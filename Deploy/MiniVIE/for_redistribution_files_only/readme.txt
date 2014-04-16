@@ -3,7 +3,7 @@ MATLAB Compiler
 1. Prerequisites for Deployment 
 
 . Verify the MATLAB Compiler Runtime (MCR) is installed and ensure you    
-  have installed version 8.0 (R2012b).   
+  have installed version 8.2 (R2013b).   
 
 . If the MCR is not installed, do the following:
   (1) enter
@@ -15,7 +15,7 @@ MATLAB Compiler
 
   (2) run the MCR Installer.
 
-Or download the Windows 32-bit version of the MCR for R2012b 
+Or download the Windows 64-bit version of the MCR for R2013b 
 from the MathWorks Web site by navigating to
 
    http://www.mathworks.com/products/compiler/mcr/index.html
@@ -33,6 +33,7 @@ NOTE: You will need administrator rights to run MCRInstaller.
 
 Files to package for Standalone 
 ================================
+-MiniVIE.ctf (component technology file)
 -MiniVIE.exe
 -MCRInstaller.exe 
    -if end users are unable to download the MCR using the above  

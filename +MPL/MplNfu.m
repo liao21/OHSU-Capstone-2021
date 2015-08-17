@@ -111,6 +111,8 @@ classdef MplNfu < Scenarios.OnlineRetrainer
             % Remaining superclass initialize methods
             initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
             
+            obj.Timer.Period = 0.035;
+            
         end
         function update(obj)
             
@@ -319,14 +321,17 @@ classdef MplNfu < Scenarios.OnlineRetrainer
                 % perform local interpolation
                 mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
                 
+                handStiffnessVal = interp1([0 0.4 0.6 1],[1 3 0.3 0.3],rocValue);
+                handStiffness = handStiffnessVal*ones(1,20);
+                handStiffness(obj.hMud.THUMB_CMC_AD_AB) = 3;
                 % generate MUD message using joint angles
                 %obj.GlobalImpedanceValue*ones(1,27));
                 msg = obj.hMud.AllJointsPosVelImpCmd(mplAngles(1:7),zeros(1,7),...
                     mplAngles(8:27),zeros(1,20),...
-                    [10*ones(1,7) 0.5*ones(1,20)]);
+                    [5*ones(1,7) handStiffness]);
                     
-                %nfuMsg = [uint8(62);msg(:)];  % append nfu message ID
-                nfuMsg = [uint8(61);msg(:)];  % append nfu message ID
+                nfuMsg = [uint8(62);msg(:)];  % append nfu message ID
+                %nfuMsg = [uint8(61);msg(:)];  % append nfu message ID
             else
                 % generate MUD message using joint angles and ROC
                 % parameters

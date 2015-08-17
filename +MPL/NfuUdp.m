@@ -309,8 +309,8 @@ classdef (Sealed) NfuUdp < handle
             %msg = obj.hMud.DOMPositionCmd(p);
             %obj.sendUdpCommand([61;msg]);  % append nfu msg header
             msg = obj.hMud.AllJointsPosVelImpCmd(p(1:7),zeros(1,7),p(8:27),zeros(1,20),stiffnessCmd);
-            %msg = [uint8(62);msg(:)];  % append nfu message ID
-            msg = [uint8(61);msg(:)];  % append nfu message ID
+            msg = [uint8(62);msg(:)];  % append nfu message ID
+            %msg = [uint8(61);msg(:)];  % append nfu message ID
             
             obj.sendUdpCommand(msg);  % append nfu msg header
             

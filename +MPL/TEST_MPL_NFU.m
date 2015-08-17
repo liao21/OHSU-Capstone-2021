@@ -1,9 +1,10 @@
+
 % 7/28/2015
 
 % RSA setup to test dynamic impedance
 % Config is clinical system (TR) with NFU
 hNfu = MPL.NfuUdp.getInstance;
-hNfu.ping(1);
+hNfu.ping(1);   % ping [blocking]
 hNfu.initialize();
 mud = MPL.MudCommandEncoder();
 
@@ -21,14 +22,14 @@ end
 %                                 stiffnessCmd[27])
 armPositions = [0 0 0 0 0.1*randn 0 0.0];
 armVelocities = zeros(1,7);
-fingerPositions = 0.1*ones(1,20);
+fingerPositions = 0.5*ones(1,20);
 fingerPositions(mud.INDEX_AB_AD) = -fingerPositions(mud.INDEX_AB_AD);
 fingerPositions(mud.THUMB_CMC_AD_AB) = 2*fingerPositions(mud.THUMB_CMC_AD_AB);
 fingerVelocities = zeros(1,20);
-stiffnessCmd = [5.0*ones(1,7) 0.1*ones(1,20)]; % 16 Nm/rad Upper Arm  0.1-1 Hand
+stiffnessCmd = [5.0*ones(1,7) 2.3*ones(1,20)]; % 16 Nm/rad Upper Arm  0.1-1 Hand
 
 msg = mud.AllJointsPosVelImpCmd(armPositions,armVelocities,fingerPositions,fingerVelocities,stiffnessCmd);
-msg = [uint8(61);msg];  % append nfu message ID
+msg = [uint8(62);msg];  % append nfu message ID
 
 hNfu.sendUdpCommand(msg);  % append nfu msg header
 

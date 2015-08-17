@@ -97,6 +97,7 @@ switch testId
         if s < 0
             error('NFU Init failed');
         end
+        hNfu.ping(1);
         hNfu.sendAllJoints([ [0 AA 0] 1.5 -0.7 -0.5 -0.5]);
         pause(1.0)
         AA = -0.25;

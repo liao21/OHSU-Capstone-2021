@@ -5,8 +5,6 @@ classdef assessmentEval
     methods (Static = true)
         function output = computeResults(structTrialLog)
             
-            
-            
             if isfield(structTrialLog,'AllClassNames')
                 % structTrialLog =
                 %     AllClassNames: {15x1 cell}
@@ -127,8 +125,9 @@ classdef assessmentEval
                 else
                     % break down user input or handle cases where full or partial
                     % paths are provided
-                    [PathName, FileName, FileExtension] = fileparts(fileName);
-                    FullFile = fullfile(PathName, [FileName FileExtension]);
+                    [PathName,name,ext] = fileparts(fileName);
+                    FileName = strcat(name,ext);
+                    FullFile = fullfile(PathName, FileName);
                     %fileName = '\\dom1\REDD\Programs\RP3\SENSITIVE_RESTRICTED_Patient_Data\JHMI\JH_TH02\*.assessmentLog';
                     if exist(FullFile,'file') ~= 2
                         [FileName,PathName,FilterIndex] = uigetfile(FullFile,'MultiSelect','on');

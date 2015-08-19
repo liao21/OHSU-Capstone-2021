@@ -3,6 +3,10 @@ classdef UserConfig < handle
     % user the first time it is accessed, and then rely on that file for
     % the remaining parameter calls
     %
+    % Example: obj = UserConfig.getInstance(userConfigFile)
+    %
+    % Arguments: userConfigFile - full path to user config .xml
+    % file
     % Revisions
     % 23APR2015 Armiger: Created
     properties (SetAccess = 'private')
@@ -19,6 +23,11 @@ classdef UserConfig < handle
         function singleObj = getInstance(userConfigFile)
             % Static creator method.  this will provide a singleton handle
             % to the class file
+            %
+            % Usage: obj = getInstance(userConfigFile)
+            %
+            % Arguments: userConfigFile - full path to user config .xml
+            % file
             persistent localObj
             
             if isempty(localObj) || ~isvalid(localObj)

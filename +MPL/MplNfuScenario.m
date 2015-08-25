@@ -1,4 +1,4 @@
-classdef MplNfu < Scenarios.OnlineRetrainer
+classdef MplNfuScenario < Scenarios.OnlineRetrainer
     % Scenario for controlling JHU/APL MPL
     % Requires Utilities\UiTools
     %
@@ -16,7 +16,7 @@ classdef MplNfu < Scenarios.OnlineRetrainer
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Transferring a new NFU image
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+    
     % E:\>ftp 192.168.1.112
     % Connected to 192.168.1.112.
     % 220 192.168.1.112 FTP server (QNXNTO-ftpd 20081216) ready.
@@ -40,10 +40,10 @@ classdef MplNfu < Scenarios.OnlineRetrainer
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Programming new NFU image
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % 
-    % 
+    %
+    %
     % QNX Neutrino (localhost) (ttyp1)
-    % 
+    %
     % login: root
     % # cd /tmp
     % # ls
@@ -56,9 +56,9 @@ classdef MplNfu < Scenarios.OnlineRetrainer
     % Scanning image
     % 8
     % # reboot
-    % 
-    % 
-    % 
+    %
+    %
+    %
     % 01-Sept-2010 Armiger: Created
     properties
         % Handles
@@ -72,6 +72,8 @@ classdef MplNfu < Scenarios.OnlineRetrainer
         EnableFeedback = 1;
         TactorIds = [3 4]
         %TactorIds = [5 6 7];
+        
+        EnableImpedance = 0;  % turn on/off dynamic impedance
         
         GlobalImpedanceValue = 0.8;
     end
@@ -88,14 +90,14 @@ classdef MplNfu < Scenarios.OnlineRetrainer
             if status < 0
                 error('Failed to initialize MPL.NfuUdp');
             end
-
+            
             
             if obj.includeVirtual
-            obj.hUdp = PnetClass(...,
-                25101,9024,'127.0.0.1');
-            
-            obj.hUdp.initialize();
-
+                obj.hUdp = PnetClass(...,
+                    25101,9024,'127.0.0.1');
+                
+                obj.hUdp.initialize();
+                
             end
             
             obj.getRocConfig();
@@ -250,7 +252,9 @@ classdef MplNfu < Scenarios.OnlineRetrainer
             
         end
         function update_control(obj)
-            % Get current joint angles and send commands to VulcanX
+            % UPDATE_CONTROL - Get arm state and transmit data to the NFU
+            %
+            % Get current joint angles and send commands to NFU
             %
             % Process steps include:
             %   - get joint angles from the JointAngles properties
@@ -275,17 +279,6 @@ classdef MplNfu < Scenarios.OnlineRetrainer
                 rocId = MPL.GraspConverter.graspLookup(rocId);
             end
             
-            % Note the joint ids for the MPL are different than the older
-            % action bus definition
-            % jointIds = [
-            %     action_bus_enum.Shoulder_FE
-            %     action_bus_enum.Shoulder_AbAd
-            %     action_bus_enum.Humeral_Rot
-            %     action_bus_enum.Elbow
-            %     action_bus_enum.Wrist_Rot
-            %     action_bus_enum.Wrist_Dev
-            %     action_bus_enum.Wrist_FE
-            %     ];
             jointIds = [
                 mpl_upper_arm_enum.SHOULDER_FE
                 mpl_upper_arm_enum.SHOULDER_ADAB
@@ -301,52 +294,44 @@ classdef MplNfu < Scenarios.OnlineRetrainer
             % get angles from state controller
             mplAngles(1:7) = [m.structState(jointIds).Value];
             
-            % Generate MUD message.  If local roc table exists, use it
-            if ~isempty(obj.RocTable)
-                
-                % check bounds
-                rocValue = max(min(rocValue,1),0);
-                
-                % lookup the Roc id and find the right table
-                iEntry = (rocId == [obj.RocTable(:).id]);
-                if sum(iEntry) < 1
-                    error('Roc Id %d not found',rocId);
-                elseif sum(iEntry) > 1
-                    warning('More than 1 Roc Tables share the id # %d',rocId);
-                    roc = obj.RocTable(find(iEntry,1,'first'));
-                else
-                    roc = obj.RocTable(iEntry);
-                end
-                
-                % perform local interpolation
-                mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
-                
-                handStiffnessVal = interp1([0 0.4 0.6 1],[1 3 0.3 0.3],rocValue);
-                handStiffness = handStiffnessVal*ones(1,20);
-                handStiffness(obj.hMud.THUMB_CMC_AD_AB) = 3;
-                % generate MUD message using joint angles
-                %obj.GlobalImpedanceValue*ones(1,27));
-                msg = obj.hMud.AllJointsPosVelImpCmd(mplAngles(1:7),zeros(1,7),...
-                    mplAngles(8:27),zeros(1,20),...
-                    [5*ones(1,7) handStiffness]);
-                    
-                nfuMsg = [uint8(62);msg(:)];  % append nfu message ID
-                %nfuMsg = [uint8(61);msg(:)];  % append nfu message ID
+            % Generate MUD message using local roc table
+            assert(~isempty(obj.RocTable),'ROC table does not exist');
+            
+            % check bounds
+            rocValue = max(min(rocValue,1),0);
+            
+            % lookup the Roc id and find the right table
+            iEntry = (rocId == [obj.RocTable(:).id]);
+            if sum(iEntry) < 1
+                error('Roc Id %d not found',rocId);
+            elseif sum(iEntry) > 1
+                warning('More than 1 Roc Tables share the id # %d',rocId);
+                roc = obj.RocTable(find(iEntry,1,'first'));
             else
-                % generate MUD message using joint angles and ROC
-                % parameters
-                msg = obj.hMud.ArmPosVelHandRocGrasps(mplAngles(1:7),zeros(1,7),1,rocId,rocVal,1);
-                nfuMsg = [uint8(61);msg(:)];  % append nfu message ID
+                roc = obj.RocTable(iEntry);
             end
             
-            % write message
-            obj.hNfu.sendUdpCommand(nfuMsg);  % append nfu msg header
-
+            % perform local interpolation of ROC
+            mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
+            
+            % Develop Stiffness Parameters
+            handStiffnessVal = interp1([0 0.4 0.6 1],[1 3 0.3 0.3],rocValue);
+            handStiffness = handStiffnessVal*ones(1,20);
+            handStiffness(obj.hMud.THUMB_CMC_AD_AB) = 3;
+            stiffnessValues = [5*ones(1,7) handStiffness];
+            
+            % Send the command to the NFU
+            if obj.EnableImpedance
+                obj.hNfu.sendAllJoints(mplAngles,stiffnessValues);
+            else
+                obj.hNfu.sendAllJoints(mplAngles);
+            end
+            
             if obj.includeVirtual
                 % write message
                 obj.hUdp.putData(msg);
             end
-        
+            
         end
     end
 end

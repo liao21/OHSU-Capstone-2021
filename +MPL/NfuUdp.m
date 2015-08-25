@@ -46,6 +46,8 @@ classdef (Sealed) NfuUdp < handle
         
         busVoltageWarn = 22; %V
         
+        DefaultStiffnessCmd = [10.0*ones(1,7) 0.9*ones(1,20)]; % 16 Nm/rad Upper Arm  0.1-1 Hand
+        
         Verbose = 1;
     end
     properties (SetAccess = private)
@@ -101,7 +103,7 @@ classdef (Sealed) NfuUdp < handle
     end
     methods
         function [ status ] = initialize(obj)
-            % Initialize network interface to NFU.
+            % INITIALIZE - Initialize network interface to NFU.
             % [ status ] = initialize(obj)
             %
             % status = 0: no error
@@ -188,8 +190,7 @@ classdef (Sealed) NfuUdp < handle
             
         end
         function [ status, result ] = ping(obj,isBlocking)
-            % Ping the limb system using the underlying windows ping
-            % command
+            % PING - Check limb system comms using system OS ping command
             %
             % argument "isBlocking", if true, will block until a successful
             % ping is received (default)
@@ -286,12 +287,40 @@ classdef (Sealed) NfuUdp < handle
             
         end
         function sendAllJoints(obj,jointAngles,stiffnessCmd)
+            % SENDALLJOINTS - Generate command for all joints and send UDP
+            %
+            % Inputs:
+            %
+            %   jointAngles - 27x1 array of all arm joint angles in radians
+            %                 joint angle enumeration given in
+            %                 mpl_upper_arm_enum (1-7) Arm
+            %                 MudCommandEncoder (1-20) Hand
+            %   stiffnessCmd - 27x1 array of arm stiffness commands in
+            %                 Nm/rad.  Typical upper arm values are 3-15 Nm/rad
+            %                 and Hand stiffnesses are approximately 0.1-1
+            %                 Nm/rad
+            %
+            % Usage: 
+            %   sendAllJoints(obj,jointAngles) - Send jointAngles using
+            %                 default stiffness.  If jointAngles is a 7x1
+            %                 array, then commands aply to the upper arm
+            %                 only and the hand angles are commanded to 0
+            %                 by default.  If jointAngles is a 27x1 then
+            %                 all joints are commanded
+            %   sendAllJoints(obj,jointAngles,stiffnessCmd) - Send
+            %                 jointAngles and stiffness for all joints.  If
+            %                 jointAngles is a 7x1 
+            %                 array, then commands aply to the upper arm
+            %                 only and the hand angles are commanded to 0
+            %                 by default.  If jointAngles is a 27x1 then
+            %                 all joints are commanded
             
             if nargin < 3
                 % use default impedance
-                stiffnessCmd = [5.0*ones(1,7) 0.1*ones(1,20)]; % 16 Nm/rad Upper Arm  0.1-1 Hand
+                stiffnessCmd = obj.DefaultStiffnessCmd;
             end
             
+            % create position array and assign inputs
             p = zeros(27,1);
             if length(jointAngles) == 7
                 p(1:7) = jointAngles;
@@ -302,24 +331,36 @@ classdef (Sealed) NfuUdp < handle
                 error('Wrong size for Joint Angles');
             end
             
-            % RSA 3/28/2014 - Added temporary offset for Thumb CMC_AD_AB
-            %p(24) = p(24) - (25*pi/180);
-            
-            % 7/29/2015 - RSA: CHange message to include impedance
-            %msg = obj.hMud.DOMPositionCmd(p);
-            %obj.sendUdpCommand([61;msg]);  % append nfu msg header
+            % create MUD command
             msg = obj.hMud.AllJointsPosVelImpCmd(p(1:7),zeros(1,7),p(8:27),zeros(1,20),stiffnessCmd);
-            msg = [uint8(62);msg(:)];  % append nfu message ID
-            %msg = [uint8(61);msg(:)];  % append nfu message ID
             
-            obj.sendUdpCommand(msg);  % append nfu msg header
+            % append nfu message ID (for impedance)
+            msg = [uint8(62);msg(:)];  
+            
+            % send the UDP command
+            obj.sendUdpCommand(msg);  
             
         end
         
         function sendUdpCommand(obj,msg)
-            %sendUdpCommand(obj,msg)
-            % send a udp message to the command socket
-            
+            % SENDUDPCOMMAND - All messages send to the NFU via UDP come
+            % through this function.
+            %
+            % Inputs: 
+            %       msg - encoded bytes for transmission to NFU.  Byte
+            %             encoding is based on MUD command encoder, however
+            %             an additional NFU message ID byte is required as
+            %             the first element
+            %
+            % Usage: 
+            %       sendUdpCommand(obj,msg)
+            %               send a udp message to the command socket
+            %
+            % NFU Message IDs:
+            %   59 - Arm position and hand ROC
+            %   60 - Tactor command
+            %   61 - All joints position
+            %   62 - All joints impedance            
             
             obj.UdpCommandSocket.putData(uint8(msg),...
                 obj.Hostname, obj.UdpCommandPortNumRemote);

@@ -110,6 +110,13 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
                 obj.hTactors = [obj.hTactors HapticAlgorithm(obj.hNfu,iTactor)];
             end
             
+            if obj.EnableImpedance
+                fprintf('[%s] NFU/MPL Impedance is ENABLED\n',mfilename);
+            else
+                fprintf('[%s] NFU/MPL Impedance is DISABLED\n',mfilename);
+            end
+            
+            
             % Remaining superclass initialize methods
             initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
             

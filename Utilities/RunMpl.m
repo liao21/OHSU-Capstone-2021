@@ -21,6 +21,7 @@ p.Scenario.JoystickId = 0;
 
 % Haptics need to be configured here, and in 
 p.Scenario.EnableFeedback = 1;
+p.Scenario.EnableImpedance = 0;
 % p.Scenario.TactorIds = [5 6 7];
 p.Scenario.TactorIds = [3 4];  % JH_TH_01
 

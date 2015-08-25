@@ -95,6 +95,11 @@ classdef MiniVIE < Common.MiniVieObj
             obj.hg.MenuToolsRocEdit = uimenu(obj.hg.MenuTools,...
                 'Label','ROC Editor...',...
                 'Callback', @(src,evt) cbRocEditor(obj) );
+            obj.hg.MenuToolsMpl = uimenu(obj.hg.MenuTools,...
+                'Label','MPL');
+            obj.hg.MenuToolsMplImpedance = uimenu(obj.hg.MenuToolsMpl,...
+                'Label','Enable Impedace',...
+                'Callback', @(src,evt) cbImpedance(obj) );
             
             function closeFig(obj)
                 try
@@ -678,6 +683,8 @@ classdef MiniVIE < Common.MiniVieObj
                         
                         obj.println('Setting up presentation...',1);
                         h = MPL.MplNfuScenario;
+                        % get starting impedance state from GUI
+                        h.EnableImpedance = strcmp(get(obj.hg.MenuToolsMpl,'Checked'),'on');
                         h.EnableFeedback = strncmpi(answer{1},'y',1);
                         h.TactorIds = str2num(answer{2}); % TODO: Validate
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
@@ -992,6 +999,26 @@ classdef MiniVIE < Common.MiniVieObj
             % Open GUI
             rocTable = UserConfig.getUserConfigVar('rocTable','WrRocDefaults.xml');
             GUIs.guiRocEditor(rocTable);
+        end
+        function cbImpedance(obj)
+            % Toggle the impedance property for the MPL/NFU
+            
+            % Toggle state
+            oldState = strcmp(get(obj.hg.MenuToolsMplImpedance,'Checked'),'on');
+            newState = ~oldState;
+            
+            if newState
+                % Enable
+                set(obj.hg.MenuToolsMplImpedance,'Checked','on');
+            else
+                % Disable
+                set(obj.hg.MenuToolsMplImpedance,'Checked','off');
+            end
+            
+            if isa(obj.Presentation,'MPL.MplNfuScenario')
+                obj.Presentation.EnableImpedance = newState;
+            end
+            
         end
     end
     methods (Static = true)

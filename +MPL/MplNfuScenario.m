@@ -16,7 +16,7 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Transferring a new NFU image
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
+    %
     % E:\>ftp 192.168.1.112
     % Connected to 192.168.1.112.
     % 220 192.168.1.112 FTP server (QNXNTO-ftpd 20081216) ready.
@@ -322,6 +322,7 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
             mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
             
             % Develop Stiffness Parameters
+            % TODO: abstract dynamic impedance values
             handStiffnessVal = interp1([0 0.4 0.6 1],[1 3 0.3 0.3],rocValue);
             handStiffness = handStiffnessVal*ones(1,20);
             handStiffness(obj.hMud.THUMB_CMC_AD_AB) = 3;

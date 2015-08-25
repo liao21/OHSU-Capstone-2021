@@ -46,7 +46,7 @@ classdef (Sealed) NfuUdp < handle
         
         busVoltageWarn = 22; %V
         
-        DefaultStiffnessCmd = [10.0*ones(1,7) 0.9*ones(1,20)]; % 16 Nm/rad Upper Arm  0.1-1 Hand
+        DefaultStiffnessCmd = [25.0*ones(1,7) 1.5*ones(1,20)]; % 16 Nm/rad Upper Arm  0.1-1 Hand
         
         Verbose = 1;
     end

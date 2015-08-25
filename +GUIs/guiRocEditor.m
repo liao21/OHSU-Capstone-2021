@@ -462,13 +462,13 @@ classdef guiRocEditor < handle
                 return
             end
             
-            upperArmAngles = obj.jointAngles(1:7);
-            handAngles = obj.jointAngles(8:27);
             if obj.IsNfu
                 % NFU
                 obj.hSink.sendAllJoints(obj.jointAngles);
             else
                 % Vulcan X
+                upperArmAngles = obj.jointAngles(1:7);
+                handAngles = obj.jointAngles(8:27);
                 msg = obj.hMud.AllJointsPosVelCmd(upperArmAngles,zeros(1,7),handAngles,zeros(1,20));
                 obj.hSink.putData(msg);
             end

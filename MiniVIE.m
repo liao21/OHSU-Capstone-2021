@@ -677,7 +677,7 @@ classdef MiniVIE < Common.MiniVieObj
                         end
                         
                         obj.println('Setting up presentation...',1);
-                        h = MPL.MplNfu;
+                        h = MPL.MplNfuScenario;
                         h.EnableFeedback = strncmpi(answer{1},'y',1);
                         h.TactorIds = str2num(answer{2}); % TODO: Validate
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);

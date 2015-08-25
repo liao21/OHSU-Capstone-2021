@@ -40,7 +40,7 @@ cellTests = {
     'MplWrist01',   '[6] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
     'MplHand',      '[7] Test MPL ROC grasps [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
     'Haptics01',    '[8] Tactor manual control'
-    'Haptics02',    '[9] HapticAlgorithm Runs HapticAlgorithm within  MPL.MplNfu < Scenarios.ScenarioBase'
+    'Haptics02',    '[9] HapticAlgorithm Runs HapticAlgorithm within  MPL.MplNfuScenario < Scenarios.ScenarioBase'
     'Joystick01',   '[10] Joystick Runs JoyMexClass preview for 15 seconds'
     'Edit01',       '[11] edit mpltest.m'
     'MplThumb',     '[12] Test MPL Thumb'
@@ -207,7 +207,7 @@ switch testId
         % HapticAlgorithm: Runs HapticAlgorithm within  MPL.MplScenarioMud < Scenarios.ScenarioBase
         tData = PatternRecognition.TrainingData;
         
-        h = MPL.MplNfu;
+        h = MPL.MplNfuScenario;
         h.initialize([],[],tData);
         h.Verbose = 0;
         h.EnableFeedback = 1;
@@ -238,27 +238,20 @@ switch testId
     case 'MplThumb'
         hNfu = MPL.NfuUdp.getInstance;
         hNfu.initialize();
-        mud = MPL.MudCommandEncoder();
+
+        id = mpl_upper_arm_enum;
+        armAngles = zeros(1,27);
         
-        armPositions = zeros(1,7);
-        armVelocities = zeros(1,7);
-        fingerPositions = zeros(1,20);
-        fingerVelocities = zeros(1,20);
-        stiffnessCmd = [5.0*ones(1,7) 1*ones(1,20)]; % 16 Nm/rad Upper Arm  0.1-1 Hand
         N = 10;
         maxVal = 0.9;
         StartStopForm([]);
         while StartStopForm
-            for i = 20:-1:17
+            for i = 27:-1:24
                 for j = [linspace(0,maxVal,N) linspace(maxVal,0,N)]
-                    fingerPositions(i) = j;
-                    fingerPositions(mud.INDEX_AB_AD) = -fingerPositions(mud.INDEX_AB_AD);
-                    fingerPositions(mud.THUMB_CMC_AD_AB) = 2*fingerPositions(mud.THUMB_CMC_AD_AB);
-                    msg = mud.AllJointsPosVelImpCmd(armPositions,armVelocities,fingerPositions,fingerVelocities,stiffnessCmd);
-                    msg = [uint8(61);msg];  % append nfu message ID
-                    %msg = mud.AllJointsPosVelCmd(armPositions,armVelocities,fingerPositions,fingerVelocities);
-                    %msg = [uint8(61),msg];  % append nfu message ID
-                    hNfu.sendUdpCommand(msg);  % append nfu msg header
+                    armAngles(i) = j;
+                    armAngles(id.INDEX_AB_AD) = -armAngles(id.INDEX_AB_AD);
+                    fingerPositions(id.THUMB_CMC_AD_AB) = 2*fingerPositions(id.THUMB_CMC_AD_AB);
+                    hNfu.sendAllJoints(armAngles);
                     pause(0.02)
                 end
             end

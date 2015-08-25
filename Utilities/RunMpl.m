@@ -16,7 +16,7 @@ diary(diaryFile);
 p.hSource = Inputs.NfuInput;
 %h = Inputs.CpchSerial(bimanParams.cpchComPort,hex2dec('FFFF'),hex2dec('FFFF'));
 
-p.Scenario = MPL.MplNfu;
+p.Scenario = MPL.MplNfuScenario;
 p.Scenario.JoystickId = 0;
 
 % Haptics need to be configured here, and in 

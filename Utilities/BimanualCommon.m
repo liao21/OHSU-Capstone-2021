@@ -71,7 +71,7 @@ obj.SignalClassifier = h;
 
 %% Setup Presentation
 
-h = MPL.MplNfu;
+h = MPL.MplNfuScenario;
 h.enableNfu = 0;
 h.VulcanXAddress = bimanParams.VulcanXAddress;
 h.VulcanXDestinationPort = bimanParams.VulcanXDestinationPort;

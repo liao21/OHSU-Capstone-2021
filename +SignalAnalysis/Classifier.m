@@ -332,7 +332,7 @@ classdef Classifier < Common.MiniVieObj
             % features2D = feature_extract(filteredDataWindowAllChannels(:,obj.getActiveChannels)',obj.NumSamplesPerWindow);
             features2D = feature_extract(filteredDataWindowAllChannels',obj.NumSamplesPerWindow);
         end
-        function plotConfusion(obj)
+        function plotConfusion(obj,hAxes)
             
             % plot the confusion matrix for the classifier
             l = obj.TrainingData.getClassLabels;
@@ -368,21 +368,32 @@ classdef Classifier < Common.MiniVieObj
             %% Plot Results
             
             % create figure
-            f = UiTools.create_figure('Confusion Matrix','Confusion_Matrix');
-            set(f,'Units','pixels')
-            set(f,'ToolBar','figure')
-            p = get(f,'Position');
-            p = [p(1) p(2)/2 800 600];
-            set(f,'Position',p);
+            if nargin < 2
+                f = UiTools.create_figure('Confusion Matrix','Confusion_Matrix');
+                set(f,'Units','pixels')
+                set(f,'ToolBar','figure')
+                p = get(f,'Position');
+                p = [p(1) p(2)/2 800 600];
+                set(f,'Position',p);
+                clf(f)
+                hAxes = axes('Parent',f);
+                drawnow
+            end
             
-            clf(f)
-            hAxes = axes('Parent',f);
-            drawnow
+            f = get(hAxes,'Parent');
+            
             % create colored surface
             [X,Y] = meshgrid(1:numClasses+1,1:numClasses+1);
             surface(X,Y,zeros(size(X)),faceColor,'Parent',hAxes);
             view(hAxes,2)
-            colormap(hAxes,'hot');
+            
+            % workaround since matlab 2014b raises a new figure when
+            % setting colormap
+            c = get(f,'HandleVisibility');
+            set(f,'HandleVisibility','on')
+            colormap(f,'hot');
+            set(f,'HandleVisibility',c)
+            
             colorbar('peer',hAxes);
             set(hAxes,'cLim',[0 100]);
             
@@ -397,11 +408,28 @@ classdef Classifier < Common.MiniVieObj
             set(hAxes,'YTick',tickVal);
             set(hAxes,'YTickLabel',flipud(tickLabel))
             
+            % workaround since matlab 2014b raises a new figure when
+            % setting colormap
+            c = get(f,'HandleVisibility');
+            set(f,'HandleVisibility','on')
             xticklabel_rotate(tickVal,30,tickLabel);
+            set(f,'HandleVisibility',c)
             
             title('Actual versus predicted class (%)','Parent',hAxes);
             
-        end
+            X = X(1:end-1,1:end-1);
+            Y = Y(1:end-1,1:end-1);
+            for i = 1:numel(normMat)
+                str = sprintf('%2d',round(normMat(i)*100));
+                hText = text(X(i)+0.5,size(Y,1)-Y(i)+1.5,{str sprintf('(%d)',cmat(i))},...
+                    'Parent',hAxes,'Color',[1 1 1],'HorizontalAlignment','Center');
+                if normMat(i) > 0.7
+                    % set black on white bg
+                    set(hText,'Color',[0 0 0]);
+                end
+            end
+            
+        end            
     end
     methods (Static = true)
         function voteDecision = majority_vote(classDecision, numVotes, ...

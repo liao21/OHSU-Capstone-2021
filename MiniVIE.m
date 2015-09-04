@@ -1088,10 +1088,13 @@ classdef MiniVIE < Common.MiniVieObj
         end
         function configurePath
             pathName = fileparts(which('MiniVIE'));
+
             addpath(pathName);
             addpath([pathName filesep 'Utilities']);
             addpath(fullfile(pathName,'GUIDE_GUIs'));
-            addpath(fullfile(pathName,'ThirdParty'));
+            
+            % add folder and sub-directories:
+            addpath(genpath(fullfile(pathName,'ThirdParty')));
         end
         function obj = Default(dataFile)
             if nargin < 1

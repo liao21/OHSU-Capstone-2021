@@ -3,7 +3,7 @@ MATLAB Compiler
 1. Prerequisites for Deployment 
 
 . Verify the MATLAB runtime is installed and ensure you    
-  have installed version 8.4 (R2014b).   
+  have installed version 8.5 (R2015a).   
 
 . If the MATLAB runtime is not installed, do the following:
   (1) enter
@@ -15,14 +15,14 @@ MATLAB Compiler
 
   (2) run the MATLAB runtime installer.
 
-Or download the Windows 64-bit version of the MATLAB runtime for R2014b 
+Or download the Windows 64-bit version of the MATLAB runtime for R2015a 
 from the MathWorks Web site by navigating to
 
    http://www.mathworks.com/products/compiler/mcr/index.html
    
    
 For more information about the MATLAB runtime and the MATLAB runtime installer, see 
-Distribution to End Users in the MATLAB Compiler documentation  
+Package and Distribute in the MATLAB Compiler documentation  
 in the MathWorks Documentation Center.    
 
 

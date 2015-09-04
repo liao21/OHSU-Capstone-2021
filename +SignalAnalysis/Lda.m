@@ -12,6 +12,8 @@ classdef Lda < SignalAnalysis.Classifier
         end
         function confuseMat = train(obj)
             
+            confuseMat = [];
+            
             if isempty(obj.TrainingData) || ~obj.TrainingData.hasData()
                 disp('No Training Data Exists');
                 return

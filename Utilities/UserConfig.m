@@ -26,9 +26,17 @@ classdef UserConfig < handle
             %
             % Usage: obj = getInstance(userConfigFile)
             %
+            % Reset: UserConfig.getInstance('')
+            %
             % Arguments: userConfigFile - full path to user config .xml
             % file
             persistent localObj
+            
+            if nargin > 0 && isempty(userConfigFile)
+                localObj = [];
+                fprintf('Resetting Object\n');
+                return
+            end
             
             if isempty(localObj) || ~isvalid(localObj)
                 if nargin < 1

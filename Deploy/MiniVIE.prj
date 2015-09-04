@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="1468830931" file="C:\git\MiniVIE\Deploy\MiniVIE.prj" location="C:\git\MiniVIE\Deploy" name="MiniVIE" preferred-package-location="C:\git\MiniVIE\Deploy\MiniVIE\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+  <configuration build-checksum="306388242" file="C:\git\MiniVIE\Deploy\MiniVIE.prj" location="C:\git\MiniVIE\Deploy" name="MiniVIE" preferred-package-location="C:\git\MiniVIE\Deploy\MiniVIE\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
     <param.appname>MiniVIE</param.appname>
     <param.icon>${PROJECT_ROOT}\MiniVIE_resources\icon.ico</param.icon>
     <param.icons>
@@ -11,12 +11,15 @@
     <param.version>1.5</param.version>
     <param.authnamewatermark>Robert Armiger</param.authnamewatermark>
     <param.email />
-    <param.company>JHU/APL</param.company>
-    <param.summary>MiniVIE Standalone App</param.summary>
-    <param.description>09/03/2015: Recompiled for Myo Armband
-11/06/2014: Recompiled for take-home final
-11/04/2014: Recompiled for take-home
-07/28/2014: Recompiled under MATLAB R2013b 64-bit</param.description>
+    <param.company>JHUAPL</param.company>
+    <param.summary>Mini Virtual Integration Environment for Prosthetic Control Using Pattern Recognition</param.summary>
+    <param.description>The MiniVIE code project reflects the concepts and workflow of the JHU/APL’s VIE platform, but is a separate and lightweight MATLAB based implementation. 
+
+Revisions:
+09/03/2015: v1.5 Recompiled for Myo Armband
+11/06/2014: v1.4 Recompiled for take-home final
+11/04/2014: v1.3 Recompiled for take-home
+07/28/2014: v1.2 Recompiled under MATLAB R2013b 64-bit</param.description>
     <param.screenshot>${PROJECT_ROOT}\MiniVIE_resources\MiniVIE.png</param.screenshot>
     <param.guid />
     <param.net.saved.interface />
@@ -40,8 +43,8 @@
     <param.package.mcr>false</param.package.mcr>
     <param.no.mcr>false</param.no.mcr>
     <param.web.mcr.name>MiniVIE_Installer_web</param.web.mcr.name>
-    <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
-    <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
+    <param.package.mcr.name>MiniVIE_Installer_mcr</param.package.mcr.name>
+    <param.no.mcr.name>MiniVIE_Installer_app</param.no.mcr.name>
     <param.windows.command.prompt>true</param.windows.command.prompt>
     <param.create.log>false</param.create.log>
     <param.log.file />
@@ -49,6 +52,7 @@
       <param.email />
       <param.guid />
       <param.net.saved.interface />
+      <param.installpath.string />
       <param.installpath.combo />
       <param.intermediate />
       <param.files.only />
@@ -61,6 +65,7 @@
       <param.web.mcr />
       <param.package.mcr />
       <param.no.mcr />
+      <param.web.mcr.name />
       <param.package.mcr.name />
       <param.no.mcr.name />
       <param.windows.command.prompt />

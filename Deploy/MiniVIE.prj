@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="306388242" file="C:\git\MiniVIE\Deploy\MiniVIE.prj" location="C:\git\MiniVIE\Deploy" name="MiniVIE" preferred-package-location="C:\git\MiniVIE\Deploy\MiniVIE\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+  <configuration build-checksum="2416116198" file="C:\git\MiniVIE\Deploy\MiniVIE.prj" location="C:\git\MiniVIE\Deploy" name="MiniVIE" preferred-package-location="C:\git\MiniVIE\Deploy\MiniVIE\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
     <param.appname>MiniVIE</param.appname>
     <param.icon>${PROJECT_ROOT}\MiniVIE_resources\icon.ico</param.icon>
     <param.icons>
@@ -43,8 +43,8 @@ Revisions:
     <param.package.mcr>false</param.package.mcr>
     <param.no.mcr>false</param.no.mcr>
     <param.web.mcr.name>MiniVIE_Installer_web</param.web.mcr.name>
-    <param.package.mcr.name>MiniVIE_Installer_mcr</param.package.mcr.name>
-    <param.no.mcr.name>MiniVIE_Installer_app</param.no.mcr.name>
+    <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
+    <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
     <param.windows.command.prompt>true</param.windows.command.prompt>
     <param.create.log>false</param.create.log>
     <param.log.file />
@@ -65,7 +65,6 @@ Revisions:
       <param.web.mcr />
       <param.package.mcr />
       <param.no.mcr />
-      <param.web.mcr.name />
       <param.package.mcr.name />
       <param.no.mcr.name />
       <param.windows.command.prompt />
@@ -124,6 +123,45 @@ Revisions:
       <file>C:\git\MiniVIE\+MPL\RocTable.m</file>
       <file>C:\git\MiniVIE\+PatternRecognition\AdaptiveTrainingInterface.m</file>
       <file>C:\git\MiniVIE\+PatternRecognition\BarTrainer.m</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\chuck grip mode.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\Cylindrical Grasp.png</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\cylindrical grip.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\elbow extension.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\elbow flexion.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\fine pinch grip.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\hand close.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\hand open.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\hook grip.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\humeral rotation (in).jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\humeral rotation (out).jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\IndexFinger.png</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\key grip mode.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\Lateral Grasp.png</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\lateral grip.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\LittleFinger.png</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\MiddleFinger.png</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\no movement (rest).jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\Palmar Grasp.png</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\point grip.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\power grip mode.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\RingFinger.png</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\shoulder abduction.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\shoulder adduction.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\shoulder extension.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\shoulder flexion.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\shoulder(humeral) rotation in.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\shoulder(humeral) rotation out.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\Spherical Grasp.png</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\ThumbFinger.png</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\Tip Grasp.png</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\tool grip.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\Tripod Grasp.png</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\wrist abduction.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\wrist adduction.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\wrist extension.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\wrist flexion.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\wrist pronation.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\wrist supination.jpg</file>
       <file>C:\git\MiniVIE\+PatternRecognition\MiniGuitarHero.m</file>
       <file>C:\git\MiniVIE\+PatternRecognition\MotionTrainer.m</file>
       <file>C:\git\MiniVIE\+PatternRecognition\SimpleTrainer.m</file>
@@ -136,6 +174,7 @@ Revisions:
       <file>C:\git\MiniVIE\+Presentation\+AirGuitarHero\NoteDetector.m</file>
       <file>C:\git\MiniVIE\+Presentation\@MiniV\MiniV.m</file>
       <file>C:\git\MiniVIE\+Presentation\@MiniV\private\ArmControl.m</file>
+      <file>C:\git\minivie\+Presentation\@MiniV\private\Body.dat</file>
       <file>C:\git\MiniVIE\+Presentation\@MiniV\private\f_KChain_IsectNodes.m</file>
       <file>C:\git\MiniVIE\+Presentation\@MiniV\private\f_KChain_IsectNodes2.m</file>
       <file>C:\git\MiniVIE\+Presentation\@MiniV\private\f_KChain_List.m</file>
@@ -160,6 +199,7 @@ Revisions:
       <file>C:\git\MiniVIE\+Presentation\@MiniV\private\f_update_triad.m</file>
       <file>C:\git\MiniVIE\+Presentation\@MiniV\private\f_UpdateHandPosition.m</file>
       <file>C:\git\MiniVIE\+Presentation\@MiniV\private\f_UpdateJointAngle.m</file>
+      <file>C:\git\minivie\+Presentation\@MiniV\private\meshData.mat</file>
       <file>C:\git\MiniVIE\+Presentation\@MiniV\private\run_demo.m</file>
       <file>C:\git\MiniVIE\+Presentation\BreakoutSink.m</file>
       <file>C:\git\MiniVIE\+Presentation\MiniBreakout.m</file>

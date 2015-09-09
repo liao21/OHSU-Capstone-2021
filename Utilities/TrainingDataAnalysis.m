@@ -347,7 +347,8 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
                 
                 for i = 1:obj.NumActiveChannels
                     iCh = obj.ActiveChannels(i);
-                    plot(squeeze(f(iCh,iFeature,sortOrder)),'Color',c(i,:))
+                    lineData = squeeze(f(iCh,iFeature,sortOrder));
+                    plot(lineData,'Color',c(i,:))
                 end
                 
                 if iFeature == 4;

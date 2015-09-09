@@ -81,13 +81,25 @@ classdef TrainingData < handle
             numFeatures = length(obj.FeatureNames);
         end
         
-        function featureData = getFeatureData(obj)
+        function featureData = getFeatureData(obj,iClass)
             %featureData = getFeatureData(obj)
             % returns valid data (since buffers initialized to larger size)
             % that is also 'enabled'
+            %
+            % Optional input argument "iClass" returns the features for a
+            % single class label
+            %
+            % featureData is [numChannels numFeatures numSamples]
             
             isEnabled = obj.EnableLabel(1:obj.SampleCount);
             featureData = obj.SignalFeatures3D(:,:,isEnabled);
+            
+            if nargin > 1
+                % filter by class number
+                isClass = obj.getClassLabels == iClass;
+                featureData = featureData(:,:,isClass);
+            end
+            
         end
         function classLabels = getClassLabels(obj)
             % Return ONLY ENABLED class labels
@@ -326,7 +338,7 @@ classdef TrainingData < handle
             assert(all(isValid),'Expected a cell array of strings');
             
             
-            assert( length(featureNames) == size(obj.SignalFeatures3D,2),...
+            assert( isempty(obj.SignalFeatures3D),...
                 'Cannot change the number of features once the data object is initialized');
             
             % Update the property

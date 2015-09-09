@@ -39,7 +39,7 @@ classdef Lda < SignalAnalysis.Classifier
             
             % If classes have no data we can leave these as NaN.  When classifying
             % max( feats * w + c , [], 2) will return the max real number
-            hasNoData = ~sum(abs(w));
+            hasNoData = ~sum(abs(w),1);
             if any(hasNoData)
                 fprintf(['[%s] Classes with no data [ ' repmat('%d ',1,sum(hasNoData)) '] \n'],mfilename,find(hasNoData));
             end

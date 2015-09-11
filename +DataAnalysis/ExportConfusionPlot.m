@@ -1,4 +1,4 @@
-function ExportConfusionPlot(hTraining,filePrefix)
+function ExportConfusionPlot(hTraining, outputFile)
 
 %Plot all results on seperate figures
 
@@ -10,7 +10,7 @@ for i = 1:length(hTraining);
     if isempty(output)
         continue
     end
-    [~, testName, ~] = fileparts(hTraining(i).fullFileName);
+    testName = hTraining(i).Name;
 
     f = figure(i);
     set(f,'Units','pixels')
@@ -29,8 +29,6 @@ for i = 1:length(hTraining);
 end
 
 %% Copy figures to PPT
-
-outputFile = strcat(filePrefix, 'ConfusionMatrix.pptx');
 
 % Start new presentation
 isOpen  = exportToPPTX();

@@ -21,6 +21,9 @@ classdef TrainingData < handle
     %
     % 2012May14 Armiger: Created
     
+    properties %public
+        Name = '';
+    end
     properties (Transient)
         Verbose = 1;            % enables print statements
         SaveInOldFormat = 0;    % save mat file as struct

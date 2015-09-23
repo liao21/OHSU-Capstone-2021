@@ -1,0 +1,207 @@
+Wed Sep 16 17:09:34 EDT 2015
+TicketID: 425809787-2254675569-3305617234-5eeb8b2
+Inventory File: raptor-options.json
+ 
+openscad -o /var/code/prod/Service-Station/ticket/425809787-2254675569-3305617234-5eeb8b2/Left.Raptor-Palm-1.stl  -D label=u.e-nable.me/yihk9  -D Left1=0 -D Left2=0 -D Left3=0 -D Left4=0 -D Left5=0 -D Left6=0 -D Left7=0 -D Left8=0 -D Left9=0 -D Left10=0  -D Right1=0 -D Right2=0 -D Right3=0 -D Right4=0 -D Right5=0 -D Right6=0 -D Right7=0 -D Right8=85 -D Right9=0 -D Right10=0 -D part=2  -D prostheticHand=0 -D gauntletSelect=3 -D fingerSelect=4 -D palmSelect=10 -D Padding=5 -D WristBolt=0 -D KnuckleBolt=0 -D JointBolt=0 -D ThumbBolt=0  /var/code/prod/Service-Station/e-NABLE/Assembly/Assembly.scad
+ECHO: "Version", [2014, 10, 2]
+ECHO: "part ", 2
+ECHO: "fingerSelect ", 4
+ECHO: "palmSelect ", 10
+ECHO: "is raptor ", true
+ECHO: "isCB ", false
+ECHO: "gauntletSelect ", 3
+ECHO: "is flared ", false
+ECHO: "*** part-h0-a10-f4-g3-2.stl"
+ECHO: "prosthetic hand ", 0
+ECHO: "pHand ", 0
+ECHO: "Measurements: prosthetic", [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+ECHO: "Measurements: full", [1, 0, 0, 0, 0, 0, 0, 0, 85, 0, 0, 0, 0]
+ECHO: "Palm len ", 108.545
+ECHO: "knuckle ", [0, 108.545, 0], " wrist ", [0, 0, 0], " padding ", 5
+ECHO: 1, 85
+ECHO: "Target Len ", 108.545, " target Width ", 90
+ECHO: "in Assembly CB scale 1.60714,1.60714 CCB scale 1.28571, 1.28571 EH scale 1.63636, 1.63636 using scale 1.63636, 1.63636"
+ECHO: "*** PALM ***"
+ECHO: "Raptor Hand palm, Support, Thumb."
+ECHO: "target hand ", 0, " other hand ", 1
+ECHO: "Scale ", 163.636, "% Y scale ", 163.636, "%"
+ECHO: "Label ", "u.e-nable.me/yihk9"
+ECHO: "Label ", "u.e-nable.me/yihk9", " mirror ", 0
+ECHO: "Label ", "u.e-nable.me/yihk9", " mirror ", 0
+ECHO: "Label ", "u.e-nable.me/yihk9", " mirror ", 0
+44.08user 0.54system 0:44.74elapsed 99%CPU (0avgtext+0avgdata 377412maxresident)k
+520inputs+4488outputs (3major+105501minor)pagefaults 0swaps
+ 
+openscad -o /var/code/prod/Service-Station/ticket/425809787-2254675569-3305617234-5eeb8b2/Left.Raptor-Gauntlet-1.stl  -D label=u.e-nable.me/yihk9  -D Left1=0 -D Left2=0 -D Left3=0 -D Left4=0 -D Left5=0 -D Left6=0 -D Left7=0 -D Left8=0 -D Left9=0 -D Left10=0  -D Right1=0 -D Right2=0 -D Right3=0 -D Right4=0 -D Right5=0 -D Right6=0 -D Right7=0 -D Right8=85 -D Right9=0 -D Right10=0 -D part=1  -D prostheticHand=0 -D gauntletSelect=3 -D fingerSelect=4 -D palmSelect=10 -D Padding=5 -D WristBolt=0 -D KnuckleBolt=0 -D JointBolt=0 -D ThumbBolt=0  /var/code/prod/Service-Station/e-NABLE/Assembly/Assembly.scad
+ECHO: "Version", [2014, 10, 2]
+ECHO: "part ", 1
+ECHO: "fingerSelect ", 4
+ECHO: "palmSelect ", 10
+ECHO: "is raptor ", true
+ECHO: "isCB ", false
+ECHO: "gauntletSelect ", 3
+ECHO: "is flared ", false
+ECHO: "*** part-h0-a10-f4-g3-1.stl"
+ECHO: "prosthetic hand ", 0
+ECHO: "pHand ", 0
+ECHO: "Measurements: prosthetic", [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+ECHO: "Measurements: full", [1, 0, 0, 0, 0, 0, 0, 0, 85, 0, 0, 0, 0]
+ECHO: "Palm len ", 108.545
+ECHO: "knuckle ", [0, 108.545, 0], " wrist ", [0, 0, 0], " padding ", 5
+ECHO: 1, 85
+ECHO: "Target Len ", 108.545, " target Width ", 90
+ECHO: "in Assembly CB scale 1.60714,1.60714 CCB scale 1.28571, 1.28571 EH scale 1.63636, 1.63636 using scale 1.63636, 1.63636"
+ECHO: "Raptor Hand Gauntlet ", 5, "support", "no flare"
+0.65user 0.04system 0:00.70elapsed 99%CPU (0avgtext+0avgdata 28412maxresident)k
+0inputs+12520outputs (0major+8811minor)pagefaults 0swaps
+ 
+openscad -o /var/code/prod/Service-Station/ticket/425809787-2254675569-3305617234-5eeb8b2/Left.Raptor-FingerProximal-5.stl  -D label=u.e-nable.me/yihk9  -D Left1=0 -D Left2=0 -D Left3=0 -D Left4=0 -D Left5=0 -D Left6=0 -D Left7=0 -D Left8=0 -D Left9=0 -D Left10=0  -D Right1=0 -D Right2=0 -D Right3=0 -D Right4=0 -D Right5=0 -D Right6=0 -D Right7=0 -D Right8=85 -D Right9=0 -D Right10=0 -D part=3  -D prostheticHand=0 -D gauntletSelect=3 -D fingerSelect=4 -D palmSelect=10 -D Padding=5 -D WristBolt=0 -D KnuckleBolt=0 -D JointBolt=0 -D ThumbBolt=0  /var/code/prod/Service-Station/e-NABLE/Assembly/Assembly.scad
+ECHO: "Version", [2014, 10, 2]
+ECHO: "part ", 3
+ECHO: "fingerSelect ", 4
+ECHO: "palmSelect ", 10
+ECHO: "is raptor ", true
+ECHO: "isCB ", false
+ECHO: "gauntletSelect ", 3
+ECHO: "is flared ", false
+ECHO: "*** part-h0-a10-f4-g3-3.stl"
+ECHO: "prosthetic hand ", 0
+ECHO: "pHand ", 0
+ECHO: "Measurements: prosthetic", [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+ECHO: "Measurements: full", [1, 0, 0, 0, 0, 0, 0, 0, 85, 0, 0, 0, 0]
+ECHO: "Palm len ", 108.545
+ECHO: "knuckle ", [0, 108.545, 0], " wrist ", [0, 0, 0], " padding ", 5
+ECHO: 1, 85
+ECHO: "Target Len ", 108.545, " target Width ", 90
+ECHO: "in Assembly CB scale 1.60714,1.60714 CCB scale 1.28571, 1.28571 EH scale 1.63636, 1.63636 using scale 1.63636, 1.63636"
+ECHO: "EHProximale scale ", [1.63636, 1.63636, 1.63636]
+ECHO: "Raptor Proximal Phalange", "support"
+6.03user 0.13system 0:06.17elapsed 99%CPU (0avgtext+0avgdata 121124maxresident)k
+0inputs+2368outputs (0major+34455minor)pagefaults 0swaps
+ 
+openscad -o /var/code/prod/Service-Station/ticket/425809787-2254675569-3305617234-5eeb8b2/Left.Raptor-FingerDistalShort-1.stl  -D label=u.e-nable.me/yihk9  -D Left1=0 -D Left2=0 -D Left3=0 -D Left4=0 -D Left5=0 -D Left6=0 -D Left7=0 -D Left8=0 -D Left9=0 -D Left10=0  -D Right1=0 -D Right2=0 -D Right3=0 -D Right4=0 -D Right5=0 -D Right6=0 -D Right7=0 -D Right8=85 -D Right9=0 -D Right10=0 -D part=8  -D prostheticHand=0 -D gauntletSelect=3 -D fingerSelect=4 -D palmSelect=10 -D Padding=5 -D WristBolt=0 -D KnuckleBolt=0 -D JointBolt=0 -D ThumbBolt=0  /var/code/prod/Service-Station/e-NABLE/Assembly/Assembly.scad
+ECHO: "Version", [2014, 10, 2]
+ECHO: "part ", 8
+ECHO: "fingerSelect ", 4
+ECHO: "palmSelect ", 10
+ECHO: "is raptor ", true
+ECHO: "isCB ", false
+ECHO: "gauntletSelect ", 3
+ECHO: "is flared ", false
+ECHO: "*** part-h0-a10-f4-g3-8.stl"
+ECHO: "prosthetic hand ", 0
+ECHO: "pHand ", 0
+ECHO: "Measurements: prosthetic", [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+ECHO: "Measurements: full", [1, 0, 0, 0, 0, 0, 0, 0, 85, 0, 0, 0, 0]
+ECHO: "Palm len ", 108.545
+ECHO: "knuckle ", [0, 108.545, 0], " wrist ", [0, 0, 0], " padding ", 5
+ECHO: 1, 85
+ECHO: "Target Len ", 108.545, " target Width ", 90
+ECHO: "in Assembly CB scale 1.60714,1.60714 CCB scale 1.28571, 1.28571 EH scale 1.63636, 1.63636 using scale 1.63636, 1.63636"
+ECHO: "Raptor Finger_tip_short ", "support"
+17.33user 0.32system 0:17.68elapsed 99%CPU (0avgtext+0avgdata 304504maxresident)k
+0inputs+4048outputs (0major+83365minor)pagefaults 0swaps
+ 
+openscad -o /var/code/prod/Service-Station/ticket/425809787-2254675569-3305617234-5eeb8b2/Left.Raptor-FingerDistalMedium-3.stl  -D label=u.e-nable.me/yihk9  -D Left1=0 -D Left2=0 -D Left3=0 -D Left4=0 -D Left5=0 -D Left6=0 -D Left7=0 -D Left8=0 -D Left9=0 -D Left10=0  -D Right1=0 -D Right2=0 -D Right3=0 -D Right4=0 -D Right5=0 -D Right6=0 -D Right7=0 -D Right8=85 -D Right9=0 -D Right10=0 -D part=4  -D prostheticHand=0 -D gauntletSelect=3 -D fingerSelect=4 -D palmSelect=10 -D Padding=5 -D WristBolt=0 -D KnuckleBolt=0 -D JointBolt=0 -D ThumbBolt=0  /var/code/prod/Service-Station/e-NABLE/Assembly/Assembly.scad
+ECHO: "Version", [2014, 10, 2]
+ECHO: "part ", 4
+ECHO: "fingerSelect ", 4
+ECHO: "palmSelect ", 10
+ECHO: "is raptor ", true
+ECHO: "isCB ", false
+ECHO: "gauntletSelect ", 3
+ECHO: "is flared ", false
+ECHO: "*** part-h0-a10-f4-g3-4.stl"
+ECHO: "prosthetic hand ", 0
+ECHO: "pHand ", 0
+ECHO: "Measurements: prosthetic", [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+ECHO: "Measurements: full", [1, 0, 0, 0, 0, 0, 0, 0, 85, 0, 0, 0, 0]
+ECHO: "Palm len ", 108.545
+ECHO: "knuckle ", [0, 108.545, 0], " wrist ", [0, 0, 0], " padding ", 5
+ECHO: 1, 85
+ECHO: "Target Len ", 108.545, " target Width ", 90
+ECHO: "in Assembly CB scale 1.60714,1.60714 CCB scale 1.28571, 1.28571 EH scale 1.63636, 1.63636 using scale 1.63636, 1.63636"
+ECHO: "Raptor Finger_tip_medium ", "support"
+17.76user 0.43system 0:18.24elapsed 99%CPU (0avgtext+0avgdata 297768maxresident)k
+0inputs+3944outputs (0major+81667minor)pagefaults 0swaps
+ 
+openscad -o /var/code/prod/Service-Station/ticket/425809787-2254675569-3305617234-5eeb8b2/Left.Raptor-FingerDistalLong-1.stl  -D label=u.e-nable.me/yihk9  -D Left1=0 -D Left2=0 -D Left3=0 -D Left4=0 -D Left5=0 -D Left6=0 -D Left7=0 -D Left8=0 -D Left9=0 -D Left10=0  -D Right1=0 -D Right2=0 -D Right3=0 -D Right4=0 -D Right5=0 -D Right6=0 -D Right7=0 -D Right8=85 -D Right9=0 -D Right10=0 -D part=9  -D prostheticHand=0 -D gauntletSelect=3 -D fingerSelect=4 -D palmSelect=10 -D Padding=5 -D WristBolt=0 -D KnuckleBolt=0 -D JointBolt=0 -D ThumbBolt=0  /var/code/prod/Service-Station/e-NABLE/Assembly/Assembly.scad
+ECHO: "Version", [2014, 10, 2]
+ECHO: "part ", 9
+ECHO: "fingerSelect ", 4
+ECHO: "palmSelect ", 10
+ECHO: "is raptor ", true
+ECHO: "isCB ", false
+ECHO: "gauntletSelect ", 3
+ECHO: "is flared ", false
+ECHO: "*** part-h0-a10-f4-g3-9.stl"
+ECHO: "prosthetic hand ", 0
+ECHO: "pHand ", 0
+ECHO: "Measurements: prosthetic", [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+ECHO: "Measurements: full", [1, 0, 0, 0, 0, 0, 0, 0, 85, 0, 0, 0, 0]
+ECHO: "Palm len ", 108.545
+ECHO: "knuckle ", [0, 108.545, 0], " wrist ", [0, 0, 0], " padding ", 5
+ECHO: 1, 85
+ECHO: "Target Len ", 108.545, " target Width ", 90
+ECHO: "in Assembly CB scale 1.60714,1.60714 CCB scale 1.28571, 1.28571 EH scale 1.63636, 1.63636 using scale 1.63636, 1.63636"
+ECHO: "Raptor Finger_tip_long ", "support"
+16.72user 0.41system 0:17.17elapsed 99%CPU (0avgtext+0avgdata 279976maxresident)k
+0inputs+3728outputs (0major+77186minor)pagefaults 0swaps
+ 
+openscad -o /var/code/prod/Service-Station/ticket/425809787-2254675569-3305617234-5eeb8b2/Left.Raptor-OtherParts-1.stl  -D label=u.e-nable.me/yihk9  -D Left1=0 -D Left2=0 -D Left3=0 -D Left4=0 -D Left5=0 -D Left6=0 -D Left7=0 -D Left8=0 -D Left9=0 -D Left10=0  -D Right1=0 -D Right2=0 -D Right3=0 -D Right4=0 -D Right5=0 -D Right6=0 -D Right7=0 -D Right8=85 -D Right9=0 -D Right10=0 -D part=7  -D prostheticHand=0 -D gauntletSelect=3 -D fingerSelect=4 -D palmSelect=10 -D Padding=5 -D WristBolt=0 -D KnuckleBolt=0 -D JointBolt=0 -D ThumbBolt=0  /var/code/prod/Service-Station/e-NABLE/Assembly/Assembly.scad
+ECHO: "Version", [2014, 10, 2]
+ECHO: "part ", 7
+ECHO: "fingerSelect ", 4
+ECHO: "palmSelect ", 10
+ECHO: "is raptor ", true
+ECHO: "isCB ", false
+ECHO: "gauntletSelect ", 3
+ECHO: "is flared ", false
+ECHO: "*** part-h0-a10-f4-g3-7.stl"
+ECHO: "prosthetic hand ", 0
+ECHO: "pHand ", 0
+ECHO: "Measurements: prosthetic", [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+ECHO: "Measurements: full", [1, 0, 0, 0, 0, 0, 0, 0, 85, 0, 0, 0, 0]
+ECHO: "Palm len ", 108.545
+ECHO: "knuckle ", [0, 108.545, 0], " wrist ", [0, 0, 0], " padding ", 5
+ECHO: 1, 85
+ECHO: "Target Len ", 108.545, " target Width ", 90
+ECHO: "in Assembly CB scale 1.60714,1.60714 CCB scale 1.28571, 1.28571 EH scale 1.63636, 1.63636 using scale 1.63636, 1.63636"
+ECHO: "Enable Hand 2.0 other parts scaleL ", 1.63636, " scaleW ", 1.63636, " s ", 1.63636
+ECHO: "Raptor Thumb Pin scaleL ", 1.7, " scaleW ", 1.7
+ECHO: "Raptor Knuckle Pins scaleL ", 1.63636, " scaleW ", 1.63636
+ECHO: "Raptor Finger Pin scaleL ", 1.63636, " scaleW ", 1.63636
+ECHO: "Raptor Finger Pin scaleL ", 1.63636, " scaleW ", 1.63636
+ECHO: "Raptor Finger Pin scaleL ", 1.63636, " scaleW ", 1.63636
+ECHO: "Raptor Finger Pin scaleL ", 1.63636, " scaleW ", 1.63636
+ECHO: "Raptor Finger Pin scaleL ", 1.63636, " scaleW ", 1.63636
+ECHO: "Raptor Hand Tensioner [x1].stl scaleL ", 1.63636, " scaleW ", 1.63636, "thumb"
+ECHO: "Raptor Hinge Pins scaleL ", 1.63636, " scaleW ", 1.63636
+ECHO: "Raptor Hex Pins scaleL ", 1.63636, " scaleW ", 1.63636
+ECHO: "Raptor Dovetail scaleL ", 1.63636, " scaleW ", 1.63636, "no flare"
+99.33user 0.92system 1:40.41elapsed 99%CPU (0avgtext+0avgdata 674056maxresident)k
+0inputs+11968outputs (0major+179392minor)pagefaults 0swaps
+ 
+openscad -o /var/code/prod/Service-Station/ticket/425809787-2254675569-3305617234-5eeb8b2/Left.Raptor-HingeCaps-1.stl  -D label=u.e-nable.me/yihk9  -D Left1=0 -D Left2=0 -D Left3=0 -D Left4=0 -D Left5=0 -D Left6=0 -D Left7=0 -D Left8=0 -D Left9=0 -D Left10=0  -D Right1=0 -D Right2=0 -D Right3=0 -D Right4=0 -D Right5=0 -D Right6=0 -D Right7=0 -D Right8=85 -D Right9=0 -D Right10=0 -D part=10  -D prostheticHand=0 -D gauntletSelect=3 -D fingerSelect=4 -D palmSelect=10 -D Padding=5 -D WristBolt=0 -D KnuckleBolt=0 -D JointBolt=0 -D ThumbBolt=0  /var/code/prod/Service-Station/e-NABLE/Assembly/Assembly.scad
+ECHO: "Version", [2014, 10, 2]
+ECHO: "part ", 10
+ECHO: "fingerSelect ", 4
+ECHO: "palmSelect ", 10
+ECHO: "is raptor ", true
+ECHO: "isCB ", false
+ECHO: "gauntletSelect ", 3
+ECHO: "is flared ", false
+ECHO: "*** part-h0-a10-f4-g3-10.stl"
+ECHO: "prosthetic hand ", 0
+ECHO: "pHand ", 0
+ECHO: "Measurements: prosthetic", [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+ECHO: "Measurements: full", [1, 0, 0, 0, 0, 0, 0, 0, 85, 0, 0, 0, 0]
+ECHO: "Palm len ", 108.545
+ECHO: "knuckle ", [0, 108.545, 0], " wrist ", [0, 0, 0], " padding ", 5
+ECHO: 1, 85
+ECHO: "Target Len ", 108.545, " target Width ", 90
+ECHO: "in Assembly CB scale 1.60714,1.60714 CCB scale 1.28571, 1.28571 EH scale 1.63636, 1.63636 using scale 1.63636, 1.63636"
+ECHO: "Raptor Hinge Caps scaleL ", 1.63636, " scaleW ", 1.63636
+0.24user 0.02system 0:00.27elapsed 99%CPU (0avgtext+0avgdata 20936maxresident)k
+0inputs+5032outputs (0major+6601minor)pagefaults 0swaps
+Completed:  Wed Sep 16 17:12:59 EDT 2015

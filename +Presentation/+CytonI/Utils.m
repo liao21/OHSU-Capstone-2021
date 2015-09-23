@@ -193,7 +193,7 @@ classdef Utils
             end
             
             % open file for reading
-            [fid msg] = fopen(fileName, 'r');
+            [fid, msg] = fopen(fileName, 'r');
             if fid < 0
                 stlMesh = [];
                 msg = sprintf('File %s could not be opened.\n Error was: "%s" \n',fileName,msg);
@@ -208,7 +208,7 @@ classdef Utils
             end_str = strtrim(fread(fid,50,'char=>char')');
             
             isBinary = ~(strcmpi(init(1:5),'solid') && ...
-                strcmpi(end_str(end-7:end),'endsolid')); %strcmp returns true if equal
+                ~isempty(strfind(end_str,'endsolid'))); %strcmp returns true if equal
             
             % go back to beginning of file
             fseek(fid,0,-1);

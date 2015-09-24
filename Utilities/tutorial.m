@@ -1,4 +1,4 @@
-% MinivVIE tutorial
+% MiniVIE tutorial
 % 1/25/2011  - At present the MiniVIE is more of a software API, rather
 % than a turn-key application.  If you are not already familiar with object
 % oriented programming in Matlab, please review the articles
@@ -11,8 +11,6 @@
 % immediate access when you are in that directory, or if it is on the path
 MiniVIE.configurePath();
 % MiniVIE.createShortcuts(); % optional
-% addpath(pwd);
-% addpath('Utilities');
 
 %% Step 1: Setup Input Device
 %  Create a handle to a Signal Input device and initialize it.
@@ -21,9 +19,10 @@ MiniVIE.configurePath();
 
 % The particular type of input is dependant on your application and
 % hardware configuration
+% Uncomment one of the following to select a signals source
 % SignalSource = Inputs.DaqHwDevice('nidaq','Dev1');
-SignalSource = Inputs.DaqHwDevice('mcc','0');
-% SignalSource = Inputs.SignalSimulator();
+% SignalSource = Inputs.DaqHwDevice('mcc','0');
+SignalSource = Inputs.SignalSimulator();
 
 % If using the simulator, the box that opens up allows you to press keys to
 % change the output pattern.  E.g. 'asdf' selects patterns '1234'

@@ -4,3 +4,5 @@
 *.trainingData
 *.tacAssessment
 *.png
+*.assessmentLog
+*.tif

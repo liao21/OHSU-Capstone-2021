@@ -49,7 +49,7 @@ classdef MiniVDisplayScenario < Scenarios.OnlineRetrainer
             axis(obj.hAxes,'off')
             
             % View Whole [Left] Arm, Frontal
-            axis([0 0.4 -0.4 0.4 0.3 0.7])
+            axis(obj.hAxes,[0 0.4 -0.4 0.4 0.3 0.7])
             
             % Zoom to hand
             if obj.isLeftSide

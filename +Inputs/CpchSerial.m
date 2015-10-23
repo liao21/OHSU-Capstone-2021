@@ -33,7 +33,7 @@ classdef CpchSerial < Inputs.CpcHeadstage
         
         % Gain values form normalized values
         GainSingleEnded = 10;
-        GainDifferential = 50;
+        GainDifferential = 0.00489;
     end
     
     properties (SetAccess = private)
@@ -285,7 +285,8 @@ classdef CpchSerial < Inputs.CpcHeadstage
             [diffDataI16, seDataU16] = obj.GetSignalData(validData,obj.BioampCnt,obj.GPICnt);
             
             % Perform Scaling
-            deDataNormalized = double(diffDataI16) / 512 * obj.GainDifferential;
+            %deDataNormalized = double(diffDataI16) / 512 * obj.GainDifferential;
+            deDataNormalized = double(diffDataI16) * obj.GainDifferential;  % updated per ICD
             seDataNormalized = double(seDataU16) ./ 1024 * obj.GainSingleEnded;
             
             % DEBUG: Send sequence data as last single ended channel

@@ -18,6 +18,8 @@ classdef ArmStateModel < handle
         ApplyVelocityLimits = 1;
         ApplyAccelerationLimits = 0;
         ApplyReturnToHome = 0;       % Used for 'simple' or 'complex' arm mode
+
+        GLOBAL_GAIN_SCALE = 0.6;
         
         structState
         lastTime
@@ -80,6 +82,8 @@ classdef ArmStateModel < handle
             obj.structState(8).State = Controls.GraspTypes.Relaxed;
             obj.structState(8).MaxAcceleration = 1;
             obj.structState(8).DefaultValue = 0.15;
+
+            loadTempState(obj);
             
         end
         function setRocId(obj,id)
@@ -114,13 +118,18 @@ classdef ArmStateModel < handle
             % Save the state structure for use when restarting limb between
             % sessions
             
-            UiTools.save_temp_file('lastArmState',obj.structState);
+            tempFileName = 'lastArmState';
+            fprintf('[%s] Saving joint state to: %s\n',mfilename,tempFileName);
+            
+            UiTools.save_temp_file(tempFileName,obj.structState);
             
         end
         function success = loadTempState(obj)
             % Load the state structure for use when restarting limb between
             % sessions
+            success = true;
             tempFileName = 'lastArmState';
+            fprintf('[%s] Loading joint angles from %s\n',mfilename,tempFileName);
             s = UiTools.load_temp_file(tempFileName);
             
             if isempty(s)
@@ -244,7 +253,7 @@ classdef ArmStateModel < handle
                 end
 
                 s.LastVelocity = s.Velocity;
-                s.Velocity = newV;
+                s.Velocity = newV * obj.GLOBAL_GAIN_SCALE;
                 
                 % Integrate velocity to get position
                 s.Value = s.Value + (s.Velocity*dt);

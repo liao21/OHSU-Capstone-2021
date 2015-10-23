@@ -37,6 +37,8 @@ classdef (Sealed) NfuUdp < handle
         
         EnableDataLogging = 0;
         
+        CpchDataBuffer
+        
         UdpBuffer1
         UdpBuffer2
         UdpBuffer3
@@ -45,6 +47,8 @@ classdef (Sealed) NfuUdp < handle
         hLogFile
         
         busVoltageWarn = 22; %V
+        
+        hideHeartbeat = 0;  % disable echoing hearbeat to console
         
         DefaultStiffnessCmd = [25.0*ones(1,7) 1.5*ones(1,20)]; % 16 Nm/rad Upper Arm  0.1-1 Hand
         
@@ -97,7 +101,6 @@ classdef (Sealed) NfuUdp < handle
     methods (Access = private)
         function obj = NfuUdp
             % Creator is private to force singleton
-            
             reset_buffers(obj);
         end
     end
@@ -300,7 +303,7 @@ classdef (Sealed) NfuUdp < handle
             %                 and Hand stiffnesses are approximately 0.1-1
             %                 Nm/rad
             %
-            % Usage: 
+            % Usage:
             %   sendAllJoints(obj,jointAngles) - Send jointAngles using
             %                 default stiffness.  If jointAngles is a 7x1
             %                 array, then commands aply to the upper arm
@@ -309,7 +312,7 @@ classdef (Sealed) NfuUdp < handle
             %                 all joints are commanded
             %   sendAllJoints(obj,jointAngles,stiffnessCmd) - Send
             %                 jointAngles and stiffness for all joints.  If
-            %                 jointAngles is a 7x1 
+            %                 jointAngles is a 7x1
             %                 array, then commands aply to the upper arm
             %                 only and the hand angles are commanded to 0
             %                 by default.  If jointAngles is a 27x1 then
@@ -335,10 +338,11 @@ classdef (Sealed) NfuUdp < handle
             msg = obj.hMud.AllJointsPosVelImpCmd(p(1:7),zeros(1,7),p(8:27),zeros(1,20),stiffnessCmd);
             
             % append nfu message ID (for impedance)
-            msg = [uint8(62);msg(:)];  
+            %msg = [uint8(62);msg(:)];
+            msg = [uint8(61);msg(:)];
             
             % send the UDP command
-            obj.sendUdpCommand(msg);  
+            obj.sendUdpCommand(msg);
             
         end
         
@@ -346,13 +350,13 @@ classdef (Sealed) NfuUdp < handle
             % SENDUDPCOMMAND - All messages send to the NFU via UDP come
             % through this function.
             %
-            % Inputs: 
+            % Inputs:
             %       msg - encoded bytes for transmission to NFU.  Byte
             %             encoding is based on MUD command encoder, however
             %             an additional NFU message ID byte is required as
             %             the first element
             %
-            % Usage: 
+            % Usage:
             %       sendUdpCommand(obj,msg)
             %               send a udp message to the command socket
             %
@@ -360,7 +364,7 @@ classdef (Sealed) NfuUdp < handle
             %   59 - Arm position and hand ROC
             %   60 - Tactor command
             %   61 - All joints position
-            %   62 - All joints impedance            
+            %   62 - All joints impedance
             
             obj.UdpCommandSocket.putData(uint8(msg),...
                 obj.Hostname, obj.UdpCommandPortNumRemote);
@@ -525,74 +529,21 @@ classdef (Sealed) NfuUdp < handle
                 dataBytes = cellDataBytes{i};
                 len = length(dataBytes);
                 
-                if (len == 406) || (len == 726)
-                    % Store EMG Data
-                    %
-                    % advance packet counter
-                    obj.numPacketsReceived = obj.numPacketsReceived + 1;
-                    
-                    % read data and mark as new
-                    obj.UdpBuffer1{obj.ptr1} = cpch_bytes_to_signal(dataBytes);
-                    obj.newData1(obj.ptr1) = true;
-                    
-                    % advance ptr
-                    obj.ptr1 = obj.ptr1 + 1;
-                    if obj.ptr1 > obj.BufferSize
-                        obj.ptr1 = 1;
-                    end
-                    
-                    obj.sum1 = obj.sum1 + 1;
-                elseif (len == 869)
-                    % Store CPC and percept data
-                    
-                    % cpch
-                    
-                    % advance packet counter
-                    obj.numPacketsReceived = obj.numPacketsReceived + 1;
-                    
-                    % read data and mark as new
-                    b1 = dataBytes(1:726);  %cpch bytes
-                    [dataValues, sequenceNumber] = cpch_bytes_to_signal(b1);
-                    obj.UdpBuffer1{obj.ptr1} = dataValues;
-                    obj.newData1(obj.ptr1) = true;
-                    
-                    % advance ptr
-                    obj.ptr1 = obj.ptr1 + 1;
-                    if obj.ptr1 > obj.BufferSize
-                        obj.ptr1 = 1;
-                    end
-                    
-                    obj.sum1 = obj.sum1 + 1;
-                    
-                    % percepts
-                    
-                    b2 = dataBytes(727:end);  %percept bytes
-                    obj.UdpBuffer2{obj.ptr2} = percept_bytes_to_signal(b2);
-                    obj.newData2(obj.ptr2) = true;
-                    
-                    % DEBUG display raw readout
-                    %disp(obj.UdpBuffer2{obj.ptr2});
-                    
-                    % advance ptr
-                    obj.ptr2 = obj.ptr2 + 1;
-                    if obj.ptr2 > obj.BufferSize
-                        obj.ptr2 = 1;
-                    end
-                    
-                    obj.sum2 = obj.sum2 + 1;
-                    
-                    
-                elseif (len == 1242)
+                if (len == 1882) || (len == 2190)
                     % Store CPC and new percept data with next gen FTSN
+                    % also get single ended data
                     
                     % cpch
                     
                     % advance packet counter
                     obj.numPacketsReceived = obj.numPacketsReceived + 1;
                     
+                    % compute the number of CPCH bytes
+                    numDataBytes = 726+640;  % diffData + seData
+                    
                     % read data and mark as new
-                    b1 = dataBytes(1:726);  %cpch bytes
-                    [dataValues, sequenceNumber] = cpch_bytes_to_signal(b1);
+                    b1 = dataBytes(1:numDataBytes);  %cpch bytes
+                    [dataValues, sequenceNumber] = MPL.NfuUdp.cpch_bytes_to_signal(b1);
                     obj.UdpBuffer1{obj.ptr1} = dataValues;
                     obj.newData1(obj.ptr1) = true;
                     
@@ -606,32 +557,9 @@ classdef (Sealed) NfuUdp < handle
                     
                     % percepts
                     
-                    b2 = dataBytes(727:end);  %percept bytes
-
-                    %obj.UdpBuffer2{obj.ptr2} = percept_bytes_to_signal(b2);
-                    obj.UdpBuffer2{obj.ptr2} = decode_percept_msg(b2);
-                    obj.newData2(obj.ptr2) = true;
+                    b2 = dataBytes(1+numDataBytes:end);  %percept bytes
                     
-                    % DEBUG display raw readout
-                    % disp(obj.UdpBuffer2{obj.ptr2});
-                    
-                    % advance ptr
-                    obj.ptr2 = obj.ptr2 + 1;
-                    if obj.ptr2 > obj.BufferSize
-                        obj.ptr2 = 1;
-                    end
-                    
-                    obj.sum2 = obj.sum2 + 1;
-                    
-                    
-                elseif (len == 131) || (len == 143)
-                    % Store percept data
-                    
-                    % advance packet counter
-                    obj.numPacketsReceived = obj.numPacketsReceived + 1;
-                    
-                    % read data and mark as new
-                    obj.UdpBuffer2{obj.ptr2} = dataBytes;
+                    obj.UdpBuffer2{obj.ptr2} = MPL.NfuUdp.decode_percept_msg(b2);
                     obj.newData2(obj.ptr2) = true;
                     
                     % advance ptr
@@ -642,32 +570,6 @@ classdef (Sealed) NfuUdp < handle
                     
                     obj.sum2 = obj.sum2 + 1;
                     
-                elseif (len == 32)
-                    % Store heartbeat message
-                    % typedef struct
-                    % {
-                    %      System_state_mode_type limb_state_mode; // should be 4 bytes
-                    %      Int32u number_of_cpchs_messages;
-                    % }Heartbeat_msg;
-                    %
-                    try
-                        newData = dataBytes;
-                        % offset zero based state with 1 based
-                        SW_STATE = typecast(newData(1:4),'uint32');
-                        strState = obj.nfuStates{SW_STATE+1};
-                        
-                        numMsgs = typecast(newData(5:8),'uint32');
-                        nfuStreaming = typecast(newData(9:16),'uint64');
-                        lcStreaming = typecast(newData(17:24),'uint64');
-                        cpchStreaming = typecast(newData(25:32),'uint64');
-                        
-                        fprintf('[%s.m %s] NFU: State = "%s", CPC msgs = "%d", Streaming NFU = %d LC = %d CPCH = %d\n',...
-                            mfilename,datestr(now),strState,numMsgs,nfuStreaming,lcStreaming,cpchStreaming);
-                    catch ME
-                        disp(newData)
-                        fprintf('[%s.m %s] Error parsing heartbeat.  Msg: %s \n',mfilename, datestr(now), ME.message);
-                        
-                    end
                 elseif (len == 36)
                     % Store heartbeat message
                     % typedef struct
@@ -687,7 +589,12 @@ classdef (Sealed) NfuUdp < handle
                         lcStreaming = typecast(newData(17:24),'uint64');
                         cpchStreaming = typecast(newData(25:32),'uint64');
                         busVoltageCounts = typecast(newData(33:34),'uint16');
-                        busVoltage = double(busVoltageCounts) ./ 148.95;
+                        busVoltage = double(busVoltageCounts) / 148.95;
+                        
+                        if obj.hideHeartbeat
+                            return
+                        end
+                        
                         if busVoltage < obj.busVoltageWarn
                             fprintf(2,'[%s.m %s] NFU: V = %6.2f State = "%s", CPC msgs = "%d", Streaming NFU = %d LC = %d CPCH = %d\n',...
                                 mfilename,datestr(now),busVoltage,strState,numMsgs,nfuStreaming,lcStreaming,cpchStreaming);
@@ -698,7 +605,6 @@ classdef (Sealed) NfuUdp < handle
                     catch ME
                         disp(newData)
                         fprintf('[%s.m %s] Error parsing heartbeat.  Msg: %s \n',mfilename, datestr(now), ME.message);
-                        
                     end
                 elseif len > 0
                     %len
@@ -855,354 +761,225 @@ classdef (Sealed) NfuUdp < handle
             msg = tactor_control_Nfu;
             
         end
-    end
-end
-
-function [s, sequenceNumber] = cpch_bytes_to_signal(b)
-
-% Determine expected packet size
-numPacketHeaderBytes = 6;
-numSamplesPerPacket = 20;
-numSampleHeaderBytes = 4;
-% if (length(cellData{1}) == 406)
-%     numChannelsPerPacket = 8;
-% else
-%     numChannelsPerPacket = 16;
-% end
-numChannelsPerPacket = 16;
-numBytesPerChannel = 2;
-numBytesPerSample = numChannelsPerPacket*numBytesPerChannel + numSampleHeaderBytes;
-cpchpacketSize = numPacketHeaderBytes+numBytesPerSample*numSamplesPerPacket;
-
-% First 6 bytes of message are global header
-%hdr = b(1:numPacketHeaderBytes);
-data = reshape(b(numPacketHeaderBytes+1:cpchpacketSize),...
-    numBytesPerSample,numSamplesPerPacket);
-
-% First 5 bytes per sample are header
-databytes = data(numSampleHeaderBytes+1:end,:);
-s = reshape(typecast(databytes(:),'int16'),...
-    numChannelsPerPacket,numSamplesPerPacket);
-
-sequenceNumber = data(3,:);
-
-% DEBUG!!!!! added this to check sequence numbers
-% s(16,:) = int16(sequenceNumber);
-
-end
-function s = percept_bytes_to_signal(b)
-
-percepts = b(1:70);
-
-sortedPercepts = reshape(percepts,7,10);
-s16 = sortedPercepts(1:6,:);
-s = double(reshape(typecast(s16(:),'int16'),3,10));
-s(4,:) = sortedPercepts(7,:);
-
-end
-
-function tlm = decode_percept_msg(b)
-
-tlm = [];
-
-% tlm =
-%
-%                  Percept: [1x10 struct]
-%        UnactuatedPercept: [1x8 struct]
-%              FtsnPercept: [1x5 struct]
-%     ContactSensorPercept: [1x1 struct]
-
-
-if nargin < 1
-    b = [...
-        106    0    0    0  255  255    0  208  255    0  208  255    0    0    4    0   47  116    0    0    0    1    0   43 ...
-        224    1    0    0  209  255   51   80    0    0    0  248  255   45   52    0    0    0  255    0  208  255    0    0 ...
-        2    0   47  116    0    0    0  254  255   43  224    1    0    0  210  255   51   80    0    0    0  243  255   45 ...
-        52    0    0    0  255    0  208  255    0    0  252  255   47  116    0    0    0  253  255   43  224    1    0    0 ...
-        206  255   51   80    0    0    0  247  255   45   52    0    0    0    2    0   59   15    0    0    0    0    0   40 ...
-        247  255   72    1  255    7   49  254    0    0    0    0    0   49   82    1    0    0  225  255   45   58    0    0 ...
-        0    0    0   60    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0  160  122  131   67  186  166   34 ...
-        26  136   33  170  131  255    0  208  255    0    0  252  255   47  116    0    0    0  253  255   43  224    1    0 ...
-        0  207  255   51   80    0    0    0  247  255   45   52    0    0    0    4    0   59   15    0    0    0    1    0 ...
-        40  247  255   72    1  255    7   49  254    0    0    0    1    0   49   82    1    0    0  226  255   45   58    0 ...
-        0    0    0    0   60    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0  160  106  170   49  122  165 ...
-        41  234  134   27  250  131   67   90  165   24   58  136   33  202  131   67  218  164   24   26  136   25   26  132 ...
-        67  234  165   42   10  136   32  250  131   67  250  167   38   26  139   33   10  131  234  132    0    0    0    0 ...
-        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-        0    0    0    0    0    0    0    0    0    0    0    0];
-end
-
-% mixing matlab indexing 1-based and enum count
-
-% Enable Flags
-PERCEPT_ENABLE_ACTUATED_PERCEPTS = 1;
-PERCEPT_ENABLE_UNACTUATED_PERCEPTS = 2;
-PERCEPT_ENABLE_INDEX_FTSN = 3;
-PERCEPT_ENABLE_MIDDLE_FTSN = 4;
-PERCEPT_ENABLE_RING_FTSN = 5;
-PERCEPT_ENABLE_LITTLE_FTSN = 6;
-PERCEPT_ENABLE_THUMB_FTSN = 7;
-PERCEPT_ENABLE_CONTACT = 8;
-PERCEPT_ENABLE_NUM_IDS = 8;
-
-% Actuated
-PERCEPTID_INDEX_AB_AD = 1;
-PERCEPTID_INDEX_MCP = 2;
-PERCEPTID_MIDDLE_MCP = 3;
-PERCEPTID_RING_MCP = 4;
-PERCEPTID_LITTLE_AB_AD = 5;
-PERCEPTID_LITTLE_MCP = 6;
-PERCEPTID_THUMB_CMC_AD_AB = 7;
-PERCEPTID_THUMB_CMC_FE = 8;
-PERCEPTID_THUMB_MCP = 9;
-PERCEPTID_THUMB_DIP = 10;
-PERCEPT_NUM_IDS = 10;
-
-% UnActuated
-PERCEPTID_INDEX_PIP = 1;
-PERCEPTID_INDEX_DIP = 2;
-PERCEPTID_MIDDLE_PIP = 3;
-PERCEPTID_MIDDLE_DIP = 4;
-PERCEPTID_RING_PIP = 5;
-PERCEPTID_RING_DIP = 6;
-PERCEPTID_LITTLE_PIP = 7;
-PERCEPTID_LITTLE_DIP = 8;
-UNACTUATED_PERCEPT_NUM_IDS = 8;
-
-%FTSN
-PERCEPTID_INDEX_FTSN = 1;
-PERCEPTID_MIDDLE_FTSN = 2;
-PERCEPTID_RING_FTSN = 3;
-PERCEPTID_LITTLE_FTSN = 4;
-PERCEPTID_THUMB_FTSN = 5;
-FTSN_PERCEPT_NUM_IDS = 5;
-
-
-b = uint8(b);
-data_bytes = typecast(b(1:4),'uint32');
-data = b(5:end);
-
-
-
-%{
-            Byte[] data = can_msg.data;
-
-            for (int i = 0; i < (int)Percepts_enable_config_id.PERCEPT_ENABLE_NUM_IDS; i++)
-            {
-                percepts_config[i] = (data[0] & (1 << i)) >= 1 ? true : false;
-            }
- 
-            tlm.ftsn_config = data[1];
-            for (int i = 0; i < (int)Ftsn_percept_id_type.FTSN_PERCEPT_NUM_IDS; i++)
-            {
-                ftsn_config[i] = (data[1] & (1 << i)) >= 1 ? true : false;
-            }
-%}
-percepts_config = false(1,8);
-for i = 1:PERCEPT_ENABLE_NUM_IDS
-    percepts_config(i) = bitget(data(1),i);
-end
-
-ftsn_config = false(1,5);
-for i = 1:FTSN_PERCEPT_NUM_IDS
-    ftsn_config(i) = bitget(data(2),i);
-end
-
-%index_size = data[0]
-index_size = data(1);
-
-data_index = 2;
-
-Percepts_enable_config_id.PERCEPT_ENABLE_ACTUATED_PERCEPTS = 1;
-
-ToInt16 = @(b,p) typecast( b(p+1:p+2) ,'Int16');
-
-if (percepts_config(PERCEPT_ENABLE_ACTUATED_PERCEPTS) == true)
-    for i = 0:PERCEPT_NUM_IDS-1
-        tlm.Percept(i+1).Position = ToInt16(data,data_index + i * 7);
-        tlm.Percept(i+1).Velocity = ToInt16(data,data_index + 2 + i * 7);
-        tlm.Percept(i+1).Torque = ToInt16(data,data_index + 4 + i * 7);
-        tlm.Percept(i+1).Temperature = data(1 + data_index + 6 + i * 7);
         
-    end
-    data_index = data_index + 70;
-end
-
-% tlm.Percept(1)
-
-if (percepts_config(PERCEPT_ENABLE_UNACTUATED_PERCEPTS) == true)
-    for i = 0:UNACTUATED_PERCEPT_NUM_IDS-1
-        tlm.UnactuatedPercept(i+1).Position = ToInt16(data, data_index + i * 2);
-    end
-    data_index = data_index + 16;
-end
-
-% tlm.UnactuatedPercept(1)
-
-
-for i = 0:FTSN_PERCEPT_NUM_IDS-1
-    if (percepts_config(i+2) == true)
-        tlm.FtsnPercept(i+1).forceConfig = ftsn_config(i+1);
-        
-        %%                    // old style
-        if (ftsn_config(i+1) == false)
-            tlm.FtsnPercept(i+1).force_pressure = ToInt16(data, data_index);
-            data_index = data_index + 2;
-            tlm.FtsnPercept(i+1).force_shear = ToInt16(data, data_index);
-            data_index = data_index + 2;
-            tlm.FtsnPercept(i+1).force_axial = ToInt16(data, data_index);
-            data_index = data_index + 2;
+        function tlm = decode_percept_msg(b)
             
-            tlm.FtsnPercept(i+1).acceleration_x = data(data_index+1);
-            data_index = data_index + 1;
-            tlm.FtsnPercept(i+1).acceleration_y = data(data_index+1);
-            data_index = data_index + 1;
-            tlm.FtsnPercept(i+1).acceleration_z = data(data_index+1);
-            data_index = data_index + 1;
-            %% new sytle
-        else
+            tlm = [];
             
-            for j = 0:14-1
-                
-                tlm.FtsnPercept(i+1).force(j+1) = data(data_index+1);
-                data_index = data_index + 1;
+            % tlm =
+            %
+            %                  Percept: [1x10 struct]
+            %        UnactuatedPercept: [1x8 struct]
+            %              FtsnPercept: [1x5 struct]
+            %     ContactSensorPercept: [1x1 struct]
+            
+            % mixing matlab indexing 1-based and enum count
+
+            % typedef struct Nfu_telemetry_type {
+            % NfuCpcDataPayload_t pkt[ CPC_STREAM_BUFFER_SIZE ];
+            % Percept_stream_response_type sync_percepts_copy;
+            % LMC_SensorData lmc_se?nsor_data[MAX_LMC_NODES];
+            % } __attribute__ ((__packed__)) Nfu_telemetry_type;
+            %
+            % #define NFU_TELEMETRY_TYPE_MSG_BYTES sizeof(Nfu_telemetry_type)
+            %  
+            % LMC_SensorData[7] is defined by this struct:
+            % (20 bytes plus StatusPollResponse)
+            % typedef struct {
+            % 
+            %   StatusPollResponse status;
+            %   int16_T torque;
+            %   int16_T motor_position;
+            %   int16_T motor_velocity;
+            %   int16_T motor_acceleration;
+            %   int16_T link_position;
+            %   uint8_T temperature;
+            %   int16_T motor_current;
+            %   uint8_T is_motor_powered;
+            %   uint8_T is_motor_running;
+            %   uint8_T fault;
+            %   int16_T bus_voltage;
+            %   int16_T bus_current;
+            % } LMC_SensorData;
+            % 
+            % 
+            % typedef struct {
+            %   MotorDirection motor_dir;
+            %   uint8_T udc_sign;
+            %   CurrentLimit is_current_limited;
+            %   BIT_States bit_state;
+            %   HandStates sw_state;
+            % } StatusPollResponse;
+
+            %#ok<*NASGU>
+            
+            % Enable Flags
+            PERCEPT_ENABLE_ACTUATED_PERCEPTS = 1;
+            PERCEPT_ENABLE_UNACTUATED_PERCEPTS = 2;
+            PERCEPT_ENABLE_INDEX_FTSN = 3; 
+            PERCEPT_ENABLE_MIDDLE_FTSN = 4;
+            PERCEPT_ENABLE_RING_FTSN = 5;
+            PERCEPT_ENABLE_LITTLE_FTSN = 6;
+            PERCEPT_ENABLE_THUMB_FTSN = 7;
+            PERCEPT_ENABLE_CONTACT = 8;
+            PERCEPT_ENABLE_NUM_IDS = 8;
+            
+            % Actuated
+            PERCEPTID_INDEX_AB_AD = 1;
+            PERCEPTID_INDEX_MCP = 2;
+            PERCEPTID_MIDDLE_MCP = 3;
+            PERCEPTID_RING_MCP = 4;
+            PERCEPTID_LITTLE_AB_AD = 5;
+            PERCEPTID_LITTLE_MCP = 6;
+            PERCEPTID_THUMB_CMC_AD_AB = 7;
+            PERCEPTID_THUMB_CMC_FE = 8;
+            PERCEPTID_THUMB_MCP = 9;
+            PERCEPTID_THUMB_DIP = 10;
+            PERCEPT_NUM_IDS = 10;
+            
+            % UnActuated
+            PERCEPTID_INDEX_PIP = 1;
+            PERCEPTID_INDEX_DIP = 2;
+            PERCEPTID_MIDDLE_PIP = 3;
+            PERCEPTID_MIDDLE_DIP = 4;
+            PERCEPTID_RING_PIP = 5;
+            PERCEPTID_RING_DIP = 6;
+            PERCEPTID_LITTLE_PIP = 7;
+            PERCEPTID_LITTLE_DIP = 8;
+            UNACTUATED_PERCEPT_NUM_IDS = 8;
+            
+            %FTSN
+            PERCEPTID_INDEX_FTSN = 1;
+            PERCEPTID_MIDDLE_FTSN = 2;
+            PERCEPTID_RING_FTSN = 3;
+            PERCEPTID_LITTLE_FTSN = 4;
+            PERCEPTID_THUMB_FTSN = 5;
+            FTSN_PERCEPT_NUM_IDS = 5;
+            
+            b = uint8(b);
+            data_bytes = typecast(b(1:4),'uint32');
+            data = b(5:end);
+            
+            percepts_config = bitget(data(1),1:PERCEPT_ENABLE_NUM_IDS);
+            ftsn_config = bitget(data(2),1:FTSN_PERCEPT_NUM_IDS);
+            
+            index_size = data(1);
+            
+            data_index = 2;
+            
+            Percepts_enable_config_id.PERCEPT_ENABLE_ACTUATED_PERCEPTS = 1;
+            
+            ToInt16 = @(b,p) typecast( b(p+1:p+2) ,'Int16');
+            
+            if (percepts_config(PERCEPT_ENABLE_ACTUATED_PERCEPTS) == true)
+                for i = 0:PERCEPT_NUM_IDS-1
+                    tlm.Percept(i+1).Position = ToInt16(data,data_index + i * 7);
+                    tlm.Percept(i+1).Velocity = ToInt16(data,data_index + 2 + i * 7);
+                    tlm.Percept(i+1).Torque = ToInt16(data,data_index + 4 + i * 7);
+                    tlm.Percept(i+1).Temperature = data(1 + data_index + 6 + i * 7);                    
+                end
+                data_index = data_index + 70;
             end
             
-            tlm.FtsnPercept(i+1).acceleration_x = data(data_index+1);
-            data_index = data_index + 1;
-            tlm.FtsnPercept(i+1).acceleration_y = data(data_index+1);
-            data_index = data_index + 1;
-            tlm.FtsnPercept(i+1).acceleration_z = data(data_index+1);
-            data_index = data_index + 1;
+            % tlm.Percept(6)
             
+            if (percepts_config(PERCEPT_ENABLE_UNACTUATED_PERCEPTS) == true)
+                for i = 0:UNACTUATED_PERCEPT_NUM_IDS-1
+                    tlm.UnactuatedPercept(i+1).Position = ToInt16(data, data_index + i * 2);
+                end
+                data_index = data_index + 16;
+            end
+            
+            % tlm.UnactuatedPercept(1)
+            
+            
+            for i = 0:FTSN_PERCEPT_NUM_IDS-1
+                if (percepts_config(i+2) == true)
+                    tlm.FtsnPercept(i+1).forceConfig = ftsn_config(i+1);
+                    
+                    % old style
+                    if (ftsn_config(i+1) == false)
+                        tlm.FtsnPercept(i+1).force_pressure = ToInt16(data, data_index);
+                        data_index = data_index + 2;
+                        tlm.FtsnPercept(i+1).force_shear = ToInt16(data, data_index);
+                        data_index = data_index + 2;
+                        tlm.FtsnPercept(i+1).force_axial = ToInt16(data, data_index);
+                        data_index = data_index + 2;
+                        
+                        tlm.FtsnPercept(i+1).acceleration_x = data(data_index+1);
+                        data_index = data_index + 1;
+                        tlm.FtsnPercept(i+1).acceleration_y = data(data_index+1);
+                        data_index = data_index + 1;
+                        tlm.FtsnPercept(i+1).acceleration_z = data(data_index+1);
+                        data_index = data_index + 1;
+                    else
+                        % new sytle
+                        for j = 0:14-1
+                            tlm.FtsnPercept(i+1).force(j+1) = data(data_index+1);
+                            data_index = data_index + 1;
+                        end
+                        
+                        tlm.FtsnPercept(i+1).acceleration_x = data(data_index+1);
+                        data_index = data_index + 1;
+                        tlm.FtsnPercept(i+1).acceleration_y = data(data_index+1);
+                        data_index = data_index + 1;
+                        tlm.FtsnPercept(i+1).acceleration_z = data(data_index+1);
+                        data_index = data_index + 1;
+                        
+                    end
+                end
+            end
+            
+            % tlm.FtsnPercept(1)
+            if (percepts_config(PERCEPT_ENABLE_CONTACT) == true)
+                contact_data = data(data_index+1:data_index+12);
+                
+                tlm.ContactSensorPercept.index_contact_sensor = contact_data(1);
+                tlm.ContactSensorPercept.middle_contact_sensor = contact_data(2);
+                tlm.ContactSensorPercept.ring_contact_sensor = contact_data(3);
+                tlm.ContactSensorPercept.little_contact_sensor = contact_data(4);
+                
+                tlm.ContactSensorPercept.index_abad_contact_sensor_1 = contact_data(5);
+                tlm.ContactSensorPercept.index_abad_contact_sensor_2 = contact_data(6);
+                
+                tlm.ContactSensorPercept.little_abad_contact_sensor_1 = contact_data(7);
+                tlm.ContactSensorPercept.little_abad_contact_sensor_2 = contact_data(8);
+                
+            end
             
         end
+        function [s, sequenceNumber] = cpch_bytes_to_signal(b)
+            
+            % Determine expected packet size
+            numPacketHeaderBytes = 6;
+            numSamplesPerPacket = 20;
+            numSampleHeaderBytes = 4;
+            if length(b) == 406
+                numChannelsPerPacket = 8;
+            elseif length(b) == 726
+                numChannelsPerPacket = 16;
+            elseif length(b) == 1366
+                numChannelsPerPacket = 32;
+            end
+            numBytesPerChannel = 2;
+            numBytesPerSample = numChannelsPerPacket*numBytesPerChannel + numSampleHeaderBytes;
+            cpchpacketSize = numPacketHeaderBytes+numBytesPerSample*numSamplesPerPacket;
+            
+            % First 6 bytes of message are global header
+            %hdr = b(1:numPacketHeaderBytes);
+            data = reshape(b(numPacketHeaderBytes+1:cpchpacketSize),...
+                numBytesPerSample,numSamplesPerPacket);
+            
+            % First 5 bytes per sample are header
+            databytes = data(numSampleHeaderBytes+1:end,:);
+            s = reshape(typecast(databytes(:),'int16'),...
+                numChannelsPerPacket,numSamplesPerPacket);
+            
+            sequenceNumber = data(3,:);
+            
+            % DEBUG!!!!! added this to check sequence numbers
+            s(end,:) = int16(sequenceNumber);
+            
+        end        
     end
 end
-
-% tlm.FtsnPercept(1)
-
-
-
-if (percepts_config(PERCEPT_ENABLE_CONTACT) == true)
-    contact_data = data(data_index+1:data_index+12);
-    
-    tlm.ContactSensorPercept.index_contact_sensor = contact_data(1);
-    tlm.ContactSensorPercept.middle_contact_sensor = contact_data(2);
-    tlm.ContactSensorPercept.ring_contact_sensor = contact_data(3);
-    tlm.ContactSensorPercept.little_contact_sensor = contact_data(4);
-    
-    tlm.ContactSensorPercept.index_abad_contact_sensor_1 = contact_data(5);
-    tlm.ContactSensorPercept.index_abad_contact_sensor_2 = contact_data(6);
-    
-    tlm.ContactSensorPercept.little_abad_contact_sensor_1 = contact_data(7);
-    tlm.ContactSensorPercept.little_abad_contact_sensor_2 = contact_data(8);
-    
-end
-
-end
-
-%{
-
-Example new percepts:
-
-b =
-
-  Columns 1 through 24
-
-  106    0    0    0  255  255    0  208  255    0  208  255    0    0    4    0   47  116    0    0    0    1    0   43
-
-  Columns 25 through 48
-
-  224    1    0    0  209  255   51   80    0    0    0  248  255   45   52    0    0    0  255    0  208  255    0    0
-
-  Columns 49 through 72
-
-    2    0   47  116    0    0    0  254  255   43  224    1    0    0  210  255   51   80    0    0    0  243  255   45
-
-  Columns 73 through 96
-
-   52    0    0    0  255    0  208  255    0    0  252  255   47  116    0    0    0  253  255   43  224    1    0    0
-
-  Columns 97 through 120
-
-  206  255   51   80    0    0    0  247  255   45   52    0    0    0    2    0   59   15    0    0    0    0    0   40
-
-  Columns 121 through 144
-
-  247  255   72    1  255    7   49  254    0    0    0    0    0   49   82    1    0    0  225  255   45   58    0    0
-
-  Columns 145 through 168
-
-    0    0    0   60    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-
-  Columns 169 through 192
-
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-
-  Columns 193 through 216
-
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0  160  122  131   67  186  166   34
-
-  Columns 217 through 240
-
-   26  136   33  170  131  255    0  208  255    0    0  252  255   47  116    0    0    0  253  255   43  224    1    0
-
-  Columns 241 through 264
-
-    0  207  255   51   80    0    0    0  247  255   45   52    0    0    0    4    0   59   15    0    0    0    1    0
-
-  Columns 265 through 288
-
-   40  247  255   72    1  255    7   49  254    0    0    0    1    0   49   82    1    0    0  226  255   45   58    0
-
-  Columns 289 through 312
-
-    0    0    0    0   60    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-
-  Columns 313 through 336
-
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-
-  Columns 337 through 360
-
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0  160  106  170   49  122  165
-
-  Columns 361 through 384
-
-   41  234  134   27  250  131   67   90  165   24   58  136   33  202  131   67  218  164   24   26  136   25   26  132
-
-  Columns 385 through 408
-
-   67  234  165   42   10  136   32  250  131   67  250  167   38   26  139   33   10  131  234  132    0    0    0    0
-
-  Columns 409 through 432
-
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-
-  Columns 433 through 456
-
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-
-  Columns 457 through 480
-
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-
-  Columns 481 through 504
-
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
-
-  Columns 505 through 516
-
-    0    0    0    0    0    0    0    0    0    0    0    0
-
-
-%}
-

@@ -6,13 +6,15 @@ classdef DataBuffer < handle
         IsInitialized = 0;
         NumChannels = 8;
         NumSamples = 1000;
+        NumAdds = 0;
+        NumGets = 0;
     end
     properties
         dataBuffer
     end
     methods
         function obj = DataBuffer(numSamples,numChannels)
-            % Create data buffer.  buffer will circular shift results when
+            % Create data buffer.  Buffer will circular shift results when
             % adding data and always return data in correct order
             
             % setup default input parameters
@@ -22,13 +24,19 @@ classdef DataBuffer < handle
             if nargin > 1
                 obj.NumChannels = numChannels;
             end
-            
+            % initialize and reset
+            obj.reset();
+        end
+        function reset(obj)
             % create empty buffer
             obj.dataBuffer = zeros(obj.NumSamples,obj.NumChannels);
         end
         function addData(obj,newData,channelIds)
             % Add new data to buffer.  if more samples than buffer is
             % provided, then data will be clipped
+
+            % count number of addData calls
+            obj.NumAdds = obj.NumAdds + 1;
             
             if nargin < 3
                 channelIds = 1:obj.NumChannels;
@@ -47,7 +55,7 @@ classdef DataBuffer < handle
                 obj.dataBuffer(:,channelIds) = ...
                     newData(end-size(obj.dataBuffer,1)+1:end,channelIds);
             else
-
+                
                 % shift the channels requested
                 obj.dataBuffer(:,channelIds) = circshift(obj.dataBuffer(:,channelIds),[-numNewSamples 0]);
                 rowIdx = size(obj.dataBuffer,1)-numNewSamples+1:size(obj.dataBuffer,1);
@@ -78,6 +86,8 @@ classdef DataBuffer < handle
                 error('Requested sammples %d is greated than buffer size %d',numSamples,obj.NumSamples);
             end
             
+            obj.NumGets = obj.NumGets + 1;
+
             data = obj.dataBuffer(size(obj.dataBuffer,1)-numSamples+1:size(obj.dataBuffer,1),idxChannel);
             
         end

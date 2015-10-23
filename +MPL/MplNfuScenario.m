@@ -65,9 +65,11 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
         hMud = MPL.MudCommandEncoder();
         hNfu = [];
         hTactors;
+        hBluetooth;
         
         includeVirtual = 0;
         hUdp
+        echoSensor = 1; % display  current sensor reading on console
         
         EnableFeedback = 1;
         TactorIds = [3 4]
@@ -90,7 +92,6 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
             if status < 0
                 error('Failed to initialize MPL.NfuUdp');
             end
-            
             
             if obj.includeVirtual
                 obj.hUdp = PnetClass(...,
@@ -116,12 +117,25 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
                 fprintf('[%s] NFU/MPL Impedance is DISABLED\n',mfilename);
             end
             
-            
             % Remaining superclass initialize methods
             initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
             
             obj.Timer.Period = 0.035;
             
+        end
+        function setupBluetooth(obj,comPort)
+            % method for connecting wireless bluetooth tactor array
+            % passcode is 1234
+            
+            if nargin < 2
+                comPort = 'COM15';
+            end
+            
+            fprintf('[%s.m] Opening serial port %s...',mfilename,comPort);
+            obj.hBluetooth = serial (comPort,'Baudrate',57600);
+            fopen(obj.hBluetooth);
+            fwrite(obj.hBluetooth,uint8(sprintf('[%d,%d,%d,%d,%d]',zeros(1,5))))
+            fprintf('Done\n');
         end
         function update(obj)
             
@@ -145,13 +159,9 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
             if isempty(obj.hNfu)
                 % No NFU, no percepts, no Feedback
                 %disp('Feedback Disabled');
-                
-                
                 if isempty(obj.hTactors)
                     return
-                end
-                
-                
+                end                
                 % Run finger tactors
                 
                 %                 pause(0.01)
@@ -164,35 +174,78 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
             
             obj.hNfu.update; %called by getData
             tlm = obj.hNfu.get_buffer(2);
+            if isempty(tlm)
+                return
+            end
             
+            tlm = tlm{end};
             
             if ~isempty(tlm)
-                tlm = tlm{end};
                 
                 % 9/14/2012 RSA verified that these delays between udp
                 % commands are necessary to avoid choppiness in the command
                 % stream
                 
+                
+                % Parse external strain gauge
+                straingage = obj.hNfu.get_buffer(1);
+                try
+                    sg = 50*double(straingage{end}(18,end))./512;
+                catch
+                    straingage
+                    sg = 0;
+                end
+                p1 = -5.667;
+                p2 = 235.2;
+                T = p1*sg + p2;
+                try
+                    if obj.echoSensor
+                        if abs(T) < 60
+                            fprintf('Sensor Data--HR: %8.3f inch-lbs; Index: %8.3f; Little: %8.3f;\n',T,tlm.Percept(2).Torque,tlm.Percept(6).Torque);
+                        else
+                            fprintf(2,'Sensor Data--HR: %8.3f inch-lbs; Index: %8.3f; Little: %8.3f;\n',T,tlm.Percept(2).Torque,tlm.Percept(6).Torque);
+                        end
+                    end
+                    if ~isempty(obj.hBluetooth)
+                        vals = zeros(1,5);
+                        vals(2) = tlm.Percept(2).Torque;
+                        vals(5) = tlm.Percept(6).Torque;
+
+                        % check limits and scaling
+                        vals = round(vals);
+                        vals(vals < 0) = 0;
+                        vals(vals > 255) = 255;
+                        cmd = sprintf('[%d,%d,%d,%d,%d]',vals);
+                        
+                        fwrite(obj.hBluetooth,uint8(cmd));
+                    end
+
+                catch ME
+                    ME
+                    ME.message
+                    tlm
+                end
+                
                 % TODO: Expose user map
                 userMap = 1;
                 switch userMap
                     case 1 % JH_TH_01
-                        pause(0.01)
-                        PERCEPTID_LITTLE_MCP = 6;
-                        littleT = tlm.Percept(PERCEPTID_LITTLE_MCP).Torque;
-                        %littleT = convertedPercepts(3,6);
-                        obj.hTactors(1).SensorLowHigh = [40 60];
-                        obj.hTactors(1).ActuatorLowHigh = [40 127];
-                        obj.hTactors(1).update(littleT);
-                        
-                        pause(0.01)
-                        PERCEPTID_INDEX_MCP = 2;
-                        indexT = tlm.Percept(PERCEPTID_INDEX_MCP).Torque;
-                        obj.hTactors(2).SensorLowHigh = [40 60];
-                        obj.hTactors(2).ActuatorLowHigh = [40 127];
-                        obj.hTactors(2).update(indexT);
-                        
-                        %fprintf('Index MCP Torque: %f  Little MCP Torge: %f \n',indexT, littleT);
+                        % pause(0.01)
+                        % PERCEPTID_LITTLE_MCP = 6;
+                        % littleT = tlm.Percept(PERCEPTID_LITTLE_MCP).Torque;
+                        % %littleT = convertedPercepts(3,6);
+                        % obj.hTactors(1).SensorLowHigh = [40 60];
+                        % obj.hTactors(1).ActuatorLowHigh = [40 127];
+                        % obj.hTactors(1).update(littleT);
+                        % 
+                        % pause(0.01)
+                        % PERCEPTID_INDEX_MCP = 2;
+                        % indexT = tlm.Percept(PERCEPTID_INDEX_MCP).Torque;
+                        % obj.hTactors(2).SensorLowHigh = [40 60];
+                        % obj.hTactors(2).ActuatorLowHigh = [40 127];
+                        % obj.hTactors(2).update(indexT);
+                        % 
+                        % %fprintf('Index MCP Torque: %f  Little MCP Torge: %f \n',indexT, littleT);
                         
                     case 2 % WR_TR_01
                         %     drawnow

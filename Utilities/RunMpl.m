@@ -1,7 +1,7 @@
 function [ obj ] = RunMpl
 
 % Set patient parameter set
-UserConfig.getInstance('MPL_05_TR_R_user_config.xml');
+UserConfig.getInstance('JHMI_TH01_L_user_config.xml');
 
 p.guiName = 'MiniVIE-NFU-MPL';
 p.filePrefix = UserConfig.getUserConfigVar('userFilePrefix','NEW_USER_');
@@ -13,8 +13,7 @@ diaryFile = [datestr(now,'yyyymmdd_HHMMSS') '_diary.txt'];
 diary(diaryFile);
 
 % define input source
-p.hSource = Inputs.NfuInput;
-%h = Inputs.CpchSerial(bimanParams.cpchComPort,hex2dec('FFFF'),hex2dec('FFFF'));
+p.hSource = Inputs.MyoUdp.getInstance();
 
 p.Scenario = MPL.MplNfuScenario;
 p.Scenario.JoystickId = 0;
@@ -62,20 +61,20 @@ h.initialize();
 
 % Enable buttons
 set(obj.hg.SignalSourceButtons(:),'Enable','on');
-set(obj.hg.popups(1),'Value',6);    % select the NFU input source
+set(obj.hg.popups(1),'Value',10);    % select the NFU input source
 
 % Setup filters and remaining properties
-obj.println('Adding Filters',1);
-Fs = h.SampleFrequency;
-h.addfilter(Inputs.HighPass(20,3,Fs));
-% h.addfilter(Inputs.RemoveOffset(10));
-% h.addfilter(Inputs.Notch([120 240 360],5,1,Fs));
-% h.addfilter(Inputs.Notch([120 240 360],64,1,1000));
-
-Fs = h.SampleFrequency;                     % 1000 Hz
-h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
-h.addfilter(Inputs.MinLimitFilter(0.2));    % min limit
-h.addfilter(Inputs.ConstraintFilter(-5,5)); % range limit
+% obj.println('Adding Filters',1);
+% Fs = h.SampleFrequency;
+% h.addfilter(Inputs.HighPass(20,3,Fs));
+% % h.addfilter(Inputs.RemoveOffset(10));
+% % h.addfilter(Inputs.Notch([120 240 360],5,1,Fs));
+% % h.addfilter(Inputs.Notch([120 240 360],64,1,1000));
+% 
+% Fs = h.SampleFrequency;                     % 1000 Hz
+% h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
+% h.addfilter(Inputs.MinLimitFilter(0.2));    % min limit
+% h.addfilter(Inputs.ConstraintFilter(-5,5)); % range limit
 
 obj.SignalSource = h;
 
@@ -109,6 +108,7 @@ h.initialize(obj.TrainingData);
 
 % TODO: Note signals only updated on classifier
 % creation
+% defaultChannels = 1:8;
 defaultChannels = GUIs.guiChannelSelect.getLastChannels();
 if isempty(defaultChannels)
     msg = 'No channels are active.  Enable channels in Signal Viewer';
@@ -117,7 +117,6 @@ if isempty(defaultChannels)
 end
 h.setActiveChannels(defaultChannels);
 
-% load('TR_Basic.classNames','-mat')
 classNames = GUIs.guiClassifierChannels.getSavedDefaults();
 if (isempty(classNames))
     classNames = GUIs.guiClassifierChannels.getDefaultNames;

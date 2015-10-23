@@ -330,7 +330,7 @@ classdef ScenarioBase < Common.MiniVieObj
                 % Strip off the 'Grasp' string and leave only the type
                 graspName = strtrim(className(1:end-5));
                 % MANUAL OVERRIDE: Setting a fixed grasp speed
-                prSpeed = 0.4;
+                prSpeed = 0.9;
             else
                 graspName = className;
             end
@@ -607,8 +607,7 @@ classdef ScenarioBase < Common.MiniVieObj
             try
                 stop(obj.Timer);
                 delete(obj.Timer);
-                
-                UiTools.save_temp_file(obj.TempFileName,obj.JointAnglesDegrees);
+                obj.ArmStateModel.saveTempState();
             end
         end
         function getRocConfig(obj)

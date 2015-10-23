@@ -130,6 +130,11 @@ classdef TrainingData < handle
             
             isEnabled = obj.EnableLabel(1:obj.SampleCount);
             
+            if length(isEnabled) ~= length(classLabels)
+                warning('Sample Enable Mask (%d) not equal to Class Label Array (%d)',...
+                    length(isEnabled),length(classLabels));
+            end
+            
             classLabels = classLabels(isEnabled);
             
         end

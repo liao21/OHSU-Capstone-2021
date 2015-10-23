@@ -27,8 +27,8 @@ classdef guiRocEditor < handle
         CurrentRocId = 1;
         CurrentWaypointId = 1;
         
-        NumOpenSteps = 200;
-        NumCloseSteps = 200;
+        NumOpenSteps = 100;
+        NumCloseSteps = 100;
 
         IsNfu;
         
@@ -289,8 +289,8 @@ classdef guiRocEditor < handle
                     obj.jointAngles = allAngles;
                     obj.transmit();
                     
-                    %pause(0.02);
-                    drawnow
+                    pause(0.02);
+                    %drawnow
                 end
                 
             end

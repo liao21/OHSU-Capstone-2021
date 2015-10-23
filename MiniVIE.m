@@ -662,7 +662,6 @@ classdef MiniVIE < Common.MiniVieObj
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
                         h.update();
                         h.Verbose = 1;
-                        start(h.Timer);
                         obj.println('Presentation setup complete',1);
                     case 'MplNfu'
                         QA = {
@@ -691,9 +690,6 @@ classdef MiniVIE < Common.MiniVieObj
                         h.update();
                         h.Verbose = 0;
                         
-                        %h.ArmStateModel.loadTempState
-                        
-                        start(h.Timer);
                         obj.println('Presentation setup complete',1);
                     case 'MplVulcanX'
                         obj.println('Setting up presentation...',1);
@@ -708,7 +704,6 @@ classdef MiniVIE < Common.MiniVieObj
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
                         h.update();
                         h.Verbose = 0;
-                        start(h.Timer);
                         obj.println('Presentation setup complete',1);
                     case 'MplUnity'
                         obj.println('Setting up presentation...',1);
@@ -716,7 +711,7 @@ classdef MiniVIE < Common.MiniVieObj
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
                         h.update();
                         h.Verbose = 0;
-                        start(h.Timer);
+
                         obj.println('Presentation setup complete',1);                        
                     case 'Breakout'
                         h = Presentation.MiniBreakout(obj.SignalSource,obj.SignalClassifier);
@@ -756,19 +751,16 @@ classdef MiniVIE < Common.MiniVieObj
                         %isLeftSide = 1;   % <---- Use this parameter to select Left=1/Right=0
                         h.initialize();
                         
-                        h.start();
                     case 'MSMS Tasks'
                         h = Scenarios.MsmsTasks;
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
                         h.update();
                         h.Verbose = 0;
-                        start(h.Timer);
                     case 'Online Retraining Demo'
                         h = Scenarios.OnlineRetrainer;
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
                         h.update();
                         h.Verbose = 1;
-                        start(h.Timer);
                     otherwise
                         % None
                         h = [];
@@ -788,8 +780,14 @@ classdef MiniVIE < Common.MiniVieObj
                     h.ArmStateModel.ApplyReturnToHome = simpleMode;
                 end
                 
-                
                 obj.Presentation = h;
+
+                drawnow
+                
+                if ~isempty(obj.Presentation)
+                    obj.Presentation.start();
+                end
+                
             catch ME
                 errordlg(ME.message);
                 rethrow(ME);
@@ -991,6 +989,7 @@ classdef MiniVIE < Common.MiniVieObj
             % Launch the ROC Editor.  
             
             % Ensure that if a scenario exists that it is not running
+            drawnow
             if ~isempty(obj.Presentation)
                 obj.Presentation.stop();
                 drawnow

@@ -5,7 +5,8 @@ strRouterIp = UserConfig.getUserConfigVar('mplRouterIp','192.168.1.1');
 strNfuIp = UserConfig.getUserConfigVar('mplNfuIp','192.168.1.111');
 
 AA = -0.3;
-armTestStart = [[0 AA 0] 1.6 0 0 0];
+EL = 0;
+armTestStart = [[0 AA 0] EL 0 0 0];
 
 % Note for changing limb stream-To address:
 %     Telnet in to limb:
@@ -98,12 +99,12 @@ switch testId
             error('NFU Init failed');
         end
         hNfu.ping(1);
-        hNfu.sendAllJoints([ [0 AA 0] 1.5 -0.7 -0.5 -0.5]);
+        hNfu.sendAllJoints([ [0 AA 0] EL -0.7 -0.5 -0.5]);
         pause(1.0)
         AA = -0.25;
-        hNfu.sendAllJoints([ [0 AA 0] 1.5 -0.7 -0.5 -0.5]);
+        hNfu.sendAllJoints([ [0 AA 0] EL+0.05 -0.7 -0.5 -0.5]);
         pause(1.0)
-        hNfu.sendAllJoints([ [0 AA 0] 1.6 0.7 0.5 0.5]);
+        hNfu.sendAllJoints([ [0 AA 0] EL 0.7 0.5 0.5]);
         pause(1.0)
         hNfu.sendAllJoints(armTestStart);
         
@@ -182,7 +183,7 @@ switch testId
             
             mplAngles = zeros(1,27);
             mplAngles(2) = -0.3;
-            mplAngles(4) = 1.5;
+            mplAngles(4) = EL+0.05; %Elbow
             
             graspVal = [linspace(0,1,numOpenSteps) ones(1,numWaitSteps) linspace(1,0,numCloseSteps)];
             for i = 1:length(graspVal)

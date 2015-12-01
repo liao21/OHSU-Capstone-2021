@@ -946,6 +946,52 @@ classdef (Sealed) NfuUdp < handle
                 tlm.ContactSensorPercept.little_abad_contact_sensor_2 = contact_data(8);
                 
             end
+                        
+            if length(b) > 518
+                % Process LMC Percepts
+                %                 
+                % 
+                % 
+                % typedef struct {
+                %   StatusPollResponse status;
+                %   int16_T torque;              [25,26]
+                %   int16_T motor_position;      [27,28]
+                %   int16_T motor_velocity;      [29,30]
+                %   int16_T motor_acceleration;  [31,32]
+                %   int16_T link_position;       [33,34]
+                %   uint8_T temperature;         [35]
+                %   int16_T motor_current;  [20?][36,37]
+                %   uint8_T is_motor_powered;   [38]
+                %   uint8_T is_motor_running;   [39]
+                %   uint8_T fault;          [40]
+                %   int16_T bus_voltage;    [41,42]
+                %   int16_T bus_current;    [43,44]
+                % } LMC_SensorData;
+                % 
+                % typedef struct { [24?]
+                %   MotorDirection motor_dir;  
+                %   uint8_T udc_sign;
+                %   CurrentLimit is_current_limited;
+                %   BIT_States bit_state;
+                %   HandStates sw_state;
+                % } StatusPollResponse;                
+                
+                %%
+                lmc = reshape(b(end-308+1:end),44,7);
+% %                 typecast(lmc(4,[27,28]),'int16')
+% %                 lmc(1:24,4)'
+% fp = fopen('test_log.txt','a+');
+% fprintf(fp,'%04d ',lmc(:,4));
+% fprintf(fp,'\n');
+% 
+% %                 lmc(25:end,4)'
+                
+            else
+                lmc = [];
+            end
+            
+            tlm.LMC = lmc;
+            
             
         end
         function [s, sequenceNumber] = cpch_bytes_to_signal(b)

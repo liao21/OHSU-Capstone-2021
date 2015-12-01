@@ -400,10 +400,10 @@ classdef MiniVIE < Common.MiniVieObj
                     case 'NfuInput'
                         h = Inputs.NfuInput();
                         % Ref Hargove 2014 comparison of real-time controlability
-                        Fs = h.SampleFrequency;                     % 1000 Hz
-                        h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
-                        h.addfilter(Inputs.MinLimitFilter(0.2));    % min limit
-                        h.addfilter(Inputs.ConstraintFilter(-5,5)); % range limit
+%                         Fs = h.SampleFrequency;                     % 1000 Hz
+%                         h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
+%                         h.addfilter(Inputs.MinLimitFilter(0.2));    % min limit
+%                         h.addfilter(Inputs.ConstraintFilter(-5,5)); % range limit
                     case 'IntanDevBoard'
                         h = Inputs.IntanUdp.getInstance;
                         h.addfilter(Inputs.Notch([120 180 240 300 360],64,1,1000));

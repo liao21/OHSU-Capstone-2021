@@ -3,6 +3,7 @@
 *.txt
 *.trainingData
 *.tacAssessment
-*.png
 *.assessmentLog
+*.partialTac
 *.tif
+*.png

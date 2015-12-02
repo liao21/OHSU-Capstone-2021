@@ -44,6 +44,8 @@ classdef (Sealed) NfuUdp < handle
         UdpBuffer3
         UdpBuffer4
         
+        AllowImpedance = 1; % Controls whether commands are sent in impedance or position mode
+        
         hLogFile
         
         busVoltageWarn = 22; %V
@@ -62,6 +64,9 @@ classdef (Sealed) NfuUdp < handle
         TcpSocket = [];
         UdpStreamReceiveSocket = [];
         UdpCommandSocket = [];
+        
+        LmcPosition = [];
+        LmcTorque = [];
         
         BufferSize = 100;
         
@@ -323,6 +328,17 @@ classdef (Sealed) NfuUdp < handle
                 stiffnessCmd = obj.DefaultStiffnessCmd;
             end
             
+            if isempty(obj.LmcPosition)
+                warning('NfuUdp:sendAllJoints','LMC Positions are unknown');
+            elseif any(abs(obj.LmcPosition(:) - reshape(jointAngles(1:7),7,1)) > 0.1)
+                % h = warndlg({'Limb is about to make a fast move'...
+                %     sprintf('%6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f (Start)',obj.LmcPosition(:)),...
+                %     sprintf('%6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f (End)',reshape(jointAngles(1:7),7,1))},...
+                %     'Fast Move','modal');
+                % uiwait(h);
+            end
+            
+            
             % create position array and assign inputs
             p = zeros(27,1);
             if length(jointAngles) == 7
@@ -338,8 +354,11 @@ classdef (Sealed) NfuUdp < handle
             msg = obj.hMud.AllJointsPosVelImpCmd(p(1:7),zeros(1,7),p(8:27),zeros(1,20),stiffnessCmd);
             
             % append nfu message ID (for impedance)
-            %msg = [uint8(62);msg(:)];
-            msg = [uint8(61);msg(:)];
+            if obj.AllowImpedance
+                msg = [uint8(62);msg(:)];
+            else
+                msg = [uint8(61);msg(:)];
+            end
             
             % send the UDP command
             obj.sendUdpCommand(msg);
@@ -509,7 +528,7 @@ classdef (Sealed) NfuUdp < handle
             end
             
         end
-        function update(obj)
+        function numReads = update(obj)
             % Update function reads any buffered udp packets and stores
             % them for later use.  Packets are routed based on size to the
             % appropriate buffer
@@ -559,7 +578,9 @@ classdef (Sealed) NfuUdp < handle
                     
                     b2 = dataBytes(1+numDataBytes:end);  %percept bytes
                     
-                    obj.UdpBuffer2{obj.ptr2} = MPL.NfuUdp.decode_percept_msg(b2);
+                    
+                    newPercepts = MPL.NfuUdp.decode_percept_msg(b2);
+                    obj.UdpBuffer2{obj.ptr2} = newPercepts;
                     obj.newData2(obj.ptr2) = true;
                     
                     % advance ptr
@@ -569,6 +590,17 @@ classdef (Sealed) NfuUdp < handle
                     end
                     
                     obj.sum2 = obj.sum2 + 1;
+                    
+                    % Ensure the LmcPosition is updated with the latest
+                    % percepts
+                    CountsToRadians = 1/650;
+                    allJoints = newPercepts.LMC([23 24],:);
+                    p = double(typecast(allJoints(:),'int16')) * CountsToRadians;
+                    allJoints = newPercepts.LMC([21 22],:);
+                    t = double(typecast(allJoints(:),'int16'));
+
+                    obj.LmcPosition = p;
+                    obj.LmcTorque = t;
                     
                 elseif (len == 36)
                     % Store heartbeat message

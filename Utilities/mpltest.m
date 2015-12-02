@@ -103,7 +103,7 @@ switch testId
         pause(1.0)
         AA = -0.25;
         hNfu.sendAllJoints([ [0 AA 0] EL+0.05 -0.7 -0.5 -0.5]);
-        pause(1.0)
+        pause(1.0)        
         hNfu.sendAllJoints([ [0 AA 0] EL 0.7 0.5 0.5]);
         pause(1.0)
         hNfu.sendAllJoints(armTestStart);

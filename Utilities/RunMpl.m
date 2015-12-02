@@ -1,6 +1,7 @@
 function [ obj ] = RunMpl
 
 % Set patient parameter set
+cd('C:\MiniVIE_Users\JHMI_TH01_L')
 UserConfig.getInstance('JHMI_TH01_L_user_config.xml');
 
 p.guiName = 'MiniVIE-NFU-MPL';

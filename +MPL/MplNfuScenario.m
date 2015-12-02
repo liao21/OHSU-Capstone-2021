@@ -196,15 +196,18 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
                     sg = 0;
                 end
                 p1 = -5.667;
-                p2 = 235.2;
+                p2 = 235.2 + 112.346;
                 T = p1*sg + p2;
                 try
                     if obj.echoSensor
                         if abs(T) < 60
-                            fprintf('Sensor Data--HR: %8.3f inch-lbs; Index: %8.3f; Little: %8.3f;\n',T,tlm.Percept(2).Torque,tlm.Percept(6).Torque);
+                            dest = 1;
                         else
-                            fprintf(2,'Sensor Data--HR: %8.3f inch-lbs; Index: %8.3f; Little: %8.3f;\n',T,tlm.Percept(2).Torque,tlm.Percept(6).Torque);
+                            dest = 2;
                         end
+                        fprintf(dest,...
+                            'Sensor Data--HR: %8.3f inch-lbs; EL: %8d; Index: %8.3f; Little: %8.3f;\n',...
+                            T,obj.hNfu.LmcTorque(4),  tlm.Percept(2).Torque,tlm.Percept(6).Torque);
                     end
                     if ~isempty(obj.hBluetooth)
                         vals = zeros(1,5);

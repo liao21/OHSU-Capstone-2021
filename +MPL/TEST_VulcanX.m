@@ -1,7 +1,7 @@
 %% Quick test of vMPL / MPL control via VulcanX
 %  Create the udp transmission via pnet
 UdpLocalPort = 56789;
-UdpDestinationPort = 9027; %9024 = Left; 9027 = Right; (see
+UdpDestinationPort = 9024; %9024 = Left; 9027 = Right; (see
 UdpAddress = '127.0.0.1'; % '192.168.1.101';
 % PnetClass(localPort,remotePort,remoteIP)
 hSink = PnetClass(UdpLocalPort,UdpDestinationPort,UdpAddress);
@@ -14,16 +14,16 @@ upperArmAngles = zeros(1,7);
 handAngles = zeros(1,20);
 
 %% Specify joint angles and transmit bytes
-upperArmAngles(1) = 0.25;
-upperArmAngles(4) = 1;
+upperArmAngles(1) = 0.3;
+upperArmAngles(4) = 0.9;
 msg = mce.AllJointsPosVelCmd(upperArmAngles,zeros(1,7),handAngles,zeros(1,20));
 hSink.putData(msg);
 
 %% Specify joint angles and ROC command
-graspId = 4;
-graspValue = 1;
-upperArmAngles(1) = 0.5;
-upperArmAngles(3) = 0.5;
+graspId = 1;
+graspValue = 0;
+upperArmAngles(1) = 0.3;
+upperArmAngles(3) = 0.0;
 upperArmAngles(4) = 1;
 msg = mce.ArmPosVelHandRocGrasps(upperArmAngles,zeros(1,7),1,graspId,graspValue,1);
 hSink.putData(msg);

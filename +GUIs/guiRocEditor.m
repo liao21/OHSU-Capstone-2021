@@ -94,11 +94,10 @@ classdef guiRocEditor < handle
                 obj.hSink = MPL.NfuUdp.getInstance;
             else
                 %  Create the udp transmission via pnet
-                UdpLocalPort = 56789;
-                UdpDestinationPort = 9027; %9024 = Left; 9027 = Right; (see
-                UdpAddress = '127.0.0.1'; % '192.168.1.101';
-                % PnetClass(localPort,remotePort,remoteIP)
-                obj.hSink = PnetClass(UdpLocalPort,UdpDestinationPort,UdpAddress);
+                VulcanXAddress = UserConfig.getUserConfigVar('mplVulcanXIpAddress','127.0.0.1');
+                VulcanXCmdPort = str2double(UserConfig.getUserConfigVar('mplVulcanXCommandPort','9027'));
+                VulcanXLocalPort = str2double(UserConfig.getUserConfigVar('mplVulcanXSensoryPort','25001'));                
+                obj.hSink = PnetClass(VulcanXLocalPort,VulcanXCmdPort,VulcanXAddress);
             end
             
             obj.hSink.initialize()

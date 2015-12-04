@@ -11,6 +11,7 @@ classdef UserConfig < handle
     % 23APR2015 Armiger: Created
     properties (SetAccess = 'private')
         userConfigFile = 'user_config.xml';
+        userRocFile = '';
         domNode  % Stores the Document Object Model node fro parsing
     end
     methods (Access = private)
@@ -68,6 +69,8 @@ classdef UserConfig < handle
             end
             singleObj = localObj;
             
+            % read the roc table on startup to store path
+            %UserConfig.getUserConfigVar('rocTable','WrRocDefaults.xml');
         end
         function success = reload
             % Reload the specified xml file
@@ -130,12 +133,43 @@ classdef UserConfig < handle
                     end
                 end
                 
-                return
             catch ME
                 warning(ME.message)
                 fprintf('[%s.m] Failed to parse tag "%s" entry in file "%s"\n',mfilename,tagName,userFile);
                 result = defaultValue;
             end
+            
+            
+            % Add a check for file references to add the full path if
+            % omitted.  THis is a special case for roc tables
+            
+            switch tagName
+                case 'rocTable'
+                    
+                    % check if the rocTable has path info
+                    missingPath = isempty(fileparts(result));
+                    noStoredPath = isempty(obj.userRocFile);
+                    
+                    if missingPath && noStoredPath
+                        % store the table with path
+                        obj.userRocFile = which(result);
+                        result = obj.userRocFile;
+                        fprintf('[%s.m] Storing full path tag "%s": "%s"\n',mfilename,tagName,result);
+                    elseif missingPath && ~noStoredPath
+                        % use the stored path and file
+                        result = obj.userRocFile;
+                    else
+                        % Path exists in xml so use it
+                    end
+                    
+                    assert(exist(result,'file') > 0,'XML Roc file %s not found %s',result);
+                    
+            end
+            
+            
+            
+            
+            
         end
     end
 end

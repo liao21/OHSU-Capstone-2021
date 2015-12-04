@@ -354,82 +354,10 @@ classdef Classifier < Common.MiniVieObj
                 return
             end
             
-            % Compute the total number of examples
-            classSum = sum(cmat,2);
-            % Normalize based on the number of examples
-            normMat = cmat ./ repmat(classSum,1,numClasses);
-            % should not occur, but if divided by zero, set to zero
-            normMat(isnan(normMat)) = 0;
-            
-            % flip the matrix, convert to percent
-            faceColor = flipud(normMat) * 100;
-
-
-            %% Plot Results
-            
-            % create figure
-            if nargin < 2
-                f = UiTools.create_figure('Confusion Matrix','Confusion_Matrix');
-                set(f,'Units','pixels')
-                set(f,'ToolBar','figure')
-                p = get(f,'Position');
-                p = [p(1) p(2)/2 800 600];
-                set(f,'Position',p);
-                clf(f)
-                hAxes = axes('Parent',f);
-                drawnow
-            end
-            
-            f = get(hAxes,'Parent');
-            
-            % create colored surface
-            [X,Y] = meshgrid(1:numClasses+1,1:numClasses+1);
-            surface(X,Y,zeros(size(X)),faceColor,'Parent',hAxes);
-            view(hAxes,2)
-            
-            % workaround since matlab 2014b raises a new figure when
-            % setting colormap
-            c = get(f,'HandleVisibility');
-            set(f,'HandleVisibility','on')
-            colormap(f,'hot');
-            set(f,'HandleVisibility',c)
-            
-            colorbar('peer',hAxes);
-            set(hAxes,'cLim',[0 100]);
-            
-            set(hAxes,'XLim',[1 numClasses+1])
-            set(hAxes,'YLim',[1 numClasses+1])
-            
             classNames = obj.getClassNames;
-            tickVal = (1:numClasses)+0.5;
-            tickLabel = classNames(trainedLabels(:));
-            pad = @(s) sprintf('%s   ',s);
-            tickLabel = cellfun(pad,tickLabel,'UniformOutput',false);
-            set(hAxes,'YTick',tickVal);
-            set(hAxes,'YTickLabel',flipud(tickLabel))
+            PlotUtils.confusionMatrix(cmat,classNames(trainedLabels(:)));
             
-            % workaround since matlab 2014b raises a new figure when
-            % setting colormap
-            c = get(f,'HandleVisibility');
-            set(f,'HandleVisibility','on')
-            xticklabel_rotate(tickVal,30,tickLabel);
-            set(f,'HandleVisibility',c)
-            
-            title('Actual versus predicted class (%)','Parent',hAxes);
-            
-            X = X(1:end-1,1:end-1);
-            Y = Y(1:end-1,1:end-1);
-            for i = 1:numel(normMat)
-                str = sprintf('%2d',round(normMat(i)*100));
-                hText = text(X(i)+0.5,size(Y,1)-Y(i)+1.5,{str sprintf('(%d)',cmat(i))},...
-                    'Parent',hAxes,'Color',[1 1 1],'HorizontalAlignment','Center');
-                if normMat(i) > 0.7
-                    % set black on white bg
-                    set(hText,'Color',[0 0 0]);
-                end
-            end
-            
-        end            
+        end
     end
     methods (Static = true)
         function voteDecision = majority_vote(classDecision, numVotes, ...

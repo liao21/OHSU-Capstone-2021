@@ -265,11 +265,11 @@ classdef PlotUtils
             hTriad = zeros(d3,1);
             for i = 1:d3
                 hTriad(i) = hgtransform('Parent',ax);
-            
+                
                 plot3(hTriad(i),Xaxis(1,:),Xaxis(2,:),Xaxis(3,:),xyz_color{1},'LineWidth',2);
                 plot3(hTriad(i),Yaxis(1,:),Yaxis(2,:),Yaxis(3,:),xyz_color{2},'LineWidth',2);
                 plot3(hTriad(i),Zaxis(1,:),Zaxis(2,:),Zaxis(3,:),xyz_color{3},'LineWidth',2);
-            
+                
                 set(hTriad(i),'Matrix',F(:,:,i));
                 
                 if ~isempty(label)
@@ -285,8 +285,7 @@ classdef PlotUtils
             end
         end
         
-        
-                function [hBox, volumeProps] = boundingBox(varargin)
+        function [hBox, volumeProps] = boundingBox(varargin)
             %BOUNDINGBOX - Plot a bounding box
             %
             %   hBox = LinAlg.boundingBox(bb)
@@ -448,6 +447,131 @@ classdef PlotUtils
                 [maxx maxy maxz]
                 [minx maxy maxz]]';
         end
-
+        
+        function confusionMatrix(cmat,classNames,hAxes)
+            
+            numClasses = length(classNames);
+            
+            % Compute the total number of examples
+            classSum = sum(cmat,2);
+            % Normalize based on the number of examples
+            normMat = cmat ./ repmat(classSum,1,numClasses);
+            % should not occur, but if divided by zero, set to zero
+            normMat(isnan(normMat)) = 0;
+            
+            % flip the matrix, convert to percent
+            faceColor = flipud(normMat) * 100;
+            
+            % Plot Results
+            
+            % create figure
+            if nargin < 3
+                f = UiTools.create_figure('Confusion Matrix','Confusion_Matrix');
+                set(f,'Units','pixels')
+                set(f,'ToolBar','figure')
+                p = get(f,'Position');
+                p = [p(1) p(2)/2 800 600];
+                set(f,'Position',p);
+                clf(f)
+                hAxes = axes('Parent',f);
+                drawnow
+            end
+            
+            f = get(hAxes,'Parent');
+            
+            % create colored surface
+            [X,Y] = meshgrid(1:numClasses+1,1:numClasses+1);
+            surface(X,Y,zeros(size(X)),faceColor,'Parent',hAxes);
+            view(hAxes,2)
+            
+            % workaround since matlab 2014b raises a new figure when
+            % setting colormap
+            c = get(f,'HandleVisibility');
+            set(f,'HandleVisibility','on')
+            colormap(f,'hot');
+            set(f,'HandleVisibility',c)
+            
+            colorbar('peer',hAxes);
+            set(hAxes,'cLim',[0 100]);
+            
+            set(hAxes,'XLim',[1 numClasses+1])
+            set(hAxes,'YLim',[1 numClasses+1])
+            
+            tickVal = (1:numClasses)+0.5;
+            tickLabel = classNames;
+            pad = @(s) sprintf('%s   ',s);
+            tickLabel = cellfun(pad,tickLabel,'UniformOutput',false);
+            set(hAxes,'YTick',tickVal);
+            set(hAxes,'YTickLabel',flipud(tickLabel))
+            
+            % workaround since matlab 2014b raises a new figure when
+            % setting colormap
+            c = get(f,'HandleVisibility');
+            set(f,'HandleVisibility','on')
+            xticklabel_rotate(tickVal,30,tickLabel);
+            set(f,'HandleVisibility',c)
+            
+            title('Actual versus Predicted Class','Parent',hAxes);
+            
+            X = X(1:end-1,1:end-1);
+            Y = Y(1:end-1,1:end-1);
+            for i = 1:numel(normMat)
+                str = sprintf('%2d%%',round(normMat(i)*100));
+                hText = text(X(i)+0.5,size(Y,1)-Y(i)+1.5,{str sprintf('(%d)',cmat(i))},...
+                    'Parent',hAxes,'Color',[1 1 1],'HorizontalAlignment','Center');
+                if normMat(i) > 0.7
+                    % set black on white bg
+                    set(hText,'Color',[0 0 0]);
+                end
+            end
+            
+        end
+        
+        function copyFiguresToPowerpoint(outputFile, titleInfo)
+            %% Copy figures to PPT
+            
+            % Start new presentation
+            isOpen  = exportToPPTX();
+            if ~isempty(isOpen),
+                % If PowerPoint already started, then close first and then open a new one
+                exportToPPTX('close');
+            end
+            
+            exportToPPTX('new','Title',titleInfo.Title, ...
+                'Author',titleInfo.Author);
+            exportToPPTX('addslide');
+            if iscell(titleInfo.SubTitle);
+                subTitle = titleInfo.SubTitle(:);
+            else
+                subTitle = {titleInfo.SubTitle};
+            end
+            exportToPPTX('addtext',[{titleInfo.Title}; {''}; subTitle], ...
+                'VerticalAlignment','middle', ...
+                'HorizontalAlignment','center', ...
+                'FontSize',20);
+            
+            for i = 1:length(findobj(0,'type','figure'))
+                slideNum = exportToPPTX('addslide');
+                exportToPPTX('addpicture',figure(i),'Scale','maxfixed');
+            end
+            
+            % Check current presentation
+            fileStats   = exportToPPTX('query');
+            if ~isempty(fileStats),
+                fprintf('Presentation size: %f x %f\n',fileStats.dimensions);
+                fprintf('Number of slides: %d\n',fileStats.numSlides);
+            end
+            
+            % Save presentation -- overwrite file if it already exists
+            % Filename automatically checked for proper extension
+            newFile = exportToPPTX('save',outputFile);
+            
+            % Close presentation
+            exportToPPTX('close');
+            
+            fprintf('New file has been saved: <a href="matlab:winopen(''%s'')">%s</a>\n',newFile,newFile);
+            
+            
+        end
     end
 end

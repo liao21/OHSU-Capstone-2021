@@ -240,7 +240,7 @@ switch testId
         hNfu = MPL.NfuUdp.getInstance;
         hNfu.initialize();
 
-        id = mpl_upper_arm_enum;
+        id = MPL.EnumArm;
         armAngles = zeros(1,27);
         
         N = 10;

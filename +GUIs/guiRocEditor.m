@@ -123,7 +123,7 @@ classdef guiRocEditor < handle
             axesRange = repmat([-pi pi],nSliders,1);
             sliderRange = axesRange;
             
-            sliderTitle = [fieldnames(mpl_upper_arm_enum); fieldnames(mpl_hand_enum)];
+            sliderTitle = fieldnames(MPL.EnumArm);
             hAx = zeros(nSliders,1);
             
             patchWidth = (axesRange(:,2) - axesRange(:,1))/15;

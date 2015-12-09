@@ -301,8 +301,7 @@ classdef (Sealed) NfuUdp < handle
             %
             %   jointAngles - 27x1 array of all arm joint angles in radians
             %                 joint angle enumeration given in
-            %                 mpl_upper_arm_enum (1-7) Arm
-            %                 MudCommandEncoder (1-20) Hand
+            %                 MPL.EnumArm (1-27) Arm
             %   stiffnessCmd - 27x1 array of arm stiffness commands in
             %                 Nm/rad.  Typical upper arm values are 3-15 Nm/rad
             %                 and Hand stiffnesses are approximately 0.1-1

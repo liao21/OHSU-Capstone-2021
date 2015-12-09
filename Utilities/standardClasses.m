@@ -61,46 +61,46 @@ for iClass = 1:numClasses
     
     switch thisClass
         case 'Shoulder Flexion'
-            s.JointId = mpl_upper_arm_enum.SHOULDER_FE;
+            s.JointId = MPL.EnumArm.SHOULDER_FE;
             s.Direction = +1;
         case 'Shoulder Extension'
-            s.JointId = mpl_upper_arm_enum.SHOULDER_FE;
+            s.JointId = MPL.EnumArm.SHOULDER_FE;
             s.Direction = -1;
         case 'Shoulder Adduction'
-            s.JointId = mpl_upper_arm_enum.SHOULDER_ADAB;
+            s.JointId = MPL.EnumArm.SHOULDER_ADAB;
             s.Direction = +1;
         case 'Shoulder Abduction'
-            s.JointId = mpl_upper_arm_enum.SHOULDER_ADAB;
+            s.JointId = MPL.EnumArm.SHOULDER_ADAB;
             s.Direction = -1;
         case 'Humeral Internal Rotation'
-            s.JointId = mpl_upper_arm_enum.HUMERAL_ROT;
+            s.JointId = MPL.EnumArm.HUMERAL_ROT;
             s.Direction = +1;
         case'Humeral External Rotation'
-            s.JointId = mpl_upper_arm_enum.HUMERAL_ROT;
+            s.JointId = MPL.EnumArm.HUMERAL_ROT;
             s.Direction = -1;
         case {'Elbow Flexion' 'Elbow Up'}
-            s.JointId = mpl_upper_arm_enum.ELBOW;
+            s.JointId = MPL.EnumArm.ELBOW;
             s.Direction = +1;
         case {'Elbow Extension' 'Elbow Down'}
-            s.JointId = mpl_upper_arm_enum.ELBOW;
+            s.JointId = MPL.EnumArm.ELBOW;
             s.Direction = -1;
         case {'Pronate' 'Wrist Rotate In' 'Pronation'}
-            s.JointId = mpl_upper_arm_enum.WRIST_ROT;
+            s.JointId = MPL.EnumArm.WRIST_ROT;
             s.Direction = +1;
         case {'Supinate' 'Wrist Rotate Out' 'Supination'}
-            s.JointId = mpl_upper_arm_enum.WRIST_ROT;
+            s.JointId = MPL.EnumArm.WRIST_ROT;
             s.Direction = -1;
         case {'Down','Hand Down', 'Ulnar Deviation','Wrist Adduction'}
-            s.JointId = mpl_upper_arm_enum.WRIST_DEV;
+            s.JointId = MPL.EnumArm.WRIST_DEV;
             s.Direction = +1;
         case {'Up', 'Hand Up', 'Radial Deviation','Wrist Abduction'}
-            s.JointId = mpl_upper_arm_enum.WRIST_DEV;
+            s.JointId = MPL.EnumArm.WRIST_DEV;
             s.Direction = -1;
         case {'Left' 'Wrist Flex' 'Wrist Flex In'}
-            s.JointId = mpl_upper_arm_enum.WRIST_FE;
+            s.JointId = MPL.EnumArm.WRIST_FE;
             s.Direction = +1;
         case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
-            s.JointId = mpl_upper_arm_enum.WRIST_FE;
+            s.JointId = MPL.EnumArm.WRIST_FE;
             s.Direction = -1;
         case {'No Movement','Rest'}
             s.JointId = [];

@@ -346,13 +346,13 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
             end
             
             jointIds = [
-                mpl_upper_arm_enum.SHOULDER_FE
-                mpl_upper_arm_enum.SHOULDER_ADAB
-                mpl_upper_arm_enum.HUMERAL_ROT
-                mpl_upper_arm_enum.ELBOW
-                mpl_upper_arm_enum.WRIST_ROT
-                mpl_upper_arm_enum.WRIST_DEV
-                mpl_upper_arm_enum.WRIST_FE
+                MPL.EnumArm.SHOULDER_FE
+                MPL.EnumArm.SHOULDER_ADAB
+                MPL.EnumArm.HUMERAL_ROT
+                MPL.EnumArm.ELBOW
+                MPL.EnumArm.WRIST_ROT
+                MPL.EnumArm.WRIST_DEV
+                MPL.EnumArm.WRIST_FE
                 ];
             
             % initialize angles

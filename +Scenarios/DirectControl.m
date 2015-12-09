@@ -67,7 +67,7 @@ classdef DirectControl < Common.MiniVieObj
                 signalDcOffset = 1.2;
                 MAV = mean(abs(obj.SignalSource.getData(150)-signalDcOffset));
                 
-                jointId = mpl_upper_arm_enum.ELBOW;
+                jointId = MPL.EnumArm.ELBOW;
                 thresholdA = 0.1;
                 gainA = 2;
                 chA = 1;

@@ -837,11 +837,8 @@ classdef MiniVIE < Common.MiniVieObj
             addlistener(obj.SignalViewer.hChannelSelect,'ValueChange',@(src,evt)update_channels);
             
             function update_channels
-                
-                if isempty(obj.SignalClassifier)
-                    disp('nope')
-                else
-                    disp('yup')
+                % Propogate channel changes to the classifier
+                if ~isempty(obj.SignalClassifier)
                     ch = obj.SignalViewer.hChannelSelect.SelectedChannels;
                     obj.SignalClassifier.setActiveChannels(ch);
                 end

@@ -78,6 +78,9 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
         EnableImpedance = 0;  % turn on/off dynamic impedance
         
         GlobalImpedanceValue = 0.8;
+        
+        DemoMyoElbow = 0;
+        
     end
     methods
         function initialize(obj,SignalSource,SignalClassifier,TrainingData)
@@ -383,6 +386,19 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
             handStiffness = handStiffnessVal*ones(1,20);
             handStiffness(obj.hMud.THUMB_CMC_AD_AB) = 3;
             stiffnessValues = [5*ones(1,7) handStiffness];
+
+            
+            if obj.DemoMyoElbow
+                % Demo for using myo band for elbow angle
+                try
+                    EL = obj.SignalSource.Orientation(2,end) + 90;
+                    EL = EL * pi/180;
+                    mplAngles(4) = EL;
+                end
+            end
+                
+                
+            
             
             % Send the command to the NFU
             if obj.EnableImpedance

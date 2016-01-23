@@ -12,6 +12,7 @@ classdef ArmStateModel < handle
     %
     % Revisions:
     % 26JUN2014 Armiger: Added accel rules and min velocity limits
+    % 10DEC2015 Armiger: Added roc ids for every joint
     properties
 
         ApplyValueLimits = 1;
@@ -25,12 +26,30 @@ classdef ArmStateModel < handle
         lastTime
         velocity = zeros(1,8);
         
+        JointState;  % new array to store state of every joint
+        
         RocStateId = 8; % not to be confused with RocId/RocValue
     end
     methods
         function obj = ArmStateModel
             % Create state for upper arm joints and roc grasps
             obj.lastTime = tic;
+            
+            % Get joint names from enumeration
+            % Use this as a based string to then get xml defaults from user
+            % config file
+            jointNames = fieldnames(MPL.EnumArm);
+            numJoints = length(jointNames);
+            obj.JointState = repmat(obj.defaultState,numJoints,1); 
+            
+            for i = 1:numJoints
+                r = UserConfig.getUserConfigVar(strcat(jointNames{i},'_LIMITS'),[0 30]);
+                obj.JointState(i).Name = jointNames{i};
+                obj.JointState(i).Min = r(1) * pi / 180;
+                obj.JointState(i).Max = r(2) * pi / 180;
+            end
+
+            % Done with the new version of joint specific ROCs
             
             obj.structState = repmat(obj.defaultState,8,1);
             
@@ -175,6 +194,19 @@ classdef ArmStateModel < handle
             % apply range limits
             
             dt = max(toc(obj.lastTime),0.001);
+
+            
+            for i = 1:length(obj.JointState)
+                s = obj.JointState(i);
+                
+                % process roc state
+                if ~isempty(s.RocId)
+                    % Integrate velocity to get position
+                    s.RocValue = s.RocValue + (s.RocVelocity*dt);
+                    s.RocValue = max(min(s.RocValue,1),0);
+                end
+                obj.JointState(i) = s;
+            end
             
             % Debug
             %obj.structState(5)
@@ -319,6 +351,14 @@ classdef ArmStateModel < handle
             stateStruct.MaxAcceleration = 10;
             stateStruct.DefaultValue = 0;   % Typically a joint angle in radians representing the 'home' position
             stateStruct.DefaultVelocity = 0.5; % Typically speed at which home is returned to given no other command
+            
+            % New fields for individual joint roc assignment
+            stateStruct.RocId = [];
+            stateStruct.RocValue = 0;
+            stateStruct.RocVelocity = 0;
+            
+            stateStruct.ControlMode = 'Joint';  % Future: Joint, Endpoint, ROC
+            
             % These are internally updated state variables
             stateStruct.LastValue = 0;
             stateStruct.LastVelocity = 0;

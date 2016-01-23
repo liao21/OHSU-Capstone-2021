@@ -197,6 +197,8 @@ classdef ScenarioBase < Common.MiniVieObj
             
             % Note gains can/should be adjusted using guiAdjustGains
             %TODO: gain values overwritten on classifier retrain
+            rocId = [];
+            rocV = [];
             switch className
                 case {'No Movement' 'Rest'}
                     % debug for endpoint
@@ -208,9 +210,9 @@ classdef ScenarioBase < Common.MiniVieObj
                 case {'Shoulder Extension'}
                     s.setVelocity(MPL.EnumArm.SHOULDER_FE,-prSpeed);
                 case {'Shoulder Adduction'}
-                    s.setVelocity(MPL.EnumArm.SHOULDER_ADAB,+prSpeed);
+                    s.setVelocity(MPL.EnumArm.SHOULDER_AB_AD,+prSpeed);
                 case {'Shoulder Abduction'}
-                    s.setVelocity(MPL.EnumArm.SHOULDER_ADAB,-prSpeed);
+                    s.setVelocity(MPL.EnumArm.SHOULDER_AB_AD,-prSpeed);
                 case {'Humeral Internal Rotation'}
                     s.setVelocity(MPL.EnumArm.HUMERAL_ROT,+prSpeed);
                 case {'Humeral External Rotation'}
@@ -224,9 +226,9 @@ classdef ScenarioBase < Common.MiniVieObj
                 case {'Supinate' 'Wrist Rotate Out'}
                     s.setVelocity(MPL.EnumArm.WRIST_ROT,-prSpeed);
                 case {'Down','Hand Down', 'Ulnar Deviation','Wrist Adduction','Ulnar_Dev'}
-                    s.setVelocity(MPL.EnumArm.WRIST_DEV,+prSpeed);
+                    s.setVelocity(MPL.EnumArm.WRIST_AB_AD,+prSpeed);
                 case {'Up', 'Hand Up', 'Radial Deviation','Wrist Abduction','Radial_Dev'}
-                    s.setVelocity(MPL.EnumArm.WRIST_DEV,-prSpeed);
+                    s.setVelocity(MPL.EnumArm.WRIST_AB_AD,-prSpeed);
                 case {'Left' 'Wrist Flex' 'Wrist Flex In' 'Wrist_Flex'}
                     s.setVelocity(MPL.EnumArm.WRIST_FE,+prSpeed);
                 case {'Right' 'Wrist Extend' 'Wrist Extend Out' 'Wrist_Extend'}
@@ -250,6 +252,48 @@ classdef ScenarioBase < Common.MiniVieObj
                     rocId = 18;
                     rocV = -0.4;
             end
+            
+            % If classified a roc id, ensure it's in the table and then
+            % assign it to the appropriate joints:
+            
+            % Note it's possible to not have a roc table since this is
+            % really only valid for the MPL and may not apply to all
+            % scenarios
+            
+            if ~isempty(obj.RocTable) && ~isempty(rocId)
+
+                availableIds = [obj.RocTable(:).id];
+                if ~ismember(rocId,availableIds)
+                    warning('Requested ROC #%d not in table %s\n',rocId,obj.RocTableXmlFilename);
+                end
+                
+                % TODO add in ROC position limiting
+                % s.structState(s.RocStateId).Value < obj.RocChangeThreshold && (rocV > 0)
+                
+                
+                % assign id to s.JointState(rocJoints).RocId
+                rocJoints = obj.RocTable(rocId).joints;
+                for i = rocJoints
+                    s.JointState(i).RocId = rocId;
+                    s.JointState(i).RocVelocity = rocV;
+                end
+                
+                
+                s.JointState(16)
+                
+                
+                
+            end     
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             
             if strncmp(className,'Endpoint',8)
                 % Handle Endpoint Classes under a special case
@@ -310,15 +354,16 @@ classdef ScenarioBase < Common.MiniVieObj
                 if s.structState(s.RocStateId).Value < obj.RocChangeThreshold && (rocV > 0)
                     s.setRocId(rocId);
                 end
-                
+                 
                 s.setVelocity(s.RocStateId,rocV);
                 
             end
             
         end
-        function generateGraspCommand(obj,className,prSpeed)
+        function isGraspClass = generateGraspCommand(obj,className,prSpeed)
             
             if isempty(className)
+                isGraspClass = false;
                 return
             end
             
@@ -398,18 +443,22 @@ classdef ScenarioBase < Common.MiniVieObj
                     end
             end
             
+            
+            % advance the state model
+            obj.ArmStateModel.update();
+            
             % joint angles and grasp values fields are updated here for
             % backward comparatbility
             % update the state
-            obj.ArmStateModel.update();
             state = obj.ArmStateModel.getValues();
             
             obj.JointAnglesDegrees(1:7) = state(1:7) * 180/pi;
             if isGraspClass
                 obj.GraspValue = state(8);
-                obj.GraspId = s.structState(8).State;
+                obj.GraspId = obj.ArmStateModel.structState(8).State;
             end
             
+
             %generateGraspCommandTwoState(obj,className,prSpeed);
         end
         function generateGraspCommandTwoState(obj,className,prSpeed)

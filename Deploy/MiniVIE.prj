@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="2416116198" file="C:\git\MiniVIE\Deploy\MiniVIE.prj" location="C:\git\MiniVIE\Deploy" name="MiniVIE" preferred-package-location="C:\git\MiniVIE\Deploy\MiniVIE\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+  <configuration build-checksum="568719966" file="C:\git\minivie\Deploy\MiniVIE.prj" location="C:\git\minivie\Deploy" name="MiniVIE" preferred-package-location="C:\git\minivie\Deploy\MiniVIE\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
     <param.appname>MiniVIE</param.appname>
     <param.icon>${PROJECT_ROOT}\MiniVIE_resources\icon.ico</param.icon>
     <param.icons>
@@ -20,13 +20,13 @@ Revisions:
 11/06/2014: v1.4 Recompiled for take-home final
 11/04/2014: v1.3 Recompiled for take-home
 07/28/2014: v1.2 Recompiled under MATLAB R2013b 64-bit</param.description>
-    <param.screenshot>${PROJECT_ROOT}\MiniVIE_resources\MiniVIE.png</param.screenshot>
+    <param.screenshot>${PROJECT_ROOT}\MiniVIE\for_redistribution_files_only\splash.png</param.screenshot>
     <param.guid />
-    <param.net.saved.interface />
     <param.installpath.string>\JHUAPL\MiniVIE\</param.installpath.string>
     <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
-    <param.logo>${PROJECT_ROOT}\MiniVIE_resources\MiniVIE_vert.png</param.logo>
+    <param.logo />
     <param.install.notes />
+    <param.target.install.notes />
     <param.intermediate>${PROJECT_ROOT}\MiniVIE\for_testing</param.intermediate>
     <param.files.only>${PROJECT_ROOT}\MiniVIE\for_redistribution_files_only</param.files.only>
     <param.output>${PROJECT_ROOT}\MiniVIE\for_redistribution</param.output>
@@ -38,6 +38,7 @@ Revisions:
     <param.required.mcr.products>
       <item>35000</item>
       <item>35010</item>
+      <item>35001</item>
     </param.required.mcr.products>
     <param.web.mcr>true</param.web.mcr>
     <param.package.mcr>false</param.package.mcr>
@@ -46,14 +47,15 @@ Revisions:
     <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
     <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
     <param.windows.command.prompt>true</param.windows.command.prompt>
-    <param.create.log>false</param.create.log>
-    <param.log.file />
+    <param.create.log>true</param.create.log>
+    <param.log.file>MiniVIE.log</param.log.file>
     <unset>
       <param.email />
       <param.guid />
-      <param.net.saved.interface />
       <param.installpath.string />
       <param.installpath.combo />
+      <param.logo />
+      <param.target.install.notes />
       <param.intermediate />
       <param.files.only />
       <param.output />
@@ -68,8 +70,6 @@ Revisions:
       <param.package.mcr.name />
       <param.no.mcr.name />
       <param.windows.command.prompt />
-      <param.create.log />
-      <param.log.file />
     </unset>
     <fileset.main>
       <file>C:\git\minivie\MiniVIE.m</file>
@@ -234,8 +234,6 @@ Revisions:
       <file>C:\git\MiniVIE\Utilities\JoyMEX.mexw64</file>
       <file>C:\git\MiniVIE\Utilities\JoyMexClass.m</file>
       <file>C:\git\MiniVIE\Utilities\LinAlg.m</file>
-      <file>C:\git\MiniVIE\Utilities\mpl_hand_enum.m</file>
-      <file>C:\git\MiniVIE\Utilities\mpl_upper_arm_enum.m</file>
       <file>C:\git\MiniVIE\Utilities\PlotUtils.m</file>
       <file>C:\git\MiniVIE\Utilities\pnet.m</file>
       <file>C:\git\MiniVIE\Utilities\pnet.mexw64</file>
@@ -251,14 +249,19 @@ Revisions:
       <file>C:\git\MiniVIE\Utilities\ViePlant.m</file>
     </fileset.resources>
     <fileset.package />
+    <fileset.depfun>
+      <file>C:\git\minivie\+DataAnalysis\Assessments.m</file>
+      <file>C:\git\minivie\+MPL\EnumArm.m</file>
+      <file>C:\git\minivie\ThirdParty\ExportToPPTX\exportToPPTX.m</file>
+    </fileset.depfun>
     <build-deliverables>
-      <file location="${PROJECT_ROOT}\MiniVIE\for_testing" name="splash.png" optional="false">C:\git\MiniVIE\Deploy\MiniVIE\for_testing\splash.png</file>
-      <file location="${PROJECT_ROOT}\MiniVIE\for_testing" name="MiniVIE.exe" optional="false">C:\git\MiniVIE\Deploy\MiniVIE\for_testing\MiniVIE.exe</file>
-      <file location="${PROJECT_ROOT}\MiniVIE\for_testing" name="readme.txt" optional="true">C:\git\MiniVIE\Deploy\MiniVIE\for_testing\readme.txt</file>
+      <file location="${PROJECT_ROOT}\MiniVIE\for_testing" name="splash.png" optional="false">C:\git\minivie\Deploy\MiniVIE\for_testing\splash.png</file>
+      <file location="${PROJECT_ROOT}\MiniVIE\for_testing" name="MiniVIE.exe" optional="false">C:\git\minivie\Deploy\MiniVIE\for_testing\MiniVIE.exe</file>
+      <file location="${PROJECT_ROOT}\MiniVIE\for_testing" name="readme.txt" optional="true">C:\git\minivie\Deploy\MiniVIE\for_testing\readme.txt</file>
     </build-deliverables>
     <workflow />
     <matlab>
-      <root>C:\Program Files\MATLAB\R2015a</root>
+      <root>C:\Program Files\MATLAB\R2015b</root>
       <toolboxes />
     </matlab>
     <platform>

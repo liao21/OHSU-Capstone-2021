@@ -147,11 +147,11 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             %     ];
             jointIds = [
                 MPL.EnumArm.SHOULDER_FE
-                MPL.EnumArm.SHOULDER_ADAB
+                MPL.EnumArm.SHOULDER_AB_AD
                 MPL.EnumArm.HUMERAL_ROT
                 MPL.EnumArm.ELBOW
                 MPL.EnumArm.WRIST_ROT
-                MPL.EnumArm.WRIST_DEV
+                MPL.EnumArm.WRIST_AB_AD
                 MPL.EnumArm.WRIST_FE
                 ];
             

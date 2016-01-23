@@ -25,7 +25,7 @@ classdef RocTable < handle
             basePosition(:,[mce.INDEX_MCP mce.MIDDLE_MCP mce.RING_MCP mce.LITTLE_MCP]) = 0.0;
             basePosition(:,mce.INDEX_AB_AD) = -0.1;
             basePosition(:,mce.LITTLE_AB_AD) = 0.2;
-            basePosition(:,mce.THUMB_CMC) = 0.4;
+            basePosition(:,mce.THUMB_CMC_FE) = 0.4;
             
             roc(1).id = 0;
             roc(1).name = 'rest';
@@ -54,8 +54,8 @@ classdef RocTable < handle
             pos3([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.9;
             
             pos3([mce.THUMB_MCP]) = 0.55;
-            pos3([mce.THUMB_CMC]) = 0.75;
-            pos3([mce.THUMB_CMC]) = 0.95;
+            pos3([mce.THUMB_CMC_FE]) = 0.75;
+            pos3([mce.THUMB_CMC_FE]) = 0.95;
             pos4 = pos3;
             roc(2).angles = [...
                 basePosition;...
@@ -197,8 +197,8 @@ classdef RocTable < handle
             roc(14).angles = repmat(basePosition,length(roc(14).waypoint),1);
             roc(14).angles(1,mce.THUMB_CMC_AD_AB) = 0;
             roc(14).angles(2,mce.THUMB_CMC_AD_AB) = 1;
-            roc(14).angles(1,mce.THUMB_CMC) = 0;
-            roc(14).angles(2,mce.THUMB_CMC) = 1;
+            roc(14).angles(1,mce.THUMB_CMC_FE) = 0;
+            roc(14).angles(2,mce.THUMB_CMC_FE) = 1;
             roc(14).angles(1,mce.THUMB_MCP) = 0;
             roc(14).angles(2,mce.THUMB_MCP) = 1;
             roc(14).angles(1,mce.THUMB_DIP) = 0;
@@ -227,7 +227,7 @@ classdef RocTable < handle
             roc(16).angles(2:3,[mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 1;
             
             roc(16).angles(3,mce.THUMB_CMC_AD_AB) = .5;
-            roc(16).angles(3,mce.THUMB_CMC) = .5;
+            roc(16).angles(3,mce.THUMB_CMC_FE) = .5;
             roc(16).angles(3,mce.THUMB_MCP) = 1.2;
             
             % add impedance defaults; set as -1 for now (unspecified

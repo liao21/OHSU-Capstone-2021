@@ -67,10 +67,10 @@ for iClass = 1:numClasses
             s.JointId = MPL.EnumArm.SHOULDER_FE;
             s.Direction = -1;
         case 'Shoulder Adduction'
-            s.JointId = MPL.EnumArm.SHOULDER_ADAB;
+            s.JointId = MPL.EnumArm.SHOULDER_AB_AD;
             s.Direction = +1;
         case 'Shoulder Abduction'
-            s.JointId = MPL.EnumArm.SHOULDER_ADAB;
+            s.JointId = MPL.EnumArm.SHOULDER_AB_AD;
             s.Direction = -1;
         case 'Humeral Internal Rotation'
             s.JointId = MPL.EnumArm.HUMERAL_ROT;
@@ -91,10 +91,10 @@ for iClass = 1:numClasses
             s.JointId = MPL.EnumArm.WRIST_ROT;
             s.Direction = -1;
         case {'Down','Hand Down', 'Ulnar Deviation','Wrist Adduction'}
-            s.JointId = MPL.EnumArm.WRIST_DEV;
+            s.JointId = MPL.EnumArm.WRIST_AB_AD;
             s.Direction = +1;
         case {'Up', 'Hand Up', 'Radial Deviation','Wrist Abduction'}
-            s.JointId = MPL.EnumArm.WRIST_DEV;
+            s.JointId = MPL.EnumArm.WRIST_AB_AD;
             s.Direction = -1;
         case {'Left' 'Wrist Flex' 'Wrist Flex In'}
             s.JointId = MPL.EnumArm.WRIST_FE;

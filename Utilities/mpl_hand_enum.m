@@ -18,7 +18,7 @@ classdef mpl_hand_enum
         LITTLE_PIP = 15;
         LITTLE_DIP = 16;
         THUMB_CMC_AD_AB = 17;
-        THUMB_CMC = 18;
+        THUMB_CMC_FE = 18;
         THUMB_MCP = 19;
         THUMB_DIP = 20;
     end

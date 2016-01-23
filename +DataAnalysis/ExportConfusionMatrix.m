@@ -57,9 +57,9 @@ classdef ExportConfusionMatrix
         function MotionTesterConfusion
             % DataAnalysis.ExportConfusionMatrix.MotionTesterConfusion
             %
-            % Goal is to create a confusion matrix from a Motion TEster
+            % Goal is to create a confusion matrix from a Motion Tester
             % assessment Log.  Step 1 will be to load the structTrialLog,
-            % filter on the tested classes and computer the number of
+            % filter on the tested classes and compute the number of
             % incorrect classess among the target class.  Note there may be
             % some versioning issues to work out with older files
 
@@ -83,36 +83,15 @@ classdef ExportConfusionMatrix
             
             for iFile = 1:length(s)
                 load(s(iFile).name,'-mat');
-                sLog = structTrialLog;
                 
-                numClasses = length(sLog.AllClassNames);
-                
-                testedClasses = sLog.AllClassNames(sLog.ClassIdToTest);
-                
-                confuseMat = zeros(numClasses);
-                for iClass = 1:length(sLog.Data)
-                    testClassId = sLog.ClassIdToTest(iClass);
-                    row = accumarray(sLog.Data(iClass).classDecision(:),1,[numClasses 1])';
-                    confuseMat(testClassId,:) = row;
-                end
-                
-                %PlotUtils.confusionMatrix(confuseMat,sLog.AllClassNames)
-                reducedMat = confuseMat(sLog.ClassIdToTest,sLog.ClassIdToTest);
-                
-                % create figure
-                p = get(0,'DefaultFigurePosition');
-                p = [p(1) p(2)/2 800 600];
-                f = figure('Units','pixels','ToolBar','figure','Position',p);
-                hAxes = axes('Parent',f);
-                
-                % plot
-                PlotUtils.confusionMatrix(reducedMat,testedClasses,hAxes)
+                hAxes = DataAnalysis.Assessments.MotionTesterConfusionPlot(structTrialLog);
                 
                 % update title
                 [~,fname,~] = fileparts(s(iFile).name);
                 hAxes.Title.String = { fname hAxes.Title.String };
                 hAxes.Title.Interpreter = 'None';
                 drawnow
+
                 
             end %iFiles
             

@@ -1094,7 +1094,7 @@ classdef MiniVIE < Common.MiniVieObj
         end
         function obj = Default(dataFile)
             if nargin < 1
-                dataFile = 'SimAll.trainingData';
+                dataFile = 'C:\MiniVIE_Users\RSA_Sandbox\myo_udp_debug\Sim_2_ROCs.trainingData';
             end
             
             MiniVIE.configurePath
@@ -1139,8 +1139,9 @@ classdef MiniVIE < Common.MiniVieObj
             obj.TrainingInterface.initialize(...
                 obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
             
-            obj.Presentation = Scenarios.OnlineRetrainer;
-            %obj.Presentation.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
+            obj.Presentation = MPL.MplUnity;
+            %obj.Presentation = Scenarios.OnlineRetrainer;
+            obj.Presentation.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
         end
         function obj = go
             % Start the MINIVIE

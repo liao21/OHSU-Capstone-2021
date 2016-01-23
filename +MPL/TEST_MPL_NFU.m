@@ -42,7 +42,7 @@ GUIs.guiSignalViewer(h);
 %% Test Percept streaming and parsing
 
 hPlot = LivePlot(10,100,{'INDEX_AB_AD','INDEX_MCP','MIDDLE_MCP','RING_MCP',...
-    'LITTLE_AB_AD','LITTLE_MCP','THUMB_CMC_AD_AB','THUMB_CMC','THUMB_MCP','THUMB_DIP'});
+    'LITTLE_AB_AD','LITTLE_MCP','THUMB_CMC_AD_AB','THUMB_CMC_FE','THUMB_MCP','THUMB_DIP'});
 StartStopForm([]);
 while StartStopForm
     drawnow

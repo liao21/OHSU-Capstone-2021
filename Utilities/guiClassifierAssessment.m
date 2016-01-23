@@ -164,6 +164,10 @@ if ~isempty(fullFilename)
     save(fullFilename,'structTrialLog','-mat');
 end
 
+% Plot Result
+DataAnalysis.Assessments.MotionTesterConfusionPlot(structTrialLog);
+
+
 function structTrialLog = assessClass(hSignalSource,hSignalClassifier,strTargetClass,classIdToTest,handles)
 % Blocking function that begins trial of classifier testing "classToTest"
 

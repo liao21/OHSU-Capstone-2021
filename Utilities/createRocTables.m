@@ -13,7 +13,7 @@ mce = MPL.MudCommandEncoder;
 % basePosition(:,mce.RING_MCP) = 0.1;
 % basePosition(:,mce.LITTLE_MCP) = 0.1;
 % basePosition(:,mce.THUMB_CMC_AD_AB) = 0.1;
-% basePosition(:,mce.THUMB_CMC) = 0.1;
+% basePosition(:,mce.THUMB_CMC_FE) = 0.1;
 % basePosition(:,mce.THUMB_DIP) = 0.1;
 % basePosition(:,mce.THUMB_MCP) = 0.1;
 
@@ -22,7 +22,7 @@ basePosition = [0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,0
 basePosition(:,[mce.INDEX_MCP mce.MIDDLE_MCP mce.RING_MCP mce.LITTLE_MCP]) = 0.0;
 basePosition(:,mce.INDEX_AB_AD) = -0.1;
 basePosition(:,mce.LITTLE_AB_AD) = 0.2;
-basePosition(:,mce.THUMB_CMC) = 0.4;
+basePosition(:,mce.THUMB_CMC_FE) = 0.4;
 
 
 roc(1).id = 0;

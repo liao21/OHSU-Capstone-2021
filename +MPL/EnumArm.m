@@ -16,11 +16,11 @@ classdef EnumArm
     properties (Constant = true)
         
         SHOULDER_FE = 1;    % + Flexion
-        SHOULDER_ADAB = 2;  % + Adduction (toward midline)
+        SHOULDER_AB_AD = 2;  % + Adduction (toward midline)
         HUMERAL_ROT = 3;    % + Internal (Medial) Rotation
         ELBOW = 4;          % + Flexion
         WRIST_ROT = 5;      % + Supination
-        WRIST_DEV = 6;      % + Ulnar Deviation
+        WRIST_AB_AD = 6;      % + Ulnar Deviation
         WRIST_FE = 7;       % + Flexion
 
         INDEX_AB_AD = 8;
@@ -39,8 +39,8 @@ classdef EnumArm
         LITTLE_MCP = 21;
         LITTLE_PIP = 22;
         LITTLE_DIP = 23;
-        THUMB_CMC_AD_AB = 24;
-        THUMB_CMC = 25;
+        THUMB_CMC_AB_AD = 24;
+        THUMB_CMC_FE = 25;
         THUMB_MCP = 26;
         THUMB_DIP = 27;
         

@@ -12,6 +12,7 @@ Created on Sat Jan 23 20:39:30 2016
 import socket
 import struct
 import numpy
+import threading
 from transformations import euler_from_matrix
 from transformations import quaternion_matrix
 VERBOSE = 0;
@@ -33,26 +34,35 @@ class MyoUdp(object):
                              socket.SOCK_DGRAM) # UDP
 
         self.sock.bind((UDP_IP, UDP_PORT))
-        self.sock.setblocking(False)
+        #self.sock.setblocking(False)
 
         self.emg_buffer = numpy.zeros((100,8))
-    def getData(self):
-        data =''
-        address = ''
-        try:
+        
+        # Create a thread for processing new data
+        # Create two threads as follows
+        #try:
+        t = threading.Thread(target=self.parse_data)
+        t.start()        
+        ##_thread.start_new_thread( self.parse_data, ("MyoUdpParser", 5) )
+        #except:
+        #   print("Error: unable to start thread")
+    
+        # Define a function for the thread
+    def parse_data(self):
+        
+        # Loop forever to recv data
+        while True:
+            # Blocking call until data received
             data,address = self.sock.recvfrom(1024)
-            output = struct.unpack("8b4f3f3f",data);
-            self.emg_buffer[:1,:] = output[0:8]
-            self.emg_buffer = numpy.roll(self.emg_buffer,1, axis=0)
-            self.quat = output[8:12]
-            if VERBOSE:
-                print(self.getAngles())            
-            
-            
-            self.accel = output[12:14]
-            self.gyro = output[15:17]
-        except socket.error:
-            pass
+            if len(data) == 48:
+                output = struct.unpack("8b4f3f3f",data);
+                self.emg_buffer[:1,:] = output[0:8]
+                self.emg_buffer = numpy.roll(self.emg_buffer,1, axis=0)
+                self.quat = output[8:12]
+                if VERBOSE:
+                    print(self.getAngles())            
+                self.accel = output[12:14]
+                self.gyro = output[15:17]
         
     def getAngles(self):
         # convert the stored quaternions to angles

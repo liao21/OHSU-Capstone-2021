@@ -4,12 +4,12 @@
 
 from pygame import time
 import math
-
+import time as tm
 from MyoUdp import MyoUdp
 from Plant import Plant
 from UnityUdp import UnityUdp
 
-VERBOSE = 0;
+VERBOSE = 1;
 
 # Create data objects    
 myPlant = Plant()
@@ -30,20 +30,27 @@ try:
         # it is good practice to store it in a variable called 'dt'
         dt = clock.tick() 
     
-        data = hMyo.getData()
+        #tm.sleep(0.001)
         myPlant.update(dt)
         
         
         time_elapsed_since_last_action += dt
         # dt is measured in milliseconds, therefore 20 ms = 0.02 seconds = 50Hz
         if time_elapsed_since_last_action >= 20:
-            if VERBOSE:
-                print(("%8.4f" % myPlant.position[2], "%4d" % numUpdates ))
+
+            # perform joint update
             vals = hMyo.getAngles()
             myPlant.position[3] = vals[1] + math.pi/2
-            time_elapsed_since_last_action = 0 # reset it to 0 so you can count again
+            
+            # transmit output
             hSink.sendJointAngles(myPlant.position)
+            
+            if VERBOSE:
+                print(("%4d" % numUpdates, "%8.4f" % myPlant.position[3], "%8.4f" % myPlant.position[4] ))
+
+            # reset timing counter vars
             numUpdates = 0;
+            time_elapsed_since_last_action = 0 # reset it to 0 so you can count again
             
 finally:
     print(hMyo.emg_buffer)

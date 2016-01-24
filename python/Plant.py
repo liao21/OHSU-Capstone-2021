@@ -21,7 +21,7 @@ class Plant(object):
         self.velocity = [0.0]*NUM_JOINTS
         self.limit = [45.0 * math.pi / 180.0]*NUM_JOINTS
 
-        self.velocity[2] = 30.0 * math.pi / 180.0
+        self.velocity[4] = 30.0 * math.pi / 180.0
 
     def update(self,dt):
         

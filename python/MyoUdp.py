@@ -14,12 +14,12 @@ import struct
 import numpy
 from transformations import euler_from_matrix
 from transformations import quaternion_matrix
-VERBOSE = 1;
+VERBOSE = 0;
 
 class MyoUdp(object):
     def __init__(self, UDP_IP = "127.0.0.1", UDP_PORT = 10001):
         
-        self.quat = (1.0, 0.0, 0.0, 0.0)
+        self.quat = (0.0, 0.0, 0.0, 1.0)
         self.accel = (0.0,0.0,0.0)
         self.gyro = (0.0,0.0,0.0)
         
@@ -45,7 +45,8 @@ class MyoUdp(object):
             self.emg_buffer[:1,:] = output[0:8]
             self.emg_buffer = numpy.roll(self.emg_buffer,1, axis=0)
             self.quat = output[8:12]
-            print(self.getAngles)            
+            if VERBOSE:
+                print(self.getAngles())            
             
             
             self.accel = output[12:14]

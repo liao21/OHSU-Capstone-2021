@@ -13,7 +13,7 @@ VERBOSE = 1;
 
 # Create data objects    
 myPlant = Plant()
-hSink = UnityUdp()
+hSink = UnityUdp("192.168.1.24")
 hMyo = MyoUdp()
 
 # represents the overhead associated with the main loop compared to the fixed rate output (50Hz)
@@ -36,7 +36,7 @@ try:
         time_elapsed_since_last_action += dt
         # dt is measured in milliseconds, therefore 20 ms = 0.02 seconds = 50Hz
         if time_elapsed_since_last_action >= 20:
-            print((myPlant.position[2], numUpdates ))
+            print(("%8.4f" % myPlant.position[2], "%4d" % numUpdates ))
             vals = hMyo.getAngles()
             myPlant.position[3] = vals[1] + math.pi/2
             time_elapsed_since_last_action = 0 # reset it to 0 so you can count again

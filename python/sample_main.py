@@ -43,7 +43,8 @@ try:
 
         timeEnd = time.time()
         timeElapsed = timeEnd - timeBegin
-        time.sleep(dt-timeElapsed)
+        if dt > timeElapsed:
+            time.sleep(dt-timeElapsed)
             
 finally:
     print(hMyo.emg_buffer)

@@ -43,7 +43,6 @@ def feature_extract(windowData):
     
     # MAV shouldn't be normalized
     #
-    
     normMAV=MAV
     normLEN=LEN / (nSamples / Fs)
     normZC=ZC / (nSamples / Fs)

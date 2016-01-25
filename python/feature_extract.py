@@ -55,14 +55,14 @@ def feature_extract(windowData):
     return features
 
 
-import matplotlib.pyplot as plt
-import math
-
-emg_buffer = np.zeros((100,8))
-sinArray = np.sin(2*math.pi*10*np.linspace(0,1,num=100))
-
-emg_buffer[:,:1] = np.reshape(sinArray,(100,1))
-plt.plot(sinArray)
-
-f = feature_extract(emg_buffer)
-print(f[:,:1])
+#import matplotlib.pyplot as plt
+#import math
+#
+#emg_buffer = np.zeros((100,8))
+#sinArray = np.sin(2*math.pi*10*np.linspace(0,1,num=100))
+#
+#emg_buffer[:,:1] = np.reshape(sinArray,(100,1))
+#plt.plot(sinArray)
+#
+#f = feature_extract(emg_buffer)
+#print(f[:,:1])

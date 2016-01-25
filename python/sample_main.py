@@ -8,6 +8,7 @@ from MyoUdp import MyoUdp
 from Plant import Plant
 from UnityUdp import UnityUdp
 import sys
+import feature_extract
 
 VERBOSE = 1;
 
@@ -26,6 +27,8 @@ try:
     while True: # main loop
         timeBegin = time.time()
     
+        f = feature_extract.feature_extract(hMyo.emg_buffer)
+        
         hPlant.update()
         
         # perform joint update

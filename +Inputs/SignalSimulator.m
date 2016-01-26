@@ -357,6 +357,41 @@ classdef SignalSimulator < Inputs.SignalInput
             end
         end
     end
+    methods (Static=true)
+        function UdpStream
+            
+            % Stream simulator with intent of emulating Myo Arm Band
+            
+            UdpLocalPort = 56789;
+            UdpDestinationPort = 10001;
+            UdpAddress = '127.0.0.1'; % '192.168.1.101';
+            % PnetClass(localPort,remotePort,remoteIP)
+            hSink = PnetClass(UdpLocalPort,UdpDestinationPort,UdpAddress);
+            hSink.initialize()
+
+            hSource = Inputs.SignalSimulator;
+            hSource.initialize(0:7)
+            
+            
+            StartStopForm([])
+            while StartStopForm
+                drawnow
+                
+                emg = uint8(120*(hSource.getData(1)-1.2));
+                quat = typecast(single([1 0 0 0]),'uint8');
+                acc = typecast(single([0 0 0]),'uint8');
+                gyro = typecast(single([0 0 0]),'uint8');
+                msg = cat(2,emg,quat,acc,gyro);
+                hSink.putData(msg)
+                
+                pause(1/200)
+                
+            end
+            
+            
+            
+        end
+    end
 end
 
 function A = expand(a,N)

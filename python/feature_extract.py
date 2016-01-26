@@ -11,8 +11,8 @@ import numpy as np
 
 def feature_extract(y):
     #compute features
-    zc_thresh = 0.05
-    ssc_thresh = 0.05
+    zc_thresh = 0.15
+    ssc_thresh = 0.15
 
     # Number of Samples
     n = y.shape[0]

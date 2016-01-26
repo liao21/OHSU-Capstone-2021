@@ -36,7 +36,7 @@ class MyoUdp(object):
         self.sock.bind((UDP_IP, UDP_PORT))
         #self.sock.setblocking(False)
 
-        self.emg_buffer = numpy.zeros((100,8))
+        self.emg_buffer = numpy.zeros((50,8))
         
         # Create a thread for processing new data
         # Create two threads as follows

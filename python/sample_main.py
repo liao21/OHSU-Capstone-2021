@@ -1,6 +1,12 @@
-# Initial pass at simulating MiniVIE processing using python so that this runs on an embedded device
-#
-# Created 1/23/2016 Armiger
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jan 23 10:17:58 2016
+
+Initial pass at simulating MiniVIE processing using python so that this runs on an embedded device
+
+@author: R. Armiger
+"""
+
 
 import math
 import time

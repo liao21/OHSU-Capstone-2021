@@ -3,7 +3,7 @@
 Created on Sat Jan 23 20:39:30 2016
 Read Myo Armband data from UDP
 
-@author: armigrs1
+@author: R. Armiger
 """
 import socket
 import struct

@@ -4,7 +4,7 @@ Created on Mon Jan 25 16:25:14 2016
 
 Perform feature extraction, veoctorized
 
-@author: armigrs1
+@author: R. Armiger
 """
 
 import numpy as np

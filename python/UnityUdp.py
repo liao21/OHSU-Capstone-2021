@@ -2,7 +2,7 @@
 """
 Created on Sat Jan 23 20:36:50 2016
 
-@author: armigrs1
+@author: R. Armiger
 """
 # Initial pass and simulating MiniVIE processing using python so that this runs on an embedded device
 #

@@ -8,13 +8,13 @@ from MyoUdp import MyoUdp
 from Plant import Plant
 from UnityUdp import UnityUdp
 import sys
-import feature_extract
+from feature_extract import feature_extract
 import numpy as np
 
 VERBOSE = 1
 
 dt = 0.02  # seconds per loop.  50Hz update
-
+    
 # Create data objects    
 hPlant = Plant(dt)
 hSink = UnityUdp("192.168.1.24")
@@ -27,7 +27,7 @@ with open("classes.txt") as f:
 
 
 # Iteration counter
-cycleMax = 0
+cycleMax = 1000
 cycleCnt = 0
 timeElapsed = -1
 try: 
@@ -44,18 +44,28 @@ try:
 
         timeBegin = time.time()
     
-        f = feature_extract.feature_extract(hMyo.emg_buffer*0.01)
+        f = feature_extract(hMyo.getData()*0.01)
 
         # Classify
         #   features[1,numChannels*NumFeatures] * Wg[numChannels*NumFeatures,numClasses] + Cg[1,numClasses]
         v = np.dot(f.T.reshape(1,32),W) + C
         classNum = v.argmax()
-        
+
+        # Move joints using classifier
+        jointId,jointDir = hPlant.class_map(classNames[classNum])
+
+        # Set joint velocities        
+        hPlant.velocity[:hPlant.NUM_JOINTS] = [0.0] * hPlant.NUM_JOINTS        
+        if jointId:
+            for i in jointId:     
+                hPlant.velocity[i] = jointDir
+
         hPlant.update()
-        
-        # perform joint update
+                
+        # perform joint motion update
         vals = hMyo.getAngles()
         hPlant.position[3] = vals[1] + math.pi/2
+
         
         # transmit output
         hSink.sendJointAngles(hPlant.position)
@@ -68,9 +78,11 @@ try:
         timeElapsed = timeEnd - timeBegin
         if dt > timeElapsed:
             time.sleep(dt-timeElapsed)
+        else:
+            print("Timing Overload")
             
 finally:
-    print(hMyo.emg_buffer)
+    print(hMyo.getData())
     print("Last timeElapsed was: ", timeElapsed)
     hSink.close()
     hMyo.close()

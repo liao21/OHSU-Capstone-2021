@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Jan 23 20:39:30 2016
+Read Myo Armband data from UDP
 
 @author: armigrs1
 """
-
-# Initial pass and simulating MiniVIE processing using python so that this runs on an embedded device
-#
-# Created 1/23/2016 Armiger
-
 import socket
 import struct
 import numpy
@@ -20,9 +16,13 @@ VERBOSE = 0;
 class MyoUdp(object):
     def __init__(self, UDP_IP = "127.0.0.1", UDP_PORT = 10001):
         
+        # Default kinematic values
         self.quat = (0.0, 0.0, 0.0, 1.0)
         self.accel = (0.0,0.0,0.0)
         self.gyro = (0.0,0.0,0.0)
+
+        # Default data buffer
+        self.data = numpy.zeros((50,8))
         
         self.UDP_IP = UDP_IP
         self.UDP_PORT = UDP_PORT
@@ -34,21 +34,14 @@ class MyoUdp(object):
                              socket.SOCK_DGRAM) # UDP
 
         self.sock.bind((UDP_IP, UDP_PORT))
-        #self.sock.setblocking(False)
 
-        self.emg_buffer = numpy.zeros((50,8))
         
         # Create a thread for processing new data
         # Create two threads as follows
-        #try:
-        t = threading.Thread(target=self.parse_data)
+        t = threading.Thread(target=self.parseData)
         t.start()        
-        ##_thread.start_new_thread( self.parse_data, ("MyoUdpParser", 5) )
-        #except:
-        #   print("Error: unable to start thread")
-    
-        # Define a function for the thread
-    def parse_data(self):
+
+    def parseData(self):
         
         # Loop forever to recv data
         while True:
@@ -56,14 +49,15 @@ class MyoUdp(object):
             data,address = self.sock.recvfrom(1024)
             if len(data) == 48:
                 output = struct.unpack("8b4f3f3f",data);
-                self.emg_buffer[:1,:] = output[0:8]
-                self.emg_buffer = numpy.roll(self.emg_buffer,1, axis=0)
+                self.data[:1,:] = output[0:8]
+                self.data = numpy.roll(self.data,1, axis=0)
                 self.quat = output[8:12]
-                if VERBOSE:
-                    print(self.getAngles())            
                 self.accel = output[12:14]
                 self.gyro = output[15:17]
-        
+    def getData(self):
+        # access the data buffer
+        return self.data
+       
     def getAngles(self):
         # convert the stored quaternions to angles
         return euler_from_matrix(quaternion_matrix(self.quat))

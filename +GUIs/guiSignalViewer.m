@@ -390,7 +390,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             
             % [numChannels numFeatures]
             features = feature_extract(channelData',obj.FeatureWindowSize);
-            
+                       
             % [numChannels numFeatures 200]
             obj.featureBuffer = circshift(obj.featureBuffer,[0 0 1]);
             obj.featureBuffer(:,:,1) = features;

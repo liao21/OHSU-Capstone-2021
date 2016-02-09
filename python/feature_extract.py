@@ -9,10 +9,23 @@ Perform feature extraction, veoctorized
 
 import numpy as np
 
-def feature_extract(y):
+def feature_extract(y, zc_thresh = 0.15, ssc_thresh = 0.15):
     #compute features
-    zc_thresh = 0.15
-    ssc_thresh = 0.15
+    #
+    # Input: 
+    # data buffer to compute features
+    # y = numpy.zeros((numSamples, numChannels))
+    # E.g. numpy.zeros((50, 8))
+    #
+    # Optional:
+    # Thresholds for computing zero crossing and slope sign change features
+    #
+    # Output: feature vector should be [1,nChan*nFeat]
+    # data ordering is as follows
+    # [ch1f1, ch1f2, ch1f3, ch1f4, ch2f1, ch2f2, ch2f3, ch2f4, ... chNf4]
+
+    
+    
 
     # Number of Samples
     n = y.shape[0]
@@ -20,14 +33,16 @@ def feature_extract(y):
     # Normalize features so they are independant of the window size    
     Fs=200
 
+    # Value to compute 'zero-crossing' around
     t=0.0
-    
-    # Compute derivative
-    dEmg = np.diff(y,axis=0)
-    
+        
     # Compute MAV across all samples (axis=0)
     MAV = np.mean(abs(y),0)     # MAV shouldn't be normalized
-    LEN = np.sum(abs(dEmg),axis=0) * Fs / n
+    
+    # Curve length is the sum of the absolute value of the derivative of the 
+    # signal, normalized by the sample rate
+    LEN = np.sum(abs( np.diff(y, axis=0) ), axis=0) * Fs / n
+
     # Criteria for crossing zero
     # zeroCross=(y[iSample] - t > 0 and y[iSample + 1] - t < 0) or (y[iSample] - t < 0 and y[iSample + 1] - t > 0)
     # overThreshold=abs(y[iSample] - t - y[iSample + 1] - t) > zc_thresh
@@ -56,9 +71,12 @@ def feature_extract(y):
     #VAR = np.var(y,axis=0) * Fs / n
     
     features=np.vstack((MAV,LEN,ZC,SSC))
-    return features
+    
+    return features.T.reshape(1, 32)
 
-
+# Offline test code
+#
+#
 #import matplotlib.pyplot as plt
 #import math
 #import timeit

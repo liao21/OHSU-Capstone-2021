@@ -360,7 +360,7 @@ classdef SignalSimulator < Inputs.SignalInput
     methods (Static=true)
         function UdpStream
             
-            % Stream simulator with intent of emulating Myo Arm Band
+            %% Stream simulator with intent of emulating Myo Arm Band
             
             UdpLocalPort = 56789;
             UdpDestinationPort = 10001;

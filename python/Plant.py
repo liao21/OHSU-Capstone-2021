@@ -44,6 +44,12 @@ class Plant(object):
 
     def class_map(self,class_name):
         # TODO: Need a better way to handle this mapping
+        JointId = [];
+        Direction = 0;
+        #return JointId, Direction    
+    
+    
+    
         if class_name == 'No Movement':
             JointId = [];
             Direction = 0;

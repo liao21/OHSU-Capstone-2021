@@ -26,6 +26,13 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
         JoystickAxisThreshold       % limit until joystick axis registers event
         
         EnableJoystick = true;
+        
+        % Added 7/31/15 Palmer: Mobile support
+        MobileRecvPort = 3001;
+        MobileSendPort = 3002;
+        EnableMobile = false;
+        AddStateMobile = 0;
+        % End Palmer
     end
     properties (SetAccess = protected)
         hJoystick       % handle to joystick, used to add data to interface
@@ -46,6 +53,8 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
     end
     properties (Access = private)
         AddState = 0;  % The mode state whether to add new data
+        NodeSocket = -1;
+        SendSocket = -1;
     end
     events
         % Events signify to a GUI that the training event occured
@@ -82,6 +91,16 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 obj.hJoystick = [];
             end
             
+            % Added 7/31/15 Palmer: Mobile support
+            if obj.EnableMobile
+                obj.NodeSocket = PnetClass(obj.MobileRecvPort, obj.MobileSendPort, 'localhost');
+                obj.NodeSocket.initialize();
+                obj.SendSocket = PnetClass(3003, obj.MobileSendPort, 'localhost');
+                obj.SendSocket.initialize();
+                obj.AddStateMobile = 0;
+            end
+            % End Palmer
+            
             initialize@Scenarios.ScenarioBase(obj,SignalSource,SignalClassifier);
             
             %if ~isempty(obj.hJoystick) && ~isempty(SignalClassifier)
@@ -110,7 +129,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
         function setupFigure(obj)
             
             %obj.hGui = guiOnlineRetrain(SignalSource,SignalClassifier);
-            %%
+            %
             classNames = obj.SignalClassifier.getClassNames;
             %             classNames = cell(1,25);
             numClasses = length(classNames);
@@ -328,7 +347,62 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 else
                     [joystickTrain, joystickAddData] = getCommand(obj);
                 end
-                                
+                
+                mobileTrain = false;
+                mobileAddData = obj.AddStateMobile;
+                
+                % Added 7/31/15 Palmer: Mobile support
+                if ~isequal(obj.NodeSocket,-1)
+                    % get any incoming data
+                    [d, n]= obj.NodeSocket.getAllData;
+                    if n > 0
+                        for i = 1:n
+                            
+                            data = loadjson(char(d{i}))
+                            switch data.type
+                                case 'prev'
+                                    obj.CurrentClass = obj.CurrentClass + 1;
+                                    if obj.CurrentClass > obj.SignalClassifier.NumClasses
+                                        % wrap to bottom
+                                        obj.CurrentClass = 1;
+                                    end
+                                    mobileTrain = false;
+                                    mobileAddData = false;
+                                    notify(obj,'PreviousClass'); % Broadcast notice of event
+                                case 'next'
+                                    obj.CurrentClass = obj.CurrentClass - 1;
+                                    if obj.CurrentClass < 1
+                                        % wrap to top
+                                        obj.CurrentClass = obj.SignalClassifier.NumClasses;
+                                    end
+                                    mobileTrain = false;
+                                    mobileAddData = false;
+                                    notify(obj,'NextClass'); % Broadcast notice of event
+                                case 'start'
+                                    mobileTrain = false;
+                                    mobileAddData = true;
+                                case 'stop'
+                                    mobileTrain = true;
+                                    mobileAddData = false;
+                                otherwise
+                                    fprintf('invalid command received\n');
+                            end
+                            obj.AddStateMobile = mobileAddData;
+                        end
+                    end
+                    
+                    % update the gui with our state information
+                    status = struct();
+                    status.apiver = '1.0';
+                    status.current_movement = obj.SignalClassifier.getClassNames{obj.CurrentClass};
+                    status.movements = cellstr(obj.SignalClassifier.getClassNames);
+                    sampleCounts = obj.TrainingData.getClassLabelCount;
+                    status.sample_count = num2str(sampleCounts(obj.CurrentClass));
+                    
+                    obj.SendSocket.putData(char(savejson('', status, 'NoRowBracket', '1')));
+                end
+                % End Palmer
+                
                 % Check the GUI for add command as well
                 guiAddData = obj.AddState;
                 
@@ -347,8 +421,8 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                     obj.RetrainCounter = 1;
                 end
                 
-                doAddData = joystickAddData || guiAddData;
-                doTrain = joystickTrain || guiTrain;
+                doAddData = mobileAddData || joystickAddData || guiAddData;
+                doTrain = mobileTrain || joystickTrain || guiTrain;
                 
                 % if all the data is cleared out, then we can't retrain
                 % without error
@@ -367,7 +441,6 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 % If training, add the current data as training data to
                 % that class
                 if doAddData
-                    
                     notify(obj,'DataCountChange'); % Broadcast notice of event
                     
                     % Add a new sample of data based on the CurrentClass property
@@ -484,6 +557,10 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
         end
         function close(obj)
+            if ~isequal(obj.NodeSocket,-1)
+                obj.NodeSocket.close;
+            end
+            
             close@Scenarios.ScenarioBase(obj); % Call superclass close method
             %             if ~isempty(obj.hGui)
             %                 obj.hGui.close();

@@ -222,11 +222,15 @@ class NfuUdp(DataSink):
                     print(msg)
 
                 # Check Limb Shutdown Condition
-                if self.mpl_status['bus_voltage'] < self.shutdown_voltage:
+                # Note that 0.0 is a voltage reported as a valid heartbeat when hand disconnected
+                v_battery = self.mpl_status['bus_voltage']
+                if v_battery != 0.0 and v_battery < self.shutdown_voltage:
                     # Execute limb Shutdown procedure
                     # Send a log message; set LC to soft reset; poweroff NFU
                     from utilities import shutdown
-                    logging.critical('MPL bus voltage is below critical value.  Shutting down system!!!')
+                    msg = 'MPL bus voltage is {} and below critical value {}.  Shutting down system!'
+                    print(msg)
+                    logging.critical(msg)
                     self.set_limb_soft_reset()
                     shutdown()
 

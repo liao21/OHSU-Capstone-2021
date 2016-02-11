@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # test script for MPL interface
 #
 # This test function is intended to be operated from the command line to bring up a short menu allow communication
@@ -47,8 +47,9 @@ def main():
     sink.connect()
     sink.wait_for_connection()
     # Synch joint position
-    for i in range(0,len(vie.Plant.JointPosition)):
-        vie.Plant.JointPosition[i] = sink.last_percept_position[i]
+    if sink.last_percept_position is not None:
+        for i in range(0,len(vie.Plant.JointPosition)):
+            vie.Plant.JointPosition[i] = sink.last_percept_position[i]
 
     vie.DataSink = sink
 

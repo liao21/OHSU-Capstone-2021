@@ -15,7 +15,8 @@ from utilities import user_config
 from scenarios import mpl_nfu
 from mpl.open_nfu import NfuUdp
 from pattern_rec import training, assessment
-
+from inputs import dcell
+import logging
 
 def main():
     """Parse command line arguments into argparse model.
@@ -55,6 +56,16 @@ def main():
     motion_test = assessment.MotionTester(vie, vie.TrainingInterface)
     vie.TrainingInterface.add_message_handler(motion_test.command_string)
     vie.TrainingInterface.add_message_handler(tac.command_string)
+
+    # Start DCell Streaming
+    dc = dcell.DCellSerial('/dev/ttymxc2')
+    # Connect and start streaming
+    dc.enable_data_logging = True
+    try:
+        dc.connect()
+        logging.info('DCell streaming started successfully')
+    except:
+        logging.warning('DCell streaming caused error, exiting from run_www')
 
     mpl_nfu.run(vie)
 

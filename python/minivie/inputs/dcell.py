@@ -94,15 +94,16 @@ class DCellSerial(SignalInput):
         self.ser = serial.Serial(
             port=self.port,
             baudrate=115200,
-            parity=serial.PARITY_NONE,
-            stopbits=serial.STOPBITS_ONE,
-            bytesize=serial.EIGHTBITS,
-            xonxoff=False,
-            rtscts=False,
+            #parity=serial.PARITY_NONE,
+            #stopbits=serial.STOPBITS_ONE,
+            #bytesize=serial.EIGHTBITS,
+            #xonxoff=False,
+            #rtscts=True,
+            #dsrdtr=False,
             timeout=1
         )
-        #self.ser.rs485_mode = serial.rs485.RS485Settings()
-
+        self.ser.rs485_mode = serial.rs485.RS485Settings()
+       
         # Check that port opened
         if self.ser.isOpen():  # Check if open
             print('DCell serial port opened: ' + self.ser.name + '\n')  # Check which port was really opened
@@ -127,25 +128,47 @@ class DCellSerial(SignalInput):
 
     def send_command(self, command_string):
         # Method to send command according to DCell ASCII protocol
-        self.ser.write('!001:' + command_string + '\r')
+        cmd = '!001:' + command_string + '\r'
+        print(cmd)
+        self.ser.write(cmd.encode())
         # Every command has an output
         out = self._readline()
         return out
 
     def _readline(self):
         # Method to read incoming serial data, expects each output to end with EOL carriage return
-        eol = b'\r'  # Define carriage return bytes
-        leneol = len(eol)
+        eol_byte = b'\r'  # Define carriage return bytes
+        eol_string = eol_byte.decode()
+        leneol_string = len(eol_string)
         line = ''
+        #line = bytearray()
+        #line = b''
         while True:
-            c = self.ser.read(1)  # Read one byte
-            if c:
-                line += c  # Append to line
-                if line[-leneol:] == eol:  # Break once EOL, in this case carriage return, is issued
+            c_byte = self.ser.read(1)  # Read one byte
+            if c_byte:
+                # line += str(c)
+                c_string = c_byte.decode("ascii","replace")
+                # print('byte:')
+                # print(c_byte)
+                # print('byte.decode("ascii","replace"):')
+                # print(c_string)
+                # print('byte[0]')
+                # print(c_byte[0])
+               
+               
+                line += c_string 
+                if c_byte == eol_byte:  # Break once EOL, in this case carriage return, is issued
+                    print('Breaking because of carriage return')
                     break
+                    
             else:  # Break if nothing read back
+                #time.sleep(0.05) # dcell manual says response should come within 50ms
+                # timeout occurs on ser.read
+                print('Breaking because nothing read back')
                 break
-        return line[0:-leneol]  # Return line without EOL
+                
+        #print(line[0:-leneol])  # Return line without EOL
+        return line[0:-leneol_string]  # Return line without EOL
 
     def _set_defaults(self):
         # Set station number to 001
@@ -222,6 +245,8 @@ def interactive_testing(port='/dev/ttyUSB0'):
     # Method so interactively send commands and receive output
     # Useful for debugging
 
+    print('Starting Interactive Mode\r')
+
     # Initialize object
     dcell = DCellSerial(port=port)
     # Connect
@@ -231,12 +256,12 @@ def interactive_testing(port='/dev/ttyUSB0'):
 
     while 1:
         # get keyboard input
-        input = raw_input(">> ")
-        if input == 'exit':
+        t_input = input(">> ")
+        if t_input == 'exit':
             dcell.close()
             exit()
         else:
-            out = dcell.send_command(input)
+            out = dcell.send_command(t_input)
             print(">>" + out)
 
 
@@ -246,10 +271,16 @@ def main():
 
     # Parameters:
     parser = argparse.ArgumentParser(description='DCell: Read from dcell and log.')
-    parser.add_argument('-p', '--PORT', help='Serial Port Name (e.g. /dev/ttyUSB0)',
-                        default='/dev/ttyUSB0')
-    args = parser.parse_args()
+    parser.add_argument('-p', '--PORT', help='Serial Port Name (e.g. /dev/ttymxc2)',
+                        default='/dev/ttymxc2')
 
+    # other common port values
+    # dev/ttyUSB0
+    # COM4
+    # dev/ttymxc2
+
+    args = parser.parse_args()
+    
     # Logging
     f = 'dcell-' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")+ '.log'
     logging.basicConfig(filename=f, level=logging.DEBUG, format='%(asctime)s %(message)s')
@@ -261,4 +292,5 @@ def main():
     dcell.connect()
 
 if __name__ == '__main__':
-    main()
+    interactive_testing('/dev/ttymxc2')
+    #main()

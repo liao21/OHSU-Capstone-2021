@@ -1,8 +1,9 @@
 %% Quick test of vMPL / MPL control via VulcanX
 %  Create the udp transmission via pnet
-UdpLocalPort = 56789;
-UdpDestinationPort = 9024; %9024 = Left; 9027 = Right; (see
-UdpAddress = '127.0.0.1'; % '192.168.1.101';
+UdpLocalPort = 22000;
+UdpDestinationPort = 9027; %9024 = Left; 9027 = Right; 
+UdpAddress = '127.0.0.1'; 
+
 % PnetClass(localPort,remotePort,remoteIP)
 hSink = PnetClass(UdpLocalPort,UdpDestinationPort,UdpAddress);
 hSink.initialize()

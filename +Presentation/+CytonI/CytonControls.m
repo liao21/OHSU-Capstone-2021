@@ -437,7 +437,7 @@ classdef CytonControls < hgsetget
         
     end
     methods (Static = true)
-        function [T_0_n, a, d] = getDHParams()
+        function [T_0_n, a, d, A] = getDHParams()
             % This function contains all the kinematics of the Cyton I with respect to
             % the global coordinate system
             
@@ -473,31 +473,31 @@ classdef CytonControls < hgsetget
             
             
             % get DH params:
-            T_1_2 = pinv(T_0_n(:,:,1))*T_0_n(:,:,2);
-            T_2_3 = pinv(T_0_n(:,:,2))*T_0_n(:,:,3);
-            T_3_4 = pinv(T_0_n(:,:,3))*T_0_n(:,:,4);
-            T_4_5 = pinv(T_0_n(:,:,4))*T_0_n(:,:,5);
-            T_5_6 = pinv(T_0_n(:,:,5))*T_0_n(:,:,6);
-            T_6_7 = pinv(T_0_n(:,:,6))*T_0_n(:,:,7);
-            T_7_8 = pinv(T_0_n(:,:,7))*T_0_n(:,:,8);
+            A(:,:,1) = pinv(T_0_n(:,:,1))*T_0_n(:,:,2);
+            A(:,:,2) = pinv(T_0_n(:,:,2))*T_0_n(:,:,3);
+            A(:,:,3) = pinv(T_0_n(:,:,3))*T_0_n(:,:,4);
+            A(:,:,4) = pinv(T_0_n(:,:,4))*T_0_n(:,:,5);
+            A(:,:,5) = pinv(T_0_n(:,:,5))*T_0_n(:,:,6);
+            A(:,:,6) = pinv(T_0_n(:,:,6))*T_0_n(:,:,7);
+            A(:,:,7) = pinv(T_0_n(:,:,7))*T_0_n(:,:,8);
             % Note both grippers w.r.t Frame 8
-            T_8_9 = pinv(T_0_n(:,:,8))*T_0_n(:,:,9);
-            T_8_10 = pinv(T_0_n(:,:,8))*T_0_n(:,:,10);
+            A(:,:,8) = pinv(T_0_n(:,:,8))*T_0_n(:,:,9);
+            A(:,:,9) = pinv(T_0_n(:,:,8))*T_0_n(:,:,10);
             
             [a, d] = deal(zeros(9,1));
             
-            d(1) = T_1_2(3,4);
-            d(2) = T_2_3(3,4);
-            d(3) = T_3_4(3,4);
-            d(4) = T_4_5(3,4);
-            d(5) = T_5_6(3,4);
-            d(6) = T_6_7(3,4);
-            d(7) = T_7_8(3,4);
+            d(1) = A(3,4,1);
+            d(2) = A(3,4,2);
+            d(3) = A(3,4,3);
+            d(4) = A(3,4,4);
+            d(5) = A(3,4,5);
+            d(6) = A(3,4,6);
+            d(7) = A(3,4,7);
             
-            a(6) = T_6_7(2,4);
-            a(7) = T_7_8(1,4);
-            a(8) = T_8_9(1,4);
-            a(9) = T_8_10(1,4);
+            a(6) = A(2,4,6);
+            a(7) = A(1,4,7);
+            a(8) = A(1,4,8);
+            a(9) = A(1,4,9);
         end
         function pElbow = solveElbowPositions(pWrist)
             % Given a wrist position, this is acheivable via a circular
@@ -588,14 +588,16 @@ classdef CytonControls < hgsetget
             clf
             axis equal
             rotate3d on
-            N = 10;
+            N = 2;
             for i = 1:N
                 PlotUtils.triad(T_0_n(:,:,i),50);
             end
             %%
+            colorOrder = get(gca, 'ColorOrder');
             for i = 1:N
                 hT(i) = hgtransform();
-                patch(patchData(i),'FaceColor','b','FaceAlpha',0.1,'EdgeColor','none','Parent',hT(i));
+                c = colorOrder(mod(i, size(colorOrder, 1))+1,:)
+                patch(patchData(i),'FaceColor',c,'FaceAlpha',0.5,'EdgeColor','none','Parent',hT(i));
             end
             %%
             for i = 1:N
@@ -682,6 +684,10 @@ classdef CytonControls < hgsetget
             % Computer forward Kinematics for Cyton
             % Returns 4x4 'A' matrices of each joint kinematics
             DH = @Presentation.CytonI.Robot.DH_transformation;
+            
+            if nargin < 1
+                q = zeros(1,7);
+            end
             
             % Computed statically from getDHParams()
             d = [37.9300 -4.6200 145.0000 11.0000 175.0000 7.4000 -7.6500 0 0];

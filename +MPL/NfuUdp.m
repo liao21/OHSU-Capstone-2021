@@ -797,12 +797,18 @@ classdef (Sealed) NfuUdp < handle
             
             tlm = [];
             
+            % Hand only:
             % tlm =
             %
             %                  Percept: [1x10 struct]
             %        UnactuatedPercept: [1x8 struct]
             %              FtsnPercept: [1x5 struct]
             %     ContactSensorPercept: [1x1 struct]
+            %
+            % Arm Only:            
+            % tlm = 
+            % 
+            %     LMC: [44x7 uint8]            
             
             % mixing matlab indexing 1-based and enum count
 

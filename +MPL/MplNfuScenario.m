@@ -69,9 +69,9 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
         
         includeVirtual = 0;
         hUdp
-        echoSensor = 1; % display  current sensor reading on console
+        echoSensor = 0; % display  current sensor reading on console
         
-        EnableFeedback = 1;
+        EnableFeedback = 0;
         TactorIds = [3 4]
         %TactorIds = [5 6 7];
         
@@ -192,6 +192,10 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
                 
                 % Parse external strain gauge
                 straingage = obj.hNfu.get_buffer(1);
+                if isempty(straingage)
+                    return
+                end
+                
                 try
                     sg = 50*double(straingage{end}(18,end))./512;
                 catch
@@ -199,8 +203,9 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
                     sg = 0;
                 end
                 p1 = -5.667;
-                p2 = 235.2 + 112.346;
-                T = p1*sg + p2;
+                % Depending on wiring the offset is typically 60.7 or 41.1
+                p2 = -41.5; %235.2; %+ 112.346;
+                T = p1*(sg + p2);
                 try
                     if obj.echoSensor
                         if abs(T) < 60
@@ -209,8 +214,14 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
                             dest = 2;
                         end
                         fprintf(dest,...
-                            'Sensor Data--HR: %8.3f inch-lbs; EL: %8d; Index: %8.3f; Little: %8.3f;\n',...
-                            T,obj.hNfu.LmcTorque(4),  tlm.Percept(2).Torque,tlm.Percept(6).Torque);
+                            'Sensor Data--HR: %8.3f inch-lbs; EL: %8d; ',...
+                            T,obj.hNfu.LmcTorque(4));
+                        if isfield(tlm,'Percept')
+                            fprintf(dest,...
+                            'Index: %8.3f; Little: %8.3f;',...
+                            tlm.Percept(2).Torque,tlm.Percept(6).Torque);
+                        end
+                        fprintf(dest,'\n');
                     end
                     if ~isempty(obj.hBluetooth)
                         vals = zeros(1,5);

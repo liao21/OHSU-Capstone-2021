@@ -10,6 +10,16 @@
     <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
     <add key="rocTable"         value="GraspAndWholeArmRoc.xml"/>
     
+    <!--Signal Source for MiniVIE Session-->
+    <add key="SignalSource"     value="Inputs.SignalSimulator()"/>
+    
+    <!--Signal Filters for MiniVIE Session-->
+    <add key="SignalFilters"    value="{'Inputs.HighPass(20,3,1000)' 'Inputs.MinLimitFilter(0.2)' 'Inputs.ConstraintFilter(-5,5)'}"/>
+
+    <!--Presentation Scenario for MiniVIE Session-->
+    <add key="Scenario"         value="Scenarios.MiniVDisplayScenario()"/>
+
+    
     <!--joystick Training Parameters -->
     <add key="joystickId"                   value="0"/><!--System ID for desired joystick-->
     <add key="joystickButtonNext"           value="[4 8]"/><!--List of buttons to go to next class-->

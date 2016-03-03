@@ -36,4 +36,4 @@ class UnityUdp(object):
     
     def close(self):
         self.sock.close()
-        print("Closing Socket")
+        print("Closing UnityUdp Socket IP={} Port={}".format(self.UDP_IP,self.UDP_PORT) )

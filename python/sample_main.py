@@ -48,18 +48,20 @@ trainCurrentClass = []
 file=open('tmp.dat','w')
      
 # Iteration counter
-cycleMax = 1000  # Max iterations (0 for infinite)
+cycleMax = 100  # Max iterations (0 for infinite)
 cycleCnt = 0  # Internal Counter
 timeElapsed = -1
 try:
     # setup main loop control
+    print("")
     print("Running...")
+    print("")
     sys.stdout.flush()
 
     while True: # main loop
 
         # LOOP CONTROL        
-        # Terminate after certain muber of steps
+        # Terminate after certain number of steps
         cycleCnt = cycleCnt + 1
         if (cycleMax > 0) and cycleCnt > cycleMax:
             break
@@ -98,7 +100,6 @@ try:
         # transmit output
         hSink.sendJointAngles(hPlant.position)
 
-
         # Training Process begin logging
         cName = str(hTrain.class_name)
         if cName:
@@ -126,8 +127,13 @@ try:
             print("Timing Overload")
 
 finally:
+    print("")
+    print("EMG Buffer:")
     print(hMyo.getData())
     print("Last timeElapsed was: ", timeElapsed)
+    print("")
+    print("Cleaning up...")
+    print("")
     hSink.close()
     hMyo.close()
     hTrain.close()

@@ -622,6 +622,7 @@ classdef (Sealed) NfuUdp < handle
                         busVoltageCounts = typecast(newData(33:34),'uint16');
                         busVoltage = double(busVoltageCounts) / 148.95;
                         
+                        % 4096 / 11 / Vref = 2.5
                         if obj.hideHeartbeat
                             return
                         end

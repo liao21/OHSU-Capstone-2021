@@ -53,7 +53,7 @@ classdef UserConfig < handle
                 end
                 
                 % ensure full path is resolved
-                userConfigFile = which(userConfigFile);
+                %userConfigFile = which(userConfigFile);
                 fprintf('[%s] Calling constructor with config file %s\n',mfilename,userConfigFile);
                 
                 localObj = UserConfig;
@@ -143,28 +143,28 @@ classdef UserConfig < handle
             % Add a check for file references to add the full path if
             % omitted.  THis is a special case for roc tables
             
-            switch tagName
-                case 'rocTable'
-                    
-                    % check if the rocTable has path info
-                    missingPath = isempty(fileparts(result));
-                    noStoredPath = isempty(obj.userRocFile);
-                    
-                    if missingPath && noStoredPath
-                        % store the table with path
-                        obj.userRocFile = which(result);
-                        result = obj.userRocFile;
-                        fprintf('[%s.m] Storing full path tag "%s": "%s"\n',mfilename,tagName,result);
-                    elseif missingPath && ~noStoredPath
-                        % use the stored path and file
-                        result = obj.userRocFile;
-                    else
-                        % Path exists in xml so use it
-                    end
-                    
-                    assert(exist(result,'file') > 0,'XML Roc file %s not found %s',result);
-                    
-            end
+%             switch tagName
+%                 case 'rocTable'
+%                     
+%                     % check if the rocTable has path info
+%                     missingPath = isempty(fileparts(result));
+%                     noStoredPath = isempty(obj.userRocFile);
+%                     
+%                     if missingPath && noStoredPath
+%                         % store the table with path
+%                         %obj.userRocFile = which(result);
+%                         result = obj.userRocFile;
+%                         fprintf('[%s.m] Storing full path tag "%s": "%s"\n',mfilename,tagName,result);
+%                     elseif missingPath && ~noStoredPath
+%                         % use the stored path and file
+%                         result = obj.userRocFile;
+%                     else
+%                         % Path exists in xml so use it
+%                     end
+%                     
+%                     assert(exist(result,'file') > 0,'XML Roc file %s not found %s',result);
+%                     
+%             end
             
             
             

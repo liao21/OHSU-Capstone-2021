@@ -151,6 +151,7 @@ classdef CytonControls < hgsetget
             if nargin < 2
                 % Get product of all frames
                 N = size(A,3);
+                N = 7; % Get end effector frame
             end
             
             % Transform to end effector

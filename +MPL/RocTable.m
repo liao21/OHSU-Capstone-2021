@@ -3,9 +3,21 @@ classdef RocTable < handle
     %
     % MPL.RocTable.createRocTables
     % MPL.RocTable.Test
-    %
+    % GUIs.guiRocEditor
     % To reload from MiniVIE GUI:
     % obj.Presentation.getRocConfig
+    %
+    %     In MATLAB, getting desired joint angles can be computed using the
+    %     interpolation command: 
+    %   
+    %     mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
+    % 
+    %     where:
+    %       mplAngles  is a [1x27] array of joint angles, 
+    %       roc.joints  is an array of joints in the ROC table, 
+    %       roc.waypoint is an array of waypoint values, 
+    %       roc.angles is a [nWayPoints x nRocJoints] matrix of waypoints, and 
+    %       rocValue is a scalar value for the current motion position ranging from 0 to 1;
     %
     % Log:
     %   17Aug2012 Armiger: Created

@@ -13,7 +13,7 @@ classdef MplUnity < Scenarios.OnlineRetrainer
         vMplCmdPort = 25000;         % MUD Port (L=25100 R=25000)
         vMplLocalPort = 25001;       % Percept Port (L=25101 R=25001)
         
-        IsRightSide = 1;
+        DemoMyoElbow = 0;
         
     end
     methods
@@ -23,6 +23,17 @@ classdef MplUnity < Scenarios.OnlineRetrainer
             % limb system via vMpl or the NFU
             
             fprintf('[%s] Starting vMpl\n',mfilename);
+            reply = questdlg('Select Arm','Unity','Left','Right','Left');
+            
+            if strcmp(reply,'Left')
+                obj.vMplCmdPort = 25100;
+                obj.vMplLocalPort = 25110;
+            else
+                obj.vMplCmdPort = 25000;
+                obj.vMplLocalPort = 25010;
+            end
+            
+            obj.DemoMyoElbow = str2double(UserConfig.getUserConfigVar('myoElbowEnable','0'));
             
             % PnetClass(localPort,remotePort,remoteIP)
             obj.hUdp = PnetClass(...
@@ -144,6 +155,15 @@ classdef MplUnity < Scenarios.OnlineRetrainer
             
             % perform local interpolation
             mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
+            
+            if obj.DemoMyoElbow
+                % Demo for using myo band for elbow angle
+                try
+                    EL = obj.SignalSource.Orientation(2,end) + 90;
+                    EL = EL * pi/180;
+                    mplAngles(4) = EL;
+                end
+            end
             
             % create message
             msg = typecast(single(mplAngles),'uint8');

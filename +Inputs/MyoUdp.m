@@ -65,9 +65,11 @@ classdef MyoUdp < Inputs.SignalInput
         numValidPackets = 0;
         
         Orientation         % Euler Angles, Degrees
+        Quaternion          % Unit Quaternion
         Accelerometer       % X,Y,Z Acceleration, (g)
         Gyroscope           % X,Y,Z Angular Rate, (deg/s)
         
+        SecondMyo           % property for second myo motion data
     end
     methods (Access = private)
         function obj = MyoUdp
@@ -163,11 +165,33 @@ classdef MyoUdp < Inputs.SignalInput
             end
             
             obj.update();
-            
             data = obj.Buffer.getData(numSamples,idxChannel);
-            
+            if obj.UdpPortNum8 == 15001
+                upsampleFactor = 5;
+                samples = round(numSamples/5);
+                buffData = obj.Buffer.getData(samples,idxChannel);
+                data = interp1(buffData,linspace(1,samples,samples*upsampleFactor-upsampleFactor+1));
+            end
         end
         function update(obj)
+            if obj.UdpPortNum8 == 15001
+                [cellDataBytes, numReads] = obj.UdpSocket8.getAllData(1000);
+                for i = 1:numReads
+                    bytes = cellDataBytes{i};
+                    d = double(typecast(bytes,'int8'));
+                    emgData = reshape(d,8,2);
+                    obj.Buffer.addData(obj.EMG_GAIN .* emgData',1:8);
+                end
+                
+                [cellDataBytes, numReads] = obj.UdpSocket16.getAllData(1000);
+                for i = 1:numReads
+                    bytes = cellDataBytes{i};
+                    d = double(typecast(bytes,'int8'));
+                    emgData = reshape(d,8,2);
+                    obj.Buffer.addData(obj.EMG_GAIN .* emgData',9:16);
+                end
+                return
+            end
             
             % Update function reads any buffered udp packets and stores
             % them for later use.
@@ -178,7 +202,7 @@ classdef MyoUdp < Inputs.SignalInput
             [cellDataBytes, numReads] = obj.UdpSocket8.getAllData(maxRead);
             if numReads > 0
                 % convert data bytes
-                [emgData,angle,accel,gyro,nValidPackets] = obj.convertPackets(cellDataBytes);
+                [emgData,angle,accel,gyro,quat,nValidPackets] = obj.convertPackets(cellDataBytes);
                 if nValidPackets == 0
                     disp('Invalid Packets for channels 1-8');
                     return
@@ -196,6 +220,7 @@ classdef MyoUdp < Inputs.SignalInput
                 obj.Orientation = angle;
                 obj.Accelerometer = accel;
                 obj.Gyroscope = gyro;
+                obj.Quaternion = quat;
                 
                 obj.Buffer.addData(obj.EMG_GAIN .* emgData,1:8);
             end
@@ -205,11 +230,17 @@ classdef MyoUdp < Inputs.SignalInput
             [cellDataBytes, numReads] = obj.UdpSocket16.getAllData(maxRead);
             if numReads > 0
                 % convert data bytes
-                [emgData,angle,accel,gyro,nValidPackets] = obj.convertPackets(cellDataBytes);
+                [emgData,angle,accel,gyro,quat,nValidPackets] = obj.convertPackets(cellDataBytes);
                 if nValidPackets == 0
                     disp('Invalid Packets for channels 9-16');
                     return
                 end
+
+                % gather second myo motion data
+                obj.SecondMyo.Orientation = angle;
+                obj.SecondMyo.Accelerometer = accel;
+                obj.SecondMyo.Gyroscope = gyro;
+                obj.SecondMyo.Quaternion = quat;
                 
                 obj.Buffer.addData(obj.EMG_GAIN .* emgData,9:16);
             end
@@ -254,11 +285,11 @@ classdef MyoUdp < Inputs.SignalInput
                 pause(eps)
             end
         end
-        function [emgData, xyz, accel, gyro,nValidPackets] = convertPackets(cellDataBytes)
+        function [emgData, xyz, accel, gyro, quat, nValidPackets] = convertPackets(cellDataBytes)
             % Read buffered udp packets and return results
             
             % default outputs
-            [emgData, xyz, accel, gyro] = deal([]);
+            [emgData, xyz, accel, gyro, quat] = deal([]);
             
             % compute number of valid packets
             packetSize = 48;

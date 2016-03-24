@@ -2,6 +2,11 @@
 """
 Created on Tue Jan 26 18:03:38 2016
 
+This class is designed to receive training commands via udp. Training commands
+consist of a message length, a class id, and a class name. This can be used to 
+set the cues for which training action is active so that currently recorded data
+can be labeled correctly
+
 @author: R. Armiger
 """
 
@@ -17,7 +22,7 @@ class TrainingUdp(object):
         print("TrainingUdp target IP:", self.UDP_IP)
         print("TrainingUdp target port:", self.UDP_PORT)
 
-        # Default kinematic values
+        # Default training values
         self.class_id = -1
         self.class_name = ""
 
@@ -25,6 +30,8 @@ class TrainingUdp(object):
                                   socket.SOCK_DGRAM)   # UDP
         self.sock.bind((UDP_IP, UDP_PORT))
 
+        self.lock = threading.Lock()
+        
         # Create a thread for processing new data
         # Create two threads as follows
         self.thread = threading.Thread(target=self.recv)
@@ -36,17 +43,26 @@ class TrainingUdp(object):
         # Loop forever to recv data
         while True:
             # Blocking call until data received
-            data, address = self.sock.recvfrom(1024)
+            try:
+                # recv call will error if socket closed on exit
+                data, address = self.sock.recvfrom(1024)
+            except socket.error as e:
+                print("Socket read error. Socket Closed?")
+                print(e)
+                return
             
             msg_id = data[0]
             if msg_id == 10:
-                msg_len = data[1]
-                self.class_id = data[2]
-                self.class_name = data[3:msg_len].decode("utf-8") 
+                # Make thread safe
+                with self.lock:
+                    msg_len = data[1]
+                    self.class_id = data[2]
+                    self.class_name = data[3:msg_len].decode("utf-8") 
             else:
                 print("Unknown Msg ID")
                 
     def close(self):
         """ Cleanup socket """
+        print("Closing TrainingUdp Socket IP={} Port={}".format(self.UDP_IP,self.UDP_PORT) )
         self.sock.close()
-        print("Closing Socket")
+        self.thread.join()

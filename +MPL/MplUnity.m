@@ -4,6 +4,42 @@ classdef MplUnity < Scenarios.OnlineRetrainer
     %
     % This scenario is used with the vMPL system
     %
+    %
+    % Communications Info:
+    %     Data should be sent in little endian format.
+    % 
+    %     Message               Transmission Type	Source	Target	Port
+    %     Left vMPL Command             Broadcast	VULCANX	vMPLEnv	25100
+    %     Right vMPL Command            Broadcast	VULCANX	vMPLEnv	25000
+    %     Left vMPL Percepts            Broadcast	vMPLEnv	VULCANX	25101
+    %     Right vMPL Percepts           Broadcast	vMPLEnv	VULCANX	25001
+    %     Left Virtual Hand Command     Broadcast	VULCANX	vMPLEnv	25300
+    %     Right Virtual Hand Command	Broadcast	VULCANX	vMPLEnv	25200
+    %     Left Virtual Hand Percepts	Broadcast	vMPLEnv	VULCANX	25301
+    %     Right Virtual Hand Percepts	Broadcast	vMPLEnv	VULCANX	25201
+    % 
+    %     enum AllJointsType
+    %     {
+    %     SHOULDER_FE,	SHOULDER_AB_AD,
+    %     HUMERAL_ROT,
+    %     ELBOW, 
+    %     WRIST_ROT,		WRIST_AB_AD,	WRIST_FE,
+    %     INDEX_AB_AD, 	INDEX_MCP,		INDEX_PIP,		INDEX_DIP,
+    %     MIDDLE_AB_AD,	MIDDLE_MCP,	MIDDLE_PIP,	MIDDLE_DIP,
+    %     RING_AB_AD,	RING_MCP,		RING_PIP,		RING_DIP,
+    %     LITTLE_AB_AD,	LITTLE_MCP,	LITTLE_PIP,	LITTLE_DIP,
+    %     THUMB_CMC_AD_AB,	THUMB_CMC_FE,	THUMB_MCP,		THUMB_IP
+    %     };
+    % 
+    %     enum FingerType
+    %     {
+    %     INDEX_AB_AD, 	INDEX_MCP,		INDEX_PIP,		INDEX_DIP,
+    %     MIDDLE_AB_AD,	MIDDLE_MCP,	MIDDLE_PIP,	MIDDLE_DIP,
+    %     RING_AB_AD,	RING_MCP,		RING_PIP,		RING_DIP,
+    %     LITTLE_AB_AD,	LITTLE_MCP,	LITTLE_PIP,	LITTLE_DIP,
+    %     THUMB_CMC_AD_AB,	THUMB_CMC_FE,	THUMB_MCP,		THUMB_IP
+    %     };
+    %
     % 29-Apr-2015 Armiger: Created
     properties
         % Handles
@@ -13,7 +49,7 @@ classdef MplUnity < Scenarios.OnlineRetrainer
         vMplCmdPort = 25000;         % MUD Port (L=25100 R=25000)
         vMplLocalPort = 25001;       % Percept Port (L=25101 R=25001)
         
-        IsRightSide = 1;
+        DemoMyoElbow = 0;
         
     end
     methods
@@ -23,6 +59,17 @@ classdef MplUnity < Scenarios.OnlineRetrainer
             % limb system via vMpl or the NFU
             
             fprintf('[%s] Starting vMpl\n',mfilename);
+            reply = questdlg('Select Arm','Unity','Left','Right','Left');
+            
+            if strcmp(reply,'Left')
+                obj.vMplCmdPort = 25100;
+                obj.vMplLocalPort = 25110;
+            else
+                obj.vMplCmdPort = 25000;
+                obj.vMplLocalPort = 25010;
+            end
+            
+            obj.DemoMyoElbow = str2double(UserConfig.getUserConfigVar('myoElbowEnable','0'));
             
             % PnetClass(localPort,remotePort,remoteIP)
             obj.hUdp = PnetClass(...
@@ -144,6 +191,15 @@ classdef MplUnity < Scenarios.OnlineRetrainer
             
             % perform local interpolation
             mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
+            
+            if obj.DemoMyoElbow
+                % Demo for using myo band for elbow angle
+                try
+                    EL = obj.SignalSource.Orientation(2,end) + 90;
+                    EL = EL * pi/180;
+                    mplAngles(4) = EL;
+                end
+            end
             
             % create message
             msg = typecast(single(mplAngles),'uint8');

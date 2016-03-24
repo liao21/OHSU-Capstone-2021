@@ -58,7 +58,7 @@ classdef MiniVIE < Common.MiniVieObj
             setupFigure(obj);
             
             % Set valid input options
-            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','Signal Simulator','EMG Simulator','DaqHwDevice','CpchSerial','NfuInput','UdpDevice','IntanDevBoard','OpenBCI','ThalmicLabs MyoUdp'});
+            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','Signal Simulator','EMG Simulator','DaqHwSession','CpchSerial','NfuInput','UdpDevice','IntanDevBoard','OpenBCI','ThalmicLabs MyoUdp'});
             set(obj.hg.popups(MiniVIE.INPUT),'Value',1);
             set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier','DiscriminantAnalysis','SupportVectorMachine','SvmStatTlbx'});
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
@@ -379,9 +379,9 @@ classdef MiniVIE < Common.MiniVieObj
                         h = Inputs.EmgSimulator(fname);
                         
                         
-                    case 'DaqHwDevice'
-                        %h = Inputs.DaqHwDevice('nidaq','Dev2');
-                        %h = Inputs.DaqHwDevice('mcc','0');
+                    case 'DaqHwSession'
+                        %h = Inputs.DaqHwSession('nidaq','Dev2');
+                        %h = Inputs.DaqHwSession('mcc','0');
                         h = loadDaqHwDevice();
                         % Ref Hargove 2014 comparison of real-time controlability
                         Fs = h.SampleFrequency;                     % 1000 Hz
@@ -413,7 +413,13 @@ classdef MiniVIE < Common.MiniVieObj
                     case 'OpenBCI'
                         h = Inputs.OpenBciChipKit('COM3');
                     case 'ThalmicLabs MyoUdp'
+                        
                         h = Inputs.MyoUdp.getInstance();
+                        h.UdpPortNum8 = str2double(UserConfig.getUserConfigVar('myoUdpPort1','10001'));
+                        h.UdpPortNum16 = str2double(UserConfig.getUserConfigVar('myoUdpPort2','10002'));
+                        %Fs = h.SampleFrequency;
+                        %h.addfilter(Inputs.Notch(60,3,1,Fs));
+                        
                     otherwise
                         % None
                         h = [];
@@ -1198,24 +1204,27 @@ function h = loadDaqHwDevice()
 tempFileName = 'defaultDaqHwDevice';
 daqParams = UiTools.load_temp_file(tempFileName);
 if isempty(daqParams)
-    % Use these defaults
-    prompt={
-        'Enter DAQ Board Name (e.g. mcc, nidaq):',...
-        'Enter DAQ Board Id (e.g. 0, Dev2):',...
-        'Enter DAQ Board Channel Ids (e.g. 0:15):',...
-        };
-    name='DAQ Parameters';
-    numlines=1;
-    defaultanswer={'mcc','0','0:15'};
-    answer=inputdlg(prompt,name,numlines,defaultanswer);
-    assert(length(answer) == 3,'Expected 3 outputs');
-    
-    daqParams.Name = answer{1};
-    daqParams.Id = answer{2};
-    daqParams.channelIds = eval(answer{3});
+    defaultanswer = {'mcc','0','0:15'};
+else
+    defaultanswer = {daqParams.Name,daqParams.Id,num2str(daqParams.channelIds)};
 end
 
-h = Inputs.DaqHwDevice(daqParams.Name,daqParams.Id,daqParams.channelIds);
+% Use these defaults
+prompt={
+    'Enter DAQ Board Name (e.g. mcc, ni):',...
+    'Enter DAQ Board Id (e.g. 0, Dev1):',...
+    'Enter DAQ Board Channel Ids (e.g. 0:7):',...
+    };
+name='DAQ Parameters';
+numlines=1;
+answer=inputdlg(prompt,name,numlines,defaultanswer);
+assert(length(answer) == 3,'Expected 3 outputs');
+
+daqParams.Name = answer{1};
+daqParams.Id = answer{2};
+daqParams.channelIds = str2num(answer{3});
+
+h = Inputs.DaqHwSession(daqParams.Name,daqParams.Id,daqParams.channelIds);
 
 try
     h.initialize();

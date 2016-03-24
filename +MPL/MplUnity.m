@@ -50,7 +50,10 @@ classdef MplUnity < Scenarios.OnlineRetrainer
         vMplLocalPort = 25001;       % Percept Port (L=25101 R=25001)
         
         DemoMyoElbow = 0;
+        DemoMyoShoulder = 0;
+        DemoMyoShoulderLeft = 0;
         
+        Fref = eye(4);
     end
     methods
         function initialize(obj,SignalSource,SignalClassifier,TrainingData)
@@ -70,6 +73,8 @@ classdef MplUnity < Scenarios.OnlineRetrainer
             end
             
             obj.DemoMyoElbow = str2double(UserConfig.getUserConfigVar('myoElbowEnable','0'));
+            obj.DemoMyoShoulder = str2double(UserConfig.getUserConfigVar('myoElbowShoulder','0'));
+            obj.DemoMyoShoulderLeft = str2double(UserConfig.getUserConfigVar('myoElbowShoulderLeft','0'));
             
             % PnetClass(localPort,remotePort,remoteIP)
             obj.hUdp = PnetClass(...
@@ -199,6 +204,31 @@ classdef MplUnity < Scenarios.OnlineRetrainer
                     EL = EL * pi/180;
                     mplAngles(4) = EL;
                 end
+            elseif obj.DemoMyoShoulder
+                                
+                %hMyo.getData();
+                q = obj.SignalSource.Quaternion(:,end);
+                R = LinAlg.quaternionToRMatrix(q);
+                [U, ~, V] = svd(R);
+                R = U*V'; % Square up the rotaiton matrix
+                
+                F = [R [0; 0; 0]; 0 0 0 1];
+
+                if isequal(obj.Fref, eye(4))
+                    obj.Fref = F;
+                end
+                
+                newXYZ = LinAlg.decompose_R(pinv(obj.Fref)*F);
+                
+                if obj.DemoMyoShoulderLeft
+                    mplAngles(1) = -newXYZ(3) * pi / 180;
+                    mplAngles(2) = -newXYZ(2) * pi / 180;
+                    mplAngles(3) = -newXYZ(1) * pi / 180;
+                else
+                    mplAngles(1) = newXYZ(3) * pi / 180;
+                    mplAngles(2) = -newXYZ(2) * pi / 180;
+                    mplAngles(3) = newXYZ(1) * pi / 180;
+                end
             end
             
             % create message
@@ -209,8 +239,7 @@ classdef MplUnity < Scenarios.OnlineRetrainer
             
         end
         function update_sensory(obj)
-            % Not implemented
-            
+            % Not implemented            
         end
         
     end

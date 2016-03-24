@@ -7,6 +7,133 @@
 %
 %
 
+% Above Elbow Case:  MYO mounted to left humerus, LED down, logo up, logo
+% in lateral direction.
+isLeft = 0;
+
+% Create Myo input
+hMyo = Inputs.MyoUdp.getInstance();
+hMyo.initialize()
+
+% Create Unity Sink
+
+% Left vMPL Command             Broadcast	VULCANX	vMPLEnv	25100
+% Right vMPL Command            Broadcast	VULCANX	vMPLEnv	25000
+if isLeft
+    hSink = PnetClass(43897,25100,'127.0.0.1');
+else
+    hSink = PnetClass(43897,25000,'127.0.0.1');
+end
+hSink.initialize()
+mplAngles = zeros(1,27,'single');
+hSink.putData(typecast(mplAngles*pi/180,'uint8'))
+
+pause(1)
+hMyo.getData();
+pause(1)
+
+%%
+f = figure(1);
+clf
+daspect([1 1 1])
+PlotUtils.triad(eye(4),0.2)
+hRef = PlotUtils.triad(eye(4),0.4);
+hT = PlotUtils.triad(eye(4),2);
+view(-170,15)
+StartStopForm([])
+Fref = eye(4);
+
+while StartStopForm()
+    drawnow
+    hMyo.getData();
+    q = hMyo.Quaternion(:,end);
+    R = LinAlg.quaternionToRMatrix(q);
+    [U, S, V]=svd(R);
+    R = U*V'; % Square up the rotaiton matrix
+
+    F = [R [0; 0; 0]; 0 0 0 1];
+    set(hT,'Matrix', F);
+    %F_offset = makehgtform('yrotate',pi/2,'xrotate',yawOffset);
+    if isequal(Fref, eye(4))
+        Fref = F;
+        set(hRef,'Matrix', Fref)
+    end
+    newXYZ = LinAlg.decompose_R(pinv(Fref)*F);
+    
+    if isLeft
+        mplAngles(1) = -newXYZ(3);
+        mplAngles(2) = -newXYZ(2);
+        mplAngles(3) = -newXYZ(1);
+    else
+        mplAngles(1) = newXYZ(3);
+        mplAngles(2) = -newXYZ(2);
+        mplAngles(3) = newXYZ(1);
+    end        
+    mplAngles(4) = 90;
+    hSink.putData(typecast(mplAngles*pi/180,'uint8'))
+
+    
+end
+
+return
+%%
+f = figure(1);
+clf
+daspect([1 1 1])
+PlotUtils.triad()
+hT = PlotUtils.triad();
+view(-170,15)
+StartStopForm([])
+yawOffset = 0;
+while StartStopForm()
+    drawnow
+    a.getData();
+    q = a.Quaternion(:,end);
+    R = [LinAlg.quaternionToRMatrix(q) [0; 0; 0]; 0 0 0 1];
+    set(hT,'Matrix', R);
+    F_offset = makehgtform('yrotate',pi/2,'xrotate',yawOffset);
+    newXYZ = LinAlg.decompose_R(F_offset*R)
+    if yawOffset == 0
+        yawOffset = -newXYZ(1);
+    end
+    %set(hT,'Matrix', F_offset*R);
+    
+end
+%%
+f = figure(1);
+clf
+daspect([1 1 1])
+PlotUtils.triad(eye(4),0.2)
+hT = PlotUtils.triad(eye(4),2);
+view(-170,15)
+StartStopForm([])
+Fref = eye(4);
+while StartStopForm()
+    drawnow
+    a.getData();
+    q = a.Quaternion(:,end);
+    R = LinAlg.quaternionToRMatrix(q);
+    
+    F = [R [0; 0; 0]; 0 0 0 1];
+    set(hT,'Matrix', F);
+    %F_offset = makehgtform('yrotate',pi/2,'xrotate',yawOffset);
+    if isequal(Fref, eye(4))
+        Fref = F;
+    end
+    newXYZ = LinAlg.decompose_R(pinv(Fref)*F)
+    %set(hT,'Matrix', F_offset*R);
+    
+end
+
+
+return
+%%
+
+
+
+
+
+
 hMyo = Inputs.MyoUdp.getInstance();
 hMyo.initialize()
 

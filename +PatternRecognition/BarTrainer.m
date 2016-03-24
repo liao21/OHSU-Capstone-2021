@@ -156,7 +156,9 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                 set(hLabel,'FontWeight','Bold');
                 
                 windowData = obj.SignalSource.getFilteredData();
-                features = feature_extract(windowData' ,obj.SignalClassifier.NumSamplesPerWindow);
+                zc = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
+                ssc = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',0.15);
+                features = feature_extract(windowData' ,obj.SignalClassifier.NumSamplesPerWindow,zc,ssc);
                 
                 f = features(obj.SignalClassifier.getActiveChannels,1);
                 obj.hStripChart.putdata(f);

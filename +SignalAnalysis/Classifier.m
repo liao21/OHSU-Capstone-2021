@@ -330,7 +330,9 @@ classdef Classifier < Common.MiniVieObj
         end
         function features2D = extractfeatures(obj,filteredDataWindowAllChannels)
             % features2D = feature_extract(filteredDataWindowAllChannels(:,obj.getActiveChannels)',obj.NumSamplesPerWindow);
-            features2D = feature_extract(filteredDataWindowAllChannels',obj.NumSamplesPerWindow);
+            zc = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
+            ssc = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',0.15);
+            features2D = feature_extract(filteredDataWindowAllChannels',obj.NumSamplesPerWindow,zc,ssc);
         end
         function plotConfusion(obj,hAxes)
             

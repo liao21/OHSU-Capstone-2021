@@ -19,6 +19,9 @@
     <!--Presentation Scenario for MiniVIE Session-->
     <add key="Scenario"         value="Scenarios.MiniVDisplayScenario()"/>
 
+    <!--Pattern Recognition Parameters-->
+    <add key="FeatureExtract.zcThreshold" value="0.15"/>
+    <add key="FeatureExtract.sscThreshold" value="0.15"/>    
     
     <!--joystick Training Parameters -->
     <add key="joystickId"                   value="0"/><!--System ID for desired joystick-->

@@ -93,10 +93,10 @@ classdef SignalInput < Common.MiniVieObj
                 end
                 
                 windowSize = 150;
-                %                 zc_thresh = 0.1;
-                %                 ssc_thresh = 0.1;
+                zc = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
+                ssc = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',0.15);
                 
-                features = feature_extract(filteredData',windowSize);
+                features = feature_extract(filteredData',windowSize,zc,ssc);
                 
                 featureBuffer = circshift(featureBuffer,[0 0 1]);
                 featureBuffer(:,:,1) = features;

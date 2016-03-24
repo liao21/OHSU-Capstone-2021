@@ -389,8 +389,11 @@ classdef guiSignalViewer < Common.MiniVieObj
             end
             
             % [numChannels numFeatures]
-            features = feature_extract(channelData',obj.FeatureWindowSize);
-                       
+            %feature_extract(windowData,windowSize,zc_thresh,ssc_thresh)
+            zc_thresh = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
+            ssc_thresh = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',0.15);
+            features = feature_extract(channelData',obj.FeatureWindowSize,zc_thresh,ssc_thresh);
+            
             % [numChannels numFeatures 200]
             obj.featureBuffer = circshift(obj.featureBuffer,[0 0 1]);
             obj.featureBuffer(:,:,1) = features;

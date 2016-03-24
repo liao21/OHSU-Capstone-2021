@@ -532,8 +532,8 @@ classdef TrainingData < handle
             assert(~isempty(obj.SignalDataRaw),'No signal data exists');
             
             if nargin < 2
-                zc_thresh = 0;
-                ssc_thresh = 0;
+                zc_thresh = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
+                ssc_thresh = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',0.15);
             end
             
             

@@ -471,14 +471,16 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             %channels = d.activeChannels;
             
             % regenerate features (overwrite those loaded from the data file)
-            thresh = 0.3;
+            zc = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
+            ssc = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',0.15);
+
             [numChannelsAll, numSamplesPerWindow, numSamples] = size(d.emgData);
             numFeatures = 4;
             features3D = zeros(numChannelsAll,numFeatures,numSamples);
             for i = 1:size(filteredData,3)
                 features3D(:,:,i) = feature_extract(...
                     filteredData(:,:,i),size(filteredData,2),...
-                    thresh,thresh);
+                    zc,ssc);
             end
             return
             %%

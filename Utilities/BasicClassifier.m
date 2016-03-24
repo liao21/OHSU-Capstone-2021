@@ -15,14 +15,18 @@ close all
 for i = 1:50
 windowData = 0.05*(rand(1,windowSize)-0.5);
 %plot(windowData)
-features = feature_extract(windowData,windowSize,0.01,0.01);
+zc = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
+ssc = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',0.15);
+features = feature_extract(windowData,windowSize,zc,ssc);
 t.addTrainingData(1, features(:,1), windowData)
 end
 
 for i = 1:50
 windowData = 0.9*(rand(1,windowSize)-0.5);
 %plot(windowData)
-features = feature_extract(windowData,windowSize,0.01,0.01);
+zc = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
+ssc = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',0.15);
+features = feature_extract(windowData,windowSize,zc,ssc);
 t.addTrainingData(2, features(:,1), windowData)
 end
 

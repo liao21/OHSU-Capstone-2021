@@ -105,6 +105,8 @@ end
 obj.SignalClassifier.setClassNames(classNames);
 
 obj.SignalClassifier.train();
+obj.SignalClassifier.computeError();
+obj.SignalClassifier.computeGains();
 
 %% Setup Presentation
 obj.Presentation = eval(UserConfig.getUserConfigVar('Scenario','Scenarios.OnlineRetrainer'));

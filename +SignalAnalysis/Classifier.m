@@ -23,6 +23,8 @@ classdef Classifier < Common.MiniVieObj
         
         IsTrained = false;
         
+        ZcThresh = 0.15;
+        SscThresh = 0.15
     end
     properties (Dependent = true, SetAccess = private)
         NumClasses;
@@ -61,7 +63,12 @@ classdef Classifier < Common.MiniVieObj
             % data init occurs before params, since these depend on
             % TrainingData params
             obj.TrainingData = hTrainingData;
-            
+
+
+            % set feature extract thresholds
+            obj.ZcThresh = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',obj.ZcThresh);
+            obj.SscThresh = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',obj.SscThresh);
+
         end
         function assertInit(obj)
             % Use to verify any methods that depend on training data
@@ -330,7 +337,7 @@ classdef Classifier < Common.MiniVieObj
         end
         function features2D = extractfeatures(obj,filteredDataWindowAllChannels)
             % features2D = feature_extract(filteredDataWindowAllChannels(:,obj.getActiveChannels)',obj.NumSamplesPerWindow);
-            features2D = feature_extract(filteredDataWindowAllChannels',obj.NumSamplesPerWindow);
+            features2D = feature_extract(filteredDataWindowAllChannels',obj.NumSamplesPerWindow,obj.ZcThresh,obj.SscThresh);
         end
         function plotConfusion(obj,hAxes)
             

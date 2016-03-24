@@ -12,7 +12,7 @@ classdef UserConfig < handle
     properties (SetAccess = 'private')
         userConfigFile = 'user_config.xml';
         userRocFile = '';
-        domNode  % Stores the Document Object Model node fro parsing
+        domNode  % Stores the Document Object Model node for parsing
     end
     methods (Access = private)
         function obj = UserConfig
@@ -165,11 +165,6 @@ classdef UserConfig < handle
 %                     assert(exist(result,'file') > 0,'XML Roc file %s not found %s',result);
 %                     
 %             end
-            
-            
-            
-            
-            
         end
     end
 end

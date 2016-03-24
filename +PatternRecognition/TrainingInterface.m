@@ -67,7 +67,9 @@ classdef TrainingInterface < Common.MiniVieObj
             windowData = obj.SignalSource.applyAllFilters(rawEmg);
             windowData = windowData(end-numSamples+1:end,:);
             
-            features = feature_extract(windowData',obj.SignalClassifier.NumSamplesPerWindow);
+            zc = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
+            ssc = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',0.15);            
+            features = feature_extract(windowData',obj.SignalClassifier.NumSamplesPerWindow,zc,ssc);
             
             obj.TrainingData.addTrainingData(obj.CurrentClass, features, rawEmg(1:obj.SignalClassifier.NumSamplesPerWindow,:)')
             

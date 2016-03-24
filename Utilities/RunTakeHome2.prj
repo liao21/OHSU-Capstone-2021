@@ -1,0 +1,250 @@
+<deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
+  <configuration build-checksum="3464306249" file="C:\git\minivie\RunTakeHome2.prj" location="C:\git\minivie" name="RunTakeHome2" preferred-package-location="C:\git\minivie\RunTakeHome2\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+    <param.appname>RunTakeHome2</param.appname>
+    <param.icon>${PROJECT_ROOT}\RunTakeHome2_resources\icon.ico</param.icon>
+    <param.icons>
+      <file>${PROJECT_ROOT}\RunTakeHome2_resources\icon_48.png</file>
+      <file>${PROJECT_ROOT}\RunTakeHome2_resources\icon_32.png</file>
+      <file>${PROJECT_ROOT}\RunTakeHome2_resources\icon_24.png</file>
+      <file>${PROJECT_ROOT}\RunTakeHome2_resources\icon_16.png</file>
+    </param.icons>
+    <param.version>1.0</param.version>
+    <param.authnamewatermark>Armiger</param.authnamewatermark>
+    <param.email>robert.armiger@jhuapl.edu</param.email>
+    <param.company>JHU/APL</param.company>
+    <param.summary />
+    <param.description />
+    <param.screenshot>${PROJECT_ROOT}\Deploy\MiniVIE\for_redistribution_files_only\splash.png</param.screenshot>
+    <param.guid />
+    <param.installpath.string>\JHU\APL\RunTakeHome2\</param.installpath.string>
+    <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
+    <param.logo />
+    <param.install.notes />
+    <param.target.install.notes />
+    <param.intermediate>${PROJECT_ROOT}\RunTakeHome2\for_testing</param.intermediate>
+    <param.files.only>${PROJECT_ROOT}\RunTakeHome2\for_redistribution_files_only</param.files.only>
+    <param.output>${PROJECT_ROOT}\RunTakeHome2\for_redistribution</param.output>
+    <param.enable.clean.build>false</param.enable.clean.build>
+    <param.user.defined.mcr.options />
+    <param.embed.ctf>true</param.embed.ctf>
+    <param.target.type>subtarget.standalone</param.target.type>
+    <param.support.packages />
+    <param.required.mcr.products>
+      <item>35000</item>
+      <item>35010</item>
+      <item>35001</item>
+    </param.required.mcr.products>
+    <param.web.mcr>true</param.web.mcr>
+    <param.package.mcr>false</param.package.mcr>
+    <param.no.mcr>false</param.no.mcr>
+    <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
+    <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
+    <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
+    <param.windows.command.prompt>true</param.windows.command.prompt>
+    <param.create.log>false</param.create.log>
+    <param.log.file />
+    <unset>
+      <param.version />
+      <param.authnamewatermark />
+      <param.email />
+      <param.company />
+      <param.summary />
+      <param.description />
+      <param.guid />
+      <param.installpath.combo />
+      <param.logo />
+      <param.target.install.notes />
+      <param.intermediate />
+      <param.files.only />
+      <param.output />
+      <param.enable.clean.build />
+      <param.user.defined.mcr.options />
+      <param.embed.ctf />
+      <param.target.type />
+      <param.support.packages />
+      <param.web.mcr />
+      <param.package.mcr />
+      <param.no.mcr />
+      <param.web.mcr.name />
+      <param.package.mcr.name />
+      <param.no.mcr.name />
+      <param.windows.command.prompt />
+      <param.create.log />
+      <param.log.file />
+    </unset>
+    <fileset.main>
+      <file>${PROJECT_ROOT}\RunTakeHome2.m</file>
+    </fileset.main>
+    <fileset.resources />
+    <fileset.package />
+    <fileset.depfun>
+      <file>${PROJECT_ROOT}\+Common\DataBuffer.m</file>
+      <file>${PROJECT_ROOT}\+Common\MiniVieObj.m</file>
+      <file>${PROJECT_ROOT}\+Common\MiniViePresentation.m</file>
+      <file>${PROJECT_ROOT}\+Controls\ArmStateModel.m</file>
+      <file>${PROJECT_ROOT}\+Controls\GraspAngles.m</file>
+      <file>${PROJECT_ROOT}\+Controls\graspInterpolation.m</file>
+      <file>${PROJECT_ROOT}\+Controls\GraspTypes.m</file>
+      <file>${PROJECT_ROOT}\+DataAnalysis\Assessments.m</file>
+      <file>${PROJECT_ROOT}\+Db\MiniVieDb.m</file>
+      <file>${PROJECT_ROOT}\+Db\MplDb.m</file>
+      <file>${PROJECT_ROOT}\+Db\Record.m</file>
+      <file>${PROJECT_ROOT}\+GUIs\guiChannelSelect.m</file>
+      <file>${PROJECT_ROOT}\+GUIs\guiClassifierChannels.m</file>
+      <file>${PROJECT_ROOT}\+GUIs\guiGainAdjust.m</file>
+      <file>${PROJECT_ROOT}\+GUIs\guiLimitsAdjust.m</file>
+      <file>${PROJECT_ROOT}\+GUIs\guiPlotPca.m</file>
+      <file>${PROJECT_ROOT}\+GUIs\guiRocEditor.m</file>
+      <file>${PROJECT_ROOT}\+GUIs\guiSignalViewer.m</file>
+      <file>${PROJECT_ROOT}\+GUIs\guiSignalViewerState.m</file>
+      <file>${PROJECT_ROOT}\+GUIs\guiTargetAchievementControl.m</file>
+      <file>${PROJECT_ROOT}\+GUIs\guiTargetAchievementControlMulti.m</file>
+      <file>${PROJECT_ROOT}\+GUIs\widgetSlider.m</file>
+      <file>${PROJECT_ROOT}\+GUIs\widgetStripChart.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\@EmgSimulator\EmgSimulator.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\ConstraintFilter.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\CpcHeadstage.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\CpchSerial.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\DaqHwDevice.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\DaqHwSession.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\Filter.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\HighPass.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\IntanUdp.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\LowPass.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\MinLimitFilter.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\MyoUdp.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\NfuInput.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\Notch.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\OpenBciChipKit.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\SignalInput.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\SignalSimulator.m</file>
+      <file>${PROJECT_ROOT}\+Inputs\UdpDevice.m</file>
+      <file>${PROJECT_ROOT}\+MPL\EnumArm.m</file>
+      <file>${PROJECT_ROOT}\+MPL\GraspConverter.m</file>
+      <file>${PROJECT_ROOT}\+MPL\MplNfuScenario.m</file>
+      <file>${PROJECT_ROOT}\+MPL\MplUnity.m</file>
+      <file>${PROJECT_ROOT}\+MPL\MplVulcanX.m</file>
+      <file>${PROJECT_ROOT}\+MPL\MudCommandEncoder.m</file>
+      <file>${PROJECT_ROOT}\+MPL\NfuUdp.m</file>
+      <file>${PROJECT_ROOT}\+MPL\RocTable.m</file>
+      <file>${PROJECT_ROOT}\+PatternRecognition\AdaptiveTrainingInterface.m</file>
+      <file>${PROJECT_ROOT}\+PatternRecognition\BarTrainer.m</file>
+      <file>${PROJECT_ROOT}\+PatternRecognition\MiniGuitarHero.m</file>
+      <file>${PROJECT_ROOT}\+PatternRecognition\MotionTrainer.m</file>
+      <file>${PROJECT_ROOT}\+PatternRecognition\SimpleTrainer.m</file>
+      <file>${PROJECT_ROOT}\+PatternRecognition\TrainingData.m</file>
+      <file>${PROJECT_ROOT}\+PatternRecognition\TrainingInterface.m</file>
+      <file>${PROJECT_ROOT}\+PatternRecognition\VMplTrainer.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\+AirGuitarHero\AirGuitarHeroBase.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\+AirGuitarHero\AirGuitarHeroEmg.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\+AirGuitarHero\HwLinesEnum.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\+AirGuitarHero\NoteDetector.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\MiniV.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\ArmControl.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_KChain_IsectNodes.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_KChain_IsectNodes2.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_KChain_List.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_KChain_Load.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_KChain_Redraw.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_KChain_Save.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_magnitude.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_make_R.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_normalize.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_plot3.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_plot_triad.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_read_stl.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_SetJointAngle.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_SetupBodyKinematics.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_SetupGraphicsChain.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_SetupKinematics.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_SetupMacros.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_show_surface.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_stlMesh_to_surface.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_transform.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_transform_model.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_update_triad.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_UpdateHandPosition.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\f_UpdateJointAngle.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\@MiniV\private\run_demo.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\BreakoutSink.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\MiniBreakout.m</file>
+      <file>${PROJECT_ROOT}\+Presentation\OdeSink.m</file>
+      <file>${PROJECT_ROOT}\+Scenarios\+MSMS_ADL\MotionFile.m</file>
+      <file>${PROJECT_ROOT}\+Scenarios\+MSMS_ADL\MSMS_WRAMC_Model.m</file>
+      <file>${PROJECT_ROOT}\+Scenarios\+MSMS_ADL\MsmsDisplayScenario.m</file>
+      <file>${PROJECT_ROOT}\+Scenarios\MiniVDisplayScenario.m</file>
+      <file>${PROJECT_ROOT}\+Scenarios\MsmsTasks.m</file>
+      <file>${PROJECT_ROOT}\+Scenarios\OnlineRetrainer.m</file>
+      <file>${PROJECT_ROOT}\+Scenarios\ScenarioBase.m</file>
+      <file>${PROJECT_ROOT}\+SignalAnalysis\Classifier.m</file>
+      <file>${PROJECT_ROOT}\+SignalAnalysis\DiscriminantAnalysis.m</file>
+      <file>${PROJECT_ROOT}\+SignalAnalysis\Lda.m</file>
+      <file>${PROJECT_ROOT}\+SignalAnalysis\private\eml_max.m</file>
+      <file>${PROJECT_ROOT}\+SignalAnalysis\private\svmpredict.mexw64</file>
+      <file>${PROJECT_ROOT}\+SignalAnalysis\private\svmtrain.mexw64</file>
+      <file>${PROJECT_ROOT}\+SignalAnalysis\Svm.m</file>
+      <file>${PROJECT_ROOT}\+SignalAnalysis\SvmStatTlbx.m</file>
+      <file>${PROJECT_ROOT}\MiniVIE.m</file>
+      <file>${PROJECT_ROOT}\ThirdParty\ExportToPPTX\exportToPPTX.m</file>
+      <file>${PROJECT_ROOT}\ThirdParty\jsonlab\jsonopt.m</file>
+      <file>${PROJECT_ROOT}\ThirdParty\jsonlab\loadjson.m</file>
+      <file>${PROJECT_ROOT}\ThirdParty\jsonlab\mergestruct.m</file>
+      <file>${PROJECT_ROOT}\ThirdParty\jsonlab\savejson.m</file>
+      <file>${PROJECT_ROOT}\ThirdParty\jsonlab\struct2jdata.m</file>
+      <file>${PROJECT_ROOT}\ThirdParty\jsonlab\varargin2struct.m</file>
+      <file>${PROJECT_ROOT}\ThirdParty\xticklabel_rotate.m</file>
+      <file>${PROJECT_ROOT}\Utilities\action_bus_definition.m</file>
+      <file>${PROJECT_ROOT}\Utilities\action_bus_enum.m</file>
+      <file>${PROJECT_ROOT}\Utilities\alwaysontop.p</file>
+      <file>${PROJECT_ROOT}\Utilities\computePcaContour.m</file>
+      <file>${PROJECT_ROOT}\Utilities\distinguishable_colors.m</file>
+      <file>${PROJECT_ROOT}\Utilities\feature_extract.m</file>
+      <file>${PROJECT_ROOT}\Utilities\getIntent.m</file>
+      <file>${PROJECT_ROOT}\Utilities\guiClassifierAssessment.fig</file>
+      <file>${PROJECT_ROOT}\Utilities\guiClassifierAssessment.m</file>
+      <file>${PROJECT_ROOT}\Utilities\HapticAlgorithm.m</file>
+      <file>${PROJECT_ROOT}\Utilities\JoyMEX.m</file>
+      <file>${PROJECT_ROOT}\Utilities\JoyMEX.mexw64</file>
+      <file>${PROJECT_ROOT}\Utilities\JoyMexClass.m</file>
+      <file>${PROJECT_ROOT}\Utilities\LinAlg.m</file>
+      <file>${PROJECT_ROOT}\Utilities\PlotUtils.m</file>
+      <file>${PROJECT_ROOT}\Utilities\pnet.m</file>
+      <file>${PROJECT_ROOT}\Utilities\pnet.mexw64</file>
+      <file>${PROJECT_ROOT}\Utilities\PnetClass.m</file>
+      <file>${PROJECT_ROOT}\Utilities\pos.m</file>
+      <file>${PROJECT_ROOT}\Utilities\screencapture.m</file>
+      <file>${PROJECT_ROOT}\Utilities\standardClasses.m</file>
+      <file>${PROJECT_ROOT}\Utilities\StartStopForm.m</file>
+      <file>${PROJECT_ROOT}\Utilities\TrainingDataAnalysis.m</file>
+      <file>${PROJECT_ROOT}\Utilities\UiTools.m</file>
+      <file>${PROJECT_ROOT}\Utilities\UserConfig.m</file>
+      <file>${PROJECT_ROOT}\Utilities\UserDrivenTrainingInterface.m</file>
+      <file>${PROJECT_ROOT}\Utilities\ViePlant.m</file>
+    </fileset.depfun>
+    <build-deliverables>
+      <file location="${PROJECT_ROOT}\RunTakeHome2\for_testing" name="splash.png" optional="false">C:\git\minivie\RunTakeHome2\for_testing\splash.png</file>
+      <file location="${PROJECT_ROOT}\RunTakeHome2\for_testing" name="RunTakeHome2.exe" optional="false">C:\git\minivie\RunTakeHome2\for_testing\RunTakeHome2.exe</file>
+      <file location="${PROJECT_ROOT}\RunTakeHome2\for_testing" name="readme.txt" optional="true">C:\git\minivie\RunTakeHome2\for_testing\readme.txt</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>C:\Program Files\MATLAB\R2015b</root>
+      <toolboxes />
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>6.1</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>

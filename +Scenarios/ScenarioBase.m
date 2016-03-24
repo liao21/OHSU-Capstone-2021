@@ -375,7 +375,7 @@ classdef ScenarioBase < Common.MiniVieObj
                 % Strip off the 'Grasp' string and leave only the type
                 graspName = strtrim(className(1:end-5));
                 % MANUAL OVERRIDE: Setting a fixed grasp speed
-                prSpeed = 0.9;
+                %prSpeed = 2.5;
             else
                 graspName = className;
             end

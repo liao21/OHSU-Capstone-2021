@@ -58,9 +58,10 @@ classdef FlockOfBirds < handle
             fopen(s);
 
             numBirds = obj.NumSensors;
-            
+            ERT = 1;  % ERT = 0 No Extended range transmitter
+
             % Set mode
-            for i = 1:numBirds
+            for i = 1:numBirds+ERT
                 fwrite(s,[240+i 89]); % set to gather position and angles
             end
             
@@ -70,7 +71,7 @@ classdef FlockOfBirds < handle
             
             % Autoconfig
             pause(0.3);   % 300 misec delay required before AutoConfig commands (p. 83)
-            fwrite(s,[240+1 80 50 numBirds]);  % autoconfig for Master => bird 1
+            fwrite(s,[240+1 80 50 numBirds+ERT]);  % autoconfig for Master => bird 1
             pause(0.3);   % 300 misec delay required after AutoConfig commands (p. 83)
             
             % lights should go on
@@ -105,7 +106,7 @@ classdef FlockOfBirds < handle
             
         end
         
-        function [pos, ang] = getBirdGroup(obj)
+        function [posAll, angAll] = getBirdGroup(obj)
             %[pos, ang] = getBirdGroup(obj)
             % get the position and angle of the flock of birds sensor(s).
             % This assumes that stream mode is active and that there is new
@@ -151,8 +152,8 @@ classdef FlockOfBirds < handle
             %idxValid = find(diff(idxRecent) == numBytes,2,'last');
             idxValid = find(diff(idxRecent) == numBytes);
             
-            pos = [];
-            ang = [];
+            posAll = zeros(3,obj.NumSensors);
+            angAll = zeros(3,obj.NumSensors);
             group = [];
             
             for i = 1:length(idxValid)
@@ -165,6 +166,9 @@ classdef FlockOfBirds < handle
                 
                 %fprintf('Msg #%3d Bird %i\tX:%+6.3f\tY:%+6.3f\tZ:%+6.3f\t',i,group,pos);
                 %fprintf('Rz:%+6.1f\tRy:%+6.1f\tRx:%+6.1f\n',ang*180/pi);
+                posAll(:,group) = pos;
+                angAll(:,group) = ang;
+                
             end
             
             pos = pos';
@@ -192,10 +196,10 @@ classdef FlockOfBirds < handle
             
             F = repmat(eye(4),[1 1 obj.NumSensors]);
             for i = 1:obj.NumSensors
-                F(:,:,i) = makehgtform('translate',pos(i,:),...
-                    'zrotate',ang(i,1),...
-                    'yrotate',ang(i,2),...
-                    'xrotate',ang(i,3));
+                F(:,:,i) = makehgtform('translate',pos(:,i),...
+                    'zrotate',ang(1,i),...
+                    'yrotate',ang(2,i),...
+                    'xrotate',ang(3,i));
             end
         end
         
@@ -296,7 +300,8 @@ classdef FlockOfBirds < handle
             % the class object, using native matlab commands
             
             %% Setup Port
-            s = serial('COM4');              % default = 'COM1'
+            delete(instrfindall)
+            s = serial('COM5');              % default = 'COM1'
             set(s,'BaudRate',115200);        % default = 9600
             set(s,'RequestToSend','off');    % default = on
             set(s,'DataTerminalReady','on'); % default = on
@@ -306,10 +311,12 @@ classdef FlockOfBirds < handle
             fopen(s);
             
             %% Set initial mode
-            numBirds = 3;
+            numBirds = 4;
+            
+            ERT = 1;  % ERT = 0 No Extended range transmitter
             
             % Set mode
-            for i = 1:numBirds
+            for i = 1:numBirds+ERT
                 fwrite(s,[240+i 89]); % set to gather position and angles
             end
             
@@ -319,7 +326,7 @@ classdef FlockOfBirds < handle
             
             %% Autoconfig
             pause(0.3);   % 300 misec delay required before AutoConfig commands (p. 83)
-            fwrite(s,[240+1 80 50 numBirds]);  % autoconfig for Master => bird 1
+            fwrite(s,[240+1 80 50 numBirds+ERT]);  % autoconfig for Master => bird 1
             pause(0.3);   % 300 misec delay required after AutoConfig commands (p. 83)
             
             % lights should go on

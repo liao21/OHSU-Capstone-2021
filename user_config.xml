@@ -51,7 +51,8 @@
     <add key="myoUdpPort1"    value="10001"/>
     <add key="myoUdpPort2"    value="10002"/>
     <add key="myoElbowEnable"    value="1"/>
-    
+    <add key="myoElbowShoulder"    value="0"/>
+    <add key="myoElbowShoulderLeft"    value="0"/>
     
     <!-- User defined joint limits
      Optionally limit the range of each joint prior to sending to the MPL

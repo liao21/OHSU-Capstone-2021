@@ -69,9 +69,9 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
         
         includeVirtual = 0;
         hUdp
-        echoSensor = 0; % display  current sensor reading on console
         
-        EnableFeedback = 0;
+        EnableSensorEcho = 1; % display  current sensor reading on console
+        EnableFeedback = 1;
         TactorIds = [3 4]
         %TactorIds = [5 6 7];
         
@@ -207,7 +207,7 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
                 p2 = -41.5; %235.2; %+ 112.346;
                 T = p1*(sg + p2);
                 try
-                    if obj.echoSensor
+                    if obj.EnableSensorEcho
                         if abs(T) < 60
                             dest = 1;
                         else

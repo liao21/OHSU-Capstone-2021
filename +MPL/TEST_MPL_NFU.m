@@ -14,15 +14,29 @@ while StartStopForm
     drawnow
     hNfu.update;
 end
+%%
+msg = mud.AllJointsPosVelCmd([0 0 0 0 0 0 0],zeros(7,1),zeros(20,1),zeros(20,1));
+msg = [uint8(61);msg];  % append nfu message ID
+
+hNfu.sendUdpCommand(msg);  % append nfu msg header
+
+%%
+stiffnessCmd = [5 5 5 5 65 5 25 2.3*ones(1,20)]; % 16 Nm/rad Upper Arm  0.1-1 Hand
+
+msg = mud.AllJointsPosVelImpCmd([0 0 0 0 0 0 0],zeros(7,1),zeros(20,1),zeros(20,1),stiffnessCmd);
+msg = [uint8(62);msg];  % append nfu message ID
+
+hNfu.sendUdpCommand(msg);  % append nfu msg header
+
 
 %%
 % Create All joint + impedance command
 % msg = AllJointsPosVelImpCmd(obj,armPositions[7],armVelocities[7], ...
 %                                 fingerPositions[20],fingerVelocities[20], ...
 %                                 stiffnessCmd[27])
-armPositions = [0 0 0 0 0.1*randn 0 0.0];
+armPositions = [0 0 0 0 0.3 0 0.0]
 armVelocities = zeros(1,7);
-fingerPositions = 0.5*ones(1,20);
+fingerPositions = 0*ones(1,20);
 fingerPositions(mud.INDEX_AB_AD) = -fingerPositions(mud.INDEX_AB_AD);
 fingerPositions(mud.THUMB_CMC_AD_AB) = 2*fingerPositions(mud.THUMB_CMC_AD_AB);
 fingerVelocities = zeros(1,20);

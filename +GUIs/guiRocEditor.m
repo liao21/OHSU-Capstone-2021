@@ -1,5 +1,5 @@
 classdef guiRocEditor < handle
-    % GUI manually setting joint angles via sliders for Roc Tables
+    % GUI for manually setting joint angles via sliders for Roc Tables
     %
     % This allows you to load, edit, save, and visualize changes in
     % real-time with vulcanX for the vMPL or MPL.
@@ -18,20 +18,21 @@ classdef guiRocEditor < handle
     %
     % 07NOV2013 Armiger: Created
     properties
-        hSink;                          % handle to the data output sink (udp)
-        hMud = MPL.MudCommandEncoder;   % handle for the message encoder
+        hDataEmitter = Common.DataEmitter;  % handle to the data output sinks (udp)
+        hMud = MPL.MudCommandEncoder;       % handle for the message encoder
         
-        structRoc;                      % structure for storing the current roc table
+        structRoc;                          % structure for storing the current roc table
         
+        CurrentFilename = 'NEW_ROC.xml';
+        IsDirty = 0;
+
         % All Ids are 1 based since this is matlab
         CurrentRocId = 1;
         CurrentWaypointId = 1;
         
         NumOpenSteps = 100;
         NumCloseSteps = 100;
-
-        IsNfu;
-        
+                
         CommsHold = 1; % controlled by toggle to delay communications with limb until released
         
         Verbose = 0;
@@ -54,59 +55,34 @@ classdef guiRocEditor < handle
         
     end
     methods
-        function obj = guiRocEditor(rocFilename,isNfu)
-            % obj = guiRocEditor(rocFilename,isNfu)
+        function obj = guiRocEditor(rocFilename)
+            % obj = guiRocEditor(rocFilename)
             %
-            % Creator Function takes an optional argument for whether there
-            % is an NFU present.  Messaging varies depending on VulcanX or
-            % NFU.  Use true or false to select approprate mode
+            % Creator Function takes an optional argument to specify the
+            % current roc filename to begin with.
             
             if nargin < 1
                 rocFilename = [];
             end
             
-            if nargin < 2
-                % Prompt for VulcanX or NFU.  Note cancelling falls to
-                % VulcanX mode
-                q = questdlg('Select MPL Interface','MPL Interface','NFU','VulcanX','VulcanX');
-                if strcmp(q,'NFU')
-                    obj.IsNfu = true;
-                else
-                    obj.IsNfu = false;
-                end
-            else
-                % user provided mode
-                obj.IsNfu = isNfu;
-            end
-            
             obj.createFigure();
+            
             if isempty(rocFilename)
                 obj.structRoc = MPL.RocTable.createRocTables();
             else
                 obj.structRoc = MPL.RocTable.readRocTable(rocFilename);
+                obj.CurrentFilename = rocFilename;
             end
             
             % Set Roc Names Listbox after creating the ROC Tables
             set(obj.hRocNames,'String',{obj.structRoc.name})
-            
-            % Set the data sink for the appropriate device
-            if obj.IsNfu
-                obj.hSink = MPL.NfuUdp.getInstance;
-            else
-                %  Create the udp transmission via pnet
-                VulcanXAddress = UserConfig.getUserConfigVar('mplVulcanXIpAddress','127.0.0.1');
-                VulcanXCmdPort = str2double(UserConfig.getUserConfigVar('mplVulcanXCommandPort','9027'));
-                VulcanXLocalPort = str2double(UserConfig.getUserConfigVar('mplVulcanXSensoryPort','25001'));                
-                obj.hSink = PnetClass(VulcanXLocalPort,VulcanXCmdPort,VulcanXAddress);
-            end
-            
-            obj.hSink.initialize()
-            
+                        
             obj.updateFigure();
         end
         function createFigure(obj,hParent,nSliders)
             if nargin < 2
                 hParent = default_figure;
+                set(hParent,'CloseRequestFcn',@(src,evt)obj.close());
             end
             if nargin < 3
                 nSliders = 27;
@@ -148,6 +124,13 @@ classdef guiRocEditor < handle
                     'TickLength',[.05 .1],...
                     'Units','Pixels',...
                     'Position',[xPos(iCol+1) 180*(numRows-iRow-1)+20 axesWidth axesHeight]);
+                t(i) = text('Parent',hAx(i),...
+                    'Position',[0.5 0],...
+                    'String',sliderTitle{i},...
+                    'Rotation',90,...
+                    'FontWeight','Bold',...
+                    'Interpreter','None',...
+                    'HorizontalAlignment','center');
                 
                 % title(hAx(i),sliderTitle{i},'Interpreter','None');
                 obj.hJointSliders{i} = GUIs.widgetSlider(...
@@ -158,13 +141,6 @@ classdef guiRocEditor < handle
                     'Range',sliderRange(i,:));
                 set(hAx(i),'YTick',[axesRange(i,1) 0 axesRange(i,2)]);
                 set(hAx(i),'YLim',axesRange(i,:))
-                t(i) = text('Parent',hAx(i),...
-                    'Position',[0.5 0],...
-                    'String',sliderTitle{i},...
-                    'Rotation',90,...
-                    'FontWeight','Bold',...
-                    'Interpreter','None',...
-                    'HorizontalAlignment','center');
             end
             
             obj.hAxes = hAx;
@@ -174,6 +150,23 @@ classdef guiRocEditor < handle
             menuFile = uimenu(hParent,'Label','&File');
             menuFileOpen = uimenu(menuFile,'Label','Open...','Callback',@(src,evt)uiOpen(obj));
             menuFileSave = uimenu(menuFile,'Label','Save As...','Callback',@(src,evt)uiSaveAs(obj));
+
+            menuOutput = uimenu(hParent,'Label','&Output');            
+            menuOutputUnity = uimenu(menuOutput,'Label','Unity');
+            uimenu(menuOutputUnity,'Label','Left Arm','Callback',@cbSetOutput);
+            uimenu(menuOutputUnity,'Label','Right Arm','Callback',@cbSetOutput);
+            uimenu(menuOutputUnity,'Label','Custom','Callback',@cbSetOutput);
+
+            menuOutputVulcanX = uimenu(menuOutput,'Label','VulcanX');
+            uimenu(menuOutputVulcanX,'Label','Left Arm','Callback',@cbSetOutput);
+            uimenu(menuOutputVulcanX,'Label','Right Arm','Callback',@cbSetOutput);
+            uimenu(menuOutputVulcanX,'Label','Custom','Callback',@cbSetOutput);
+            
+            %MPL-NFU
+            menuOutputMplNfu = uimenu(menuOutput,'Label','MPL-NFU');
+            uimenu(menuOutputMplNfu,'Label','Left Arm','Callback',@cbSetOutput);
+            uimenu(menuOutputMplNfu,'Label','Right Arm','Callback',@cbSetOutput);
+            uimenu(menuOutputMplNfu,'Label','Custom','Callback',@cbSetOutput);
             
             % Roc ID Spinner Label
             uicontrol(hParent,'Style','text','Position',[10 620, 60, 20],...
@@ -220,11 +213,65 @@ classdef guiRocEditor < handle
             
             % Set Angles Button
             uicontrol(hParent,'Style','pushbutton','Position',[600 620, 80, 20],...
-                'String','Set Angles','HorizontalAlignment','Left','Callback',@(src,evt)cbGetAngles);
-
+                'String','Set Angles','HorizontalAlignment','Left','Callback',@(src,evt)cbSetAngles);
+            
             % HOLD Button
             uicontrol(hParent,'Style','togglebutton','Value',1,'Position',[700 620, 80, 20],...
                 'String','HOLD','HorizontalAlignment','Left','Callback',@(src,evt)cbHold(src));
+            
+            obj.IsDirty = false;
+            
+            return
+            
+            function cbSetOutput(src,~)
+                
+                % determine whether to add or remove base on checked
+                if strcmp(get(src,'Checked'),'off')
+                    set(src,'Checked','on')
+                    
+                else
+                    %set(src,'Checked','off')
+                    warning('sink removal not implemented')
+                    return
+                end
+
+                % Get Text labels
+                parentLabel = get(get(src,'Parent'),'Label');
+                armLabel = get(src,'Label');
+                
+                % Determine source                
+                switch parentLabel
+                    
+                    case 'Unity'
+                        hSink = MPL.MplUnitySink;
+                        hSink.IsLeftArm = strcmp(armLabel,'Left Arm');
+                        hSink.initialize();
+                        
+                    case 'VulcanX'
+                        
+                        if strcmp(armLabel,'Left Arm')
+                            hSink = MPL.MplVulcanXSink;
+                            hSink.MplCmdPort = 9024;          % MUD Port (L=9024 R=9027)
+                            hSink.MplLocalPort = 25101;       % Percept Port (L=25101 R=25001)
+                        else
+                            hSink = MPL.MplVulcanXSink;
+                            hSink.MplCmdPort = 9027;          % MUD Port (L=9024 R=9027)
+                            hSink.MplLocalPort = 25001;       % Percept Port (L=25101 R=25001)
+                        end
+                        
+                        hSink.initialize();
+                        
+                    case 'MPL-NFU'
+                        hSink = MPL.MplNfuSink();
+                        hSink.initialize();
+                    otherwise
+                        errordlg('Unmatched Output Module');
+                        return
+                end
+                
+                obj.attachSink(hSink);
+                
+            end
             
             function cbSpinner(src)
                 obj.CurrentRocId = src.Value+1;
@@ -242,7 +289,9 @@ classdef guiRocEditor < handle
                 obj.updateFigure();
             end
             
-            function cbGetAngles()
+            function cbSetAngles()
+                obj.IsDirty = true;
+                
                 oldAngles = obj.jointAngles;
                 newAngles = textscan(get(obj.hAngleBox,'String'),'%f,');
                 newAngles = newAngles{1}'*pi/180;
@@ -256,6 +305,8 @@ classdef guiRocEditor < handle
                 nNewAngles = length(newAngles);
                 obj.structRoc(rocId).angles(waypointId,:) = newAngles((nNewAngles-nROCAngles+1):end);
                 display('Joint angles set')
+                
+                obj.updateFigure();
             end
             
             function cbListBoxName(src)
@@ -277,7 +328,7 @@ classdef guiRocEditor < handle
                 thisRoc = obj.structRoc(idx);
                 RocId = thisRoc.id;
                 RocName = thisRoc.name;
-                                
+                
                 rocVal = linspace(1,0,obj.NumOpenSteps);
                 for iVal = 1:length(rocVal)
                     fprintf('Entry #%d, RocId=%d, %14s %6.2f Pct\n',...
@@ -299,7 +350,7 @@ classdef guiRocEditor < handle
                 thisRoc = obj.structRoc(idx);
                 RocId = thisRoc.id;
                 RocName = thisRoc.name;
-                                
+                
                 rocVal = linspace(0,1, obj.NumCloseSteps);
                 for iVal = 1:length(rocVal)
                     fprintf('Entry #%d, RocId=%d, %14s %6.2f Pct\n',...
@@ -319,7 +370,16 @@ classdef guiRocEditor < handle
         function ang = getdata(obj)
             ang = obj.jointAngles;
         end
-        function updateFigure(obj)
+        function attachSink(obj,hSink)
+            % Attach a new output (sink) to the module
+            obj.hDataEmitter.attachSink(hSink)
+        end
+        function updateFigure(obj,idCurrent)
+            
+            % if the user is driving one slider, don't try to update it
+            if nargin < 2
+                idCurrent = -1;
+            end
             
             rocId = obj.CurrentRocId;
             waypointId = obj.CurrentWaypointId;
@@ -346,9 +406,13 @@ classdef guiRocEditor < handle
             
             finalAngles = currentAngles;
             for i = 1:length(roc.joints)
+                
+                
                 iJoint = roc.joints(i);
                 newAngle = roc.angles(waypointId,i);
-                set(obj.hJointSliders{iJoint},'Value',newAngle);
+                if i ~= idCurrent
+                    set(obj.hJointSliders{iJoint},'Value',newAngle);
+                end
                 finalAngles(iJoint) = newAngle;
             end
             
@@ -375,6 +439,17 @@ classdef guiRocEditor < handle
             
             % set angle text box
             setAngleTextBox(obj)
+
+            % Update figure title
+            if obj.IsDirty
+                figTitle = sprintf('JHU/APL: Reduced Order Control (ROC) Editor - %s*',obj.CurrentFilename);
+            else
+                figTitle = sprintf('JHU/APL: Reduced Order Control (ROC) Editor - %s',obj.CurrentFilename);
+            end
+            if ishandle(obj.hParent) && isa(obj.hParent,'matlab.ui.Figure')
+                set(obj.hParent,'Name',figTitle)
+            end
+
         end
         
         function setAngleTextBox(obj)
@@ -422,9 +497,12 @@ classdef guiRocEditor < handle
             obj.structRoc = MPL.RocTable.readRocTable(xmlFileName);
             obj.updateFigure();
         end
-        function uiSaveAs(obj)
+        function success = uiSaveAs(obj)
+            % Interactively save file
+            success = false;
             
-            [fileName, pathName, filterIndex] = uiputfile('*.xml');
+            [fileName, pathName, filterIndex] = uiputfile('*.xml',...
+                'Select ROC File to Write',obj.CurrentFilename);
             if filterIndex == 0
                 %User Cancelled
                 return
@@ -433,6 +511,11 @@ classdef guiRocEditor < handle
             xmlFileName = fullfile(pathName,fileName);
             
             MPL.RocTable.writeRocTable(xmlFileName,obj.structRoc);
+            
+            obj.IsDirty = false;
+            
+            success = true;
+            
         end
         
         function set.jointAngles(obj,value)
@@ -461,20 +544,34 @@ classdef guiRocEditor < handle
                 return
             end
             
-            if obj.IsNfu
-                % NFU
-                obj.hSink.sendAllJoints(obj.jointAngles);
-            else
-                % Vulcan X
-                upperArmAngles = obj.jointAngles(1:7);
-                handAngles = obj.jointAngles(8:27);
-                msg = obj.hMud.AllJointsPosVelCmd(upperArmAngles,zeros(1,7),handAngles,zeros(1,20));
-                obj.hSink.putData(msg);
-            end
+            obj.hDataEmitter.putData(obj.jointAngles);
             
         end
         function close(obj)
-            close(obj.hAxes);
+            % Check for unsaved changes before closing
+            if obj.IsDirty
+                reply = questdlg('Do you want to save changes to the ROC table?','Unsaved Changes','Save','Don''t Save','Cancel','Save');
+                switch reply
+                    case 'Save'
+                        success = uiSaveAs(obj);
+                        if ~success
+                            return
+                        end
+                    case 'Don''t Save'
+                        % Do nothing and exit
+                    otherwise
+                        return
+                end
+            end
+            
+            for iSink = 1:length(obj.hDataEmitter.sinks)
+                hSink = obj.hDataEmitter.sinks{iSink};
+                hSink.close();
+            end
+            
+            
+            %close(obj.hAxes);
+            delete(obj.hParent)
             obj.hAxes = [];
         end
     end
@@ -484,21 +581,44 @@ end
 function set_position(src,evnt,obj,i) %#ok<INUSL>
 
 newAngle = get(src,'Value');
+m = MPL.EnumArm;
+
+indexGroup = [m.INDEX_MCP m.INDEX_DIP m.INDEX_PIP];
+middleGroup = [m.MIDDLE_MCP m.MIDDLE_DIP m.MIDDLE_PIP];
+ringGroup = [m.RING_MCP m.RING_DIP m.RING_PIP];
+littleGroup = [m.LITTLE_MCP m.LITTLE_DIP m.LITTLE_PIP];
+
+if ismember(i,indexGroup)
+    idGroup = indexGroup;
+    newAngle = [newAngle 0.45.*([newAngle newAngle])];
+elseif ismember(i,middleGroup)
+    idGroup = middleGroup;
+    newAngle = [newAngle 0.45.*([newAngle newAngle])];
+elseif ismember(i,ringGroup)
+    idGroup = ringGroup;
+    newAngle = [newAngle 0.45.*([newAngle newAngle])];
+elseif ismember(i,littleGroup)
+    idGroup = littleGroup;
+    newAngle = [newAngle 0.45.*([newAngle newAngle])];
+else
+    idGroup = i;
+end
 
 % Update joint angles for transmission
-obj.jointAngles(i) = newAngle;
+obj.jointAngles(idGroup) = newAngle;
 
 % update the internal roc table in memory
 rocId = obj.CurrentRocId;
 waypointId = obj.CurrentWaypointId;
 
-id = find(i == obj.structRoc(rocId).joints);
+[~,id] = intersect(obj.structRoc(rocId).joints,idGroup);
 if ~isempty(id)
+    % update ROC table
     obj.structRoc(rocId).angles(waypointId,id) = newAngle;
-    %disp(obj.structRoc(rocId).angles)
-else
-    %disp('No Roc Entry to Update')
+    obj.IsDirty = true;
 end
+
+obj.updateFigure(i)
 
 end
 

@@ -29,7 +29,8 @@ classdef guiSignalViewer < Common.MiniVieObj
 
         % Use this to specify the window size that features are computed over
         FeatureWindowSize = 150;
-        
+        ZcThreshold=0.15
+        SscThreshold=0.15
         hg
         hTimer
         hChannelSelect
@@ -226,6 +227,8 @@ classdef guiSignalViewer < Common.MiniVieObj
                 case GUIs.guiSignalViewerState.Features
                     set(obj.hg.PanelDomain,'SelectedObject',obj.hg.ButtonFeatures);
                     set(obj.hg.editSamples,'String',num2str(obj.NumFeatureSamples));
+                    obj.ZcThreshold = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
+                    obj.SscThreshold = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',0.15);
             end
             
         end
@@ -254,7 +257,7 @@ classdef guiSignalViewer < Common.MiniVieObj
                         xlim(obj.hg.Axes(2),[0 obj.NumFeatureSamples]);
                         xlim(obj.hg.Axes(3),[0 obj.NumFeatureSamples]);
                         xlim(obj.hg.Axes(4),[0 obj.NumFeatureSamples]);
-                        
+
                         obj.updateFeatures();
                     case GUIs.guiSignalViewerState.TimeDomain
                         setAxesVisible(obj.hg.Axes(1),'on');
@@ -390,9 +393,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             
             % [numChannels numFeatures]
             %feature_extract(windowData,windowSize,zc_thresh,ssc_thresh)
-            zc_thresh = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
-            ssc_thresh = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',0.15);
-            features = feature_extract(channelData',obj.FeatureWindowSize,zc_thresh,ssc_thresh);
+            features = feature_extract(channelData',obj.FeatureWindowSize,obj.ZcThreshold,obj.SscThreshold);
             
             % [numChannels numFeatures 200]
             obj.featureBuffer = circshift(obj.featureBuffer,[0 0 1]);

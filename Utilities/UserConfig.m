@@ -43,7 +43,7 @@ classdef UserConfig < handle
                 if nargin < 1
                     %userConfigFile = 'user_config.xml';
                     
-                    [FileName,PathName,FilterIndex] = uigetfile('user_config.xml');
+                    [FileName,PathName,FilterIndex] = uigetfile('user_config.xml','Select User Configuration XML File to Open');
                     if FilterIndex == 0
                         % User Cancelled
                         userConfigFile = '';

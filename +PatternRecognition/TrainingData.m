@@ -583,7 +583,7 @@ classdef TrainingData < handle
             if (nargin == 1) || isempty(fname)
                 % Get filename interactively
                 FilterSpec = '*.trainingData';
-                [FileName,PathName,FilterIndex] = uigetfile(FilterSpec);
+                [FileName,PathName,FilterIndex] = uigetfile(FilterSpec,'Select Training Data File to Open');
                 if FilterIndex == 0
                     % User Cancelled
                     return
@@ -595,7 +595,7 @@ classdef TrainingData < handle
                 fullFile = fname;
             else
                 FilterSpec = fname;
-                [FileName,PathName,FilterIndex] = uigetfile(FilterSpec);
+                [FileName,PathName,FilterIndex] = uigetfile(FilterSpec,'Select Training Data File to Open');
                 if FilterIndex == 0
                     % User Cancelled
                     return

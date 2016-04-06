@@ -98,5 +98,8 @@
     <add key="THUMB_CMC_FE_LIMITS"    value="   8, 80" />
     <add key="THUMB_MCP_LIMITS"       value="   8, 80" />
     <add key="THUMB_DIP_LIMITS"       value=" -12, 60" />
-        
+
+    <!-- Joint direction parameters to flip joint direction +/- 1 -->    
+    <add key="WRIST_FE_DIRECTION"        value="+1" />
+    
 </userConfig>

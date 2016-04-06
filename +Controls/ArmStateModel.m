@@ -48,6 +48,11 @@ classdef ArmStateModel < handle
                 obj.JointState(i).Min = r(1) * pi / 180;
                 obj.JointState(i).Max = r(2) * pi / 180;
             end
+%             r = UserConfig.getUserConfigVar('WRIST_FE_LIMITS',[-90 90]);
+%             obj.structState(7).Name = 'Wrist FE';
+%             
+%             obj.structState(7).IsReversed = UserConfig.getUserConfigVar('WRIST_FE_DIRECTION',1);
+%             obj.structState(7).MaxVelocity = 4;
 
             % Done with the new version of joint specific ROCs
             
@@ -90,7 +95,9 @@ classdef ArmStateModel < handle
 
             r = UserConfig.getUserConfigVar('WRIST_FE_LIMITS',[-90 90]);
             obj.structState(7).Name = 'Wrist FE';
-            obj.structState(7).IsReversed = 0;
+            
+            IsReversed = isequal(-1,UserConfig.getUserConfigVar('WRIST_FE_DIRECTION',1));            
+            obj.structState(7).IsReversed = IsReversed;
             obj.structState(7).MaxVelocity = 4;
             obj.structState(7).Min = r(1) * pi / 180;
             obj.structState(7).Max = r(2) * pi / 180;
@@ -112,6 +119,8 @@ classdef ArmStateModel < handle
             obj.velocity(id) = velocity;
         end
         function value = getValues(obj)
+            % Use this method rather than accessing the struct state
+            % directly to perform joint direction correction
             v = [obj.structState(:).Value];
             isReversed = [obj.structState(:).IsReversed] ~= 0;
             v(isReversed) = -v(isReversed);

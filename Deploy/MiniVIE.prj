@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="190940780" file="C:\git\minivie\Deploy\MiniVIE.prj" location="C:\git\minivie\Deploy" name="MiniVIE" preferred-package-location="C:\git\minivie\Deploy\MiniVIE\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+  <configuration build-checksum="1277797933" file="C:\git\minivie\Deploy\MiniVIE.prj" location="C:\git\minivie\Deploy" name="MiniVIE" preferred-package-location="C:\git\minivie\Deploy\MiniVIE\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
     <param.appname>MiniVIE</param.appname>
     <param.icon>${PROJECT_ROOT}\MiniVIE_resources\icon.ico</param.icon>
     <param.icons>

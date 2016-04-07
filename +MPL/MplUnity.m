@@ -164,7 +164,7 @@ classdef MplUnity < Scenarios.OnlineRetrainer
                 %hMyo.getData();
                 %q = obj.SignalSource.Quaternion(:,end);
                 q = obj.SignalSource.Orientation;
-                R = LinAlg.quaternionToRMatrix(q');
+                R = LinAlg.quaternionToRMatrix(q(:));
                 [U, ~, V] = svd(R);
                 R = U*V'; % Square up the rotaiton matrix
                 

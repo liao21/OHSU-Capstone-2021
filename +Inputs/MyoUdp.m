@@ -265,9 +265,9 @@ classdef MyoUdp < Inputs.SignalInput
                 end
                 
                 % update object
-                obj.Orientation = angle;
-                obj.Accelerometer = accel;
-                obj.Gyroscope = gyro;
+                obj.Orientation = quat(:,end);
+                obj.Accelerometer = accel(:,end);
+                obj.Gyroscope = gyro(:,end);
                 %obj.Quaternion = quat;
                 
                 obj.Buffer.addData(obj.EMG_GAIN .* emgData,1:8);

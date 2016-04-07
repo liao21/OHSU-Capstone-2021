@@ -301,7 +301,7 @@ classdef MyoUdp < Inputs.SignalInput
             % get orientation as rotation matrix.  Convert quaterion to
             % matrix but then do post processing to ensure it is orthogonal
             q = obj.Orientation;
-            R = LinAlg.quaternionToRMatrix(q');
+            R = LinAlg.quaternionToRMatrix(q(:));
             [U, ~, V] = svd(R);
             R = U*V'; % Square up the rotaiton matrix
         end

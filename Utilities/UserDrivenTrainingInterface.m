@@ -82,7 +82,7 @@ classdef UserDrivenTrainingInterface < Common.MiniVieObj
                 set(obj.hg.hAdd,'Value',0)
                 notify(obj, 'StopAdd')
             end
-
+            
             obj.setDisplay();
         end
         function previousClass(obj)
@@ -97,10 +97,10 @@ classdef UserDrivenTrainingInterface < Common.MiniVieObj
             
             obj.setDisplay();
         end
-%         function add = doAddData(obj)
-%             % Return the state of the training button
-%             add = get(obj.hg.hAdd,'Value');
-%         end
+        %         function add = doAddData(obj)
+        %             % Return the state of the training button
+        %             add = get(obj.hg.hAdd,'Value');
+        %         end
         function updateBar(obj)
             % Update the smaple count progress bar
             labelCounts = max(1,obj.TrainingData.getClassLabelCount);
@@ -141,19 +141,26 @@ classdef UserDrivenTrainingInterface < Common.MiniVieObj
             % Get the image (RGB) and display
             im = obj.Images{i};
             
-            % Flip the image manually and display using normal xy axis
-            % since on release R2013 this led to inverted axis labels
-            imFlip = im;
-            for i = 1:size(imFlip,3)
-                % flip each dimension
-                imFlip(:,:,i) = flipud(imFlip(:,:,i));
-            end
+            old = false;
             
-            % show image
-            image(imFlip,'Parent',obj.hg.ImAxes);
-            axis(obj.hg.ImAxes,'xy')
-            axis(obj.hg.ImAxes,'off')
-            daspect(obj.hg.ImAxes,[1 1 1]);
+            if old
+                % Flip the image manually and display using normal xy axis
+                % since on release R2013 this led to inverted axis labels
+                imFlip = im;
+                for i = 1:size(imFlip,3)
+                    % flip each dimension
+                    imFlip(:,:,i) = flipud(imFlip(:,:,i));
+                end
+                
+                % show image
+                image(imFlip,'Parent',obj.hg.ImAxes);
+                axis(obj.hg.ImAxes,'xy')
+                axis(obj.hg.ImAxes,'off')
+                daspect(obj.hg.ImAxes,[1 1 1]);
+            else
+                %cla(obj.hg.ImAxes);
+                imshow(im,'Parent',obj.hg.ImAxes)
+            end
             updateBar(obj);
             
             h = title(currentClass,'Parent',obj.hg.ImAxes);
@@ -265,7 +272,7 @@ classdef UserDrivenTrainingInterface < Common.MiniVieObj
             else
                 notify(obj, 'StopAdd')
             end
-
+            
             setDisplay(obj)
         end
     end

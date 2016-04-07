@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="836796417" file="C:\git\minivie\Deploy\MiniVIE.prj" location="C:\git\minivie\Deploy" name="MiniVIE" preferred-package-location="C:\git\minivie\Deploy\MiniVIE\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+  <configuration build-checksum="2335756466" file="C:\git\minivie\Deploy\MiniVIE.prj" location="C:\git\minivie\Deploy" name="MiniVIE" preferred-package-location="C:\git\minivie\Deploy\MiniVIE\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
     <param.appname>MiniVIE</param.appname>
     <param.icon>${PROJECT_ROOT}\MiniVIE_resources\icon.ico</param.icon>
     <param.icons>
@@ -131,6 +131,7 @@ Revisions:
       <file>C:\git\minivie\+PatternRecognition\Images\cylindrical grip.jpg</file>
       <file>C:\git\minivie\+PatternRecognition\Images\elbow extension.jpg</file>
       <file>C:\git\minivie\+PatternRecognition\Images\elbow flexion.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\Extension Grasp.png</file>
       <file>C:\git\minivie\+PatternRecognition\Images\fine pinch grip.jpg</file>
       <file>C:\git\minivie\+PatternRecognition\Images\hand close.jpg</file>
       <file>C:\git\minivie\+PatternRecognition\Images\hand open.jpg</file>
@@ -145,8 +146,11 @@ Revisions:
       <file>C:\git\minivie\+PatternRecognition\Images\MiddleFinger.png</file>
       <file>C:\git\minivie\+PatternRecognition\Images\no movement (rest).jpg</file>
       <file>C:\git\minivie\+PatternRecognition\Images\Palmar Grasp.png</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\Point Grasp.png</file>
       <file>C:\git\minivie\+PatternRecognition\Images\point grip.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\Power Grasp.png</file>
       <file>C:\git\minivie\+PatternRecognition\Images\power grip mode.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\Relaxed Grasp.png</file>
       <file>C:\git\minivie\+PatternRecognition\Images\RingFinger.png</file>
       <file>C:\git\minivie\+PatternRecognition\Images\shoulder abduction.jpg</file>
       <file>C:\git\minivie\+PatternRecognition\Images\shoulder adduction.jpg</file>
@@ -158,6 +162,7 @@ Revisions:
       <file>C:\git\minivie\+PatternRecognition\Images\ThumbFinger.png</file>
       <file>C:\git\minivie\+PatternRecognition\Images\Tip Grasp.png</file>
       <file>C:\git\minivie\+PatternRecognition\Images\tool grip.jpg</file>
+      <file>C:\git\minivie\+PatternRecognition\Images\Trigger Grasp.png</file>
       <file>C:\git\minivie\+PatternRecognition\Images\Tripod Grasp.png</file>
       <file>C:\git\minivie\+PatternRecognition\Images\wrist abduction.jpg</file>
       <file>C:\git\minivie\+PatternRecognition\Images\wrist adduction.jpg</file>

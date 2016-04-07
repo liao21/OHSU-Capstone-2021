@@ -164,17 +164,23 @@ classdef MyoUdp < Inputs.SignalInput
             end
             
             obj.update();
-            data = obj.Buffer.getData(numSamples,idxChannel);
+            
             if obj.UdpPortNum8 == 15001
-                upsampleFactor = 5;
-                samples = round(numSamples/5);
+                % get upsampled data
+                desiredRate = 1000;
+                actualRate = 200;
+                upsampleFactor = desiredRate/actualRate;
+                samples = round(numSamples/upsampleFactor);
                 buffData = obj.Buffer.getData(samples,idxChannel);
-                data = interp1(buffData,linspace(1,samples,samples*upsampleFactor-upsampleFactor+1));
+                data = interp1(buffData,linspace(1,samples,numSamples));
+            else
+                % get data directly
+                data = obj.Buffer.getData(numSamples,idxChannel);
             end
         end
         function update(obj)
             if obj.UdpPortNum8 == 15001
-                [cellDataBytes, numReads] = obj.UdpSocket8.getAllData(1000);
+                [cellDataBytes, numReads] = obj.UdpSocket8.getAllData(100);
                 for i = 1:numReads
                     bytes = cellDataBytes{i};
                     switch length(bytes)
@@ -183,6 +189,7 @@ classdef MyoUdp < Inputs.SignalInput
                             d = double(typecast(bytes,'int8'));
                             emgData = reshape(d,8,2);
                             obj.Buffer.addData(obj.EMG_GAIN .* emgData',1:8);
+                            obj.numPacketsReceived = obj.numPacketsReceived + 1;
                         case 20
                             % IMU sample 
                             MYOHW_ORIENTATION_SCALE = 16384.0;
@@ -202,7 +209,7 @@ classdef MyoUdp < Inputs.SignalInput
                             warning('Unknown packet received')
                     end   
                 end
-                [cellDataBytes, numReads] = obj.UdpSocket16.getAllData(1000);
+                [cellDataBytes, numReads] = obj.UdpSocket16.getAllData(100);
                 for i = 1:numReads
                     bytes = cellDataBytes{i};
                     switch length(bytes)
@@ -325,10 +332,72 @@ classdef MyoUdp < Inputs.SignalInput
             
             
         end
+        function obj = MeasureRate(obj)
+            % check the rate at which streaming EMG data is received
+            
+            if nargin < 1
+                obj = Inputs.MyoUdp.getInstance();
+            end
+            %%
+            tLast = clock;
+            pLast = 0;
+            StartStopForm([])
+            while StartStopForm
+                drawnow
+                obj.update();
+                
+                tNow = clock;
+                tElapsed = etime(tNow,tLast);
+                if tElapsed > 2
+                    pCount = obj.numPacketsReceived;
+                    disp((pCount - pLast)/tElapsed)
+                    tLast = tNow;
+                    pLast = pCount;
+                end                
+            end
+            
+                
+        end
+        
+        function obj = DebugLatency(obj)
+            % check the rate at which streaming EMG data is received
+            
+            pnet('closeall')
+            h1 = PnetClass(15001);
+            h2 = PnetClass(15002);
+            h1.initialize()
+            h2.initialize()
+            
+            %%
+            StartStopForm([])
+            while StartStopForm
+                drawnow
+                pause(0.1)
+                [cellDataBytes, numReads] = h2.getAllData(5000);
+                id = cellfun(@length,cellDataBytes) == 16;
+                d = double(typecast([cellDataBytes{id}],'int8'));
+                emgData1 = reshape(d,8,[]);
+                [cellDataBytes, numReads] = h1.getAllData(5000);
+                id = cellfun(@length,cellDataBytes) == 16;
+                d = double(typecast([cellDataBytes{id}],'int8'));
+                emgData2 = reshape(d,8,[]);
+                subplot(2,1,1)
+                plot(emgData1')
+                ylim([-127 127])
+                subplot(2,1,2)
+                plot(emgData2')
+                ylim([-127 127])
+            end
+            
+                
+        end
+        
         function [obj, hViewer] = Default
             % [obj hViewer] = Default
             % Test usage:
             obj = Inputs.MyoUdp.getInstance;
+            obj.UdpPortNum8 = 15001
+            obj.UdpPortNum16 = 15002
             obj.initialize();
             hViewer = GUIs.guiSignalViewer(obj);
         end

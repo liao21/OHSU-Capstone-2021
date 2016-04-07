@@ -64,9 +64,9 @@ classdef MyoUdp < Inputs.SignalInput
         numPacketsReceived = 0;
         numValidPackets = 0;
         
-        Orientation         % Unit Quaternion
-        Accelerometer       % X,Y,Z Acceleration, (g)
-        Gyroscope           % X,Y,Z Angular Rate, (deg/s)
+        Orientation         % Unit Quaternion [1 x 4]
+        Accelerometer       % X,Y,Z Acceleration, (g) [1 x 3]
+        Gyroscope           % X,Y,Z Angular Rate, (deg/s) [1 x 3]
         
         SecondMyo           % property for second myo motion data
     end
@@ -191,7 +191,7 @@ classdef MyoUdp < Inputs.SignalInput
                             obj.Buffer.addData(obj.EMG_GAIN .* emgData',1:8);
                             obj.numPacketsReceived = obj.numPacketsReceived + 1;
                         case 20
-                            % IMU sample 
+                            % IMU sample
                             MYOHW_ORIENTATION_SCALE = 16384.0;
                             MYOHW_ACCELEROMETER_SCALE = 2048.0;
                             MYOHW_GYROSCOPE_SCALE = 16.0;
@@ -201,13 +201,14 @@ classdef MyoUdp < Inputs.SignalInput
                             accelerometer = dataInt16(5:7) ./ MYOHW_ACCELEROMETER_SCALE;
                             gyroscope = dataInt16(8:10) ./ MYOHW_GYROSCOPE_SCALE;
                             
-                            obj.Orientation = orientation;
-                            obj.Accelerometer = accelerometer;
-                            obj.Gyroscope = gyroscope;
-
+                            % Ensure output is in row vectors, type double
+                            obj.Orientation = orientation(:)';
+                            obj.Accelerometer = accelerometer(:)';
+                            obj.Gyroscope = gyroscope(:)';
+                            
                         otherwise
                             warning('Unknown packet received')
-                    end   
+                    end
                 end
                 [cellDataBytes, numReads] = obj.UdpSocket16.getAllData(100);
                 for i = 1:numReads
@@ -219,7 +220,7 @@ classdef MyoUdp < Inputs.SignalInput
                             emgData = reshape(d,8,2);
                             obj.Buffer.addData(obj.EMG_GAIN .* emgData',9:16);
                         case 20
-                            % IMU sample 
+                            % IMU sample
                             MYOHW_ORIENTATION_SCALE = 16384.0;
                             MYOHW_ACCELEROMETER_SCALE = 2048.0;
                             MYOHW_GYROSCOPE_SCALE = 16.0;
@@ -229,13 +230,14 @@ classdef MyoUdp < Inputs.SignalInput
                             accelerometer = dataInt16(5:7) ./ MYOHW_ACCELEROMETER_SCALE;
                             gyroscope = dataInt16(8:10) ./ MYOHW_GYROSCOPE_SCALE;
                             
-                            obj.SecondMyo.Orientation = orientation;
-                            obj.SecondMyo.Accelerometer = accelerometer;
-                            obj.SecondMyo.Gyroscope = gyroscope;
-
+                            % Ensure output is in row vectors, type double
+                            obj.SecondMyo.Orientation = orientation(:)';
+                            obj.SecondMyo.Accelerometer = accelerometer(:)';
+                            obj.SecondMyo.Gyroscope = gyroscope(:)';
+                            
                         otherwise
                             warning('Unknown packet received')
-                    end   
+                    end
                 end
                 
                 return
@@ -268,7 +270,11 @@ classdef MyoUdp < Inputs.SignalInput
                 obj.Orientation = quat(:,end);
                 obj.Accelerometer = accel(:,end);
                 obj.Gyroscope = gyro(:,end);
-                %obj.Quaternion = quat;
+                
+                % Ensure output is in row vectors, type double
+                obj.Orientation = double(obj.Orientation(:)');
+                obj.Accelerometer = double(obj.Accelerometer(:)');
+                obj.Gyroscope = double(obj.Gyroscope(:)');
                 
                 obj.Buffer.addData(obj.EMG_GAIN .* emgData,1:8);
             end
@@ -285,14 +291,19 @@ classdef MyoUdp < Inputs.SignalInput
                 end
                 
                 % gather second myo motion data
-                obj.SecondMyo.Orientation = angle;
-                obj.SecondMyo.Accelerometer = accel;
-                obj.SecondMyo.Gyroscope = gyro;
-                %obj.SecondMyo.Quaternion = quat;
+                
+                % update object
+                obj.SecondMyo.Orientation = quat(:,end);
+                obj.SecondMyo.Accelerometer = accel(:,end);
+                obj.SecondMyo.Gyroscope = gyro(:,end);
+                
+                % Ensure output is in row vectors, type double
+                obj.SecondMyo.Orientation = double(obj.SecondMyo.Orientation(:)');
+                obj.SecondMyo.Accelerometer = double(obj.SecondMyo.Accelerometer(:)');
+                obj.SecondMyo.Gyroscope = double(obj.SecondMyo.Gyroscope(:)');
                 
                 obj.Buffer.addData(obj.EMG_GAIN .* emgData,9:16);
             end
-            
         end
         function Rxyz = getEulerAngles(obj)
             Rxyz = LinAlg.decompose_R(getRotationMatrix(obj));
@@ -353,10 +364,10 @@ classdef MyoUdp < Inputs.SignalInput
                     disp((pCount - pLast)/tElapsed)
                     tLast = tNow;
                     pLast = pCount;
-                end                
+                end
             end
             
-                
+            
         end
         
         function obj = DebugLatency(obj)
@@ -389,7 +400,7 @@ classdef MyoUdp < Inputs.SignalInput
                 ylim([-127 127])
             end
             
-                
+            
         end
         
         function [obj, hViewer] = Default

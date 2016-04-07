@@ -129,7 +129,7 @@ classdef RaptorVIE < handle
         end
         function obj = TestMyo()
             %Presentation.RaptorVIE.TestMyo
-            % create a demo movie or render motino onscreen
+            % create a demo movie or render motion onscreen
             
             obj = Presentation.RaptorVIE;
             obj.initialize;
@@ -147,7 +147,7 @@ classdef RaptorVIE < handle
                 drawnow
                 
                 hMyo.update
-                p = hMyo.Orientation(:,end);
+                p = hMyo.getEulerAngles();
                 obj.update(zeros(11,1),p)
                 disp(p)
                 

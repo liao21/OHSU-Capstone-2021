@@ -85,8 +85,11 @@ classdef UserConfig < handle
         
         
         function result = getUserConfigVar(tagName,defaultValue)
-            %charResult = UserConfig.getUserConfigVar(tagName,defaultValue)
+            %result = UserConfig.getUserConfigVar(tagName,defaultValue)
             % Read tag from user config xml file
+            %
+            % the class of the output is determined by the default value
+            % provided [required]
             %
             
             obj = UserConfig.getInstance;
@@ -102,69 +105,75 @@ classdef UserConfig < handle
                 return
             end
             
-            try
-                
-                isFound = false;
-                v = a.getElementsByTagName('add');
-                for i = 1:v.getLength
-                    t = v.item(i-1);
-                    key = char(t.getAttribute('key'));
-                    if strcmp(key,tagName)
-                        result = char(t.getAttribute('value'));
-                        isFound = true;
-                        break;
-                    end
+            
+            % Because we are reading from xml, the xmlResult will
+            % always be a char.
+            xmlResult = '';
+            v = a.getElementsByTagName('add');
+            for i = 1:v.getLength
+                t = v.item(i-1);
+                key = char(t.getAttribute('key'));
+                if strcmp(key,tagName)
+                    xmlResult = char(t.getAttribute('value'));
+                    break;
                 end
-                
-                if isFound
-                    fprintf('[%s] %s=%s\n',mfilename,tagName,result);
-                else
-                    fprintf('[%s] %s not found. Default=%s\n',mfilename,tagName,result);
-                end
-                
-                % convert value to the class of the default parameter.
-                if ~ischar(defaultValue)
-                    % example '[1 3]'  --> 1 3
-                    [x, status] = str2num(result); %#ok<ST2NM>
-                    if status
-                        result = x;
-                    else
-                        warning('Failed to cast xml key-value');
-                    end
-                end
-                
-            catch ME
-                warning(ME.message)
-                fprintf('[%s.m] Failed to parse tag "%s" entry in file "%s"\n',mfilename,tagName,userFile);
-                result = defaultValue;
             end
+            
+            if isempty(xmlResult)
+                %Not found
+                % display warning
+                if ischar(defaultValue)
+                    fprintf('[%s] %s not found. Default=%s\n',mfilename,tagName,defaultValue);
+                else
+                    fprintf('[%s] %s not found. Default=%s\n',mfilename,tagName,num2str(defaultValue));
+                end
+                result = defaultValue;
+            else
+                % Echo the xml value found display 
+                fprintf('[%s] %s=%s\n',mfilename,tagName,xmlResult);
+                result = xmlResult;
+            end
+            
+            % convert value to the class of the default parameter.
+            % If the defualt value isn't a character, then it needs to be
+            % converted
+            if ~ischar(defaultValue) && ischar(result)
+                % example '[1 3]'  --> 1 3
+                [x, status] = str2num(result); %#ok<ST2NM>
+                if status
+                    result = x;
+                else
+                    warning('Failed to cast xml key-value');
+                end
+            end
+            
             
             
             % Add a check for file references to add the full path if
             % omitted.  THis is a special case for roc tables
             
-%             switch tagName
-%                 case 'rocTable'
-%                     
-%                     % check if the rocTable has path info
-%                     missingPath = isempty(fileparts(result));
-%                     noStoredPath = isempty(obj.userRocFile);
-%                     
-%                     if missingPath && noStoredPath
-%                         % store the table with path
-%                         %obj.userRocFile = which(result);
-%                         result = obj.userRocFile;
-%                         fprintf('[%s.m] Storing full path tag "%s": "%s"\n',mfilename,tagName,result);
-%                     elseif missingPath && ~noStoredPath
-%                         % use the stored path and file
-%                         result = obj.userRocFile;
-%                     else
-%                         % Path exists in xml so use it
-%                     end
-%                     
-%                     assert(exist(result,'file') > 0,'XML Roc file %s not found %s',result);
-%                     
-%             end
+            %             switch tagName
+            %                 case 'rocTable'
+            %
+            %                     % check if the rocTable has path info
+            %                     missingPath = isempty(fileparts(result));
+            %                     noStoredPath = isempty(obj.userRocFile);
+            %
+            %                     if missingPath && noStoredPath
+            %                         % store the table with path
+            %                         %obj.userRocFile = which(result);
+            %                         result = obj.userRocFile;
+            %                         fprintf('[%s.m] Storing full path tag "%s": "%s"\n',mfilename,tagName,result);
+            %                     elseif missingPath && ~noStoredPath
+            %                         % use the stored path and file
+            %                         result = obj.userRocFile;
+            %                     else
+            %                         % Path exists in xml so use it
+            %                     end
+            %
+            %                     assert(exist(result,'file') > 0,'XML Roc file %s not found %s',result);
+            %
+            %             end
         end
     end
 end

@@ -160,27 +160,24 @@ classdef MplUnity < Scenarios.OnlineRetrainer
                 end
             end
             if obj.DemoMyoShoulder
-                                
-                %hMyo.getData();
-                %q = obj.SignalSource.Quaternion(:,end);
-                q = obj.SignalSource.Orientation;
-                R = LinAlg.quaternionToRMatrix(q(:));
-                [U, ~, V] = svd(R);
-                R = U*V'; % Square up the rotaiton matrix
                 
+                R = obj.SignalSource.getRotationMatrix();
                 F = [R [0; 0; 0]; 0 0 0 1];
 
                 if isequal(obj.Fref, eye(4))
+                    % set offset the first time
                     obj.Fref = F;
                 end
                 
                 newXYZ = LinAlg.decompose_R(pinv(obj.Fref)*F);
                 
                 if obj.DemoMyoShoulderLeft
+                    % left side angle decomposition
                     mplAngles(1) = -newXYZ(3) * pi / 180;
                     mplAngles(2) = -newXYZ(2) * pi / 180;
                     mplAngles(3) = -newXYZ(1) * pi / 180;
                 else
+                    % right side angle decomposition
                     mplAngles(1) = newXYZ(3) * pi / 180;
                     mplAngles(2) = -newXYZ(2) * pi / 180;
                     mplAngles(3) = newXYZ(1) * pi / 180;

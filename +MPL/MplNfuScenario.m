@@ -80,6 +80,8 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
         GlobalImpedanceValue = 0.8;
         
         DemoMyoElbow = 0;
+        DemoMyoShoulder = 0;
+        DemoMyoShoulderLeft = 0;
         
     end
     methods
@@ -124,6 +126,11 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
             initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
             
             obj.Timer.Period = 0.035;
+            
+            obj.DemoMyoElbow = str2double(UserConfig.getUserConfigVar('myoElbowEnable','0'));
+            obj.DemoMyoShoulder = str2double(UserConfig.getUserConfigVar('myoElbowShoulder','0'));
+            obj.DemoMyoShoulderLeft = str2double(UserConfig.getUserConfigVar('myoElbowShoulderLeft','0'));
+            
             
         end
         function setupBluetooth(obj,comPort)
@@ -404,15 +411,13 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
             if obj.DemoMyoElbow
                 % Demo for using myo band for elbow angle
                 try
-                    EL = obj.SignalSource.Orientation(2,end) + 90;
+                    ang = obj.SignalSource.getEulerAngles;
+                    EL = ang(2) + 90;
                     EL = EL * pi/180;
                     mplAngles(4) = EL;
                 end
             end
                 
-                
-            
-            
             % Send the command to the NFU
             if obj.EnableImpedance
                 obj.hNfu.sendAllJoints(mplAngles,stiffnessValues);

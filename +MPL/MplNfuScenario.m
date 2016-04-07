@@ -70,7 +70,7 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
         includeVirtual = 0;
         hUdp
         
-        EnableSensorEcho = 1; % display  current sensor reading on console
+        EnableSensorEcho = 0; % display  current sensor reading on console
         EnableFeedback = 1;
         TactorIds = [3 4]
         %TactorIds = [5 6 7];
@@ -214,8 +214,8 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
                             dest = 2;
                         end
                         fprintf(dest,...
-                            'Sensor Data--HR: %8.3f inch-lbs; EL: %8d; ',...
-                            T,obj.hNfu.LmcTorque(4));
+                            '[%s.m] Sensor Data--HR: %8.3f inch-lbs; EL: %8d; ',...
+                            mfilename,T,obj.hNfu.LmcTorque(4));
                         if isfield(tlm,'Percept')
                             fprintf(dest,...
                             'Index: %8.3f; Little: %8.3f;',...
@@ -369,7 +369,9 @@ classdef MplNfuScenario < Scenarios.OnlineRetrainer
             % initialize angles
             mplAngles = zeros(1,27);
             % get angles from state controller
-            mplAngles(1:7) = [m.structState(jointIds).Value];
+            values = m.getValues();
+
+            mplAngles(1:7) = values(1:7);
             
             % Generate MUD message using local roc table
             assert(~isempty(obj.RocTable),'ROC table does not exist');

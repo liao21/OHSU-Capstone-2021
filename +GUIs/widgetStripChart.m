@@ -49,7 +49,8 @@ classdef widgetStripChart < handle
             end
             
             obj.hLines = plot(obj.hAxes,zeros(obj.NumSamples,obj.NumLines));
-
+            drawnow
+            
             obj.hLegend = legend(obj.hLines,lineTxt,'Location','NorthWest');
             set(obj.hLegend,'Interpreter','None');
             

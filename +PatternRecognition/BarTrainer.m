@@ -62,6 +62,11 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                 obj.ShowImages = true;
             end
             
+            
+            
+            obj.ZcThreshold = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
+            obj.SscThreshold = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',0.15);
+            
         end
         function setupFigure(obj)
             obj.hFigure = UiTools.create_figure('Interactive Trainer');
@@ -156,11 +161,10 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                 set(hLabel,'FontWeight','Bold');
                 
                 windowData = obj.SignalSource.getFilteredData();
-                zc = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
-                ssc = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',0.15);
-                features = feature_extract(windowData' ,obj.SignalClassifier.NumSamplesPerWindow,zc,ssc);
+                features = feature_extract(windowData' ,obj.SignalClassifier.NumSamplesPerWindow,obj.ZcThreshold,obj.SscThreshold);
                 
                 f = features(obj.SignalClassifier.getActiveChannels,1);
+
                 obj.hStripChart.putdata(f);
                 
                 if useJoystick
@@ -254,6 +258,10 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
             if ~ishandle(obj.hFigure)
                 setupFigure(obj);
             end
+            
+            % call update once manually for error checking
+            obj.update()
+            
             start(obj.hTimer);
         end
         function close(obj)

@@ -19,6 +19,10 @@ classdef TrainingInterface < Common.MiniVieObj
         SignalSource;
         SignalClassifier;
         TrainingData
+
+        ZcThreshold=0.15
+        SscThreshold=0.15
+
     end
     methods (Abstract=true)
         collectdata(obj);
@@ -39,6 +43,9 @@ classdef TrainingInterface < Common.MiniVieObj
             obj.TrainingData = hTrainingData;
             obj.SignalClassifier = hSignalClassifier;
             obj.SignalSource = hSignalSource;
+            
+            obj.ZcThreshold = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
+            obj.SscThreshold = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',0.15);
             
         end
         function ok = isInitialized(obj)
@@ -67,9 +74,7 @@ classdef TrainingInterface < Common.MiniVieObj
             windowData = obj.SignalSource.applyAllFilters(rawEmg);
             windowData = windowData(end-numSamples+1:end,:);
             
-            zc = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
-            ssc = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',0.15);            
-            features = feature_extract(windowData',obj.SignalClassifier.NumSamplesPerWindow,zc,ssc);
+            features = feature_extract(windowData',obj.SignalClassifier.NumSamplesPerWindow,obj.ZcThreshold,obj.SscThreshold);
             
             obj.TrainingData.addTrainingData(obj.CurrentClass, features, rawEmg(1:obj.SignalClassifier.NumSamplesPerWindow,:)')
             

@@ -126,7 +126,7 @@ classdef EmgSimulator < Inputs.SignalInput
             else
                 set(hFig,'Position',[1 1 1 1]);
                 drawnow
-                alwaysontop(hFig);
+                WinOnTop(hFig);
             end
             
             obj.hg.hFig = hFig;

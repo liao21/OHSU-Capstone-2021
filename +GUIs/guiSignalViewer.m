@@ -15,7 +15,7 @@ classdef guiSignalViewer < Common.MiniVieObj
         
         ShowFilteredData = 1;
         ShowMeasurements = 0;
-        ModeSelect = GUIs.guiSignalViewerState.TimeDomain;
+        ModeSelect = GUIs.guiSignalViewer.TimeDomain;
         
         AxesLimTimeDomain = 'auto';  % 'auto', [-1 1], etc
         
@@ -43,6 +43,14 @@ classdef guiSignalViewer < Common.MiniVieObj
         numFeatures = 4;
         
         FullAxesPosition = [80 250 750 300];
+
+        % Enumerated states.  this was a separate class using enumeration,
+        % but too many problems with compatability
+        FFT = 'FFT';
+        TimeDomain = 'TimeDomain';
+        Features = 'Features';
+        Spectrogram = 'Spectrogram';
+        
     end
     methods
         function obj = guiSignalViewer(hSignalSource)
@@ -74,6 +82,9 @@ classdef guiSignalViewer < Common.MiniVieObj
             
             obj.setupFigure();
             
+            obj.ModeSelect = GUIs.guiSignalViewer.TimeDomain;
+            %obj.ModeSelect = GUIs.guiSignalViewer.Spectrogram;
+            
             % Need to be careful here if this overruns the buffers of the signal source objects
             %obj.SignalSource.NumSamples = 3000;
             
@@ -90,14 +101,17 @@ classdef guiSignalViewer < Common.MiniVieObj
             obj.resetFeatureBuffer();
             
             obj.updateFigure();
-            fprintf('OK\n');
+            %fprintf('OK\n');
             
             % Update once manually before timer (helps debugging by
             % throwing a real error)
             obj.update()
             
+            obj.update()
+            obj.update()
+            obj.update()
+            obj.update()
             start(obj.hTimer);
-            
             
         end
         function resetFeatureBuffer(obj)
@@ -126,12 +140,14 @@ classdef guiSignalViewer < Common.MiniVieObj
             obj.hg.PanelDomain = uibuttongroup(obj.hg.Figure,'Units','Pixels','Position',[80 40 200 150]);
             set(obj.hg.PanelDomain,'Title','Plot Domain');
             % Create three radio buttons in the button group.
-            obj.hg.ButtonFFT = uicontrol('Style','Togglebutton','String','FFT','Units','Normalized',...
-                'pos',[0.1 0.1 0.8 0.25],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
             obj.hg.ButtonFeatures = uicontrol('Style','Togglebutton','String','Features','Units','Normalized',...
-                'pos',[0.1 0.7 0.8 0.25],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
+                'pos',[0.1 0.65 0.8 0.2],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
             obj.hg.ButtonTimeDomain = uicontrol('Style','Togglebutton','String','Time','Units','Normalized',...
-                'pos',[0.1 0.4 0.8 0.25],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
+                'pos',[0.1 0.45 0.8 0.2],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
+            obj.hg.ButtonSpectrogram = uicontrol('Style','Togglebutton','String','Spectrogram','Units','Normalized',...
+                'pos',[0.1 0.25 0.8 0.2],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
+            obj.hg.ButtonFFT = uicontrol('Style','Togglebutton','String','FFT','Units','Normalized',...
+                'pos',[0.1 0.05 0.8 0.2],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
             % Initialize some button group properties.
             set(obj.hg.PanelDomain,'SelectionChangeFcn',@(src,evt)selcbk(src));
             set(obj.hg.PanelDomain,'Visible','on');
@@ -174,19 +190,19 @@ classdef guiSignalViewer < Common.MiniVieObj
                 val = max(min(val,MAX_SAMPLES),1);
                 
                 switch obj.ModeSelect
-                    case GUIs.guiSignalViewerState.TimeDomain
+                    case GUIs.guiSignalViewer.TimeDomain
                         if isempty(val)
                             val = obj.NumTimeDomainSamples;
                         else
                             obj.NumTimeDomainSamples = val;
                         end
-                    case GUIs.guiSignalViewerState.FFT
+                    case GUIs.guiSignalViewer.FFT
                         if isempty(val)
                             val = obj.NumFrequencySamples;
                         else
                             obj.NumFrequencySamples = val;
                         end
-                    case GUIs.guiSignalViewerState.Features
+                    case GUIs.guiSignalViewer.Features
                         if isempty(val)
                             val = obj.NumFeatureSamples;
                         else
@@ -198,11 +214,13 @@ classdef guiSignalViewer < Common.MiniVieObj
             function selcbk(source)
                 switch get(source,'SelectedObject')
                     case obj.hg.ButtonTimeDomain
-                        obj.ModeSelect = GUIs.guiSignalViewerState.TimeDomain;
+                        obj.ModeSelect = GUIs.guiSignalViewer.TimeDomain;
                     case obj.hg.ButtonFFT
-                        obj.ModeSelect = GUIs.guiSignalViewerState.FFT;
+                        obj.ModeSelect = GUIs.guiSignalViewer.FFT;
                     case obj.hg.ButtonFeatures
-                        obj.ModeSelect = GUIs.guiSignalViewerState.Features;
+                        obj.ModeSelect = GUIs.guiSignalViewer.Features;
+                    case obj.hg.ButtonSpectrogram
+                        obj.ModeSelect = GUIs.guiSignalViewer.Spectrogram;
                 end
                 
                 obj.updateFigure();
@@ -218,13 +236,16 @@ classdef guiSignalViewer < Common.MiniVieObj
             
             % set button group
             switch obj.ModeSelect
-                case GUIs.guiSignalViewerState.TimeDomain
+                case GUIs.guiSignalViewer.TimeDomain
                     set(obj.hg.PanelDomain,'SelectedObject',obj.hg.ButtonTimeDomain);
                     set(obj.hg.editSamples,'String',num2str(obj.NumTimeDomainSamples));
-                case GUIs.guiSignalViewerState.FFT
+                case GUIs.guiSignalViewer.FFT
                     set(obj.hg.PanelDomain,'SelectedObject',obj.hg.ButtonFFT);
                     set(obj.hg.editSamples,'String',num2str(obj.NumFrequencySamples));
-                case GUIs.guiSignalViewerState.Features
+                case GUIs.guiSignalViewer.Spectrogram
+                    set(obj.hg.PanelDomain,'SelectedObject',obj.hg.ButtonSpectrogram);
+                    set(obj.hg.editSamples,'String',num2str(obj.NumFrequencySamples));
+                case GUIs.guiSignalViewer.Features
                     set(obj.hg.PanelDomain,'SelectedObject',obj.hg.ButtonFeatures);
                     set(obj.hg.editSamples,'String',num2str(obj.NumFeatureSamples));
                     obj.ZcThreshold = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',0.15);
@@ -236,7 +257,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             % This function called by timer object and updates the GUI
             try
                 switch obj.ModeSelect
-                    case GUIs.guiSignalViewerState.Features
+                    case GUIs.guiSignalViewer.Features
                         setAxesVisible(obj.hg.Axes(1:4),'on');
                         axis(obj.hg.Axes(1),'auto');
                         
@@ -259,7 +280,7 @@ classdef guiSignalViewer < Common.MiniVieObj
                         xlim(obj.hg.Axes(4),[0 obj.NumFeatureSamples]);
 
                         obj.updateFeatures();
-                    case GUIs.guiSignalViewerState.TimeDomain
+                    case GUIs.guiSignalViewer.TimeDomain
                         setAxesVisible(obj.hg.Axes(1),'on');
                         setAxesVisible(obj.hg.Axes(2:4),'off');
                         set(obj.hg.Axes(1),'OuterPosition',[0 0 1 1]);
@@ -274,7 +295,7 @@ classdef guiSignalViewer < Common.MiniVieObj
                         xlim(obj.hg.Axes(1),[0 obj.NumTimeDomainSamples]);
 
                         obj.updateTimeDomain();
-                    case GUIs.guiSignalViewerState.FFT
+                    case GUIs.guiSignalViewer.FFT
                         setAxesVisible(obj.hg.Axes(1),'on');
                         setAxesVisible(obj.hg.Axes(2:4),'off');
                         set(obj.hg.Axes(1),'OuterPosition',[0 0 1 1]);
@@ -289,6 +310,13 @@ classdef guiSignalViewer < Common.MiniVieObj
                         set(obj.hg.DataLabels,'Visible','off');
                         
                         obj.updateFrequencyDomain();
+                    case GUIs.guiSignalViewer.Spectrogram
+                        setAxesVisible(obj.hg.Axes(1),'on');
+                        setAxesVisible(obj.hg.Axes(2:4),'off');
+                        set(obj.hg.Axes(1),'OuterPosition',[0 0 1 1]);
+
+                        colormap(obj.hg.Axes(1),'jet')
+                        obj.updateSpectrogram();
                     otherwise
                         disp('Invalid Mode Selection');
                 end
@@ -328,6 +356,44 @@ classdef guiSignalViewer < Common.MiniVieObj
                 set(obj.hg.PlotLines{1}(iChannel),'YData',2*abs(Y(1:NFFT/2+1)),'XData',f);
                 
             end
+            
+        end
+        function updateSpectrogram(obj)
+            
+            numSamples = obj.NumFrequencySamples;
+            
+            if obj.ShowFilteredData
+                channelData = obj.SignalSource.getFilteredData(numSamples);
+            else
+                channelData = obj.SignalSource.getData(numSamples);
+            end
+            
+            if isempty(channelData) || ~ishandle(obj.hg.Figure)
+                return;
+            end
+            
+            Fs = obj.SignalSource.SampleFrequency;
+            
+            iChannel = obj.SelectedChannels(1);
+                
+            x = channelData(:,iChannel);
+            
+            % [s,f,t] = spectrogram(x,window,noverlap,f,fs)
+            [s,f,t] = spectrogram(x,25,0,256,Fs,'yaxis');
+
+            %imagesc(real(s),[-50 0],'Parent',obj.hg.Axes(1))
+            imagesc(obj.hg.Axes(1),real(s))
+            %obj.hg.Axes(1).CLim = [0 5];
+            xlabel(obj.hg.Axes(1),'Time');
+            ylabel(obj.hg.Axes(1),'Frequency');
+            
+            oldLabel = str2double(obj.hg.Axes(1).YTickLabel);
+            obj.hg.Axes(1).YTickLabel = round(oldLabel .* (Fs/2) ./ size(s,1));
+            
+            obj.hg.Axes(1).XTickLabel = '';
+            
+            xlim(obj.hg.Axes(1),[0 size(s,2)]);
+
             
         end
         function updateTimeDomain(obj)

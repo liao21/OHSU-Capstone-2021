@@ -28,7 +28,7 @@ function isRunning = StartStopForm(manualState)
             'Position', [300, 300, 250, 100]);
 
         drawnow;
-        alwaysontop(stopForm);  % Keep control box on top
+        WinOnTop(stopForm);  % Keep control box on top
         
         internalState = true;
 

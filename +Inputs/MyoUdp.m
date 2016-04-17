@@ -64,9 +64,9 @@ classdef MyoUdp < Inputs.SignalInput
         numPacketsReceived = 0;
         numValidPackets = 0;
         
-        Orientation         % Unit Quaternion [1 x 4]
-        Accelerometer       % X,Y,Z Acceleration, (g) [1 x 3]
-        Gyroscope           % X,Y,Z Angular Rate, (deg/s) [1 x 3]
+        Orientation = [1 0 0 0];    % Unit Quaternion [1 x 4]
+        Accelerometer = [0 0 0];    % X,Y,Z Acceleration, (g) [1 x 3]
+        Gyroscope = [0 0 0];        % X,Y,Z Angular Rate, (deg/s) [1 x 3]
         
         SecondMyo           % property for second myo motion data
     end

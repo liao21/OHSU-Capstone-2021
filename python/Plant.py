@@ -23,6 +23,7 @@ class Plant(object):
         self.limit = [45.0 * math.pi / 180.0]*self.NUM_JOINTS
         self.dt = dt
 
+        # ----------|-Class Name------------------|-----Joint ID-------|-Direction-|
         self.Joint={'No Movement'               : [                  [], 0 ],
                     'Shoulder Flexion'          : [                 [0],+1 ],
                     'Shoulder Extension'        : [                 [0],-1 ],
@@ -42,6 +43,8 @@ class Plant(object):
                     'Spherical Grasp'           : [ list(range(7,26+1)),+1 ]
                     }
 
+        # TODO[Lydia1]: this is a temporary mapping for the hand. Need to implement ROC based hand commands next
+                    
         if DEBUG:
             # debug, set a joint to move
             self.velocity[4] = 30.0 * math.pi / 180.0

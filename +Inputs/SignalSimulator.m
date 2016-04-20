@@ -199,7 +199,7 @@ classdef SignalSimulator < Inputs.SignalInput
             
             % force redraw before forcing always on top
             drawnow
-            alwaysontop(hFig);
+            WinOnTop(hFig);
             
             cellCurrentKeys = {};
             

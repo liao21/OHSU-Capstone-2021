@@ -23,7 +23,8 @@ dt = 0.02  # seconds per loop.  50Hz update
 
 # Create data objects
 
-# Singal Source get external bio-signal data
+# Signal Source get external bio-signal data
+# For MPL, this might be CPC Headstage, External Signal Acquisition, MyoBand, etc.
 hMyo = MyoUdp()#("192.168.1.3")
 
 # Training Data holds data labels 
@@ -32,10 +33,13 @@ hTrain = TrainingUdp()
 # Plant maintains current limb state (positions) during velocity control
 hPlant = Plant(dt)
 
-# Sink is output to ouside world (in this case to VIE)
+# Sink is output to outside world (in this case to VIE)
+# For MPL, this might be: real MPL/NFU, Virtual Arm, etc.
 hSink = UnityUdp() #("192.168.1.24")
 
 # Classifier parameters
+# TODO: generate defaults if these files don't exist, or are corrupt
+# TODO: Perform error checking to ensure number of Classes match matrix sizes
 W = np.genfromtxt("weights.txt", dtype=None)
 C = np.genfromtxt("centers.txt", dtype=None)
 # Classifier class names 
@@ -45,6 +49,7 @@ with open("classes.txt") as f:
 trainCurrentClass = []
 
 #create filefor dumping training data
+#TODO[Lydia2]: store training data more efficiently and explicitly
 file=open('tmp.dat','w')
      
 # Iteration counter
@@ -86,23 +91,30 @@ try:
         jointId, jointDir = hPlant.class_map(classNames[classNum])
 
         # Set joint velocities
-        hPlant.velocity[:hPlant.NUM_JOINTS] = [0.0] * hPlant.NUM_JOINTS
+        # TODO [Lydia1]: Needs ROC implementation
+        hPlant.velocity[:hPlant.NUM_JOINTS] = [0.0] * hPlant.NUM_JOINTS # initially set all to zero
         if jointId:
             for i in jointId:
-                hPlant.velocity[i] = jointDir
+                hPlant.velocity[i] = jointDir # set non-zero velocity for joints we care about
 
         hPlant.update()
 
+        # Non-EMG Motion based inputs [Optional]
         # perform joint motion update
         vals = hMyo.getAngles()
+        # Temp: Overwrite Elbow angle based on Myo orientation
         hPlant.position[3] = vals[1] + math.pi/2
 
         # transmit output
         hSink.sendJointAngles(hPlant.position)
 
+        # TODO[Lydia2]: Update training 
         # Training Process begin logging
-        cName = str(hTrain.class_name)
+        # [Lydia2] Efficient way to organize incoming messages, store labeled data on disk
+        # [Lydia3] Implement LDA in python to regen training parameters
+        cName = str(hTrain.class_name)  # Do I have an external command?
         if cName:
+            # If external command, write the data and label to disk
             print(cName)
             #txt = ','.join(map(str, f.tolist()))
             f.tofile(file)

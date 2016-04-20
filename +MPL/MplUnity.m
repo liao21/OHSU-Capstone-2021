@@ -84,18 +84,7 @@ classdef MplUnity < Scenarios.OnlineRetrainer
             % state variable
             
             if length(rocId) >= 3
-                endPtVelocities = [0 0 0]';
-                endPtOrientationVelocities = rocId';
-                rocMode = 1;
-                rocTableIDs = 1;
-                rocTableValues = 1;
-                rocWeights  = 1;
-                
-                msg = obj.hMud.EndpointVelocity6HandRocGrasps( ...
-                    endPtVelocities, endPtOrientationVelocities, ...
-                    rocMode, rocTableIDs, rocTableValues, rocWeights);
-                
-                obj.hUdp.putData(msg);
+                warning('Endpoint Mode not supported by MplUnity');
                 return
             end
             
@@ -107,15 +96,6 @@ classdef MplUnity < Scenarios.OnlineRetrainer
             
             % Note the joint ids for the MPL are different than the older
             % action bus definition
-            % jointIds = [
-            %     action_bus_enum.Shoulder_FE
-            %     action_bus_enum.Shoulder_AbAd
-            %     action_bus_enum.Humeral_Rot
-            %     action_bus_enum.Elbow
-            %     action_bus_enum.Wrist_Rot
-            %     action_bus_enum.Wrist_Dev
-            %     action_bus_enum.Wrist_FE
-            %     ];
             jointIds = [
                 MPL.EnumArm.SHOULDER_FE
                 MPL.EnumArm.SHOULDER_AB_AD
@@ -129,7 +109,6 @@ classdef MplUnity < Scenarios.OnlineRetrainer
             mplAngles = zeros(1,27);
             %mplAngles(1:7) = obj.JointAnglesDegrees(jointIds) * pi/180;
             mplAngles(1:7) = [m.structState(jointIds).Value];
-            
             
             % Generate vMpl message.  If local roc table exists, use it
             
@@ -163,7 +142,7 @@ classdef MplUnity < Scenarios.OnlineRetrainer
                 
                 R = obj.SignalSource.getRotationMatrix();
                 F = [R [0; 0; 0]; 0 0 0 1];
-
+                
                 if isequal(obj.Fref, eye(4))
                     % set offset the first time
                     obj.Fref = F;
@@ -185,12 +164,10 @@ classdef MplUnity < Scenarios.OnlineRetrainer
             end
             
             obj.hSink.putData(mplAngles);
-                        
+            
         end
         function update_sensory(obj)
-            % Not implemented            
+            % Not implemented
         end
-        
     end
 end
-

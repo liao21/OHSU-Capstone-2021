@@ -1083,9 +1083,10 @@ classdef MiniVIE < Common.MiniVieObj
             % cd('C:\svn\myopen\MiniVIE');
             % MiniVIE.configurePath;
             % obj = RunTakeHome();
-            cb = sprintf('cd(''%s'');\nMiniVIE.configurePath();\nobj = RunTakeHome();',...
-                fileparts(which('MiniVIE')));
-            shortcutUtils.addShortcutToBottom(strcat('RunTakeHome',suffix),cb,'','Shortcuts', 'true');
+            
+            %cb = sprintf('cd(''%s'');\nMiniVIE.configurePath();\nobj = RunTakeHome();',...
+            %    fileparts(which('MiniVIE')));
+            %shortcutUtils.addShortcutToBottom(strcat('RunTakeHome',suffix),cb,'','Shortcuts', 'true');
             
         end
         function configurePath
@@ -1093,7 +1094,7 @@ classdef MiniVIE < Common.MiniVieObj
 
             addpath(pathName);
             addpath([pathName filesep 'Utilities']);
-            addpath(fullfile(pathName,'GUIDE_GUIs'));
+            %addpath(fullfile(pathName,'GUIDE_GUIs'));
             
             % add folder and sub-directories:
             addpath(genpath(fullfile(pathName,'ThirdParty')));

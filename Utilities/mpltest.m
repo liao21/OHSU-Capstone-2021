@@ -1,29 +1,9 @@
 function mpltest
 % Test Script to test MPL functions with NFU
 
-strRouterIp = UserConfig.getUserConfigVar('mplRouterIp','192.168.1.1');
-strNfuIp = UserConfig.getUserConfigVar('mplNfuIp','192.168.1.111');
-
 AA = -0.3;
 EL = 0;
 armTestStart = [[0 AA 0] EL 0 0 0];
-
-% Note for changing limb stream-To address:
-%     Telnet in to limb:
-%     Launch windows command prompt (cmd.exe)
-%     c:\> telnet 192.168.1.111
-%     login as root
-%     > cat /fs/etfs/hostname
-%     > vi /fs/etfs/hostname
-%     > reboot
-
-
-% Note for quick NFU based limb position adjust:
-% hNfu = MPL.NfuUdp.getInstance;
-% s = hNfu.initialize();
-% hNfu.sendAllJoints([ [-0.35 -0.2 0] 1.8 -0.7 -0.5 -0.5])  % radians
-
-
 
 fprintf('\n\n\n\n\n');
 fprintf('******************************\n');
@@ -31,55 +11,45 @@ fprintf('********MiniVIE Tests*********\n');
 fprintf('******************************\n');
 fprintf('Which Test?\n');
 
-% cellTests = { testIdentifier, test description }
+% cellTests = { function callback, test description }
 cellTests = {
-    'Ping01',       sprintf('[1] Ping router using OS [ping %s -t]',strRouterIp)
-    'Ping02',       sprintf('[2] Ping limb system using OS [ping %s -t]',strNfuIp)
-    'Telnet01',     sprintf('[3] Open telnet session (pkgmgr /iu:"TelnetClient") [telnet %s]',strNfuIp)
-    'Pnet01',       '[4] basic pnet tcpsocket and tcplisten on 6200'
-    'NfuStream01',  '[5] NFU Streaming [Inputs.NfuInput]'
-    'MplWrist01',   '[6] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
-    'MplHand',      '[7] Test MPL ROC grasps [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
-    'Haptics01',    '[8] Tactor manual control'
-    'Haptics02',    '[9] HapticAlgorithm Runs HapticAlgorithm within  MPL.MplNfuScenario < Scenarios.ScenarioBase'
-    'Joystick01',   '[10] Joystick Runs JoyMexClass preview for 15 seconds'
-    'Edit01',       '[11] edit mpltest.m'
-    'MplThumb',     '[12] Test MPL Thumb'
-    'exit',         '[0] Exit'
+    @Ping,         'Ping: Limb system and router using OS'
+    @NfuStream01,  'NFU: Streaming [Inputs.NfuInput]'
+    @MplWrist01,   'MPL Wrist: Range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
+    @MplHand,      'MPL Hand: ROC grasps [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
+    @Haptics01,    'Tactor: Manual control'
+    @Haptics02,    'HapticAlgorithm: Runs HapticAlgorithm within  MPL.MplNfuScenario < Scenarios.ScenarioBase'
+    @Joystick01,   'Joystick: Runs JoyMexClass preview for 15 seconds'
+    @MplThumb,     'Test MPL Thumb'
+    @Edit01,       'Edit: mpltest.m'
     };
 
-%     'MplWrist02',   '[12] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
-%     'MplWrist03',   '[13] Test MPL wrist range of motion with tactor'
-%     'MplShoulderFe','[14] Test MPL shoulder fe range of motion'
-%     'MplShouldAbAd','[15] Test MPL shoulder abad range of motion'
-%     'MplHumeralRot','[16] Test MPL humeral rot range of motion'
-%     'MplElbow',     '[17] Test MPL elbow range of motion'
+% display options
+nTests = size(cellTests,1);
+testDescriptions = cellTests(:,2);
+str = [ cellstr(num2str((1:nTests)')) testDescriptions]';
+fprintf('[%s] %s\n',str{:})
+fprintf('[0] Exit\n');
 
-for i = 1:size(cellTests,1)
-    fprintf('%s\n',cellTests{i,2});
-end
-
+% get response
 response = str2double(input('Select Test: ','s'));
 
 if isnan(response) || (response == 0)
+    % Exit
     return
 end
 
-testId = cellTests{response,1};
-switch testId
-    case 'Ping01'
-        cmd = sprintf('ping %s -t',strRouterIp);
-        disp(cmd);
-        system(cmd);
-    case 'Ping02'
-        cmd = sprintf('ping %s -t',strNfuIp);
-        disp(cmd);
-        system(cmd);
-    case 'Telnet01'
-        cmd = sprintf('telnet %s',strNfuIp);
-        disp(cmd);
-        system(cmd);
-    case 'NfuStream01'
+% call function
+testFunction = cellTests{response,1};
+testFunction();
+
+return
+
+    function Ping
+        MPL.MplUtils.wait_for_ping_response();
+    end
+
+    function NfuStream01
         h = Inputs.NfuInput();
         
         fprintf('Adding Filters\n');
@@ -90,8 +60,9 @@ switch testId
         assert(s >= 0,'NFU Init failed');
         
         GUIs.guiSignalViewer(h);
-        return
-    case 'MplWrist01'
+        
+    end
+    function MplWrist01
         %test mpl wrist ROM
         hNfu = MPL.NfuUdp.getInstance;
         s = hNfu.initialize();
@@ -103,12 +74,12 @@ switch testId
         pause(1.0)
         AA = -0.25;
         hNfu.sendAllJoints([ [0 AA 0] EL+0.05 -0.7 -0.5 -0.5]);
-        pause(1.0)        
+        pause(1.0)
         hNfu.sendAllJoints([ [0 AA 0] EL 0.7 0.5 0.5]);
         pause(1.0)
         hNfu.sendAllJoints(armTestStart);
-        
-    case 'MplWrist02'
+    end
+    function MplWrist02
         %test mpl wrist ROM
         hNfu = MPL.NfuUdp.getInstance;
         s = hNfu.initialize();
@@ -124,7 +95,8 @@ switch testId
             hNfu.sendAllJoints([zeros(1,4) val val val]);
             pause(0.02);
         end
-    case 'MplWrist03'
+    end
+    function MplWrist03
         % this test runs the wrist doms through a 1 Hz sine wave.
         % It also activates the tactors on/off at 1 Hz
         
@@ -162,8 +134,8 @@ switch testId
         tactorId = 4;
         hNfu.tactorControl(tactorId, 100, 0, 100, 100, 0);
         
-        
-    case 'MplHand'
+    end
+    function MplHand
         %test mpl hand Roc
         hNfu = MPL.NfuUdp.getInstance;
         hNfu.initialize();
@@ -173,38 +145,40 @@ switch testId
         
         StartStopForm([]);
         while StartStopForm
-        for iRoc = [3 5 6 8 16]%1:length(roc)
-            RocId = structRoc(iRoc).id;
-            RocName = structRoc(iRoc).name;
-            
-            numOpenSteps = 30;
-            numWaitSteps = 10;
-            numCloseSteps = 30;
-            
-            mplAngles = zeros(1,27);
-            mplAngles(2) = -0.3;
-            mplAngles(4) = EL+0.05; %Elbow
-            
-            graspVal = [linspace(0,1,numOpenSteps) ones(1,numWaitSteps) linspace(1,0,numCloseSteps)];
-            for i = 1:length(graspVal)
-                fprintf('Entry #%d, RocId=%d, %14s %6.2f Pct\n',...
-                    iRoc,RocId,RocName,graspVal(i)*100);
+            for iRoc = [3 5 6 8 16]%1:length(roc)
+                RocId = structRoc(iRoc).id;
+                RocName = structRoc(iRoc).name;
                 
-                % perform local interpolation
-                mplAngles(structRoc(iRoc).joints) = interp1(structRoc(iRoc).waypoint,structRoc(iRoc).angles,graspVal(i));
+                numOpenSteps = 30;
+                numWaitSteps = 10;
+                numCloseSteps = 30;
                 
-                hNfu.sendAllJoints(mplAngles);
-                pause(0.02);
+                mplAngles = zeros(1,27);
+                mplAngles(2) = -0.3;
+                mplAngles(4) = EL+0.05; %Elbow
+                
+                graspVal = [linspace(0,1,numOpenSteps) ones(1,numWaitSteps) linspace(1,0,numCloseSteps)];
+                for i = 1:length(graspVal)
+                    fprintf('Entry #%d, RocId=%d, %14s %6.2f Pct\n',...
+                        iRoc,RocId,RocName,graspVal(i)*100);
+                    
+                    % perform local interpolation
+                    mplAngles(structRoc(iRoc).joints) = interp1(structRoc(iRoc).waypoint,structRoc(iRoc).angles,graspVal(i));
+                    
+                    hNfu.sendAllJoints(mplAngles);
+                    pause(0.02);
+                end
+                disp('Wait...');pause(1);
             end
-            disp('Wait...');pause(1);
-        end
         end
         hNfu.sendAllJoints(armTestStart);
-    case 'Haptics01'
+    end
+    function Haptics01
         % Test tactors manually
         test_tactor_nfu();
         return
-    case 'Haptics02'
+    end
+    function Haptics02
         % HapticAlgorithm: Runs HapticAlgorithm within  MPL.MplScenarioMud < Scenarios.ScenarioBase
         tData = PatternRecognition.TrainingData;
         
@@ -217,13 +191,16 @@ switch testId
         fprintf('Feedback Algorithm is running\n');
         
         return
-    case 'Joystick01'
+    end
+    function Joystick01
         obj = JoyMexClass;
         obj.preview;
-    case 'Edit01'
+    end
+    function Edit01
         edit(mfilename);
         return
-    case 'Pnet01'
+    end
+    function Pnet01
         pnet('closeall');
         pause(0.1);
         p = pnet('tcpsocket',6200);
@@ -236,10 +213,11 @@ switch testId
             pnet(t,'close');
             pnet(p,'close');
         end
-    case 'MplThumb'
+    end
+    function MplThumb
         hNfu = MPL.NfuUdp.getInstance;
         hNfu.initialize();
-
+        
         id = MPL.EnumArm;
         armAngles = zeros(1,27);
         
@@ -257,12 +235,5 @@ switch testId
                 end
             end
         end
-    otherwise
-        fprintf('Unmatched test "%s"\n',testId);
-        return
-end
-fprintf('***********END****************\n');
-fprintf('Restarting test script\n');
-mpltest
-
+    end
 end

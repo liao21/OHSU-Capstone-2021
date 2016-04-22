@@ -49,11 +49,11 @@ def storeROC(file):
    
 timeElapsed  = time.time() - timeBegin
 
-def main():
-    print(timeElapsed)
-    print (storeROC(filename))
-    
-main()
+#def main():
+#    print(timeElapsed)
+#    print (storeROC(filename))
+#    
+#main()
 
         
     

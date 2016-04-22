@@ -22,7 +22,7 @@ VERBOSE = 1
 dt = 0.02  # seconds per loop.  50Hz update
 
 # TODO [Lydia1]: need to include xml file with ROC tables
-filename = ""
+filename = "C:\git\minivie\python\GraspAndWholeArmRoc.xml"
 # Create data objects
 
 # Signal Source get external bio-signal data

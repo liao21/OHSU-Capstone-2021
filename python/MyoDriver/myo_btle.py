@@ -2,6 +2,7 @@
 myo_btle.py - revision 5f
 
 Created on Mar 22 20:22:37 2016
+edited on Apr 24 2016 - comments and verbose improvements
 
 Module to discover Bluetooth Services for a Myo through -btle-
 --Object Classes:
@@ -30,6 +31,8 @@ import cmdHCI
 from struct import unpack
 import time
 from subprocess import Popen
+
+__version__ = "0.5.e"
 
 class c_struct_construct:
     pass
@@ -192,7 +195,7 @@ class myo_struct:
             discSvcName=list(allSvcNames[:])
         conn.getServices()
         for svcName in discSvcName:
-            print('...')
+            print('.'),
             self.appendInfo2(conn, svcName)
         print 'BTLE Discovery Done.'
 

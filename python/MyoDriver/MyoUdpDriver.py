@@ -1,8 +1,9 @@
 """
-MyoUdpDriver.py - ver 0.6
+MyoUdpDriver.py - ver 0.6a
 
 Created on Mar 25 08:50:20 2016 - proof simultaneous dual myo configuration at 300Hz:EMG 200Hz:IMU
 Edited on Apr 24 2016 - improved driver options, enable console output, improved threading
+Edited on Apr 25 2016 - configured for a 48byte UDP Payload
 
 Module to connect to Myo and stream data
 
@@ -24,7 +25,8 @@ import socket
 import argparse
 import binascii
 
-__version__ = "0.6"
+__version__ = "0.6.a"
+print sys.argv[0] + " Version: " + __version__
 
 
 ### Parameters:
@@ -100,6 +102,9 @@ parser.add_argument('--bVrbDisc', default = False, type=bool,
 # THREADING
 parser.add_argument('--bNoThrd', default = False, type=bool,
                     help='{bool} <False> Enable data stream threads for each Myo')
+parser.add_argument('--bPad48bytes', default = False, type=bool,
+                    help='{bool} <False> Enable 48byte data stream with zero padding')
+
 
 args = parser.parse_args()
 
@@ -136,7 +141,7 @@ class MyoDelegate(btle.DefaultDelegate):
 ##        for i in range(10): emptyIMUdata.append(0)
 ##        emptyIMUdata[0]=1 # to make sure the Quaternion orientation matrix is valid
 ##        self.zerosIMUdata=bytearray(struct.pack('%dh' % len(emptyIMUdata),*emptyIMUdata))
-        self.zerosIMUdata=bytearray(struct.pack('4h3h3h', 1,0,0,0 ,0,0,0 ,0,0,0))
+        self.zerosIMUdata=bytearray(struct.pack('4f3f3f', 1,0,0,0 ,0,0,0 ,0,0,0))
         
 ##        emptyEMGdata=list()
 ##        for i in range(8): emptyEMGdata.append(127)
@@ -178,7 +183,7 @@ class MyoDelegate(btle.DefaultDelegate):
 ##            self.sock.sendto(data,self.addrBatt)
             self.battCount += 1
         elif cHandle == self.Classifier_valHandle[0]: #0x??: # ClassifierCharacteristic
-            self.packIMUandTransmit(data)
+            self.packClsandTransmit(data)
 ##            self.sock.sendto(data,self.addrBatt)
         else:
             print('Got unfiltered Notification from BTLE Characteristic Handle: %d' % cHandle)
@@ -188,28 +193,31 @@ class MyoDelegate(btle.DefaultDelegate):
     def packEMGandTransmit(self, dataEMG):
         # Handle first Raw EMG
         self.incomingEMGdata = struct.unpack('8b',dataEMG[:8])
-        self.data_28bPayload = dataEMG[:8] + self.zerosIMUdata
-        self.sock.sendto(self.data_28bPayload, self.addr)
+        self.data_48bPayload = dataEMG[:8] + self.zerosIMUdata
+        self.sock.sendto(self.data_48bPayload, self.addr)
         if self.bVerboseNotif:
-            print binascii.hexlify(self.data_28bPayload)
+            print binascii.hexlify(self.data_48bPayload)
         # Handle second Raw EMG
         self.incomingEMGdata = struct.unpack('8b',dataEMG[8:])
-        self.data_28bPayload = dataEMG[8:] + self.zerosIMUdata
-        self.sock.sendto(self.data_28bPayload, self.addr)
+        self.data_48bPayload = dataEMG[8:] + self.zerosIMUdata
+        self.sock.sendto(self.data_48bPayload, self.addr)
         if self.bVerboseNotif:
-            print binascii.hexlify(self.data_28bPayload)
+            print binascii.hexlify(self.data_48bPayload)
 
-    def packIMUandTransmit(self, dataIMU):
-        self.data_28bPayload = self.ceilEMGdata + dataIMU
-        self.sock.sendto(self.data_28bPayload, self.addr)
+    def packIMUandTransmit(self, dataIMU_h):
+        dataIMU_short=struct.unpack('4h3h3h',dataIMU_h)
+        dataIMU_f = struct.pack('4f3f3f',*dataIMU_short)
+        self.data_48bPayload = self.ceilEMGdata + dataIMU_f
+        self.sock.sendto(self.data_48bPayload, self.addr)
         if self.bVerboseNotif:
-            print binascii.hexlify(self.data_28bPayload)
+            print binascii.hexlify(self.data_48bPayload)
             
     def packClsandTransmit(self, dataClassifier):
-        self.data_28bPayload = self.ceilEMGdata + dataIMU
-        self.sock.sendto(self.data_28bPayload, self.addr)
+        self.data_48bPayload = self.ceilEMGdata + self.zerosIMUdata
+# TODO: Need to embed Classifier into 48bPayload somehow.        
+        self.sock.sendto(self.data_48bPayload, self.addr)
         if self.bVerboseNotif:
-            print binascii.hexlify(self.data_28bPayload)
+            print binascii.hexlify(self.data_48bPayload)
             
 
 def setParameters(myo):
@@ -441,6 +449,7 @@ for m in listMyo:
 
 
 #%%
+print sys.argv[0] + " Version: " + __version__
 rate_EMG1 = 0
 rate_EMG2 = 0
 if args.bVrbEMG:

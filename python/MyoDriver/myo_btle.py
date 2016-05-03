@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
 """
-myo_btle.py - revision 5f
+myo_btle.py - [see __version__ below]
 
 Created on Mar 22 20:22:37 2016
 edited on Apr 24 2016 - comments and verbose improvements
+edited on Apr 30 2016 - added try-except handler for non-Myo devices
+                        Python 3 compatible
 
 Module to discover Bluetooth Services for a Myo through -btle-
 --Object Classes:
@@ -26,13 +29,19 @@ Module to discover Bluetooth Services for a Myo through -btle-
 @author: W. Haris
 """
 
+from __future__ import with_statement # 2.5 only
 import btle
 import cmdHCI
 from struct import unpack
 import time
 from subprocess import Popen
+import sys
+import string
 
-__version__ = "0.5.e"
+__version__ = "0.5.g"
+print (sys.argv[0]  + " Version: " + __version__)
+
+bDEBUG = False
 
 class c_struct_construct:
     pass
@@ -132,7 +141,7 @@ class myo_struct:
                 addCharData(structBase,'prop',c[0].properties)          # Store characteristic properties
                 addCharData(structBase,'sUUID',str(c[0].uuid)[4:8])     # Store short UUID
                 if str(c[0].uuid)[4:8]==self.ChrNames["Name"]:          # Filter for 2a00 (see dictionary above)
-                    self.Name=perif_conn.readCharacteristic(c[0].valHandle)   
+                    self.Name=perif_conn.readCharacteristic(c[0].valHandle).decode('utf-8')
                 elif str(c[0].uuid)[4:8]==self.ChrNames["Appearance"]:  # Filter for 2a01 (see dictionary above)
                     self.Appear=list(unpack('h',perif_conn.readCharacteristic(c[0].valHandle)))
                 elif str(c[0].uuid)[4:8]==self.ChrNames["PPCP"]:        # Filter for 2a04 (see dictionary above)
@@ -184,7 +193,7 @@ class myo_struct:
     # METHOD: DISCOVER SERVICES (using BTLE getServices)
     #   Input: BTLE.Peripheral.Connection, list of Services desired
     def discover(self, conn, discSvcName = list('All')):
-        print'\n\nDiscover BT Handle Descriptors'
+        print('\n\nDiscover BT Handle Descriptors')
         allSvcNames=list(['Generic Access', 'Generic Attribute',
                          'Device Information', 'Battery Service',
                          'Myo Attribute', 'Classifier Data',
@@ -197,7 +206,7 @@ class myo_struct:
         for svcName in discSvcName:
             print('.'),
             self.appendInfo2(conn, svcName)
-        print 'BTLE Discovery Done.'
+        print('BTLE Discovery Done.')
 
         return
 
@@ -205,20 +214,23 @@ class myo_struct:
     #   Input: storage object
     def showAttrib(self, structBase):
         if hasattr(structBase,'hChar'):
-            print 'Characteristic Handle(s):                      %s' % getattr(structBase,'hChar')
+            print('Characteristic Handle(s):                      %s' % getattr(structBase,'hChar'))
         if hasattr(structBase,'hValue'):
-            print 'Characteristic Value Handle(s):                %s' % getattr(structBase,'hValue')
+            print('Characteristic Value Handle(s):                %s' % getattr(structBase,'hValue'))
         if hasattr(structBase,'hConfig'):
-            print 'Client Characteristic Configuration Handle(s): %s' % getattr(structBase,'hConfig')
+            print('Client Characteristic Configuration Handle(s): %s' % getattr(structBase,'hConfig'))
         if hasattr(structBase,'sUUID'):
-            print 'Characteristic Short UUID(s):                  %s' % getattr(structBase,'sUUID')
+            print('Characteristic Short UUID(s):                  %s' % getattr(structBase,'sUUID'))
         if hasattr(structBase,'prop'):
-            print 'Characteristic Properties:                     %s' % getattr(structBase,'prop')
+            print('Characteristic Properties:                     %s' % getattr(structBase,'prop'))
         
     # METHOD: DISPLAY FORMAT
     def dumpStruct(self):
-        for key, value in self.enumUUIDlongName.iteritems():
-            print '\n- %s --------------------------' % key
+        if bDEBUG: print('start dumpStruct')
+##        Python 3 uses items() not iteritems()
+##        for key, value in self.enumUUIDlongName.iteritems():
+        for key, value in self.enumUUIDlongName.items():
+            print('\n- %s --------------------------' % key)
             if hasattr(self.disc,value[1].split('.')[1]):
                 self.showAttrib(getattr(self.disc,value[1].split('.')[1]))
                 (getattr(self.disc,value[1].split('.')[1]))
@@ -227,7 +239,9 @@ class myo_struct:
 
     def resetStruct(self):
         ## TODO: Should loop through object attributes in order to delete them
-        for key, value in self.enumUUIDlongName.iteritems():
+##        Python 3 uses items() not iteritems()
+##        for key, value in self.enumUUIDlongName.iteritems():
+        for key, value in self.enumUUIDlongName.items():
             if hasattr(self.disc,value[1].split('.')[1]):
                 delattr(self.disc,value[1].split('.')[1])
         self.__init__()
@@ -245,18 +259,23 @@ def isThalmic(conn):
     checkMyo.discover(conn,["Device Information"])
     if hasattr(checkMyo.disc,"DevInfo"):
         if hasattr(checkMyo.disc.DevInfo,"hValue"):
-            strMfg=conn.readCharacteristic(checkMyo.disc.DevInfo.hValue[0])
-            if strMfg=='Thalmic Labs':
-                return True
-            else:
+            try:
+                strMfg=conn.readCharacteristic(checkMyo.disc.DevInfo.hValue[0]).decode('utf-8')
+                
+                if strMfg=='Thalmic Labs':
+                    return True
+                else:
+                    return False
+            except:
                 return False
         else:
-            print 'Missing Characteristic Value Handle'
+            print('Object_construct Missing Characteristic Value Handle attribute')
             return False
     else:
-        print 'Missing Device Info Service'
+        print('Object_construct Missing Device Info Service attribute')
         return False
 
+    if bDEBUG: print('isThalmic done.')
 #%%
 ## The following code (when this module is run as a stand-alone script)
 ##    will demonstrate this module's discovery capabilities and evaluate
@@ -265,6 +284,7 @@ def isThalmic(conn):
 ##    is required.
     
 if __name__=='__main__':
+    print (sys.argv[0]  + " Version: " + __version__)
     bVerbose=False
 
     tStart1=time.time()
@@ -273,8 +293,10 @@ if __name__=='__main__':
     hciX='hci0'
 
     # Get MAC Addresses
-    knownMAC='D0:8A:F1:84:B5:CB'
-    knownMAC='DE:61:5F:43:2C:63'
+    knownMAC =  'D0:8A:F1:84:B5:CB'
+    knownMAC =  'DE:61:5F:43:2C:63'
+    print('You must have a known MAC address to run this as a stand-alone module')
+    print('Using: ' + knownMAC)
 
     # Configure HCI
     strDesiredState="up"
@@ -292,9 +314,9 @@ if __name__=='__main__':
             myo1=myo_struct()
             myo1.strMAC = mac
             myo1.strHCI = hciX
-            print 'The BTLE Device with MAC:[%s] is a Thalmic Device' % myo1.strMAC
+            print('The BTLE Device with MAC:[%s] is a Thalmic Device' % myo1.strMAC)
         else:
-            print 'The BTLE Device with MAC:[%s] is NOT a Thalmic Device!' % myo1.strMAC
+            print('The BTLE Device with MAC:[%s] is NOT a Thalmic Device!' % myo1.strMAC)
             #need to blacklist the MAC Address
         tEnd2=time.time()
         tStart3=tEnd2
@@ -304,35 +326,35 @@ if __name__=='__main__':
 ##    myo1.discover(conn,"All")
     myo1.discover(conn,["Raw EMG","IMU Data","Generic Access", "Myo Attribute"])
     myo1.dumpStruct()
-    print '=========================================='
-    print 'Name: ', myo1.Name
-    print 'Appearance: ', myo1.Appear
-    print 'PPCP: ', myo1.PPCP
-    print 'MAC: ', myo1.MAC
-    print 'FW: ', myo1.FW
-    print 'hCmd: ', myo1.disc.hCmd
+    print('==========================================')
+    print('Name: ', myo1.Name)
+    print('Appearance: ', myo1.Appear)
+    print('PPCP: ', myo1.PPCP)
+    print('MAC: ', myo1.MAC)
+    print('FW: ', myo1.FW)
+    print('hCmd: ', myo1.disc.hCmd)
 
     tEnd3=time.time()
-    print '=========================================='
-    print '=========================================='
-    print '=========================================='
+    print('==========================================')
+    print('==========================================')
+    print('==========================================')
 
     myo1.resetStruct()
     tStart4=time.time()
     # Discover All Services & Characteristics
     myo1.discover(conn,['All'])
     myo1.dumpStruct()
-    print '=========================================='
-    print 'Name: ', myo1.Name
-    print 'Appearance: ', myo1.Appear
-    print 'PPCP: ', myo1.PPCP
-    print 'MAC: ', myo1.MAC
-    print 'FW: ', myo1.FW
-    print 'hCmd: ', myo1.disc.hCmd
+    print('==========================================')
+    print('Name: ', myo1.Name)
+    print('Appearance: ', myo1.Appear)
+    print('PPCP: ', myo1.PPCP)
+    print('MAC: ', myo1.MAC)
+    print('FW: ', myo1.FW)
+    print('hCmd: ', myo1.disc.hCmd)
     tEnd4=time.time()
     conn.disconnect()
-    print '\ndTime1 Connect = %f' % (tEnd1-tStart1)
-    print '\ndTime2 Is Thalmic = %f' % (tEnd2-tStart2)
-    print '\ndTime3 Discover Subset = %f' % (tEnd3-tStart3)
-    print '\ndTime4 Discover All = %f' % (tEnd4-tStart4)
+    print('\ndTime1 Connect = %f' % (tEnd1-tStart1))
+    print('\ndTime2 Is Thalmic = %f' % (tEnd2-tStart2))
+    print('\ndTime3 Discover Subset = %f' % (tEnd3-tStart3))
+    print('\ndTime4 Discover All = %f' % (tEnd4-tStart4))
 

@@ -29,7 +29,7 @@ import binascii
 VERBOSE = 0
 
 __version__ = "0.1.a"
-print sys.argv[0]  + " Version: " + __version__
+print(sys.argv[0]  + " Version: " + __version__)
 
 class MyoUdp(object):
     """ Class for receiving Myo Armband data via UDP"""
@@ -104,7 +104,7 @@ class MyoUdp(object):
                         self.dataEMG = numpy.roll(self.dataEMG, 1, axis=0)
                         self.dataEMG[:1, :] = output[:8] #insert in first buffer entry
                     else:
-                        print 'NOTE: unlikely outcome: all EMG signals at max value and all IMU is zeros'
+                        print('NOTE: unlikely outcome: all EMG signals at max value and all IMU is zeros')
                         self.invalidDataValues += 1
             else:
                 # incoming data is too short or too long
@@ -163,9 +163,9 @@ if __name__=='__main__':
         myoReceiver2.thread.start()
 
     if numMyo>1:
-        print '\n---- ---- ---- ---- ---- ---- ---- ---- | ---- ---- ---- ---- ---- ---- ---- ---- | ------ ------ --'
+        print('\n---- ---- ---- ---- ---- ---- ---- ---- | ---- ---- ---- ---- ---- ---- ---- ---- | ------ ------ --')
     else:
-        print '\n---- ---- ---- ---- ---- ---- ---- ---- |q------ ------ ------ ------ |a------ ------ ------ |g------ ------ ------ x'
+        print('\n---- ---- ---- ---- ---- ---- ---- ---- |q------ ------ ------ ------ |a------ ------ ------ |g------ ------ ------ x')
     try:
         bogusResponse = input('Make sure the above line fits the console window <Press Enter to continue...>')
     except SyntaxError:

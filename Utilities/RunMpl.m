@@ -5,7 +5,7 @@ diaryFile = [datestr(now,'yyyymmdd_HHMMSS') '_diary.txt'];
 diary(diaryFile);
 
 % perform windows ping prior to further initialization
-MplUtils.wait_for_ping_response();
+MPL.MplUtils.wait_for_ping_response();
 
 obj = run();
 

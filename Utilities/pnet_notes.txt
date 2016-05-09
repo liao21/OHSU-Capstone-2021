@@ -1,0 +1,33 @@
+Additional Notes regarding usage of pnet with the MiniIVE
+
+Revisions:
+5/7/2016 Armiger: Created
+
+Interface:
+-------------------------
+See PnetClass.m as an object oriented interface to pnet which incorporates 
+some best practices to avoid locking the socket, cleaning up, and reading 
+multiple packets
+
+
+Compiling:
+-------------------------
+Compiled on linux-64 (ubuntu) using:
+
+mex -O CFLAGS="\$CFLAGS -std=c99" pnet.c
+
+Output:
+>> mex -O CFLAGS="\$CFLAGS -std=c99" pnet.c
+Building with 'gcc'.
+Warning: You are using gcc version '4.8.4'. The version of gcc is not supported. The version currently supported with MEX is
+'4.7.x'. For a list of currently supported compilers see: http://www.mathworks.com/support/compilers/current_release. 
+/home/limb/Desktop/sandbox/pnet.c: In function ‘mexFunction’:
+/home/limb/Desktop/sandbox/pnet.c:1256:29: warning: cast from pointer to integer of different size [-Wpointer-to-int-cast]
+  mexPrintf("WRITE PTR:%x\n",(int)con[con_index].write.ptr);
+                             ^
+/home/limb/Desktop/sandbox/pnet.c:1260:28: warning: cast from pointer to integer of different size [-Wpointer-to-int-cast]
+  mexPrintf("READ PTR:%x\n",(int)con[con_index].read.ptr);
+                            ^
+
+MEX completed successfully.
+

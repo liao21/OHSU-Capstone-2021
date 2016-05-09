@@ -413,13 +413,7 @@ classdef MiniVIE < Common.MiniVieObj
                     case 'OpenBCI'
                         h = Inputs.OpenBciChipKit('COM3');
                     case 'ThalmicLabs MyoUdp'
-                        
                         h = Inputs.MyoUdp.getInstance();
-                        h.UdpPortNum8 = str2double(UserConfig.getUserConfigVar('myoUdpPort1','10001'));
-                        h.UdpPortNum16 = str2double(UserConfig.getUserConfigVar('myoUdpPort2','10002'));
-                        %Fs = h.SampleFrequency;
-                        %h.addfilter(Inputs.Notch(60,3,1,Fs));
-                        
                     otherwise
                         % None
                         h = [];

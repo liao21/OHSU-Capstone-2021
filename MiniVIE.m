@@ -100,6 +100,9 @@ classdef MiniVIE < Common.MiniVieObj
             obj.hg.MenuToolsMplImpedance = uimenu(obj.hg.MenuToolsMpl,...
                 'Label','Enable Dynamic Impedance',...
                 'Callback', @(src,evt) cbImpedance(obj) );
+            obj.hg.MenuFileExportLdaParams = uimenu(obj.hg.MenuFile,...
+                'Label','Save LDA Wg, Cg, and Classes to TextFile',...
+                'Callback', @(src,evt)obj.saveTxt());
             
             function closeFig(obj)
                 try
@@ -323,6 +326,23 @@ classdef MiniVIE < Common.MiniVieObj
             end
             
         end
+        function saveTxt(obj)
+            % save the LDA weights, centers, thresholds and TrainingData class names to text files
+            
+            assert(~isempty(obj.SignalClassifier),'Signal Classifier module does not exist');
+            assert(~isempty(obj.TrainingData),'Training Data module does not exist');
+            
+            %strPythonDir = 'c:\git\MiniVIE\python';
+            strPythonDir = fullfile(fileparts(which('MiniVIE')),'python');
+            if obj.SignalClassifier.savePythonClassifierData(strPythonDir)
+                fprintf('Classifier parameters saved to text files in directory: [');
+                fprintf(' %s',strPythonDir);
+                fprintf(' ]\n');
+            else
+                fprintf('There was a problem saving one or many python txt file(s).\n');
+            end
+        end
+        
         function close(obj)
             
             try obj.SignalSource.close();end

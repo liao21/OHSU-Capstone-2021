@@ -85,6 +85,8 @@ classdef MyoUdp < Inputs.SignalInput
         UdpPortNum16 = 10002;    % stream port for channels 9-16
         
         EMG_GAIN = 0.01;  %Scaling from int8 to voltage
+        
+        InputFrequency = 300; % Hz
     end
     properties (SetAccess = private)
         IsInitialized = 0;
@@ -200,7 +202,9 @@ classdef MyoUdp < Inputs.SignalInput
             if obj.UdpPortNum8 == 15001
                 % get upsampled data
                 desiredRate = 1000;
-                actualRate = 200;
+                %actualRate = 200;
+                actualRate = obj.InputFrequency;
+                %TODO: evaluate actual frequency with tic/toc and round to nearest 50
                 upsampleFactor = desiredRate/actualRate;
                 samples = round(numSamples/upsampleFactor);
                 buffData = obj.Buffer.getData(samples,idxChannel);

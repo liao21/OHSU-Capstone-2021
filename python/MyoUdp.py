@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-0.0 Created on Sat Jan 23 20:39:30 2016
-0.1 Edited on Sun Apr 24 2016 - improved data byte processing, created __main__
-0.1.a Edited on Sat APR 30 2016 - Python 3 ready, fixed compatibility to sample_main.py
-0.1.b Edited on Sun May 01 2016 - numSamples input argument added
+Created on Sat Jan 23 20:39:30 2016
+Edited on Sun Apr 24 2016 - improved data byte processing, created __main__
+Edited on Mon Apr 25 2016 - improved data byte processing, created __main__
 
 Read Myo Armband data from UDP.  Buffer EMG Data and record the most recent IMU data.
 If this module is executed as ' $ python MyoUdp.py', the output generated can
@@ -12,9 +11,7 @@ serve as a monitor of the EMG data streaming through UDP ports.
 Selecting 1 Myo will display streaming EMG and IMU data
 Selecting 2 Myos will display streaming EMG1 and EMG2 data (no IMU data)
 
-Note __variable signifies private variable; which are acccessible to getData and getAngles.
-A call to the class methods (getData, getAngles) allow external modules to read streaming data
-that is buffered in the private variables.
+Note __variable signifies private variable  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< NOT SURE WHAT THE IMPORTANCE OF HIDDEN VARIABLES IS??????
 
 @author: R. Armiger
 contributor: W. Haris
@@ -29,22 +26,26 @@ from transformations import quaternion_matrix
 import sys
 import time
 import binascii
+VERBOSE = 0
 
-__version__ = "0.1.b"
-print (sys.argv[0]  + " Version: " + __version__)
+__version__ = "0.1.a"
+print(sys.argv[0]  + " Version: " + __version__)
 
 class MyoUdp(object):
     """ Class for receiving Myo Armband data via UDP"""
-    def __init__(self, UDP_PORT=10001, UDP_IP="127.0.0.1", numSamples=50):
+    def __init__(self, UDP_PORT=10001, UDP_IP="127.0.0.1"):
 
         # Default kinematic values
-        self.__quat = (1.0, 0.0, 0.0, 0.0)
-        self.__accel = (0.0, 0.0, 0.0)
-        self.__gyro = (0.0, 0.0, 0.0)
+##        self.__quat = (1.0, 0.0, 0.0, 0.0)
+##        self.__accel = (0.0, 0.0, 0.0)
+##        self.__gyro = (0.0, 0.0, 0.0)
+        self.quat = (1.0, 0.0, 0.0, 0.0)
+        self.accel = (0.0, 0.0, 0.0)
+        self.gyro = (0.0, 0.0, 0.0)
 
         # Default data buffer [nSamples by nChannels]
         # Treat as private.  use getData to access since it is thread-safe
-        self.dataEMG = numpy.zeros((numSamples, 8))
+        self.dataEMG = numpy.zeros((50, 8))
 
         # UDP Port setup
         self.UDP_IP = UDP_IP
@@ -56,12 +57,6 @@ class MyoUdp(object):
         self.invalidDataValues = 0
         self.invalidDataLength = 0
         
-        # Create threadsafe lock
-        self.__lock = threading.Lock()
-    
-        # Create a thread for processing new data
-        self.__thread = threading.Thread(target=self.parseData)
-        self.__thread.start()
 
     def parseData(self):
         """ Convert incoming bytes to emg, quaternion, accel, and ang rate """
@@ -71,7 +66,7 @@ class MyoUdp(object):
             # Blocking call until data received
             try:
                 # recv call will error if socket closed on exit
-##                print('going for data')
+##                print 'going for data'
                 data, address = self.__sock.recvfrom(1024)
             except socket.error as e:
                 print("Socket read error. Socket Closed?")
@@ -80,8 +75,8 @@ class MyoUdp(object):
                 
             if len(data) == 48: #NOTE: this is true if IMU data packs as a float point type
 ##            if len(data) == 28: # NOTE: length==28 is true if IMU data packs as hex type
-                with self.__lock:
-##                with self.lock:
+##                with self.__lock:
+                with self.lock:
                     # unpack formatted data bytes
                     #  orientaiton:   int16 w, x, y, z
                     #  accelerometer: int16 +/-16 units of g
@@ -96,9 +91,12 @@ class MyoUdp(object):
                         vectGyro=output[15:18]
                         if ((abs(a)<=16 for a in vectAccel) or
                             (abs(g)<=2000 for g in vectGyro)):
-                            self.__quat = output[8:12]   #[ q * 16384.0 for q in output[8:12]]
-                            self.__accel = vectAccel #[ a * 2048.0 for a in vectAccel]
-                            self.__gyro = vectGyro  #[ g * 16.0 for g in vectGyro]
+##                            self.__quat = output[8:12]   #[ q * 16384.0 for q in output[8:12]]
+##                            self.__accel = vectAccel #[ a * 2048.0 for a in vectAccel]
+##                            self.__gyro = vectGyro  #[ g * 16.0 for g in vectGyro]
+                            self.quat = output[8:12]   #[ q * 16384.0 for q in output[8:12]]
+                            self.accel = vectAccel #[ a * 2048.0 for a in vectAccel]
+                            self.gyro = vectGyro  #[ g * 16.0 for g in vectGyro]
                         else:
                             self.invalidDataValues += 1
                     elif sum(output[8:]) == 1:
@@ -108,46 +106,30 @@ class MyoUdp(object):
                     else:
                         print('NOTE: unlikely outcome: all EMG signals at max value and all IMU is zeros')
                         self.invalidDataValues += 1
-            elif len(data) == 40 or len(data) == 20: #IMU data only
-                if len(data) == 40:
-                    output = struct.unpack("4f3f3f", data)
-                else:
-                    output = struct.unpack("4h3h3h", data)
-                #IMU Data Update
-                vectAccel=output[4:7]
-                vectGyro=output[7:12]
-                if ((abs(a)<=16 for a in vectAccel) or
-                    (abs(g)<=2000 for g in vectGyro)):
-                    self.__quat = output[0:4]   #[ q * 16384.0 for q in output[8:12]]
-                    self.__accel = vectAccel #[ a * 2048.0 for a in vectAccel]
-                    self.__gyro = vectGyro  #[ g * 16.0 for g in vectGyro]
-                else:
-                    self.invalidDataValues += 1
-            elif len(data) == 8: # EMG data only
-                output = struct.unpack("8b", data)
-                #Populate EMG Data Buffer (newest on top)
-                self.dataEMG = numpy.roll(self.dataEMG, 1, axis=0)
-                self.dataEMG[:1, :] = output[:8] #insert in first buffer entry
             else:
-                # incoming data is not of length = 8, 20, 40, or 48
+                # incoming data is too short or too long
                 self.invalidDataLength += 1
 
 
 
     def getData(self):
         """ Return data buffer [nSamples][nChannels] """
-        with self.__lock:
+##        with self.__lock:
+        with self.lock:
             return self.dataEMG
     def getAngles(self):
         """ Return Euler angles computed from Myo quaternion """
         # convert the stored quaternions to angles
-        with self.__lock:
-            return euler_from_matrix(quaternion_matrix(self.__quat))
+##        with self.__lock:
+        with self.lock:
+##            return euler_from_matrix(quaternion_matrix(self.__quat))
+            return euler_from_matrix(quaternion_matrix(self.quat))
     def close(self):
         """ Cleanup socket """
         print("\n\nClosing MyoUdp Socket IP={} Port={}".format(self.UDP_IP,self.UDP_PORT) )
         self.__sock.close()
-        self.__thread.join()
+##        self.__thread.join()
+        self.thread.join()
         print('Number of data value errors: %d' % self.invalidDataValues)
         print('Number of data length errors: %d' % self.invalidDataLength)
 
@@ -157,18 +139,33 @@ if __name__=='__main__':
     print (sys.argv[0]  + " Version: " + __version__)
     numMyo = int(input('How many Myo Armbands?'))
 ##    numMyo = 2
-
-    # Instanciate MyoUdp Class which will begin listening for streaming UDP data
     myoReceiver1=MyoUdp(10001) # Establish myo1 UDP socket binding to port 10001
     if numMyo>1:
         myoReceiver2=MyoUdp(10002) # Establish myo2 UDP socket binding to port 10002
     
+    # Create threadsafe lock
+##    myoReceiver1.__lock = threading.Lock()
+##    myoReceiver2.__lock = threading.Lock()
+    myoReceiver1.lock = threading.Lock()
+    if numMyo>1:
+        myoReceiver2.lock = threading.Lock()
+    
+    # Create a thread for processing new data
+##    myoReceiver1.__thread = threading.Thread(target=myoReceiver1.parseData)
+##    myoReceiver2.__thread = threading.Thread(target=myoReceiver2.parseData)
+##    myoReceiver1.__thread.start()
+##    myoReceiver2.__thread.start()
+    myoReceiver1.thread = threading.Thread(target=myoReceiver1.parseData)
+    if numMyo>1:
+        myoReceiver2.thread = threading.Thread(target=myoReceiver2.parseData)
+    myoReceiver1.thread.start()
+    if numMyo>1:
+        myoReceiver2.thread.start()
 
     if numMyo>1:
-        print('\n---- ---- ---- ---- ---- ---- ---- ---- | ---- ---- ---- ---- ---- ---- ---- ---- | ---- ---- ---- | ---- ---- ---- x')
+        print('\n---- ---- ---- ---- ---- ---- ---- ---- | ---- ---- ---- ---- ---- ---- ---- ---- | ------ ------ --')
     else:
-##        print('\n---- ---- ---- ---- ---- ---- ---- ---- |q------ ------ ------ ------ |a------ ------ ------ |g------ ------ ------ x')
-        print('\n EMG: ---- ---- ---- ---- ---- ---- ---- ---- | EulerAngles: --.--- --.--- --.--- x')
+        print('\n---- ---- ---- ---- ---- ---- ---- ---- |q------ ------ ------ ------ |a------ ------ ------ |g------ ------ ------ x')
     try:
         bogusResponse = input('Make sure the above line fits the console window <Press Enter to continue...>')
     except SyntaxError:
@@ -177,37 +174,38 @@ if __name__=='__main__':
           '\n                             resume job in suspend: >fg ' +
           '\n                          terminate job in suspend: >kill $(jobs -p); sleep 3s; kill -9 $(jobs -p)\n\n')
 
-    # Forever loop to get streaming data
-
     try:
         while(True):
             time.sleep(1/300)
-            a = myoReceiver1.getData()[:1,:]
-            g1,g2,g3 = myoReceiver1.getAngles()
+            a = myoReceiver1.dataEMG[:1,:]
             if numMyo>1:
-                b = myoReceiver2.getData()[:1,:]
-                h1,h2,h3 = myoReceiver2.getAngles()
-                sys.stdout.write('\r%4d %4d %4d %4d %4d %4d %4d %4d | %4d %4d %4d %4d %4d %4d %4d %4d | %5.2f %5.2f %5.2f | %5.2f %5.2f %5.2f' %
+                b = myoReceiver2.dataEMG[:1,:]
+                sys.stdout.write('\r%4d %4d %4d %4d %4d %4d %4d %4d | %4d %4d %4d %4d %4d %4d %4d %4d ' %
                                  (a[0,0],a[0,1],a[0,2],a[0,3],a[0,4],a[0,5],a[0,6],a[0,7],
-                                  b[0,0],b[0,1],b[0,2],b[0,3],b[0,4],b[0,5],b[0,6],b[0,7],
-                                  g1,g2,g3,
-                                  h1,h2,h3))
+                                  b[0,0],b[0,1],b[0,2],b[0,3],b[0,4],b[0,5],b[0,6],b[0,7]))
+                                  #b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7]))
+        ##                          ,*myoReceiver1.dataEMG[:1,:], *myoReceiver2.dataEMG[:1,:]))
             else:
-                sys.stdout.write('\r%4d %4d %4d %4d %4d %4d %4d %4d | %5.2f %5.2f %5.2f' %
+##                b=myoReceiver1.__quat
+##                c=myoReceiver1.__accel
+##                d=myoReceiver1.__gyro
+                b=myoReceiver1.quat
+                c=myoReceiver1.accel
+                d=myoReceiver1.gyro
+                sys.stdout.write('\r%4d %4d %4d %4d %4d %4d %4d %4d |q%6.0f %6.0f %6.0f %6.0f |a%6.0f %6.0f %6.0f |g%6.0f %6.0f %6.0f ' %
                                  (a[0,0],a[0,1],a[0,2],a[0,3],a[0,4],a[0,5],a[0,6],a[0,7],
-                                  g1,g2,g3))
+                                  b[0],b[1],b[2],b[3],
+                                  c[0],c[1],c[2],
+                                  d[0],d[1],d[2]))
             sys.stdout.flush()
 
     except KeyboardInterrupt:
     ##    break
         pass
-    print('Myo1 DataBuffer:')
-    print(myoReceiver1.getData())
-    if numMyo>1:
-        print('Myo2 DataBuffer:')
-        print(myoReceiver2.getData())
     myoReceiver1.close()
     if numMyo>1:
         myoReceiver2.close()
 
 # TODO: Research/understand THREAD.JOIN() !!! ??????
+##    myoReceiver1.__thread.join()
+##    myoReceiver2.__thread.join()

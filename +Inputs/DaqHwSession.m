@@ -85,11 +85,11 @@ classdef DaqHwSession < Inputs.SignalInput
             % verify that adaptor family is installed
             vendors = daq.getVendors;
             vendorList = {vendors(:).ID};
-            assert(ismember(obj.DaqDeviceName,vendorList),'Vendor %s is not found');
+            assert(ismember(obj.DaqDeviceName,vendorList),'Vendor %s is not found',obj.DaqDeviceName);
 
             dev = daq.getDevices;
             devList = {dev(:).ID};
-            assert(ismember(obj.DaqDeviceId,devList),'Device %s is not found');
+            assert(ismember(obj.DaqDeviceId,devList),'Device %s is not found',obj.DaqDeviceId);
 
             s = daq.createSession(obj.DaqDeviceName);
 

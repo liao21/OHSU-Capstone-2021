@@ -1,4 +1,4 @@
-function features = feature_extract(windowData,windowSize,zc_thresh,ssc_thresh) %% codegen
+function features = feature_extract(windowData,windowSize,zc_thresh,ssc_thresh,Fs) %% codegen
 % Extract time domain feature extraction function
 % Note that this is not an exact copy of the previous methodology,
 % but RSA tried and tested this code with minimal differences
@@ -21,6 +21,10 @@ function features = feature_extract(windowData,windowSize,zc_thresh,ssc_thresh) 
 
 %  Thresholds for computing zero crossing and slope sign change features
 
+if nargin < 5
+    Fs = 1000;
+end
+
 if nargin < 4
     ssc_thresh = 0.15;
 end
@@ -39,7 +43,6 @@ windowSize = min(windowSize,nSamples);
 t = 0.0;
 
 %  Normalize features so they are independant of the window size
-Fs = 1000;
 n = windowSize;
 
 idStart = (1+nSamples-windowSize);

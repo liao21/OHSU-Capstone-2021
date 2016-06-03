@@ -4,6 +4,7 @@
 0.1 Edited on Sun Apr 24 2016 - improved data byte processing, created __main__
 0.1.a Edited on Sat APR 30 2016 - Python 3 ready, fixed compatibility to sample_main.py
 0.1.b Edited on Sun May 01 2016 - numSamples input argument added
+0.1.c Edited on Sun May 19 2016 - fixed stream receive for EMG Data Only: 16 bytes, not 8
 
 Read Myo Armband data from UDP.  Buffer EMG Data and record the most recent IMU data.
 If this module is executed as ' $ python MyoUdp.py', the output generated can
@@ -123,11 +124,14 @@ class MyoUdp(object):
                     self.__gyro = vectGyro  #[ g * 16.0 for g in vectGyro]
                 else:
                     self.invalidDataValues += 1
-            elif len(data) == 8: # EMG data only
-                output = struct.unpack("8b", data)
+            elif len(data) == 16: # EMG data only
+                output = struct.unpack("16b", data)
                 #Populate EMG Data Buffer (newest on top)
                 self.dataEMG = numpy.roll(self.dataEMG, 1, axis=0)
                 self.dataEMG[:1, :] = output[:8] #insert in first buffer entry
+                self.dataEMG = numpy.roll(self.dataEMG, 1, axis=0)
+                self.dataEMG[:1, :] = output[8:16] #insert in first buffer entry
+
             else:
                 # incoming data is not of length = 8, 20, 40, or 48
                 self.invalidDataLength += 1
@@ -159,9 +163,9 @@ if __name__=='__main__':
 ##    numMyo = 2
 
     # Instanciate MyoUdp Class which will begin listening for streaming UDP data
-    myoReceiver1=MyoUdp(10001) # Establish myo1 UDP socket binding to port 10001
+    myoReceiver1=MyoUdp(15001) # Establish myo1 UDP socket binding to port 10001
     if numMyo>1:
-        myoReceiver2=MyoUdp(10002) # Establish myo2 UDP socket binding to port 10002
+        myoReceiver2=MyoUdp(15002) # Establish myo2 UDP socket binding to port 10002
     
 
     if numMyo>1:

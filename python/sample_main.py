@@ -17,7 +17,7 @@ from UnityUdp import UnityUdp
 from TrainingUdp import TrainingUdp
 from feature_extract import feature_extract
 
-VERBOSE = 1
+VERBOSE = 0
 
 dt = 0.02  # seconds per loop.  50Hz update
 
@@ -27,7 +27,8 @@ filename = "../GraspAndWholeArmRoc.xml"
 
 # Signal Source get external bio-signal data
 # For MPL, this might be CPC Headstage, External Signal Acquisition, MyoBand, etc.
-hMyo = MyoUdp()#("192.168.1.3")
+#hMyo = MyoUdp()#("192.168.1.3")
+hMyo = MyoUdp(UDP_IP='127.0.0.1',UDP_PORT=15001,numSamples=20)#("192.168.1.3")
 
 # Training Data holds data labels 
 hTrain = TrainingUdp()
@@ -56,7 +57,7 @@ trainCurrentClass = []
 file=open('tmp.dat','w')
      
 # Iteration counter
-cycleMax = 100  # Max iterations (0 for infinite)
+cycleMax = 1400  # Max iterations (0 for infinite)
 cycleCnt = 0  # Internal Counter
 timeElapsed = -1
 try:
@@ -80,11 +81,12 @@ try:
 
 
         # Get data and extract features
+        emgData = hMyo.getData()*0.01
         # feature vector should be [1,nChan*nFeat]
         # data ordering is as follows
         # [ch1f1, ch1f2, ch1f3, ch1f4, ch2f1, ch2f2, ch2f3, ch2f4, ... chNf4]
-        f = feature_extract(hMyo.getData()*0.01)
-        
+        f = feature_extract(emgData)
+        print('%8.4f %8.4f %8.4f %8.4f' % (f[0,0], f[0,0], f[0,0], f[0,0]))
         # Classify
         # features[1,nChan*nFeat] * Wg[nChan*numFeat,nClasses] + Cg[1,nClasses]
         v = np.dot(f, W) + C

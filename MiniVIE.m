@@ -64,7 +64,7 @@ classdef MiniVIE < Common.MiniVieObj
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
             set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero','Bar Trainer','Motion Trainer','vMPL Trainer'});
             set(obj.hg.popups(MiniVIE.TRAINING),'Value',1);
-            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplVulcanX','MplNfu','MplUnity','MSMS_ADL','MSMS Tasks','Online Retraining Demo'});
+            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplVulcanX','MplNfu','MplUnity','MSMS_ADL','MSMS Tasks','Online Retraining Demo','EndpointControl'});
             set(obj.hg.popups(MiniVIE.PRESENTATION),'Value',1);
         end
         function setupFigure(obj)
@@ -718,7 +718,15 @@ classdef MiniVIE < Common.MiniVieObj
                         h.update();
                         h.Verbose = 0;
 
-                        obj.println('Presentation setup complete',1);                        
+                        obj.println('Presentation setup complete',1);
+                    case 'Endpoint Control'
+                        obj.println('Setting up presentation...',1);
+                        h = MPL.EndpointControl;
+                        h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
+                        h.update();
+                        h.Verbose = 0;
+
+                        obj.println('Presentation setup complete',1); 
                     case 'Breakout'
                         h = Presentation.MiniBreakout(obj.SignalSource,obj.SignalClassifier);
                     case 'AGH'

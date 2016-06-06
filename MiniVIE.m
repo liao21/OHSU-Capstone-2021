@@ -58,7 +58,7 @@ classdef MiniVIE < Common.MiniVieObj
             setupFigure(obj);
             
             % Set valid input options
-            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','Signal Simulator','EMG Simulator','DaqHwSession','CpchSerial','NfuInput','UdpDevice','IntanDevBoard','OpenBCI','ThalmicLabs MyoUdp'});
+            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','Signal Simulator','EMG Simulator','DaqHwSession','DaqHwDevice','CpchSerial','NfuInput','UdpDevice','IntanDevBoard','OpenBCI','ThalmicLabs MyoUdp'});
             set(obj.hg.popups(MiniVIE.INPUT),'Value',1);
             set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier','DiscriminantAnalysis','SupportVectorMachine','SvmStatTlbx'});
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
@@ -100,6 +100,9 @@ classdef MiniVIE < Common.MiniVieObj
             obj.hg.MenuToolsMplImpedance = uimenu(obj.hg.MenuToolsMpl,...
                 'Label','Enable Dynamic Impedance',...
                 'Callback', @(src,evt) cbImpedance(obj) );
+            obj.hg.MenuFileExportLdaParams = uimenu(obj.hg.MenuFile,...
+                'Label','Save LDA Wg, Cg, and Classes to TextFile',...
+                'Callback', @(src,evt)obj.saveTxt());
             
             function closeFig(obj)
                 try
@@ -323,6 +326,23 @@ classdef MiniVIE < Common.MiniVieObj
             end
             
         end
+        function saveTxt(obj)
+            % save the LDA weights, centers, thresholds and TrainingData class names to text files
+            
+            assert(~isempty(obj.SignalClassifier),'Signal Classifier module does not exist');
+            assert(~isempty(obj.TrainingData),'Training Data module does not exist');
+            
+            %strPythonDir = 'c:\git\MiniVIE\python';
+            strPythonDir = fullfile(fileparts(which('MiniVIE')),'python');
+            if obj.SignalClassifier.savePythonClassifierData(strPythonDir)
+                fprintf('Classifier parameters saved to text files in directory: [');
+                fprintf(' %s',strPythonDir);
+                fprintf(' ]\n');
+            else
+                fprintf('There was a problem saving one or many python txt file(s).\n');
+            end
+        end
+        
         function close(obj)
             
             try obj.SignalSource.close();end
@@ -375,14 +395,16 @@ classdef MiniVIE < Common.MiniVieObj
                         else
                             fname = fullfile(PathName,FileName);
                         end
-                        
                         h = Inputs.EmgSimulator(fname);
-                        
-                        
                     case 'DaqHwSession'
-                        %h = Inputs.DaqHwSession('nidaq','Dev2');
-                        %h = Inputs.DaqHwSession('mcc','0');
-                        h = loadDaqHwDevice();
+                        h = loadDaqHwDevice('Session');
+                        % Ref Hargove 2014 comparison of real-time controlability
+                        Fs = h.SampleFrequency;                     % 1000 Hz
+                        h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
+                        h.addfilter(Inputs.MinLimitFilter(0.2));    % min limit
+                        h.addfilter(Inputs.ConstraintFilter(-5,5)); % range limit
+                    case 'DaqHwDevice'
+                        h = loadDaqHwDevice('Legacy');
                         % Ref Hargove 2014 comparison of real-time controlability
                         Fs = h.SampleFrequency;                     % 1000 Hz
                         h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
@@ -413,13 +435,7 @@ classdef MiniVIE < Common.MiniVieObj
                     case 'OpenBCI'
                         h = Inputs.OpenBciChipKit('COM3');
                     case 'ThalmicLabs MyoUdp'
-                        
                         h = Inputs.MyoUdp.getInstance();
-                        h.UdpPortNum8 = str2double(UserConfig.getUserConfigVar('myoUdpPort1','10001'));
-                        h.UdpPortNum16 = str2double(UserConfig.getUserConfigVar('myoUdpPort2','10002'));
-                        %Fs = h.SampleFrequency;
-                        %h.addfilter(Inputs.Notch(60,3,1,Fs));
-                        
                     otherwise
                         % None
                         h = [];
@@ -1091,9 +1107,10 @@ classdef MiniVIE < Common.MiniVieObj
             % cd('C:\svn\myopen\MiniVIE');
             % MiniVIE.configurePath;
             % obj = RunTakeHome();
-            cb = sprintf('cd(''%s'');\nMiniVIE.configurePath();\nobj = RunTakeHome();',...
-                fileparts(which('MiniVIE')));
-            shortcutUtils.addShortcutToBottom(strcat('RunTakeHome',suffix),cb,'','Shortcuts', 'true');
+            
+            %cb = sprintf('cd(''%s'');\nMiniVIE.configurePath();\nobj = RunTakeHome();',...
+            %    fileparts(which('MiniVIE')));
+            %shortcutUtils.addShortcutToBottom(strcat('RunTakeHome',suffix),cb,'','Shortcuts', 'true');
             
         end
         function configurePath
@@ -1101,7 +1118,7 @@ classdef MiniVIE < Common.MiniVieObj
 
             addpath(pathName);
             addpath([pathName filesep 'Utilities']);
-            addpath(fullfile(pathName,'GUIDE_GUIs'));
+            %addpath(fullfile(pathName,'GUIDE_GUIs'));
             
             % add folder and sub-directories:
             addpath(genpath(fullfile(pathName,'ThirdParty')));
@@ -1206,8 +1223,12 @@ UiTools.save_temp_file(tempFileName,cpchParams);
 
 end
 
-function h = loadDaqHwDevice()
+function h = loadDaqHwDevice(version)
 % Load a dawHwDevice with default prompts
+
+if nargin < 1 
+    version = 'Session';
+end
 
 tempFileName = 'defaultDaqHwDevice';
 daqParams = UiTools.load_temp_file(tempFileName);
@@ -1230,10 +1251,13 @@ assert(length(answer) == 3,'Expected 3 outputs');
 
 daqParams.Name = answer{1};
 daqParams.Id = answer{2};
-daqParams.channelIds = str2num(answer{3});
+daqParams.channelIds = str2num(answer{3}); %#ok<ST2NM>
 
-h = Inputs.DaqHwSession(daqParams.Name,daqParams.Id,daqParams.channelIds);
-
+if strcmp(version,'Legacy')
+    h = Inputs.DaqHwDevice(daqParams.Name,daqParams.Id,daqParams.channelIds);
+else
+    h = Inputs.DaqHwSession(daqParams.Name,daqParams.Id,daqParams.channelIds);
+end
 try
     h.initialize();
 catch ME

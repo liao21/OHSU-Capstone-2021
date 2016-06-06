@@ -18,9 +18,7 @@ classdef ScenarioBase < Common.MiniVieObj
     properties
         SignalSource;
         SignalClassifier;
-        
         ArmStateModel;
-        
         Timer;
         
         % For Grasp Based control
@@ -43,21 +41,22 @@ classdef ScenarioBase < Common.MiniVieObj
         
         % For opening hand without Hand Open class:
         AutoOpenSpeed = 0;
-        
-        % Store joint state parameters
-        JointAnglesDegrees;
-        JointVelocity;
-        
-        TempFileName = 'jointAngles';
-        
-        Intent = [];
-        
+
         % Stores a structure format of roc table data loaded from xml.  See
         % MPL.RocTable
         RocTable;
         RocTableXmlFilename;
         
         Verbose = 1;
+
+        
+        % DEPRECATED
+        % Store joint state parameters
+        JointAnglesDegrees;
+        JointVelocity;
+        TempFileName = 'jointAngles';
+        
+        Intent = [];
         
     end
     
@@ -84,15 +83,15 @@ classdef ScenarioBase < Common.MiniVieObj
             fprintf('[%s] Setting timer refresh rate to %4.2f s\n',mfilename,period);
             obj.Timer.Period = period;
             
-            % Load previous angles.  Does this work with the joint state
-            % machine?
-            jointAngles = UiTools.load_temp_file(obj.TempFileName);
-            if isempty(jointAngles)
-                obj.JointAnglesDegrees = zeros(size(action_bus_definition));
-            else
-                obj.JointAnglesDegrees = jointAngles;
-            end
-            obj.JointVelocity = zeros(size(action_bus_definition));
+            % % Load previous angles.  Does this work with the joint state
+            % % machine?
+            % jointAngles = UiTools.load_temp_file(obj.TempFileName);
+            % if isempty(jointAngles)
+            %     obj.JointAnglesDegrees = zeros(size(action_bus_definition));
+            % else
+            %     obj.JointAnglesDegrees = jointAngles;
+            % end
+            % obj.JointVelocity = zeros(size(action_bus_definition));
             
         end
         function start(obj)
@@ -129,6 +128,24 @@ classdef ScenarioBase < Common.MiniVieObj
                 stop(obj.Timer);
             end
         end
+        function update(obj)
+            %update(obj)
+            % Called by timer function, Get intent and update arm
+            
+            % Use a try block to display more info if an error occurs
+            try
+                % Step 1: Get Intent
+                [className,prSpeed] = getIntentSignals(obj);
+                
+                % Step 2: Convert Intent to limb commands
+                obj.generateUpperArmCommand(className,prSpeed);
+                obj.generateGraspCommand(className,prSpeed);
+                
+            catch ME
+                UiTools.display_error_stack(ME);
+            end
+            
+        end % update
         function [className,prSpeed,rawEmg,windowData,features2D,voteDecision] = getIntentSignals(obj)
             % Perform classification with error checking
             
@@ -162,22 +179,19 @@ classdef ScenarioBase < Common.MiniVieObj
             obj.Intent.features2D = features2D;
             
             if obj.Verbose > 0
-                fprintf('Class=%2d; Vote=%2d; Class = %24s; S=%6.4f',...
-                    classOut,voteDecision,className,prSpeed);
-                try
-                    s = obj.ArmStateModel;
-                    
-                    % could be number or enum type
-                    RocId = s.structState(s.RocStateId).State;
-                    if isnumeric(RocId)
-                        RocId = num2str(RocId);
-                    else
-                        RocId = char(RocId);
-                    end
-                    
-                    fprintf('\t | Roc=%s; P=%6.4f',...
-                        RocId,s.structState(s.RocStateId).Value);
+                % Display command line output
+                
+                % could be number or enum type
+                RocVal = obj.ArmStateModel.getRocVal;
+                RocId = obj.ArmStateModel.getRocId;
+                if isnumeric(RocId)
+                    RocId = num2str(RocId);
+                else
+                    RocId = char(RocId);
                 end
+                
+                fprintf('Class=%2d; Vote=%2d; Class = %24s; S=%6.4f \t | Roc=%s; P=%6.4f',...
+                    classOut,voteDecision,className,prSpeed,RocId,RocVal);
             end
             
         end
@@ -196,7 +210,6 @@ classdef ScenarioBase < Common.MiniVieObj
             s.velocity(1:7) = 0;
             
             % Note gains can/should be adjusted using guiAdjustGains
-            %TODO: gain values overwritten on classifier retrain
             rocId = [];
             rocV = [];
             switch className
@@ -278,22 +291,9 @@ classdef ScenarioBase < Common.MiniVieObj
                     s.JointState(i).RocVelocity = rocV;
                 end
                 
-                
                 s.JointState(16)
                 
-                
-                
             end     
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
             
             if strncmp(className,'Endpoint',8)
                 % Handle Endpoint Classes under a special case
@@ -333,17 +333,6 @@ classdef ScenarioBase < Common.MiniVieObj
                     otherwise
                         warning('Unmatched Endpoint Class');
                 end
-
-                
-                % offset = [0 pi/2 pi/2 0 pi/2];
-                % [v,J,p] = MPL_JacobianBound(...
-                %     [s.structState(1:5).Value] + offset,...
-                %     eV/40);
-                % %offset(3) = -offset(3);
-                % p = p - offset(:);
-                % p(3) = -p(3);
-                % for i = 1:5, s.structState(i).Value = p(i);end
-                % s.velocity(1:5) = 0;
             end
             
             % Parse partial classname
@@ -633,25 +622,6 @@ classdef ScenarioBase < Common.MiniVieObj
             end
             
         end
-        function update(obj)
-            %update(obj)
-            % Called by timer function, Get intent and update arm
-            
-            % Use a try block to display more info if an error occurs
-            try
-                % Step 1: Get Intent
-                [className,prSpeed] = getIntentSignals(obj);
-                
-                % Step 2: Convert Intent to limb commands
-                obj.generateUpperArmCommand(className,prSpeed);
-                obj.generateGraspCommand(className,prSpeed);
-                
-                
-            catch ME
-                UiTools.display_error_stack(ME);
-            end
-            
-        end
         function close(obj)
             try
                 stop(obj.Timer);
@@ -668,9 +638,15 @@ classdef ScenarioBase < Common.MiniVieObj
             
             % create local ROC tables (even though roc tables in vulcan x
             % can also be specified)
-            xmlFileName = UserConfig.getUserConfigVar('rocTable','WrRocDefaults.xml');
-            obj.RocTable = MPL.RocTable.readRocTable(xmlFileName);
-            obj.RocTableXmlFilename = xmlFileName;
+            xmlFileName = UserConfig.getUserConfigVar('rocTable','NONE');
+            if strcmp(xmlFileName,'NONE')
+                % No file, create from code
+                obj.RocTable = MPL.RocTable.createRocTables;
+                obj.RocTableXmlFilename = 'NONE';
+            else
+                obj.RocTable = MPL.RocTable.readRocTable(xmlFileName);
+                obj.RocTableXmlFilename = xmlFileName;
+            end
         end
     end
 end

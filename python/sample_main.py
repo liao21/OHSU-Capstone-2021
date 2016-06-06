@@ -21,6 +21,8 @@ VERBOSE = 1
 
 dt = 0.02  # seconds per loop.  50Hz update
 
+# TODO [Lydia1]: need to include xml file with ROC tables
+filename = "../GraspAndWholeArmRoc.xml"
 # Create data objects
 
 # Signal Source get external bio-signal data
@@ -31,7 +33,8 @@ hMyo = MyoUdp()#("192.168.1.3")
 hTrain = TrainingUdp()
 
 # Plant maintains current limb state (positions) during velocity control
-hPlant = Plant(dt)
+#TODO[Lydia2] This can fail if file does not exist, then the UDP objects aren;t cleaned up properly
+hPlant = Plant(dt,filename)
 
 # Sink is output to outside world (in this case to VIE)
 # For MPL, this might be: real MPL/NFU, Virtual Arm, etc.

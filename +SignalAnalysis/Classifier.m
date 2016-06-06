@@ -362,9 +362,47 @@ classdef Classifier < Common.MiniVieObj
             end
             
             classNames = obj.getClassNames;
-            PlotUtils.confusionMatrix(cmat,classNames(trainedLabels(:)));
+            if nargin < 2
+                PlotUtils.confusionMatrix(cmat,classNames(trainedLabels(:)));
+            else
+                PlotUtils.confusionMatrix(cmat,classNames(trainedLabels(:)),hAxes);
+            end
             
         end
+        function success = savePythonClassifierData(obj, pyDir)
+            % Save Classifier Data for python
+                        
+            %python directory
+            if nargin < 2
+                %pyDir = 'C:\git\MiniVIE\python';
+                pyDir = fullfile(fileparts(which('MiniVIE')),'python');
+            end
+            
+            % Get Data directly from TrainingData object.
+            pyWeights = obj.Wg; %#ok<NASGU>
+            pyCenters = obj.Cg; %#ok<NASGU>
+            pyClassNames = obj.TrainingData.ClassNames; 
+            pyZcThresh = obj.ZcThresh; %#ok<NASGU>
+            pySscThresh = obj.SscThresh; %#ok<NASGU>
+            
+            save(fullfile(pyDir,'__weights.txt'), 'pyWeights', '-ASCII');
+            save(fullfile(pyDir,'__centers.txt'), 'pyCenters', '-ASCII');
+            save(fullfile(pyDir,'__ThreshZc.txt'), 'pyZcThresh', '-ASCII');
+            save(fullfile(pyDir,'__ThreshSsc.txt'), 'pySscThresh', '-ASCII');
+            
+            % cell arrays require a bit more work
+            fileID = fopen(fullfile(pyDir,'__classes.txt'),'wt');
+            formatSpec = '%s\n';
+            [nrows,ncols] = size(pyClassNames);
+            for row = 1:nrows
+                fprintf(fileID,formatSpec,pyClassNames{row,:});
+            end
+            fclose(fileID);
+
+            success = true;
+            
+        end
+
     end
     methods (Static = true)
         function voteDecision = majority_vote(classDecision, numVotes, ...

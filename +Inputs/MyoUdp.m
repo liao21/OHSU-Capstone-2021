@@ -1,19 +1,29 @@
 classdef MyoUdp < Inputs.SignalInput
-    % Class for interfacing Thalmic Labs Myo Armband via pnet udp.  The basic
-    % architecture is that the Myo SDK is used within MyoUdp.exe which
-    % handles device interface and low level communications.  The
-    % executable file then streams the EMG, orientation, accelerometer, and
-    % gyroscope data via UDP on port 10001 at 200Hz.  Note this is so far
-    % independant from MATLAB so any receiver code could be written to take
-    % the EMG data.  Note that the device pairing and connection can be
-    % managed using the myo armband manager software from thalmic
+    % Class for interfacing Thalmic Labs Myo Armband via pnet udp.  
+    %
+    % There are currently two UDP streaming protocols compatible with the
+    % MiniVIE.  The first is the MyoUdp.exe executable which runs under
+    % windows and allows streaming of only a single armband at 200Hz. In
+    % order to have a second streaming armband, a virtual machine can be
+    % used, mapping a second armband and dongle to the virtual environment,
+    % and streaming to the host PC.
+    % 
+    % The second streaming interface uses the bluetooth low energy
+    % streaming protocol released by Thalmic Labs.  Within the python
+    % subfolder are tools to connect and stream multiple Myo armbands to
+    % UDP using the device MAC address.  This can achieve 300Hz raw EMG
+    % streaming rates
+    %
+    % Each streaming protocol streams the EMG, orientation, accelerometer,
+    % and gyroscope data 
+    %
     % On the matlab side, the getData command reads buffered UDP packets,
     % interpolated the EMG data up to the expected 1kHz and returns the
     % data.  The orientation, accelerometer, and gyroscope data are
     % currently returned as property values.  Future versions may make
     % these available as seperate channel data for pattern classification.
     %
-    % Data packet information:
+    % MyoUdp.exe Data packet information:
     % Data packet size is 48 bytes.
     %     uchar values encoding:
     %     Bytes 0-7: int8 [8] emgSamples
@@ -21,13 +31,30 @@ classdef MyoUdp < Inputs.SignalInput
     %     Bytes 24-35: float [3] accelerometer data, in units of g
     %     Bytes 36-47: float [3] gyroscope data, in units of deg / s
     %
+    % MyoUdp.py Data packet information:
+    % Data packet size either 16 or 20 bytes.
+    %     case 16
+    %         % EMG Samples (8 channels 2 samples per packet)
+    %         d = double(typecast(bytes,'int8'));
+    %         emgData = reshape(d,8,2);
+    %     case 20
+    %         % IMU sample
+    %         MYOHW_ORIENTATION_SCALE = 16384.0;
+    %         MYOHW_ACCELEROMETER_SCALE = 2048.0;
+    %         MYOHW_GYROSCOPE_SCALE = 16.0;
+    %         dataInt16 = double(typecast(bytes,'int16'));
+    %         orientation = dataInt16(1:4) ./ MYOHW_ORIENTATION_SCALE;
+    %         accelerometer = dataInt16(5:7) ./ MYOHW_ACCELEROMETER_SCALE;
+    %         gyroscope = dataInt16(8:10) ./ MYOHW_GYROSCOPE_SCALE;
     %
     % Known Limitations:
-    % As stated above, the maximum data rate is 200Hz for the armband and
+    % As stated above, the maximum data rate is 200-300Hz for the armband and
     % the data resolution is only 8-bits.  Also, the myo is set to timeout
-    % after 30 seconds of no motion to conserve battery.  Shaking the
-    % device will wake it and resue streaming.  Currently only one myo can
-    % stream at a time, though this is targeted for future revisions in the
+    % after 30 seconds of no motion to conserve battery, this has been
+    % disabled in the python version. Shaking the device will wake it and
+    % resume streaming.  Currently only one myo can stream at a time,
+    % unless using a virtual machine as described above.
+    %
     % MiniVIE software
     %
     %     % Test usage:
@@ -50,11 +77,16 @@ classdef MyoUdp < Inputs.SignalInput
     %   2/24/2015 Armiger: Updated .exe to include orientation data
     %   7/01/2015 Armiger: Added support for dual streaming armbands (2
     %                      computers)
+    %   5/09/2016 Armiger: Updated documentation
     properties
+        % Note the streaming ports are read in the user_config.xml file on
+        % initialize
         UdpPortNum8 = 10001;     % stream port for channels 1-8
         UdpPortNum16 = 10002;    % stream port for channels 9-16
         
         EMG_GAIN = 0.01;  %Scaling from int8 to voltage
+        
+        InputFrequency = 300; % Hz
     end
     properties (SetAccess = private)
         IsInitialized = 0;
@@ -64,9 +96,9 @@ classdef MyoUdp < Inputs.SignalInput
         numPacketsReceived = 0;
         numValidPackets = 0;
         
-        Orientation         % Unit Quaternion [1 x 4]
-        Accelerometer       % X,Y,Z Acceleration, (g) [1 x 3]
-        Gyroscope           % X,Y,Z Angular Rate, (deg/s) [1 x 3]
+        Orientation = [1 0 0 0];    % Unit Quaternion [1 x 4]
+        Accelerometer = [0 0 0];    % X,Y,Z Acceleration, (g) [1 x 3]
+        Gyroscope = [0 0 0];        % X,Y,Z Angular Rate, (deg/s) [1 x 3]
         
         SecondMyo           % property for second myo motion data
     end
@@ -97,6 +129,8 @@ classdef MyoUdp < Inputs.SignalInput
             end
             
             % Open a udp port to receive streaming data on
+            obj.UdpPortNum8 = str2double(UserConfig.getUserConfigVar('myoUdpPort1','10001'));
+            obj.UdpPortNum16 = str2double(UserConfig.getUserConfigVar('myoUdpPort2','10002'));            
             obj.UdpSocket8 = PnetClass(obj.UdpPortNum8);
             obj.UdpSocket16 = PnetClass(obj.UdpPortNum16);
             if ~obj.UdpSocket8.initialize()
@@ -168,7 +202,9 @@ classdef MyoUdp < Inputs.SignalInput
             if obj.UdpPortNum8 == 15001
                 % get upsampled data
                 desiredRate = 1000;
-                actualRate = 200;
+                %actualRate = 200;
+                actualRate = obj.InputFrequency;
+                %TODO: evaluate actual frequency with tic/toc and round to nearest 50
                 upsampleFactor = desiredRate/actualRate;
                 samples = round(numSamples/upsampleFactor);
                 buffData = obj.Buffer.getData(samples,idxChannel);

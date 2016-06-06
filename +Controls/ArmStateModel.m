@@ -13,6 +13,35 @@ classdef ArmStateModel < handle
     % Revisions:
     % 26JUN2014 Armiger: Added accel rules and min velocity limits
     % 10DEC2015 Armiger: Added roc ids for every joint
+    
+    % Notes:
+    %
+    % There are a variety of control scenarios that this class should
+    % eventually include.  
+    %
+    % The baseline is joint based velocity control.
+    % In this case the 7 upper arm joints are treated seperately and each
+    % maintains its own position / velocity control status.  
+    %
+    % The hand is usually controled via a single state that has information
+    % related to the roc ID and the current position, which is just a
+    % normalized valie on 0-1
+    %
+    % Individual finger control can be either handled by ROC tables, which
+    % has the limitation of being mutually exclusive.  OR individual
+    % fingers would need their own account of position and hence their own
+    % state
+    %
+    % We also may want a scenario in which some joints are mapped to
+    % differing ROC tables. E.g. if there is a whole arm ROC mapped to
+    % motion and another mapped to hand grasp
+    %
+    % Endpoint control is needed in a manner such that some joints are
+    % mapped to Endopint command states while maintaining hand grasps via
+    % ROC tables.  Both endpont position and velocity modes are desired
+    %
+    % 
+    
     properties
 
         ApplyValueLimits = 1;
@@ -113,7 +142,16 @@ classdef ArmStateModel < handle
             
         end
         function setRocId(obj,id)
+            % Set the ROC ID
             obj.structState(obj.RocStateId).State = id;
+        end
+        function id = getRocId(obj)
+            % Get the ROC ID
+            id = obj.structState(obj.RocStateId).State;
+        end
+        function val = getRocVal(obj)
+            % Get the current position in the ROC ID
+            val = obj.structState(obj.RocStateId).Value;
         end
         function setVelocity(obj,id,velocity)
             obj.velocity(id) = velocity;

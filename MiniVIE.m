@@ -58,7 +58,7 @@ classdef MiniVIE < Common.MiniVieObj
             setupFigure(obj);
             
             % Set valid input options
-            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','Signal Simulator','EMG Simulator','DaqHwSession','CpchSerial','NfuInput','UdpDevice','IntanDevBoard','OpenBCI','ThalmicLabs MyoUdp'});
+            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','Signal Simulator','EMG Simulator','DaqHwSession','DaqHwDevice','CpchSerial','NfuInput','UdpDevice','IntanDevBoard','OpenBCI','ThalmicLabs MyoUdp'});
             set(obj.hg.popups(MiniVIE.INPUT),'Value',1);
             set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier','DiscriminantAnalysis','SupportVectorMachine','SvmStatTlbx'});
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
@@ -395,14 +395,16 @@ classdef MiniVIE < Common.MiniVieObj
                         else
                             fname = fullfile(PathName,FileName);
                         end
-                        
                         h = Inputs.EmgSimulator(fname);
-                        
-                        
                     case 'DaqHwSession'
-                        %h = Inputs.DaqHwSession('nidaq','Dev2');
-                        %h = Inputs.DaqHwSession('mcc','0');
-                        h = loadDaqHwDevice();
+                        h = loadDaqHwDevice('Session');
+                        % Ref Hargove 2014 comparison of real-time controlability
+                        Fs = h.SampleFrequency;                     % 1000 Hz
+                        h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
+                        h.addfilter(Inputs.MinLimitFilter(0.2));    % min limit
+                        h.addfilter(Inputs.ConstraintFilter(-5,5)); % range limit
+                    case 'DaqHwDevice'
+                        h = loadDaqHwDevice('Legacy');
                         % Ref Hargove 2014 comparison of real-time controlability
                         Fs = h.SampleFrequency;                     % 1000 Hz
                         h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
@@ -1213,8 +1215,12 @@ UiTools.save_temp_file(tempFileName,cpchParams);
 
 end
 
-function h = loadDaqHwDevice()
+function h = loadDaqHwDevice(version)
 % Load a dawHwDevice with default prompts
+
+if nargin < 1 
+    version = 'Session';
+end
 
 tempFileName = 'defaultDaqHwDevice';
 daqParams = UiTools.load_temp_file(tempFileName);
@@ -1237,10 +1243,13 @@ assert(length(answer) == 3,'Expected 3 outputs');
 
 daqParams.Name = answer{1};
 daqParams.Id = answer{2};
-daqParams.channelIds = str2num(answer{3});
+daqParams.channelIds = str2num(answer{3}); %#ok<ST2NM>
 
-h = Inputs.DaqHwSession(daqParams.Name,daqParams.Id,daqParams.channelIds);
-
+if strcmp(version,'Legacy')
+    h = Inputs.DaqHwDevice(daqParams.Name,daqParams.Id,daqParams.channelIds);
+else
+    h = Inputs.DaqHwSession(daqParams.Name,daqParams.Id,daqParams.channelIds);
+end
 try
     h.initialize();
 catch ME

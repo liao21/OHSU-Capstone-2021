@@ -1,9 +1,13 @@
+# -*- coding: utf-8 -*-
 """
-MyoUdpDriver.py - ver 0.6a
+MyoUdpDriver.py - [see __version__ below]
 
-Created on Mar 25 08:50:20 2016 - proof simultaneous dual myo configuration at 300Hz:EMG 200Hz:IMU
-Edited on Apr 24 2016 - improved driver options, enable console output, improved threading
-Edited on Apr 25 2016 - configured for a 48byte UDP Payload
+0.0 Created on Mar 25 08:50:20 2016 - proof simultaneous dual myo configuration at 300Hz:EMG 200Hz:IMU
+0.4 Edited on Apr 24 2016 - improved driver options, enable console output, improved threading
+0.5 Edited on Apr 25 2016 - configured for a 48byte UDP Payload
+0.6b Edited on Apr 30 2016 - configured for 8byte, 20byte, and 40byte UDP Payloads.
+                           - Python 3 compatible
+0.6c Edited on May 02 2016 - created EMG-triggered 48byte payload option
 
 Module to connect to Myo and stream data
 
@@ -11,7 +15,7 @@ Module to connect to Myo and stream data
 @author: W. Haris
 """
 
-##from __future__ import print_function
+from __future__ import print_function
 ###from bluepy import btle
 from cmdHCI import discoverBtleHCI, scanForBtleMAC, configHCI
 from myo_btle import Connection, myo_struct, isThalmic
@@ -25,9 +29,10 @@ import socket
 import argparse
 import binascii
 
-__version__ = "0.6.a"
-print sys.argv[0] + " Version: " + __version__
+__version__ = "0.6.c"
+print(sys.argv[0] + " Version: " + __version__)
 
+bDEBUG = False
 
 ### Parameters:
 #   NOTE FOR BOOLEAN ARGUMENTS:
@@ -99,11 +104,22 @@ parser.add_argument('--bVrbHCI', default = False, type=bool,
                     help='{bool} <False> Print HCI information to terminal')
 parser.add_argument('--bVrbDisc', default = False, type=bool,
                     help='{bool} <False> Print Discovery Information to terminal')
-# THREADING
+# THREADING, NETWORK BYTES, OTHER SCRIPT CONTROL
 parser.add_argument('--bNoThrd', default = False, type=bool,
-                    help='{bool} <False> Enable data stream threads for each Myo')
+                    help='{bool} <False> Disable data stream threads')
+parser.add_argument('--bIntIMU', default = False, type=bool,
+                    help='{bool} <False> IMU data type:integer (not float)')
+parser.add_argument('--bMonitor', default = False, type=bool,
+                    help='{bool} <False> User will monitor the driver')
 parser.add_argument('--bPad48bytes', default = False, type=bool,
-                    help='{bool} <False> Enable 48byte data stream with zero padding')
+                    help='{bool} <False> 48byte data stream payload contains ' +
+                    'fresh incoming EMG (with IMU padding) or IMU (with EMG ' +
+                    'padding) data with padding (checksum padding EMG=127 ' +
+                    'and IMU=0,0,0,1, 0,0,0, 0,0,0)')
+parser.add_argument('--bEMG48bytes', default = False, type=bool,
+                    help='{bool} <False> EMG-triggered 48 byte payload with ' +
+                    'fresh incoming EMG data and the most recent IMU data ' +
+                    '(no data padding like with bPad48bytes option)')
 
 
 args = parser.parse_args()
@@ -124,6 +140,8 @@ class MyoDelegate(btle.DefaultDelegate):
 ##        self.addrIMU = myo.addrUdpIMU
 ##        self.addrBatt = myo.addrUdpBatt
         self.bVerboseNotif = myo.bVerboseNotif
+        self.bPad48bytes = args.bPad48bytes
+        self.bIntIMU = args.bIntIMU
         # Assign select Notification Handles from Myo Structure
         self.EMGdata_valHandle = myo.disc.EMGdata.hValue    # returns a list of one handle
         self.RawEMG_valHandle = myo.disc.RawEMG.hValue      # returns a list of four handles
@@ -136,12 +154,14 @@ class MyoDelegate(btle.DefaultDelegate):
         self.battCount = 0;
         # Create the first data payload variable 'l' used for brevity
         # note one 'l' =8bytes; therefore 6l=48bytes
+        self.imuPayload = struct.pack('4h3h3h',0,0,0,1,0,0,0,0,0,0)
 
 ##        emptyIMUdata=list()
 ##        for i in range(10): emptyIMUdata.append(0)
 ##        emptyIMUdata[0]=1 # to make sure the Quaternion orientation matrix is valid
 ##        self.zerosIMUdata=bytearray(struct.pack('%dh' % len(emptyIMUdata),*emptyIMUdata))
-        self.zerosIMUdata=bytearray(struct.pack('4f3f3f', 1,0,0,0 ,0,0,0 ,0,0,0))
+        self.zerosIMUdata_f=bytearray(struct.pack('4f3f3f', 1,0,0,0 ,0,0,0 ,0,0,0))
+        self.zerosIMUdata_h=bytearray(struct.pack('4h3h3h', 1,0,0,0 ,0,0,0 ,0,0,0))
         
 ##        emptyEMGdata=list()
 ##        for i in range(8): emptyEMGdata.append(127)
@@ -151,7 +171,7 @@ class MyoDelegate(btle.DefaultDelegate):
 ##        self.full_sMask_8b = struct.pack('8b',127,127,127,127,127,127,127,127)
 ##        self.full_uMask_8b = struct.pack('8B',255,255,255,255,255,255,255,255)
 
-        self.incomingEMGdata = [0,1,2,3, 4,5,6,7]
+        self.monitorEMG = [0,1,2,3, 4,5,6,7]
 ##        self.incomingEMGdata = bytearray(struct.pack('8b',2,-2,5,-5,10,-10,100,-100))
 
 
@@ -190,34 +210,72 @@ class MyoDelegate(btle.DefaultDelegate):
         
         return
 
-    def packEMGandTransmit(self, dataEMG):
+
+    def packEMGandTransmit(self, dataEMG_b):
         # Handle first Raw EMG
-        self.incomingEMGdata = struct.unpack('8b',dataEMG[:8])
-        self.data_48bPayload = dataEMG[:8] + self.zerosIMUdata
-        self.sock.sendto(self.data_48bPayload, self.addr)
+        finalPayload = dataEMG_b[:8]
+        if args.bEMG48bytes:
+            # NOTE: If an IMU notification is *not* the first bluetooth
+            #       packet received, the very first one or two
+            #       IMU payload(s) will be of hex type from MyoDelegate_init
+            #       self.imuPayload = struct.pack('4h3h3h',0,0,0,1,0,0,0,0,0,0);
+            #       if hex type is selected with bIntIMU==True,
+            #       then all subsequent IMU payloads will be hex;
+            #       with the default bIntIMU==False, float-point is needed
+            #       and all subsequent transmits will be of float type
+            #       once the packIMUandTransmit module is run.
+            finalPayload = finalPayload + self.imuPayload
+        elif self.bPad48bytes:
+            if self.bIntIMU:
+                finalPayload = finalPayload + self.zerosIMUdata_h
+            else:
+                finalPayload = finalPayload + self.zerosIMUdata_f
+        self.sock.sendto(finalPayload, self.addr)
+        if args.bMonitor:
+            self.monitorEMG = struct.unpack('8b',dataEMG_b[:8])
         if self.bVerboseNotif:
-            print binascii.hexlify(self.data_48bPayload)
+            print(binascii.hexlify(finalPayload))
         # Handle second Raw EMG
-        self.incomingEMGdata = struct.unpack('8b',dataEMG[8:])
-        self.data_48bPayload = dataEMG[8:] + self.zerosIMUdata
-        self.sock.sendto(self.data_48bPayload, self.addr)
+        finalPayload = dataEMG_b[8:]
+        if args.bEMG48bytes:
+            # see note above
+            finalPayload = finalPayload + self.imuPayload
+        elif self.bPad48bytes:
+            if self.bIntIMU:
+                finalPayload = finalPayload + self.zerosIMUdata_h
+            else:
+                finalPayload = finalPayload + self.zerosIMUdata_f
+        self.sock.sendto(finalPayload, self.addr)
+        if args.bMonitor:
+            self.monitorEMG = struct.unpack('8b',dataEMG_b[8:])
         if self.bVerboseNotif:
-            print binascii.hexlify(self.data_48bPayload)
+            print(binascii.hexlify(finalPayload))
 
     def packIMUandTransmit(self, dataIMU_h):
-        dataIMU_short=struct.unpack('4h3h3h',dataIMU_h)
-        dataIMU_f = struct.pack('4f3f3f',*dataIMU_short)
-        self.data_48bPayload = self.ceilEMGdata + dataIMU_f
-        self.sock.sendto(self.data_48bPayload, self.addr)
+        if self.bIntIMU:
+            finalPayload = dataIMU_h
+        else:
+            dataIMU_short=struct.unpack('4h3h3h',dataIMU_h)
+            dataIMU_f = struct.pack('4f3f3f',*dataIMU_short)
+            finalPayload = dataIMU_f
+        if self.bPad48bytes:
+            finalPayload = self.ceilEMGdata + finalPayload
+        if args.bEMG48bytes:
+            # DO NOT send IMU-triggered packet
+            # save IMU data as an object attribute use by packEMGandTransmit
+            # see note in packEMGandTransmit for other information
+            self.imuPayload = finalPayload
+        else:
+            self.sock.sendto(finalPayload, self.addr)
         if self.bVerboseNotif:
-            print binascii.hexlify(self.data_48bPayload)
+            print(binascii.hexlify(finalPayload))
             
     def packClsandTransmit(self, dataClassifier):
-        self.data_48bPayload = self.ceilEMGdata + self.zerosIMUdata
-# TODO: Need to embed Classifier into 48bPayload somehow.        
-        self.sock.sendto(self.data_48bPayload, self.addr)
+        finalPayload = self.ceilEMGdata + self.zerosIMUdata_f
+# TODO: Need to embed Classifier into 48bPayload somehow.
+        self.sock.sendto(finalPayload, self.addr)
         if self.bVerboseNotif:
-            print binascii.hexlify(self.data_48bPayload)
+            print(binascii.hexlify(finalPayload))
             
 
 def setParameters(myo):
@@ -273,12 +331,12 @@ def threadMyo(myo, bVrbEMG):
 # Get HCI interface(s)
 # NOTE:
 #   listHCI is needed for syntax of command line arguments
-print '\n>> Get HCI'
+print('\n>> Get HCI')
 if args.iIface1 < 0 or args.iIface2 < 0:
     listHCI=list(discoverBtleHCI(args.bVrbHCI))
     listHCI.sort() # This sort is redundent but is important for peripheral binding order.
     if not listHCI:
-        print 'Could not find BTLE radio.'
+        print('Could not find BTLE radio.')
         sys.exit("No Bluetooth LE radio found. [TERMINATING DRIVER]")
 else:
     listHCI=list()
@@ -288,7 +346,7 @@ if args.iIface1 >= 0:
 if args.iIface2 >= 0:
     configHCI("hci"+str(args.iIface2),"UP", True)
     listHCI.insert(0, "hci"+str(args.iIface2))
-print '\n>> Get HCI Done. (%d found)' % len(listHCI)
+print('\n>> Get HCI Done. (%d found)' % len(listHCI))
 
 
 
@@ -296,18 +354,18 @@ print '\n>> Get HCI Done. (%d found)' % len(listHCI)
 
 #%%
 # Get MAC Addresses
-print '\n>> Get MAC'
+print('\n>> Get MAC')
 if args.strMAC1=="DISCOVERY" or args.strMAC2=="DISCOVERY":
-    print 'Initial BTLE radio scan...'
+    print('Initial BTLE radio scan...')
     listMAC=list(scanForBtleMAC(listHCI[0], args.bVrbHCI))
     if not listMAC:
-        print "Could not find any BTLE Devices. [Three more Attempts]"
+        print("Could not find any BTLE Devices. [Three more Attempts]")
         listMAC=list(scanForBtleMAC(listHCI[0], args.bVrbHCI))
         if not listMAC:
-            print "Could not find any BTLE Devices. [Two more Attempts]"
+            print("Could not find any BTLE Devices. [Two more Attempts]")
             listMAC=list(scanForBtleMAC(listHCI[0], args.bVrbHCI))
             if not listMAC:
-                print "Could not find any BTLE Devices. [Last Attempt]"
+                print("Could not find any BTLE Devices. [Last Attempt]")
                 listMAC=list(scanForBtleMAC(listHCI[0], args.bVrbHCI))
                 if not listMAC:
                     sys.exit("BTLE radio scan for Devices turned up empty. [TERMINATING DRIVER]")
@@ -317,7 +375,7 @@ if args.strMAC1 != "DISCOVERY":
     listMAC.insert(0,strMAC1)
 if args.strMAC2 != "DISCOVERY":
     listMAC.insert(1,strMAC2)
-print '\n>> Get_MAC Done. (%d found)' % len(listMAC)
+print('\n>> Get_MAC Done. (%d found)' % len(listMAC))
 
 
 
@@ -325,11 +383,11 @@ print '\n>> Get_MAC Done. (%d found)' % len(listMAC)
 
 #%%
 # Connect found Myo(s)
-print '\n>> Connect Myo(s)'
+print('\n>> Connect Myo(s)')
 iMyo=0 #Myo counter
 listMyo=list()
 for iMAC in range(len(listMAC)):
-    print '\n>> Start loop for Myo(s) (iter:%d)' % iMyo
+    print('\n>> Start loop for Myo(s) (iter:%d)' % iMyo)
     if not iMyo:
         pConn1=Connection(listMAC[iMAC], int(listHCI[0].strip()[len(listHCI[0].strip())-1]))
         if isThalmic(pConn1):
@@ -338,18 +396,18 @@ for iMAC in range(len(listMAC)):
             setattr(listMyo[iMyo],'strHCI', listHCI[0])
             setattr(listMyo[iMyo],'intHCI', int(listHCI[0].strip()[len(listHCI[0].strip())-1]))
             setattr(listMyo[iMyo],'pConn', pConn1)
-            print 'The BTLE Device with MAC:[%s] is a Thalmic Device on %s' % (listMAC[iMAC], listMyo[iMyo].strHCI)
+            print('The BTLE Device with MAC:[%s] is a Thalmic Device on %s' % (listMAC[iMAC], listMyo[iMyo].strHCI))
             iMyo += 1
         else:
             #TODO: need to blacklist the MAC Address
-            print 'The BTLE Device with MAC:[%s] is NOT a Thalmic Device!' % listMAC[iMAC]
+            print('The BTLE Device with MAC:[%s] is NOT a Thalmic Device!' % listMAC[iMAC])
             pConn1.disconnect()
     elif iMyo:
         if len(listHCI) > 1:
-            print 'Second Myo Armbands connected to second BTLE Radio'
+            print('Second Myo Armbands connected to second BTLE Radio')
             pConn2=Connection(listMAC[iMAC], int(listHCI[1].strip()[len(listHCI[1].strip())-1]))
         else:
-            print 'NOTE: using 2 Myo Armbands on one BTLE Radio'
+            print('NOTE: using 2 Myo Armbands on one BTLE Radio')
             pConn2=Connection(listMAC[iMAC], listMyo[0].intHCI)
         if isThalmic(pConn2):
             listMyo.append(myo_struct())
@@ -362,14 +420,14 @@ for iMAC in range(len(listMAC)):
                 setattr(listMyo[iMyo],'strHCI', listHCI[0])
                 setattr(listMyo[iMyo],'intHCI', int(listHCI[0].strip()[len(listHCI[0].strip())-1]))
                 setattr(listMyo[iMyo],'pConn', pConn1)
-            print 'The BTLE Device with MAC:[%s] is a Thalmic Device on %s' % (listMAC[iMAC], listMyo[iMyo].strHCI)
+            print('The BTLE Device with MAC:[%s] is a Thalmic Device on %s' % (listMAC[iMAC], listMyo[iMyo].strHCI))
             iMyo += 1
             break
         else:
             #TODO: need to blacklist the MAC Address
-            print 'The BTLE Device with MAC:[%s] is NOT a Thalmic Device!' % listMAC[iMAC]
+            print('The BTLE Device with MAC:[%s] is NOT a Thalmic Device!' % listMAC[iMAC])
             pConn2.disconnect()
-    print '\n>> Finished one loop for Myo(s)'
+    print('\n>> Finished one loop for Myo(s)')
 
 
 
@@ -382,21 +440,21 @@ for iMAC in range(len(listMAC)):
 
 # TODO: Need to pickle discovery based on FW version
 
-print '\n>> Discover Myo(s)'
+print('\n>> Discover Myo(s)')
 for i in range(len(listMyo)):
     listMyo[i].discover(listMyo[i].pConn,["All"])
 
     listMyo[i].bVerboseNotif = args.bVrbNoti
     if args.bVrbDisc:
-        print '\n>> Dump info'
+        print('\n>> Dump info')
         listMyo[i].dumpStruct()
-        print '=========================================='
-        print 'Name: ', listMyo[i].Name
-        print 'Appearance: ', listMyo[i].Appear
-        print 'PPCP: ', listMyo[i].PPCP
-        print 'MAC: ', listMyo[i].MAC
-        print 'FW: ', listMyo[i].FW
-        print 'hCmd: ', listMyo[i].disc.hCmd
+        print('==========================================')
+        print('Name: ', listMyo[i].Name)
+        print('Appearance: ', listMyo[i].Appear)
+        print('PPCP: ', listMyo[i].PPCP)
+        print('MAC: ', listMyo[i].MAC)
+        print('FW: ', listMyo[i].FW)
+        print('hCmd: ', listMyo[i].disc.hCmd)
 
 
 
@@ -449,24 +507,53 @@ for m in listMyo:
 
 
 #%%
-print sys.argv[0] + " Version: " + __version__
+print('no sys????')
+print(sys.argv[0] + " Version: " + __version__)
+print('got sys!!!')
+
+
+print('Print EMG stream to terminal [bVrbEMG]: ' + str(args.bVrbEMG))
+print('Print Notifications to terminal [bVrbNoti]: ' + str(args.bVrbNoti))
+print('Print HCI Info to terminal [bVrbHCI]: ' + str(args.bVrbHCI))
+print('Print BTLE Discovery Info to terminal [bVrbDisc]: ' + str(args.bVrbDisc))
+
+print('Diable Threading [bNoThrd]: %s' % str(args.bNoThrd))
+print('Pad UDP data to 48 bytes [bPad48bytes]: %s' % str(args.bPad48bytes))
+print('IMU data as integer(else float) [bIntIMU]: %s' % str(args.bIntIMU))
+print('User monitoring the Driver [bMonitor]: %s' % str(args.bMonitor))
+
+print('Subscribe to IMU Svc [not:bNoIMU]: %s' % str(not args.bNoIMU))
+print('Subscribe to Raw EMG Svc [not:bNoEMG]: %s' % str(not args.bNoEMG))
+print('Subscribe to Classifier [not:bNoCls]: %s' % str(not args.bNoCls))
+print('Subscribe to Battery SOC [not:bNoBatt]: %s' % str(not args.bNoBatt))
+
+##print('MAC1: %s ; MAC2: %s ; HCI1: %d ; HCI2: %d' % (args.strMAC1, args.strMAC2, args.iIface1, args.iIface2))
+print('\nHCIx:MAC1: %s:%s' % (listMyo[0].strMAC, listMyo[0].strHCI))
+if len(listMyo)>1:
+      print('HCIx:MAC2: %s:%s' % (listMyo[1].strMAC, listMyo[1].strHCI))
+print('\nUDP Destination (IP:Port1): %s:%d' % (listMyo[0].addrUdp))
+if len(listMyo)>1:
+      print('\nUDP Destination (IP:Port2): %s:%d' % (listMyo[1].addrUdp))
+
 rate_EMG1 = 0
 rate_EMG2 = 0
 if args.bVrbEMG:
     if len(listMyo)>1:
-        print '\n---- ---- ---- ---- ---- ---- ---- ---- | ---- ---- ---- ---- ---- ---- ---- ---- | ------ ------ --'
+        print('\n---- ---- ---- ---- ---- ---- ---- ---- | ---- ---- ---- ---- ---- ---- ---- ---- | ------ ------ --')
     else:
-        print '\n---- ---- ---- ---- ---- ---- ---- ---- | ____ Hz '
+        print('\n---- ---- ---- ---- ---- ---- ---- ---- | ____ Hz ')
     try:
         pauseResponse = input('Make sure the above line fits the console window <Press Enter> to continue... ')
     except SyntaxError:
         pass
 
-print '\n  Press <Ctrl-C> to terminate; <Ctrl-Z> to suspend (''fg'' to resume suspend)\n'
+print('\n  Press <Ctrl-C> to terminate; <Ctrl-Z> to suspend (''fg'' to resume suspend)\n')
 
 try:
     tStart = time.time()
     if args.bNoThrd:
+        if bDEBUG: print('No Threading')
+        # Receive Myo Data without Threading
         tStart = time.time()
         pLast1=0
         imuLast1=0
@@ -479,9 +566,9 @@ try:
             if len(listMyo)>1:
                 listMyo[1].pConn.waitForNotifications(1.0)
             if args.bVrbEMG:
-                a = listMyo[0].Delegate.incomingEMGdata
+                a = listMyo[0].Delegate.monitorEMG
                 if len(listMyo)>1:
-                    b = listMyo[1].Delegate.incomingEMGdata
+                    b = listMyo[1].Delegate.monitorEMG
                     sys.stdout.write('\r%4d %4d %4d %4d %4d %4d %4d %4d | %4d %4d %4d %4d %4d %4d %4d %4d | %4.1f %4.1f Hz' %
                                      (a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7],
                                       b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7],
@@ -509,21 +596,24 @@ try:
                 if len(listMyo)>1:
                     pLast2 = listMyo[1].Delegate.pCount
                     imuLast2 = listMyo[1].Delegate.imuCount
-
     else:
+        # Listen for Bluetooth data in separate thread(s)
+        if bDEBUG: print('Use Threading')
         t1 = threading.Thread(target=threadMyo,args=[listMyo[0], args.bVrbEMG])
         if len(listMyo)>1:
             t2 = threading.Thread(target=threadMyo,args=[listMyo[1], args.bVrbEMG])
 
+        if bDEBUG: print('Launch Thread1')
         t1.start()
         if len(listMyo)>1:
+            if bDEBUG: print('Launch Thread2')
             t2.start()
 
         if args.bVrbEMG:
             while(1):
-                a = listMyo[0].Delegate.incomingEMGdata
+                a = listMyo[0].Delegate.monitorEMG
                 if len(listMyo)>1:
-                    b = listMyo[1].Delegate.incomingEMGdata
+                    b = listMyo[1].Delegate.monitorEMG
                 else:
                     b = [0,0,0,0,0,0,0,0]
                 if len(listMyo)>1:
@@ -537,11 +627,12 @@ try:
                                      (a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7]))
                 sys.stdout.flush()
 
-        print '\n join Threads'
+        print('\n join Threads')
         t1.join()
         if len(listMyo)>1:
             t2.join()
-        print '\n post join'
+        print('\n post join')
+        print("Look for: BTLEException: Device disconnected")
 
 
 except KeyboardInterrupt:

@@ -344,13 +344,26 @@ classdef MyoUdp < Inputs.SignalInput
         function Rxyz = getEulerAngles(obj)
             Rxyz = LinAlg.decompose_R(getRotationMatrix(obj));
         end
-        function R = getRotationMatrix(obj)
-            % get orientation as rotation matrix.  Convert quaterion to
-            % matrix but then do post processing to ensure it is orthogonal
+        function [R, R2] = getRotationMatrix(obj)
+            % get orientation as [3x3] rotation matrix.  Convert native
+            % quaterion to matrix, but then do post processing to ensure it
+            % is orthogonal.
+            % 
+            % If a second myo is attached then the second output argument
+            % can be used to query the [3x3] rotation matirx of that device
+            
             q = obj.Orientation;
             R = LinAlg.quaternionToRMatrix(q(:));
             [U, ~, V] = svd(R);
             R = U*V'; % Square up the rotaiton matrix
+            
+            if nargout > 1
+                % get matrix for second myo
+                q2 = obj.SecondMyo.Orientation;
+                R2 = LinAlg.quaternionToRMatrix(q2(:));
+                [U2, ~, V2] = svd(R2);
+                R2 = U2*V2'; % Square up the rotaiton matrix
+            end
         end
         function isReady = isReady(obj,numSamples) % Consider removing extra arg
             isReady = 1;

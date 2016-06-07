@@ -14,13 +14,16 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
 
         VulcanXAddress = '127.0.0.1';   % VulcanX IP (127.0.0.1)
         VulcanXCmdPort = 9027;          % MUD Port (L=9024 R=9027)
-        VulcanXLocalPort = 25001;       % Percept Port (L=25101 R=25001)
+        VulcanXLocalPort = 25001;       % Percept Port (MPL, VMPL, L=25101 R=25001)
         
         IntentAddress = '127.0.0.1';    % IP for class info streaming (127.0.0.1)
         IntentDestinationPort = 9094;   % Dest Port for class info streaming (L=9094 R=9095)
         IntentSourcePort = 58010;       % Src Port for class info streaming 
 
         IsRightSide = 0;
+        
+        TactorPort = '';
+        hTactors = [];
         
     end
     methods
@@ -52,7 +55,38 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             % Remaining superclass initialize methods
             initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
             
+            %% tactor initialization ************************************
+            tactorCOM = inputdlg('Which COM Port for Tactors? ( "" for none, "debug" for print mode )');
+            if isempty(tactorCOM) || isempty(tactorCOM{1})
+                obj.TactorPort = '';
+            
+            % set debug flag for tactors
+            elseif strcmpi(tactorCOM{1}, 'debug')
+                obj.TactorPort = 'DEBUG';
+            
+            % use the requested COM ports
+            else
+                obj.TactorPort = upper(tactorCOM{1});
+                delete(instrfindall);
+                obj.hTactors = serial(obj.TactorPort);
+                
+                obj.hTactors.BaudRate= 57600;
+                obj.hTactors.Timeout=0.5;
+                obj.hTactors.Terminator = 'CR';
+                fopen(obj.hTactors);
+            end
+            
         end
+        
+        function close(obj)
+            % Cleanup and close tactors
+            if ~isempty(obj.hTactors)
+                fclose(obj.hTactors);
+                obj.hTactors = [];
+            end
+            
+        end
+        
         function update(obj)
             % This is the main funciton called by the timer
             try
@@ -60,6 +94,11 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 
                 if ~isempty(obj.SignalSource)
                     obj.update_control();
+                end
+                
+                % update sensory if tactor input provided
+                if ~isempty(obj.TactorPort)
+                    obj.update_sensory();
                 end
                 
                 % obj.update_sensory();
@@ -195,16 +234,46 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             
             % percepts will be sent to the local port
             p = obj.hUdp.getData; %gets latest packets
-            if ~isempty(p) && length(p) >= 324
-                r = reshape(typecast(p(1:324),'single'),3,27);
-                if obj.Verbose > 1
-                    fprintf('[%s] PerceptAngles: ',mfilename);
-                    fprintf('%6.4f ',r(1,:)');
-                    fprintf('\n');
+%             if ~isempty(p) && length(p) >= 324
+%                 r = reshape(typecast(p(1:324),'single'),3,27);
+%                 if obj.Verbose > 1
+%                     fprintf('[%s] PerceptAngles: ',mfilename);
+%                     fprintf('%6.4f ',r(1,:)');
+%                     fprintf('\n');
+%                 end
+%                 
+%             else
+%                 % No new data
+%             end
+
+            % read in a new percept packet
+            if ~isempty(p)
+                
+                % parse the percept packet
+                feedback_data = extract_mpl_percepts_v2(p);
+                
+                % extract torqueVals
+                tactorVals = feedback_data.jointPercepts.torque([MPL.EnumArm.THUMB_MCP,...
+                                                                 MPL.EnumArm.INDEX_MCP,...
+                                                                 MPL.EnumArm.MIDDLE_MCP,...
+                                                                 MPL.EnumArm.RING_MCP,...
+                                                                 MPL.EnumArm.LITTLE_MCP]);
+                                                             
+                % scale the torque values
+                SENSOR_RANGE = [0 0.3]; % torque - 0-0.3 is good
+                MAX_OUTPUT = 255;
+                tactorVals(SENSOR_RANGE(1) < 0) = 0;
+                tactorVals(tactorVals > 0) = round((tactorVals(tactorVals > 0) - SENSOR_RANGE(1)) ./ diff(SENSOR_RANGE) * MAX_OUTPUT + 0.5);
+                tactorVals(tactorVals > MAX_OUTPUT) = MAX_OUTPUT;
+                tactorVals = uint8(tactorVals);
+                
+                % print out the tactor values, to std. out or serial port
+                if ~strcmpi(obj.TactorPort, 'DEBUG')
+                    fprintf(obj.hTactors, '[%d,%d,%d,%d,%d]', tactorVals);
+                else
+                    fprintf('[%d,%d,%d,%d,%d]\n', tactorVals);
                 end
                 
-            else
-                % No new data
             end
         
         end

@@ -18,8 +18,8 @@ classdef EndpointController < Scenarios.OnlineRetrainer
         
         IntentAddress = '127.0.0.1';    % IP for class info streaming (127.0.0.1)
         IntentDestinationPort = 9094;   % Dest Port for class info streaming (L=9094 R=9095)
-        IntentSourcePort = 58010;       % Src Port for class info streaming 
-
+        IntentSourcePort = 58010;       % Src Port for class info streaming
+        MAX_VEL = 0.005;
         IsRightSide = 0;
         
     end
@@ -101,94 +101,13 @@ classdef EndpointController < Scenarios.OnlineRetrainer
             %       upper arm joint values
             
             m = obj.ArmStateModel;
-            rocValue = m.structState(m.RocStateId).Value;
-            rocId = m.structState(m.RocStateId).State;
-            m.velocity([MPL.EnumArm.WRIST_ROT, MPL.EnumArm.WRIST_FE, MPL.EnumArm.WRIST_AB_AD])
+%             rocValue = m.structState(m.RocStateId).Value; % not used, from MplVulcanX
+%             rocId = m.structState(m.RocStateId).State;
             
-            % check for endpoint control command.  Currently hijacking the
-            % state variable
-            
-            if length(rocId) >= 8
-                fprintf('Endpoint: %f %f %f %f %f %f %f %f\n',rocId)
-                endPtVelocities = rocId(1:3)';
-                endPtOrientationVelocities = rocId(4:6)';
-                % rocMode = 1;
-                % rocTableIDs = 1;
-                % rocTableValues = 0;
-                % rocWeights  = 1;
-                rocMode = obj.hMud.ROC_MODE_VELOCITY;
-                rocTableIDs = 1;
-                rocTableValues = rocId(8);
-                rocWeights  = 1;
-                
-                msg = obj.hMud.EndpointVelocity6HandRocGrasps( ...
-                    endPtVelocities, endPtOrientationVelocities, ...
-                    rocMode, rocTableIDs, rocTableValues, rocWeights);
-                
-                obj.hUdp.putData(msg);
-                return
-            end
-
-            if isa(rocId,'Controls.GraspTypes')
-                % convert char grasp class name (e.g. 'Spherical') to numerical mpl
-                % grasp value (e.g. 7)
-                rocId = MPL.GraspConverter.graspLookup(rocId);
-            end
-            
-            % Note the joint ids for the MPL are different than the older
-            % action bus definition
-            % jointIds = [
-            %     action_bus_enum.Shoulder_FE
-            %     action_bus_enum.Shoulder_AbAd
-            %     action_bus_enum.Humeral_Rot
-            %     action_bus_enum.Elbow
-            %     action_bus_enum.Wrist_Rot
-            %     action_bus_enum.Wrist_Dev
-            %     action_bus_enum.Wrist_FE
-            %     ];
-            jointIds = [
-                MPL.EnumArm.SHOULDER_FE
-                MPL.EnumArm.SHOULDER_AB_AD
-                MPL.EnumArm.HUMERAL_ROT
-                MPL.EnumArm.ELBOW
-                MPL.EnumArm.WRIST_ROT
-                MPL.EnumArm.WRIST_AB_AD
-                MPL.EnumArm.WRIST_FE
-                ];
-            
-            mplAngles = zeros(1,27);
-            %mplAngles(1:7) = obj.JointAnglesDegrees(jointIds) * pi/180;
-            mplAngles(1:7) = [m.structState(jointIds).Value];
-            
-                        
-            % Generate vulcanX message.  If local roc table exists, use it
-            if ~isempty(obj.RocTable)
-
-                % check bounds
-                rocValue = max(min(rocValue,1),0);
-                % lookup the Roc id and find the right table
-                iEntry = (rocId == [obj.RocTable(:).id]);
-                if sum(iEntry) < 1
-                    error('Roc Id %d not found',rocId);
-                elseif sum(iEntry) > 1
-                    warning('More than 1 Roc Tables share the id # %d',rocId);
-                    roc = obj.RocTable(find(iEntry,1,'first'));
-                else
-                    roc = obj.RocTable(iEntry);
-                end
-
-                % perform local interpolation
-                mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
-
-                % generate MUD message using joint angles
-                msg = obj.hMud.AllJointsPosVelCmd(mplAngles(1:7),zeros(1,7),mplAngles(8:27),zeros(1,20));
-            else
-                % generate MUD message using joint angles and ROC
-                % parameters
-                msg = obj.hMud.ArmPosVelHandRocGrasps(mplAngles(1:7),zeros(1,7),1,rocId,rocVal,1);
-            end
-            
-            % write message
+            velMask = sign(m.velocity([MPL.EnumArm.WRIST_ROT, MPL.EnumArm.WRIST_FE, MPL.EnumArm.WRIST_AB_AD])); % will return -1, 0, or 1
+            velocity3D = velMask * obj.MAX_VEL;
+            msg = obj.hMud.EndpointVelocity6HandRocGraspsImp(velocity3D, [0 0 0], obj.hMud.ROC_MODE_NO_MOTION,1,0, 1, ones(27, 1));
+            fprintf('%.3f\t%.3f\t%.3f\n', velocity3D(1), velocity3D(2), velocity3D(3));
             obj.hUdp.putData(msg);
             
         end

@@ -84,6 +84,9 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 fclose(obj.hTactors);
                 obj.hTactors = [];
             end
+            try
+                obj.hUdp.close()
+            end
             
         end
         
@@ -97,9 +100,7 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 end
                 
                 % update sensory if tactor input provided
-                if ~isempty(obj.TactorPort)
-                    obj.update_sensory();
-                end
+                obj.update_sensory();
                 
                 % obj.update_sensory();
                 
@@ -247,8 +248,11 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
 %             end
 
             % read in a new percept packet
-            if ~isempty(p)
-                
+            if isempty(p)
+                disp('No Data')
+                return
+            end
+            if ~isempty(obj.TactorPort)
                 % parse the percept packet
                 feedback_data = extract_mpl_percepts_v2(p);
                 
@@ -269,7 +273,15 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 
                 % print out the tactor values, to std. out or serial port
                 if ~strcmpi(obj.TactorPort, 'DEBUG')
-                    fprintf(obj.hTactors, '[%d,%d,%d,%d,%d]', tactorVals);
+                    fprintf(obj.hTactors, '[%d,%d,%d,%d,%d]', double(tactorVals));
+                    fprintf(2, '[%d,%d,%d,%d,%d]\n', double(tactorVals));
+
+                    % Read down receive buffer, not interested in response
+                    nBytes = obj.hTactors.BytesAvailable;
+                    if nBytes > 0
+                        c = char(fread(obj.hTactors,nBytes,'char')');
+                        %disp(c)
+                    end
                 else
                     fprintf('[%d,%d,%d,%d,%d]\n', tactorVals);
                 end

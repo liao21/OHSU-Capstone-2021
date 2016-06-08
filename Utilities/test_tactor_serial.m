@@ -1,7 +1,7 @@
 function s = test_tactor_serial
 % Simple test of tactor control with a GUI.
 
-DEBUG = true;
+DEBUG = false;
 
 comPort = 'COM8';
 
@@ -16,7 +16,7 @@ if DEBUG
 else
     s = instrfind('port',comPort);
     if isempty(s)
-        s = serial(comPort,'Baudrate',57600,'Timeout',0.1,'Terminator','CR');
+        s = serial(comPort,'Baudrate',57600,'Timeout',0.5,'Terminator',0);
         fprintf('Opening port %s...',comPort)
         fopen(s);
         fprintf('Done\n');
@@ -42,9 +42,15 @@ set(f,'WindowKeyReleaseFcn',@(src,evt)keyUp(evt.Key));
                 if ~isequal(commandVals,newVals)
                     commandVals = newVals;
                     fprintf(s,'[%d,%d,%d,%d,%d]',commandVals);
-                    fprintf('Activating Tactor #%s\n',key);
+                pause(0.1)
+                    nBytes = s.BytesAvailable;
+                    if nBytes > 0
+                        c = char(fread(s,nBytes,'char')');
+                        disp(c)
+                    end
+                    %fprintf('Activating Tactor #%s\n',key);
                 else
-                    fprintf('Activated Tactor #%s\n',key);
+                    %fprintf('Activated Tactor #%s\n',key);
                 end
         end
     end
@@ -56,8 +62,13 @@ set(f,'WindowKeyReleaseFcn',@(src,evt)keyUp(evt.Key));
                 commandVals(id) = lowVal;
                 
                 fprintf(s,'[%d,%d,%d,%d,%d]',commandVals);
-                fprintf('Deactvating Tactor #%s\n',key);
-                pause(0.01)
+                pause(0.1)
+                    nBytes = s.BytesAvailable;
+                    if nBytes > 0
+                        c = char(fread(s,nBytes,'char')');
+                        disp(c)
+                    end
+                %fprintf('Deactvating Tactor #%s\n',key);
         end
     end
 end

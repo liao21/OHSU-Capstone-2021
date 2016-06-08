@@ -56,34 +56,18 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
             
             %% tactor initialization ************************************
-            tactorCOM = inputdlg('Which COM Port for Tactors? ( "" for none, "debug" for print mode )');
-            if isempty(tactorCOM) || isempty(tactorCOM{1})
-                obj.TactorPort = '';
-            
-            % set debug flag for tactors
-            elseif strcmpi(tactorCOM{1}, 'debug')
-                obj.TactorPort = 'DEBUG';
-            
-            % use the requested COM ports
-            else
-                obj.TactorPort = upper(tactorCOM{1});
-                delete(instrfindall);
-                obj.hTactors = serial(obj.TactorPort);
-                
-                obj.hTactors.BaudRate= 57600;
-                obj.hTactors.Timeout=0.5;
-                obj.hTactors.Terminator = 'CR';
-                fopen(obj.hTactors);
-            end
+            obj.TactorPort = UserConfig.getUserConfigVar('TactorComPort','');
+            obj.hTactors = BluetoothTactor(obj.TactorPort);
+            obj.hTactors.initialize();
             
         end
         
         function close(obj)
             % Cleanup and close tactors
-            if ~isempty(obj.hTactors)
-                fclose(obj.hTactors);
-                obj.hTactors = [];
+            try 
+                obj.hTactors.close();
             end
+            
             try
                 obj.hUdp.close()
             end
@@ -235,57 +219,36 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             
             % percepts will be sent to the local port
             p = obj.hUdp.getData; %gets latest packets
-%             if ~isempty(p) && length(p) >= 324
-%                 r = reshape(typecast(p(1:324),'single'),3,27);
-%                 if obj.Verbose > 1
-%                     fprintf('[%s] PerceptAngles: ',mfilename);
-%                     fprintf('%6.4f ',r(1,:)');
-%                     fprintf('\n');
-%                 end
-%                 
-%             else
-%                 % No new data
-%             end
 
             % read in a new percept packet
             if isempty(p)
                 disp('No Data')
                 return
             end
+            
             if ~isempty(obj.TactorPort)
                 % parse the percept packet
                 feedback_data = extract_mpl_percepts_v2(p);
                 
                 % extract torqueVals
-                tactorVals = feedback_data.jointPercepts.torque([MPL.EnumArm.THUMB_MCP,...
+                tactorVals = zeros(1,5);
+                sensorVals = feedback_data.jointPercepts.torque([MPL.EnumArm.THUMB_MCP,...
                                                                  MPL.EnumArm.INDEX_MCP,...
                                                                  MPL.EnumArm.MIDDLE_MCP,...
                                                                  MPL.EnumArm.RING_MCP,...
                                                                  MPL.EnumArm.LITTLE_MCP]);
+                
                                                              
-                % scale the torque values
-                SENSOR_RANGE = [0 0.3]; % torque - 0-0.3 is good
-                MAX_OUTPUT = 255;
-                tactorVals(SENSOR_RANGE(1) < 0) = 0;
-                tactorVals(tactorVals > 0) = round((tactorVals(tactorVals > 0) - SENSOR_RANGE(1)) ./ diff(SENSOR_RANGE) * MAX_OUTPUT + 0.5);
-                tactorVals(tactorVals > MAX_OUTPUT) = MAX_OUTPUT;
-                tactorVals = uint8(tactorVals);
+                sensorVals = max(sensorVals,0);
                 
-                % print out the tactor values, to std. out or serial port
-                if ~strcmpi(obj.TactorPort, 'DEBUG')
-                    fprintf(obj.hTactors, '[%d,%d,%d,%d,%d]', double(tactorVals));
-                    fprintf(2, '[%d,%d,%d,%d,%d]\n', double(tactorVals));
+                % scale the torque values and perform mapping
+                tactorVals(5) = interp1([0 0.1],[0 255],sensorVals(1),'linear',255);
+                tactorVals(4) = interp1([0 0.3],[0 255],sensorVals(2),'linear',255);
+                tactorVals(3) = interp1([0 0.3],[0 255],sensorVals(3),'linear',255);
+                tactorVals(2) = interp1([0 0.3],[0 255],sensorVals(4),'linear',255);
+                tactorVals(1) = interp1([0 0.3],[0 255],sensorVals(5),'linear',255);
 
-                    % Read down receive buffer, not interested in response
-                    nBytes = obj.hTactors.BytesAvailable;
-                    if nBytes > 0
-                        c = char(fread(obj.hTactors,nBytes,'char')');
-                        %disp(c)
-                    end
-                else
-                    fprintf('[%d,%d,%d,%d,%d]\n', tactorVals);
-                end
-                
+                obj.hTactors.tactorVals = double(round(tactorVals));
             end
         
         end

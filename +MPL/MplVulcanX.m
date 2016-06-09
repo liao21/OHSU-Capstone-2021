@@ -194,6 +194,7 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             %mplAngles(1:7) = obj.JointAnglesDegrees(jointIds) * pi/180;
             mplAngles(1:7) = [m.structState(jointIds).Value];
             
+            try
             if obj.DemoMyoShoulder
                 
                 R = obj.SignalSource.getRotationMatrix();
@@ -217,6 +218,9 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                     mplAngles(2) = -newXYZ(2) * pi / 180;
                     mplAngles(3) = newXYZ(1) * pi / 180;
                 end
+                % Limit humeral ROM
+                mplAngles(3) = max(min(mplAngles(3),pi/6),-pi/6);
+            end
             end
             
             % Generate vulcanX message.  If local roc table exists, use it
@@ -272,16 +276,16 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                                                                  MPL.EnumArm.MIDDLE_MCP,...
                                                                  MPL.EnumArm.RING_MCP,...
                                                                  MPL.EnumArm.LITTLE_MCP]);
-                
-                                                             
-                sensorVals = max(sensorVals,0);
+                minSensor = 0.05;
+                sensorVals(1) = -sensorVals(1);
+                sensorVals = max(sensorVals,minSensor);
                 
                 % scale the torque values and perform mapping
-                tactorVals(5) = interp1([0 0.1],[0 255],sensorVals(1),'linear',255);
-                tactorVals(4) = interp1([0 0.3],[0 255],sensorVals(2),'linear',255);
-                tactorVals(3) = interp1([0 0.3],[0 255],sensorVals(3),'linear',255);
-                tactorVals(2) = interp1([0 0.3],[0 255],sensorVals(4),'linear',255);
-                tactorVals(1) = interp1([0 0.3],[0 255],sensorVals(5),'linear',255);
+                tactorVals(5) = interp1([minSensor 0.1],[0 255],sensorVals(1),'linear',255);
+                tactorVals(4) = interp1([minSensor 0.3],[0 255],sensorVals(2),'linear',255);
+                tactorVals(3) = interp1([minSensor 0.3],[0 255],sensorVals(3),'linear',255);
+                tactorVals(2) = interp1([minSensor 0.3],[0 255],sensorVals(4),'linear',255);
+                tactorVals(1) = interp1([minSensor 0.3],[0 255],sensorVals(5),'linear',255);
 
                 obj.hTactors.tactorVals = double(round(tactorVals));
             end

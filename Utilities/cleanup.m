@@ -3,6 +3,7 @@
 close all force;
 clear classes;
 clear java;
+clear mex;
 try
     dbclear('all');
 end

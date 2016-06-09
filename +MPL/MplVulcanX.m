@@ -14,13 +14,16 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
 
         VulcanXAddress = '127.0.0.1';   % VulcanX IP (127.0.0.1)
         VulcanXCmdPort = 9027;          % MUD Port (L=9024 R=9027)
-        VulcanXLocalPort = 25001;       % Percept Port (L=25101 R=25001)
+        VulcanXLocalPort = 25001;       % Percept Port (MPL, VMPL, L=25101 R=25001)
         
         IntentAddress = '127.0.0.1';    % IP for class info streaming (127.0.0.1)
         IntentDestinationPort = 9094;   % Dest Port for class info streaming (L=9094 R=9095)
         IntentSourcePort = 58010;       % Src Port for class info streaming 
 
         IsRightSide = 0;
+        
+        TactorPort = '';
+        hTactors = [];
         
     end
     methods
@@ -52,7 +55,25 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             % Remaining superclass initialize methods
             initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
             
+            %% tactor initialization ************************************
+            obj.TactorPort = UserConfig.getUserConfigVar('TactorComPort','');
+            obj.hTactors = BluetoothTactor(obj.TactorPort);
+            obj.hTactors.initialize();
+            
         end
+        
+        function close(obj)
+            % Cleanup and close tactors
+            try 
+                obj.hTactors.close();
+            end
+            
+            try
+                obj.hUdp.close()
+            end
+            
+        end
+        
         function update(obj)
             % This is the main funciton called by the timer
             try
@@ -61,6 +82,9 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 if ~isempty(obj.SignalSource)
                     obj.update_control();
                 end
+                
+                % update sensory if tactor input provided
+                obj.update_sensory();
                 
                 % obj.update_sensory();
                 
@@ -195,16 +219,36 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             
             % percepts will be sent to the local port
             p = obj.hUdp.getData; %gets latest packets
-            if ~isempty(p) && length(p) >= 324
-                r = reshape(typecast(p(1:324),'single'),3,27);
-                if obj.Verbose > 1
-                    fprintf('[%s] PerceptAngles: ',mfilename);
-                    fprintf('%6.4f ',r(1,:)');
-                    fprintf('\n');
-                end
+
+            % read in a new percept packet
+            if isempty(p)
+                disp('No Data')
+                return
+            end
+            
+            if ~isempty(obj.TactorPort)
+                % parse the percept packet
+                feedback_data = extract_mpl_percepts_v2(p);
                 
-            else
-                % No new data
+                % extract torqueVals
+                tactorVals = zeros(1,5);
+                sensorVals = feedback_data.jointPercepts.torque([MPL.EnumArm.THUMB_MCP,...
+                                                                 MPL.EnumArm.INDEX_MCP,...
+                                                                 MPL.EnumArm.MIDDLE_MCP,...
+                                                                 MPL.EnumArm.RING_MCP,...
+                                                                 MPL.EnumArm.LITTLE_MCP]);
+                
+                                                             
+                sensorVals = max(sensorVals,0);
+                
+                % scale the torque values and perform mapping
+                tactorVals(5) = interp1([0 0.1],[0 255],sensorVals(1),'linear',255);
+                tactorVals(4) = interp1([0 0.3],[0 255],sensorVals(2),'linear',255);
+                tactorVals(3) = interp1([0 0.3],[0 255],sensorVals(3),'linear',255);
+                tactorVals(2) = interp1([0 0.3],[0 255],sensorVals(4),'linear',255);
+                tactorVals(1) = interp1([0 0.3],[0 255],sensorVals(5),'linear',255);
+
+                obj.hTactors.tactorVals = double(round(tactorVals));
             end
         
         end

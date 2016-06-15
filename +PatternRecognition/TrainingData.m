@@ -220,6 +220,76 @@ classdef TrainingData < handle
             dataBreaks = windowSize:windowSize:numSamples*windowSize;
             
             signalData = reshape(s(channels,:,sortOrder),length(channels),[])';
+        end
+        function [signalData, signalLabel] = getStichedData(obj,channels,sortOrder)
+
+            s = obj.SignalDataRaw;
+            assert(~isempty(s),'No Raw Data Found');
+            if nargin < 2
+                channels = obj.ActiveChannels;
+            end
+            if nargin < 3
+                sortOrder = 1:obj.SampleCount;
+            end
+            
+            s = s(channels,:,sortOrder);
+            
+            lag = zeros(1,size(s,3)-1);
+            warning('off','signal:finddelay:noSignificantCorrelationVector');
+            for i = 1:size(s,3)-1
+                s1 = s(:,:,i);
+                s2 = s(:,:,i+1);
+                D = finddelay(s2',s1');
+                if all(D == 0)
+                    % signal is identical
+                    lag(i) = 0;
+                else 
+                    % ignore zero case (flat signals)
+                    delayVals = D(D ~= 0);
+                    
+                    % find most common delay
+                    bestDelay = mode(delayVals);
+                    
+                    nDisagree = sum(delayVals ~= bestDelay);
+                    
+                    if nDisagree > 2
+                        % likely signals don't correlate since they are
+                        % entirely unique
+                        lag(i) = NaN;
+                    else
+                        lag(i) = bestDelay;
+                    end
+                end
+                
+            end
+            dbstop if error
+            % concat EMG waveform
+            emgLabel = ones(1,size(s,2));
+            emgWave = s(:,:,1);
+            for i = 1:size(s,3)-1
+                L = lag(i);
+                if isnan(L)
+                    % add entire signal
+                    newData = s(:,:,i);
+                else
+                    newData = s(:,1+end-L:end,i+1);
+                end
+                emgWave = cat(2,emgWave,newData);
+                thisClass = obj.ClassLabelId(sortOrder(i));
+                emgLabel = cat(2,emgLabel,thisClass*ones(1,size(newData,2)));
+            end
+            
+            signalData = emgWave;
+            signalLabel = emgLabel;
+            
+            
+            if nargout < 1
+                figure()
+                subplot(2,1,1)
+                plot(signalData')
+                subplot(2,1,2)
+                plot(emgLabel')
+            end
             
         end
         function signalData = getRawSignals(obj)
@@ -255,7 +325,7 @@ classdef TrainingData < handle
             % Each column of x represents one variable, and each row
             % represents one observation.  
             %
-            % Note: for use in the Classiication Learner App, use:
+            % Note: for use in the Classication Learner App, use:
             % myData = table(predictors, response)
 
             % return cell array of class labels

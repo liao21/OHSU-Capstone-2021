@@ -73,10 +73,11 @@ classdef PnetClass < handle
             % initialize return arguments
             dataBytes = [];
             numReads = 0;
-            
-            if ~isequal(pnet(obj.hSocket,'status'),6)
-                fprintf(['[%s] pnet socket is disconnected but not closed. '...
-                    'Not ready to getData() on port %d \n'],mfilename,obj.localPort);
+
+            status = pnet(obj.hSocket,'status');
+            if ~isequal(status,6)
+                fprintf('[%s.m] UDP Port %d not ready to getData. Status is %d. Peer Disconnected?.\n',...
+                    mfilename,obj.localPort,status);
                 return
             end
 
@@ -87,7 +88,7 @@ classdef PnetClass < handle
                     % "One or more output arguments not assigned during call to "pnet"."
                     len = pnet(obj.hSocket,'readpacket','noblock');
                 catch ME
-                    fprintf(2,'[%s] Caught pnet error during readpacket: "%s"\n',mfilename,ME.message);
+                    fprintf(2,'[%s.m] Caught pnet error during readpacket: "%s"\n',mfilename,ME.message);
                     len = 0;
                 end
                 if len > 0
@@ -95,7 +96,7 @@ classdef PnetClass < handle
                         dataBytes = pnet(obj.hSocket,'read',len,'uint8','noblock');
                         numReads = numReads + 1;
                     catch ME
-                        fprintf(2,'[%s] Caught pnet error during read: "%s"\n',mfilename,ME.message);
+                        fprintf(2,'[%s.m] Caught pnet error during read: "%s"\n',mfilename,ME.message);
                         dataBytes = [];
                     end
                 end
@@ -105,7 +106,7 @@ classdef PnetClass < handle
             % [cellDataBytes, numReads] = getAllData(obj,maxReads)
             % read down buffer and return all packets as cell array
             
-            assert(~isempty(obj.hSocket),'[%s] PnetClass not initialized\n',mfilename);
+            assert(~isempty(obj.hSocket),'[%s.m] PnetClass not initialized\n',mfilename);
             
             if nargin < 2
                 maxReads = 500;
@@ -117,9 +118,10 @@ classdef PnetClass < handle
             numReads = 0;
 
             % Check socket status
-            if ~isequal(pnet(obj.hSocket,'status'),6)
-                fprintf(['[%s] pnet socket is disconnected but not closed. '...
-                    'Not ready to getData() on port %d \n'],mfilename,obj.localPort);
+            status = pnet(obj.hSocket,'status');
+            if ~isequal(status,6)
+                fprintf('[%s.m] UDP Port %d not ready to getData. Status is %d. pnet socket is disconnected but not closed.\n',...
+                    mfilename,obj.localPort,status);
                 return
             end
             
@@ -131,7 +133,7 @@ classdef PnetClass < handle
                     % "One or more output arguments not assigned during call to "pnet"."
                     len = pnet(obj.hSocket,'readpacket','noblock');
                 catch ME
-                    fprintf(2,'[%s] Caught pnet error during readpacket: "%s"\n',mfilename,ME.message);
+                    fprintf(2,'[%s.m] Caught pnet error during readpacket: "%s"\n',mfilename,ME.message);
                     len = 0;
                 end
                 if len > 0
@@ -139,7 +141,7 @@ classdef PnetClass < handle
                         numReads = numReads + 1;
                         cellDataBytes{numReads} = pnet(obj.hSocket,'read',len,'uint8','noblock');
                     catch ME
-                        fprintf('[%s] Caught pnet error during read: "%s"\n',mfilename,ME.message);
+                        fprintf('[%s.m] Caught pnet error during read: "%s"\n',mfilename,ME.message);
                         cellDataBytes{numReads} = [];
                         numReads = numReads - 1;
                     end
@@ -160,23 +162,24 @@ classdef PnetClass < handle
 
             assert(~isempty(obj.hSocket),'[%s] PnetClass not initialized');
 
-            status = pnet(obj.hSocket,'status');
-            if ~isequal(status,6)
-                fprintf('[%s] UDP Port %d not ready. Unable to write data.\n',mfilename,obj.localPort);
-                return
-            end
-            
             if nargin < 3
                 destinationHostname = obj.remoteIP;
                 destinationPortNumber = obj.remotePort;
             end
-            
+
+            status = pnet(obj.hSocket,'status');
+            if ~isequal(status,6)
+                fprintf('[%s.m] UDP Port %d not ready to putData to %d@%s. Status is %d.\n',...
+                    mfilename,obj.localPort,destinationPortNumber,destinationHostname,status);
+                return
+            end
+                        
             pnet( obj.hSocket, 'write', dataBytes );
             pnet( obj.hSocket, 'writepacket', destinationHostname, destinationPortNumber );
         end
         function close(obj)
             pnet(obj.hSocket,'close');
-            fprintf('[%s] Closed pnet socket #%d at local port: %d\n',...
+            fprintf('[%s.m] Closed pnet socket #%d at local port: %d\n',...
                 mfilename,obj.hSocket,obj.localPort);
             obj.hSocket = [];
         end

@@ -28,7 +28,7 @@ classdef BluetoothTactor < handle
             
             if isempty(obj.comPort)
                 % Create simulated port
-                obj.hSerial = 'DISABLE';
+                obj.hSerial = [];
                 return
             elseif strcmpi(obj.comPort, 'debug')
                 % Create simulated port
@@ -81,7 +81,9 @@ classdef BluetoothTactor < handle
                 delete(obj.hTimer)
             end
             try
-                fclose(obj.hSerial);
+                if ~isempty(obj.hSerial)
+                    fclose(obj.hSerial);
+                end
             end
             try
                 delete(obj.hSerial)

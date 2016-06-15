@@ -6,6 +6,7 @@ classdef BluetoothTactor < handle
         hTimer
         comPort = 'DEBUG'
         echoResponse = 0;
+        echoCommand = 1;
         
         tactorVals = [0 0 0 0 0];
     end
@@ -20,11 +21,10 @@ classdef BluetoothTactor < handle
         end
         function initialize(obj)
             % Open the port
-
+            
             % create refresh timer
             obj.hTimer = UiTools.create_timer('BluetoothTactorTimer',@(src,evt) obj.transmit );
             obj.hTimer.Period = 0.1;
-            
             
             if isempty(obj.comPort)
                 % Create simulated port
@@ -39,7 +39,7 @@ classdef BluetoothTactor < handle
                 % create the serial port
                 s = instrfind('port',obj.comPort);
                 if isempty(s)
-                    s = serial(obj.comPort,'Baudrate',57600,'Timeout',0.5,'Terminator',0);
+                    s = serial(obj.comPort,'Baudrate',57600,'Timeout',0.01,'Terminator',0);
                     fopen(s);
                 end
                 
@@ -47,7 +47,7 @@ classdef BluetoothTactor < handle
             end
             
             fprintf('Done\n');
-                        
+            
             start(obj.hTimer);
             
         end
@@ -57,8 +57,15 @@ classdef BluetoothTactor < handle
             
             % print out the tactor values, to std. out or serial port
             if ~strcmpi(obj.comPort, 'DEBUG')
-                fprintf(obj.hSerial, '[%d,%d,%d,%d,%d]', obj.tactorVals);
-                fprintf('[%s] [%d,%d,%d,%d,%d]\n', mfilename, obj.tactorVals);
+                try
+                    fprintf(obj.hSerial, '[%d,%d,%d,%d,%d]', obj.tactorVals);
+                catch ME
+                    ME.message
+                end
+                if obj.echoCommand
+                    fprintf('[%s.m %s] [%d,%d,%d,%d,%d]\n', ...
+                        mfilename, datestr(now,'dd-mmm-yyyy HH:MM:SS.FFF PM'), obj.tactorVals);
+                end
                 
                 % Read down receive buffer, not interested in response
                 nBytes = obj.hSerial.BytesAvailable;
@@ -79,6 +86,7 @@ classdef BluetoothTactor < handle
             end
             try
                 delete(obj.hTimer)
+                obj.hTimer = [];
             end
             try
                 if ~isempty(obj.hSerial)
@@ -87,6 +95,7 @@ classdef BluetoothTactor < handle
             end
             try
                 delete(obj.hSerial)
+                obj.hSerial = [];
             end
         end
     end

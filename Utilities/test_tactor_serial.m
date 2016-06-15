@@ -2,9 +2,9 @@ function hTactor = test_tactor_serial
 % Simple test of tactor control with a GUI.
 
 lowVal = 0;
-highVal = 200;
+highVal = 250;
 
-hTactor = BluetoothTactor('COM8');
+hTactor = BluetoothTactor('COM2');
 % hTactor = BluetoothTactor('DEBUG');
 hTactor.initialize()
 

@@ -17,6 +17,7 @@ classdef guiRocEditor < handle
     %
     %
     % 07NOV2013 Armiger: Created
+    % 16JUN2016 Samson: Added +/- ROC and Waypoint 
     properties
         hDataEmitter = Common.DataEmitter;  % handle to the data output sinks (udp)
         hMud = MPL.MudCommandEncoder;       % handle for the message encoder
@@ -151,6 +152,11 @@ classdef guiRocEditor < handle
             menuFile = uimenu(hParent,'Label','&File');
             menuFileOpen = uimenu(menuFile,'Label','Open...','Callback',@(src,evt)uiOpen(obj));
             menuFileSave = uimenu(menuFile,'Label','Save As...','Callback',@(src,evt)uiSaveAs(obj));
+            
+            % unimplemented menu items to edit ROC names and Waypoint values
+            %menuEdit = uimenu(hParent,'Label','&Edit');
+            %menuEditRenameROC = uimenu(menuEdit,'Label','Rename ROC','Callback',@(src,evt)uiRenameROC(obj));
+            %menuFileSetWaypoint = uimenu(menuEdit,'Label','Set Waypoint','Callback',@(src,evt)uiSetWaypoint(obj));
 
             menuOutput = uimenu(hParent,'Label','&Output');            
             menuOutputUnity = uimenu(menuOutput,'Label','Unity');
@@ -192,16 +198,28 @@ classdef guiRocEditor < handle
             uicontrol(hParent,'Style','text','Position',[100 620, 80, 20],...
                 'String','Roc Names:','HorizontalAlignment','Left');
             
+            % Add/Delete ROC
+            uicontrol(hParent,'Style','pushbutton','Position',[260 620, 20, 20],'TooltipString','Insert Copy of Current ROC',...
+                'String','+','HorizontalAlignment','Left','Callback',@(src,evt)cbAddROC);
+            uicontrol(hParent,'Style','pushbutton','Position',[280 620, 20, 20],'TooltipString','Delete Current ROC',...
+                'String','-','HorizontalAlignment','Left','Callback',@(src,evt)cbDeleteROC);
+            
             % Roc Names Listbox
-            obj.hRocNames = uicontrol(hParent,'Style','listbox','Position',[100 540, 200, 80],...
+            obj.hRocNames = uicontrol(hParent,'Style','listbox','Position',[100 555, 200, 65],...
                 'String',{'-empty-'},'Callback',@(src,evt)cbListBoxName(src));
             
             % Roc Waypoint Label
             uicontrol(hParent,'Style','text','Position',[320 620, 80, 20],...
                 'String','RocWaypoint:','HorizontalAlignment','Left');
             
+            % Add/Delete Waypoint
+            uicontrol(hParent,'Style','pushbutton','Position',[400 620, 20, 20],'TooltipString','Insert Copy of Current Waypoint',...
+                'String','+','HorizontalAlignment','Left','Callback',@(src,evt)cbAddWaypoint);
+            uicontrol(hParent,'Style','pushbutton','Position',[420 620, 20, 20],'TooltipString','Delete Current Waypoint',...
+                'String','-','HorizontalAlignment','Left','Callback',@(src,evt)cbDeleteWaypoint);
+            
             % Roc Waypoint Listbox
-            obj.hRocWaypoints = uicontrol(hParent,'Style','listbox','Position',[320 540, 120, 80],...
+            obj.hRocWaypoints = uicontrol(hParent,'Style','listbox','Position',[320 555, 120, 65],...
                 'String',{'0.0' '0.5' '1.0'},'Callback',@(src,evt)cbListBox(src));
             
             % Angles Label
@@ -220,6 +238,14 @@ classdef guiRocEditor < handle
             uicontrol(hParent,'Style','togglebutton','Value',1,'Position',[700 620, 80, 20],...
                 'String','HOLD','HorizontalAlignment','Left','Callback',@(src,evt)cbHold(src));
             
+            % Rename ROC Name text box
+            uicontrol(hParent,'Style','edit','Position',[100 540, 200, 16],'HorizontalAlignment','left',...
+                'TooltipString','Rename Current ROC...','Callback',@(src,evt)cbEditRocName(src));
+            
+            % Edit Waypoint text box
+            uicontrol(hParent,'Style','edit','Position',[320 540, 120, 16],'HorizontalAlignment','left',...
+                'TooltipString','Edit Waypoint Value...','Callback',@(src,evt)cbEditWaypoint(src));
+
             obj.IsDirty = false;
             
             return
@@ -365,6 +391,130 @@ classdef guiRocEditor < handle
                     pause(0.02);
                 end
                 
+            end
+            
+            function cbAddROC
+                % TO-DO: need to add ability name a new ROC
+                idx = obj.CurrentRocId;
+                struct = obj.structRoc
+                
+                % insert copy of current ROC below current
+                obj.structRoc = [struct(1:idx) struct(idx:length(struct))];
+                
+                resetRocIDs();
+                obj.updateFigure();
+            end
+            
+            function cbDeleteROC
+                % TO-DO: add warning for deleting a ROC
+                idx = obj.CurrentRocId;
+                struct = obj.structRoc
+                % element to delete is not first or last
+                if (idx < length(struct) && idx > 1)
+                    obj.structRoc = [struct(1:idx-1) struct(idx+1:length(struct))];
+                % element to delete is first
+                elseif (idx == 1 && length(struct) ~= 1)
+                    obj.structRoc = struct(idx+1:length(struct));
+                % element to delete is last
+                elseif (idx == length(struct) && length(struct) ~= 1)
+                    obj.structRoc = struct(1:length(struct)-1)
+                    obj.CurrentRocId = obj.CurrentRocId -1;
+                % element to delete is the only element
+                elseif (length(struct) == 1)
+                    obj.structRoc(1).name = 'NewROC';
+                    obj.structRoc(1).waypoint = [0];
+                    obj.structRoc(1).angles = zeros(1,length(struct.joints));
+                    obj.structRoc(1).impedance = zeros(1,length(struct.joints))-1;
+                end
+                
+                resetRocIDs();
+                obj.updateFigure();
+                
+            end
+            
+            function cbAddWaypoint
+                % TO-DO: add ability to set waypoint time
+                idx = obj.CurrentRocId;
+                idw = obj.CurrentWaypointId;
+                waypt = obj.structRoc(idx).waypoint;
+                angs = obj.structRoc(idx).angles;
+                imps = obj.structRoc(idx).impedance;
+                
+                % insert copy of current waypoint below current
+                obj.structRoc(idx).waypoint = [waypt(1:idw) waypt(idw:length(waypt))];
+                obj.structRoc(idx).angles = [angs(1:idw, 1:size(angs,2)); angs(idw:size(angs,1), 1:size(angs,2))];
+                obj.structRoc(idx).impedance = [imps(1:idw, 1:size(imps,2)); imps(idw:size(imps,1), 1:size(imps,2))];
+                
+                obj.updateFigure();
+            end
+            
+            function cbDeleteWaypoint
+                % TO-DO: add warning for deleting a waypoint
+                idx = obj.CurrentRocId;
+                idw = obj.CurrentWaypointId;
+                waypt = obj.structRoc(idx).waypoint;
+                angs = obj.structRoc(idx).angles;
+                imps = obj.structRoc(idx).impedance;
+                
+                % element to delete is not first or last
+                if (idw < length(waypt) && idw > 1)
+                    obj.structRoc(idx).waypoint = [waypt(1:idw-1) waypt(idw+1:length(waypt))];
+                    obj.structRoc(idx).angles = [angs(1:idw-1, 1:size(angs,2)); angs(idw+1:size(angs,1), 1:size(angs,2))];
+                    obj.structRoc(idx).impedance = [imps(1:idw-1, 1:size(imps,2)); imps(idw+1:size(imps,1), 1:size(imps,2))];
+                % element to delete is first
+                elseif (idw == 1 && length(waypt) ~= 1)
+                    obj.structRoc(idx).waypoint = waypt(idw+1:length(waypt));
+                    obj.structRoc(idx).angles = angs(idw+1:size(angs,1), 1:size(angs,2));
+                    obj.structRoc(idx).impedance = imps(idw+1:size(imps,1), 1:size(imps,2));
+                % element to delete is last
+                elseif (idw == length(waypt) && length(waypt) ~= 1)
+                    obj.structRoc(idx).waypoint = waypt(1:length(waypt)-1);
+                    obj.structRoc(idx).angles = angs(1:idw-1, 1:size(angs,2));
+                    obj.structRoc(idx).impedance = imps(1:idw-1, 1:size(imps,2));
+                    obj.CurrentWaypointId = obj.CurrentWaypointId -1;
+                % element to delete is the only element
+                elseif (length(waypt) == 1)
+                    obj.structRoc(idx).waypoint = [0];
+                    obj.structRoc(idx).angles = zeros(1,length(obj.structRoc(1).joints));
+                    obj.structRoc(idx).impedance = zeros(1,length(obj.structRoc(1).joints))-1;
+                end
+                
+                obj.updateFigure();
+            end
+            
+            function cbEditRocName(src)
+                idx = obj.CurrentRocId;
+                idw = obj.CurrentWaypointId;
+                str = get(src,'string');
+                set(src,'string','');
+                if (~isempty(str) && isstrprop(str(1),'alpha'))
+                    obj.structRoc(idx).name = str;
+                else
+                    error('Name should start with a letter');
+                end
+                
+                obj.updateFigure();
+            end
+            
+            function cbEditWaypoint(src)
+                idx = obj.CurrentRocId;
+                idw = obj.CurrentWaypointId;
+                newVal = str2double(get(src,'string'));
+                set(src,'string','');
+                
+                if (~isnan(newVal) && newVal >= 0 && newVal <= 1)
+                    obj.structRoc(idx).waypoint(idw) = newVal;
+                else
+                    errordlg('Invalid input. Waypoints must be a value from 0 to 1');
+                end
+                
+                obj.updateFigure();
+            end
+            
+            function resetRocIDs
+                for (idx = 1:length(obj.structRoc))
+                    obj.structRoc(idx).id = idx-1;
+                end
             end
             
         end

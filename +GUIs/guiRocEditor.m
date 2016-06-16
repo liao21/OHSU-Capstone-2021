@@ -490,7 +490,8 @@ classdef guiRocEditor < handle
                 if (~isempty(str) && isstrprop(str(1),'alpha'))
                     obj.structRoc(idx).name = str;
                 else
-                    error('Name should start with a letter');
+                    errordlg('Name should start with a letter');
+                    return
                 end
                 
                 obj.updateFigure();
@@ -506,6 +507,7 @@ classdef guiRocEditor < handle
                     obj.structRoc(idx).waypoint(idw) = newVal;
                 else
                     errordlg('Invalid input. Waypoints must be a value from 0 to 1');
+                    return
                 end
                 
                 obj.updateFigure();

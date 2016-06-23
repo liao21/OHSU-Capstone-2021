@@ -1122,6 +1122,8 @@ classdef MiniVIE < Common.MiniVieObj
             
             % add folder and sub-directories:
             addpath(genpath(fullfile(pathName,'ThirdParty')));
+            
+            fprintf('[%s.m] Configured MiniVIE path at: %s\n', mfilename, pathName)
         end
         function obj = Default(dataFile)
             if nargin < 1

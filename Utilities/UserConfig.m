@@ -54,7 +54,7 @@ classdef UserConfig < handle
                 
                 % ensure full path is resolved
                 %userConfigFile = which(userConfigFile);
-                fprintf('[%s] Calling constructor with config file %s\n',mfilename,userConfigFile);
+                fprintf('[%s.m] Calling constructor with config file %s\n',mfilename,userConfigFile);
                 
                 localObj = UserConfig;
                 localObj.userConfigFile = userConfigFile;
@@ -101,7 +101,7 @@ classdef UserConfig < handle
             a = obj.domNode;
             
             if isempty(a)
-                fprintf('[%s] No file %s found\n',mfilename,userFile);
+                fprintf('[%s.m] No file %s found\n',mfilename,userFile);
                 return
             end
             
@@ -123,14 +123,14 @@ classdef UserConfig < handle
                 %Not found
                 % display warning
                 if ischar(defaultValue)
-                    fprintf('[%s] %s not found. Default=%s\n',mfilename,tagName,defaultValue);
+                    fprintf('[%s.m] %s not found. Default=%s\n',mfilename,tagName,defaultValue);
                 else
-                    fprintf('[%s] %s not found. Default=%s\n',mfilename,tagName,num2str(defaultValue));
+                    fprintf('[%s.m] %s not found. Default=%s\n',mfilename,tagName,num2str(defaultValue));
                 end
                 result = defaultValue;
             else
                 % Echo the xml value found display 
-                fprintf('[%s] %s=%s\n',mfilename,tagName,xmlResult);
+                fprintf('[%s.m] %s=%s\n',mfilename,tagName,xmlResult);
                 result = xmlResult;
             end
             

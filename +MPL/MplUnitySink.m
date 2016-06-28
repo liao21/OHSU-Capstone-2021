@@ -44,7 +44,6 @@ classdef MplUnitySink < Common.DataSink
         % Handles
         hUdp;  % Handle to Udp port.  local port is setup to receive percepts and send to command port
         
-        IsLeftArm = [];     % Specify as 0 or 1 for right/left arm.  Disables prompt
         MplAddress;        % vMpl IP (127.0.0.1)
         MplCmdPort;        % Data Port (L=25100 R=25000)
         MplLocalPort;      % Percept Port (L=25101 R=25001)
@@ -57,22 +56,46 @@ classdef MplUnitySink < Common.DataSink
             %   None
             %
             
-            success = false;
+            % PnetClass(localPort,remotePort,remoteIP)
+            obj.hUdp = PnetClass(...
+                obj.MplLocalPort,obj.MplCmdPort,obj.MplAddress);
+            obj.hUdp.initialize();
             
-            if isempty(obj.IsLeftArm)
+            success = true;
+            
+        end
+        function setPortDefaults(obj,IsLeftArm)
+            % setDefaults
+            % Input arguments: 
+            %   IsLeftArm - Optional: Specifying true/false for this value
+            %               will overwrite the port parameters to the
+            %               local defaults. If this is omitted, a prompt
+            %               will appear for the user to select Left / Right
+            %
+
+            if nargin < 2
                 % prompt to select a side
                 reply = questdlg('Select Arm','Unity','Left','Right','Left');
                 switch reply
                     case 'Left'
-                        obj.IsLeftArm = true;
+                        IsLeftArm = true;
                     case 'Right'
-                        obj.IsLeftArm = false;
+                        IsLeftArm = false;
                     otherwise
+                        % Arm is not initialized
                         return
                 end
             end
-                
-            if obj.IsLeftArm
+
+            % Issue warning if settings are not empty
+            if ~isempty(obj.MplAddress) || ...
+                    ~isempty(obj.MplCmdPort) || ...
+                    ~isempty(obj.MplLocalPort)
+                warning('Overwriting port parameters settings');
+            end
+            
+            % Set port params using arm side defualts
+            if IsLeftArm
                 % Left
                 obj.MplCmdPort = 25100;
                 obj.MplLocalPort = 25110;
@@ -83,14 +106,6 @@ classdef MplUnitySink < Common.DataSink
                 obj.MplLocalPort = 25010;
                 obj.MplAddress = '127.0.0.1';
             end
-            
-            % PnetClass(localPort,remotePort,remoteIP)
-            obj.hUdp = PnetClass(...
-                obj.MplLocalPort,obj.MplCmdPort,obj.MplAddress);
-            obj.hUdp.initialize();
-            
-            success = true;
-            
         end
         function close(obj)
             % Cleanup and close udp port

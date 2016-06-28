@@ -3,7 +3,6 @@
 ## 
 ## June 28, 2016
 
-
 import uinput
 import socket
 import sys

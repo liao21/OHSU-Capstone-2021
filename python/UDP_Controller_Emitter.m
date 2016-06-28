@@ -1,3 +1,7 @@
+% UDP Controller Transmitter
+% By David Samson
+% June 28 2016
+
 % Send controller data via UDP
 % Matlab packs data 
 

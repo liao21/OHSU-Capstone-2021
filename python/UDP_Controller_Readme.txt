@@ -1,7 +1,7 @@
 How to use UDP controller:
 1. run UPD_Controller_Reciever.py
 2. ensure that controller is plugged in
-3. run testJoystickUPD in MATLAB
+3. run UDP_Controller_Emitter in MATLAB
 controller should be streaming data
 
 When run with zero input arguements, UDP_Controller_Reciever.py will default to a SNES style controller interface. An case sensitive command line argument can be used to specify the type of controller to use.

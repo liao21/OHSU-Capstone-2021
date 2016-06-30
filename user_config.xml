@@ -20,8 +20,8 @@
     <add key="Scenario"         value="Scenarios.MiniVDisplayScenario()"/>
 
     <!--Pattern Recognition Parameters-->
-    <add key="FeatureExtract.zcThreshold" value="0.15"/>
-    <add key="FeatureExtract.sscThreshold" value="0.15"/>    
+    <add key="FeatureExtract.zcThreshold" value="0.05"/>
+    <add key="FeatureExtract.sscThreshold" value="0.05"/>    
     
     <!--joystick Training Parameters -->
     <add key="joystickId"                   value="0"/><!--System ID for desired joystick-->
@@ -45,9 +45,9 @@
     Percept Port (L=25101 R=25001)
     Intent Port (L=9094 R=9095) -->
     <add key="mplVulcanXIpAddress"          value="127.0.0.1"/>
-    <add key="mplVulcanXCommandPort"        value="9027"/>
-    <add key="mplVulcanXSensoryPort"        value="25001"/>
-    <add key="mplVulcanXIntentPort"         value="9095"/>
+    <add key="mplVulcanXCommandPort"        value="9024"/>
+    <add key="mplVulcanXSensoryPort"        value="25101"/>
+    <add key="mplVulcanXIntentPort"         value="9094"/>
     <add key="mplVulcanXIntentPortLocal"    value="58001"/>
     
     <!-- Myo Stream Ports -->

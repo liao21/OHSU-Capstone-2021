@@ -271,9 +271,8 @@ classdef guiRocEditor < handle
                     
                     case 'Unity'
                         hSink = MPL.MplUnitySink;
-                        hSink.IsLeftArm = strcmp(armLabel,'Left Arm');
+                        hSink.setPortDefaults(strcmp(armLabel,'Left Arm'));
                         hSink.initialize();
-                        
                     case 'VulcanX'
                         
                         if strcmp(armLabel,'Left Arm')

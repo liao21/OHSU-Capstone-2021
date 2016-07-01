@@ -10,12 +10,12 @@ classdef MplVulcanXSink < Common.DataSink
     %     hSink = MPL.MplVulcanXSink;
     %     hSink.setPortDefaults();
     %     hSink.initialize();
-    % 
+    %
     %     %% Synch Current position and target position
     %     perceptData = hSink.getPercepts();
     %     jointAngles = perceptData.jointPercepts.position; %radians
     %     hSink.putData(jointAngles);
-    % 
+    %
     %     %% Smooth Home
     %     hSink.gotoSmooth();
     %
@@ -24,20 +24,27 @@ classdef MplVulcanXSink < Common.DataSink
         % Handles
         hUdp;  % Handle to Udp port.  local port is setup to receive percepts and send to command port
         hMud = MPL.MudCommandEncoder(); % MUD message translator
-
+        
         MplAddress;         % VulcanX IP (127.0.0.1)
         MplCmdPort;         % MUD Port (L=9024 R=9027)
-        MplLocalPort;       % Percept Port (L=25101 R=25001)
+        MplLocalPort;       % Percept Port (L=9026 R=9029)
         
-        Verbose = 1;        % Control Console Printing Verbosity 
+        Verbose = 1;        % Control Console Printing Verbosity
     end
     methods
         function success = initialize(obj)
             % setup data stream via udp
-            % Input arguments: 
+            % Input arguments:
             %   None
             %
-
+            
+            % if nothing is set, bring up selection dialog
+            if isempty(obj.MplAddress) && isempty(obj.MplCmdPort) ...
+                    && isempty(obj.MplLocalPort)
+                obj.setPortDefaults;
+            end
+            
+            % if local port not set, cannot continue
             if isempty(obj.MplLocalPort)
                 error('UDP Port Not Specified');
             end
@@ -61,13 +68,13 @@ classdef MplVulcanXSink < Common.DataSink
         end
         function setPortDefaults(obj,IsLeftArm)
             % setDefaults
-            % Input arguments: 
+            % Input arguments:
             %   IsLeftArm - Optional: Specifying true/false for this value
             %               will overwrite the port parameters to the
             %               local defaults. If this is omitted, a prompt
             %               will appear for the user to select Left / Right
             %
-
+            
             if nargin < 2
                 % prompt to select a side
                 reply = questdlg('Select Arm','VulcanX','Left','Right','Left');
@@ -77,11 +84,11 @@ classdef MplVulcanXSink < Common.DataSink
                     case 'Right'
                         IsLeftArm = false;
                     otherwise
-                        % Arm is not initialized
+                        % No changes to port settings
                         return
                 end
             end
-
+            
             % Issue warning if settings are not empty
             if ~isempty(obj.MplAddress) || ...
                     ~isempty(obj.MplCmdPort) || ...
@@ -89,7 +96,7 @@ classdef MplVulcanXSink < Common.DataSink
                 warning('Overwriting port parameters settings');
             end
             
-            % Set port params using arm side defualts
+            % Set port params using arm side defaults
             if IsLeftArm
                 % Left
                 obj.MplCmdPort = 9024;
@@ -101,17 +108,10 @@ classdef MplVulcanXSink < Common.DataSink
                 obj.MplLocalPort = 9029;
                 obj.MplAddress = '127.0.0.1';
             end
-        end        
-        function close(obj)
-            % Cleanup and close udp port
-            if ~isempty(obj.hUdp)
-                obj.hUdp.close();
-                obj.hUdp = [];
-            end
         end
         function putData(obj, mplAngles)
             % Get current joint angles and send commands to vMpl
-            % Input arguments: 
+            % Input arguments:
             %   mplAngles - array of joint angles in radians [1,27];
             
             if any(abs(mplAngles)) > pi
@@ -119,52 +119,73 @@ classdef MplVulcanXSink < Common.DataSink
             end
             
             % generate MUD message using joint angles
-            
             %             % 0 to 256 for upper arm (256 is off)
             %             % upper arm around 40
             %             % wrist around 20, start around 40
             %             % hand is 0 to 16 (16 is off)
             %             % 0 to 1.5 for hand is useful range
-            %             
+            %
             %             imp = [256*ones(1,4) 256*ones(1,3) 15.6288*ones(1,20)];
             %             imp = [256*ones(1,4) 256*ones(1,3) 0.5*ones(1,20)];
-            % 
+            %
             %             imp(7+mpl_hand_enum.THUMB_CMC_AD_AB) = 16;
-            % 
-            %             % 15.5 
+            %
+            %             % 15.5
             %             % 15.
             %             msg = obj.hMud.AllJointsPosVelImpCmd(mplAngles(1:7),zeros(1,7),mplAngles(8:27),zeros(1,20),imp);
             
             % Non - impendance command
             msg = obj.hMud.AllJointsPosVelCmd(mplAngles(1:7),zeros(1,7),mplAngles(8:27),zeros(1,20));
-
+            
             % write message
             obj.hUdp.putData(msg);
             
         end
-        function data = getPercepts(obj)
+        function data = getPercepts(obj,nRetries)
+            % Get percepts data via UDP port and convert to structure of
+            % sensor values
+            %
+            % Note this function will retry several times before erroring
+            % out
+            %
+            % Inputs:
+            %   nRetries - number of times to attempt to get packet data
+            %
+            % Outputs:
+            %   data -  jointPercepts: [1x1 struct]
+            %           segmentPercepts: [1x1 struct]
             
-            % Read buffered udp packets
-            packets = obj.hUdp.getData;
-            
-            if isempty(packets)
-                % No data ready
-                data = [];
-            else
-                % convert packets to percept struct
-                data = extract_mpl_percepts_v2(packets);
-                armDegrees = round(data.jointPercepts.position(1:7) * 180 / pi);
-                fprintf(['[%s] Arm Angles: SHFE=%6.1f | SHAA=%6.1f | HUM=%6.1f'...
-                    '| EL=%6.1f | WR=%6.1f | DEV=%6.1f | WFE=%6.1f Degrees\n'],...
-                    mfilename,armDegrees);
+            if nargin < 2
+                nRetries = 5;
             end
+            
+            for iTry = 1:nRetries
+                % Read buffered udp packets
+                packets = obj.hUdp.getData;
+                if isempty(packets)
+                    % Wait for a half CAN cycle and retry
+                    pause(0.01);
+                else
+                    % success
+                    break;
+                end
+            end
+            
+            assert(~isempty(packets),'Unable to get percept data on port %d. Check VulcanX. Check Firewall.',obj.MplLocalPort);
+            
+            % convert packets to percept struct
+            data = extract_mpl_percepts_v2(packets);
+            armDegrees = round(data.jointPercepts.position(1:7) * 180 / pi);
+            fprintf(['[%s] Arm Angles: SHFE=%6.1f | SHAA=%6.1f | HUM=%6.1f'...
+                '| EL=%6.1f | WR=%6.1f | DEV=%6.1f | WFE=%6.1f Degrees\n'],...
+                mfilename,armDegrees);
             
         end % getPercepts
         function success = gotoSmooth(obj, anglesRadians)
             % Send incremental updates in a blocking while loop to achieve
             % a desired position.  Requires that percepts are active and
             % updated
-            % 
+            %
             % gotoSmooth(obj, anglesRadians)
             %
             % Inputs:
@@ -189,8 +210,8 @@ classdef MplVulcanXSink < Common.DataSink
                 end
             end
             
-            assert(~isempty(jointAngles),'Unable to get percept data');
-
+            assert(~isempty(jointAngles),'Unable to get percept data on port %d. Check VulcanX. Check Firewall.',obj.MplLocalPort);
+            
             vMax = 0.1;
             tolArm = 2.5*pi/180;
             tolHand = 10*pi/180;
@@ -199,7 +220,7 @@ classdef MplVulcanXSink < Common.DataSink
             targetPos = jointAngles;
             targetPos(1:length(anglesRadians)) = anglesRadians;
             while 1
-                pause(0.02); 
+                pause(0.02);
                 
                 perceptData = obj.getPercepts();
                 if isempty(perceptData)
@@ -224,6 +245,13 @@ classdef MplVulcanXSink < Common.DataSink
             end
             
             success = true;
+        end
+        function close(obj)
+            % Cleanup and close udp port
+            if ~isempty(obj.hUdp)
+                obj.hUdp.close();
+                obj.hUdp = [];
+            end
         end
     end
 end

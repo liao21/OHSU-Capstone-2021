@@ -1,4 +1,4 @@
-classdef MplUnitySink < Common.DataSink
+classdef MplUnitySink < MPL.MplSink
     % Data for controlling JHU/APL vMPL Unity Environment
     % Requires Utilities\PnetClass.m
     %
@@ -17,57 +17,10 @@ classdef MplUnitySink < Common.DataSink
     %     Left Virtual Hand Percepts	Broadcast	vMPLEnv	VULCANX	25301
     %     Right Virtual Hand Percepts	Broadcast	vMPLEnv	VULCANX	25201
     % 
-    %     enum AllJointsType
-    %     {
-    %     SHOULDER_FE,	SHOULDER_AB_AD,
-    %     HUMERAL_ROT,
-    %     ELBOW, 
-    %     WRIST_ROT,		WRIST_AB_AD,	WRIST_FE,
-    %     INDEX_AB_AD, 	INDEX_MCP,		INDEX_PIP,		INDEX_DIP,
-    %     MIDDLE_AB_AD,	MIDDLE_MCP,	MIDDLE_PIP,	MIDDLE_DIP,
-    %     RING_AB_AD,	RING_MCP,		RING_PIP,		RING_DIP,
-    %     LITTLE_AB_AD,	LITTLE_MCP,	LITTLE_PIP,	LITTLE_DIP,
-    %     THUMB_CMC_AD_AB,	THUMB_CMC_FE,	THUMB_MCP,		THUMB_IP
-    %     };
-    % 
-    %     enum FingerType
-    %     {
-    %     INDEX_AB_AD, 	INDEX_MCP,		INDEX_PIP,		INDEX_DIP,
-    %     MIDDLE_AB_AD,	MIDDLE_MCP,	MIDDLE_PIP,	MIDDLE_DIP,
-    %     RING_AB_AD,	RING_MCP,		RING_PIP,		RING_DIP,
-    %     LITTLE_AB_AD,	LITTLE_MCP,	LITTLE_PIP,	LITTLE_DIP,
-    %     THUMB_CMC_AD_AB,	THUMB_CMC_FE,	THUMB_MCP,		THUMB_IP
-    %     };
+    % See also: MPL.EnumArm
     %
     % 28-Mar-2016 Armiger: Created
-    properties
-        % Handles
-        hUdp;  % Handle to Udp port.  local port is setup to receive percepts and send to command port
-        
-        MplAddress;        % vMpl IP (127.0.0.1)
-        MplCmdPort;        % Data Port (L=25100 R=25000)
-        MplLocalPort;      % Percept Port (L=25101 R=25001)
-        
-    end
     methods
-        function success = initialize(obj)
-            % setup data stream via udp
-            % Input arguments: 
-            %   None
-            %
-            
-            if isempty(obj.MplLocalPort)
-                error('UDP Port Not Specified');
-            end
-            
-            % PnetClass(localPort,remotePort,remoteIP)
-            obj.hUdp = PnetClass(...
-                obj.MplLocalPort,obj.MplCmdPort,obj.MplAddress);
-            obj.hUdp.initialize();
-            
-            success = true;
-            
-        end
         function setPortDefaults(obj,IsLeftArm)
             % setDefaults
             % Input arguments: 
@@ -86,7 +39,7 @@ classdef MplUnitySink < Common.DataSink
                     case 'Right'
                         IsLeftArm = false;
                     otherwise
-                        % Arm is not initialized
+                        % No changes to port settings
                         return
                 end
             end
@@ -111,13 +64,6 @@ classdef MplUnitySink < Common.DataSink
                 obj.MplAddress = '127.0.0.1';
             end
         end
-        function close(obj)
-            % Cleanup and close udp port
-            if ~isempty(obj.hUdp)
-                obj.hUdp.close();
-                obj.hUdp = [];
-            end
-        end
         function putData(obj, mplAngles)
             % Get current joint angles and send commands to vMpl
             % Input arguments: 
@@ -134,5 +80,55 @@ classdef MplUnitySink < Common.DataSink
             obj.hUdp.putData(msg);
             
         end
+        function data = getPercepts(obj,nRetries)
+            % Get percepts data via UDP port and convert to structure of
+            % sensor values
+            %
+            % Note this function will retry several times before erroring
+            % out
+            %
+            % Inputs:
+            %   nRetries - number of times to attempt to get packet data
+            %
+            % Outputs:
+            %   data -  jointPercepts: [1x1 struct]
+            %           (TODO) segmentPercepts: [1x1 struct]
+            
+            if nargin < 2
+                nRetries = 5;
+            end
+            
+            for iTry = 1:nRetries
+                % Read buffered udp packets
+                packets = obj.hUdp.getData;
+                if isempty(packets)
+                    % Wait for a half CAN cycle and retry
+                    pause(0.01);
+                else
+                    % success
+                    break;
+                end
+            end
+            
+            assert(~isempty(packets),'Unable to get percept data on port %d. Check VulcanX. Check Firewall.',obj.MplLocalPort);
+            
+            % convert packets to percept struct
+            nJoints = 27;
+            nBytesPerFloat = 4;
+            floatData = typecast(packets(1:nJoints*nBytesPerFloat*3),'single');
+            floatData = reshape(floatData,3,nJoints);
+            
+            
+            %data = extract_mpl_percepts_v2(packets);
+            data.jointPercepts.position = floatData(1,:);
+            
+            
+            armDegrees = round(data.jointPercepts.position(1:7) * 180 / pi);
+            fprintf(['[%s] Arm Angles: SHFE=%6.1f | SHAA=%6.1f | HUM=%6.1f'...
+                '| EL=%6.1f | WR=%6.1f | DEV=%6.1f | WFE=%6.1f Degrees\n'],...
+                mfilename,armDegrees);
+            
+        end % getPercepts
+
     end
 end

@@ -92,7 +92,8 @@ classdef ScenarioBase < Common.MiniVieObj
             %     obj.JointAnglesDegrees = jointAngles;
             % end
             % obj.JointVelocity = zeros(size(action_bus_definition));
-            
+            obj.getRocConfig();
+
         end
         function start(obj)
             % Start the main timer function for the scenario.  the timer

@@ -3,19 +3,35 @@ classdef JoyMexClass < handle
     % Emulates JavaJoystick class, but without haptic effect, however this has
     % been tested on both win32 and win64 systems
     % Created:  6/25/2011 Armiger
+    %
+    % Additionally, added functionality to get info about buttons being
+    % held, released, etc which is useful dynamically and to prevent
+    % 'bouncing' of mode switches etc.
+    %
+    % E.g. check property obj.buttonsReleased to only get the event when
+    % the button comes up.  obj.buttonsPressed to only get the initial
+    % falling state, or obj.buttonsHeld and obj.buttonsHeldCount to
+    % determine long-term holds
+    %
+    % 
     
     properties
-        
-        id
         doSwapAxes = true;
-        
         name
+        % double array of number the normalized dead for each axis
+        axisDeadband
+    end
+    properties (SetAccess = private)
+        id      % gamepad device number id
+
         nButtons
         nAxes
         nPov
-        buttonVal
-        axisVal
-        povVal
+        buttonVal       % Instantaneous button values
+        axisVal         % Instantaneous axis values
+        povVal          % Instantaneous pov value
+        
+        IsInitialized = false;
         
         % Logical array of buttons that went from up to down on last update 
         buttonsPressed
@@ -44,9 +60,6 @@ classdef JoyMexClass < handle
         % double array of number of updates each axis has been down
         axisHeldCount
         
-        % double array of number the normalized dead for each axis
-        axisDeadband
-
         % Internal state of axis and buttons at last update
         axisValLast
         buttonValLast
@@ -71,8 +84,19 @@ classdef JoyMexClass < handle
                 obj.id = joyId;
             end
             
+            obj.initialize();
+        end
+        
+        function initialize(obj)
+            
+            if obj.IsInitialized
+                fprintf('Joystick Id = %d already initialized\n', obj.id);
+                return
+            end
+            
             try
-                % Calling init twice will result in error
+                % Note: Calling init twice will result in error
+                fprintf('[%s] ',mfilename);
                 JoyMEX('init',obj.id); 
             catch ME
                 if strcmp(ME.identifier,'JoyMEX:NotFound')
@@ -82,11 +106,11 @@ classdef JoyMexClass < handle
                 end
             end
             
-            [a, b] = JoyMEX(obj.id);
-            
+            % Get capabilities.  In earlier versions these were accurate,
+            % but the mex file forces values 6 axes and 128 buttons
             obj.name = 'Unknown Joystick';
-            obj.nAxes = length(a);
-            obj.nButtons = length(b);
+            obj.nAxes = 6;
+            obj.nButtons = 128;
             obj.nPov = 0;
 
             obj.axisDeadband = 0.02*ones(1,obj.nAxes);
@@ -95,12 +119,19 @@ classdef JoyMexClass < handle
             obj.buttonsHeldCount = zeros(1,obj.nButtons);
             obj.axisHeldCount = zeros(1,obj.nAxes);
             
+            % call once to complete initialization
+            obj.update();
+            
+            obj.IsInitialized = true;
         end
         function update(obj)
             % Call MEX Function
             
             % get current state
             [obj.axisVal, obj.buttonVal] = JoyMEX(obj.id);
+            if obj.doSwapAxes
+                obj.axisVal([1 2 3 4 5 6]) = obj.axisVal([2 1 6 3 4 5]);
+            end
 
             % Handle the init case with unknown state
             if isempty(obj.axisValLast)
@@ -144,8 +175,6 @@ classdef JoyMexClass < handle
             obj.axisValLast = obj.axisVal;
             obj.buttonValLast = obj.buttonVal;
 
-            %obj.axisHeldCount
-            
         end
         
         function [success, msg] = getdata(obj)
@@ -165,24 +194,21 @@ classdef JoyMexClass < handle
             end
             
             obj.povVal = -1;
-            
-            % Axis swapping
-            if obj.doSwapAxes
-                swapaxes(obj);
-            end
-            
+                        
             success = true;
             
         end
-        function swapaxes(obj)
-            % Swap axes for compatability with JavaJoystick Class
-            obj.axisVal([1 2 3 4 5 6]) = obj.axisVal([2 1 6 3 4 5]);
-            obj.axisValLast([1 2 3 4 5 6]) = obj.axisValLast([2 1 6 3 4 5]);
-        end
-        function preview(obj)
+        function preview(obj,timeout)
+            % Run a loop to display joystick values in real time
+            % preview(obj,timeout)
+            % Default timeout is 15 sec
+            
+            if nargin < 2
+                timeout = 15;
+            end
             
             t = tic;
-            while toc(t) < 15
+            while toc(t) < timeout
                 
                 getdata(obj);
                 
@@ -208,10 +234,9 @@ classdef JoyMexClass < handle
         end
     end
     methods (Static=true)
-        
         function close
+            % Cleanup all joysticks.
             clear('JoyMEX')
         end
     end
-    
 end

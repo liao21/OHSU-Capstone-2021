@@ -166,16 +166,23 @@ classdef UiTools
                 fullFilename = fullfile(PathName,FileName);
             end
         end
-        function display_error_stack(ME)
+        function display_error_stack(varargin)
             %display_error_stack(ME)
             % Given a Matlab exception, show each individual message in
-            % stack and then rethrow error
+            % the stack and then rethrow error
             fprintf('\n');
-            fprintf('---------ERROR--------');
+            fprintf(2,'----------------------------------------\n');
+            fprintf(2,'---------------ERROR--------------------\n');
+            fprintf(2,'----Displaying MiniVIE Error Stack: ----\n');
+            fprintf(2,'----------------------------------------\n');
             disp(ME.message);
             for i = 1:length(ME.stack)
                 disp(ME.stack(i));
             end
+            fprintf('\n');
+            fprintf(2,'----------------------------------------\n');
+            fprintf(2,'------------END Error Stack-------------\n');
+            fprintf(2,'-----------Rethorwing Last Error: ------\n');
             rethrow(ME);
             
         end

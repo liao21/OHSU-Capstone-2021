@@ -56,6 +56,10 @@ classdef MplUnitySink < Common.DataSink
             %   None
             %
             
+            if isempty(obj.MplLocalPort)
+                error('UDP Port Not Specified');
+            end
+            
             % PnetClass(localPort,remotePort,remoteIP)
             obj.hUdp = PnetClass(...
                 obj.MplLocalPort,obj.MplCmdPort,obj.MplAddress);
@@ -98,12 +102,12 @@ classdef MplUnitySink < Common.DataSink
             if IsLeftArm
                 % Left
                 obj.MplCmdPort = 25100;
-                obj.MplLocalPort = 25110;
+                obj.MplLocalPort = 25101;
                 obj.MplAddress = '127.0.0.1';
             else
                 % Right
                 obj.MplCmdPort = 25000;
-                obj.MplLocalPort = 25010;
+                obj.MplLocalPort = 25001;
                 obj.MplAddress = '127.0.0.1';
             end
         end
@@ -113,7 +117,6 @@ classdef MplUnitySink < Common.DataSink
                 obj.hUdp.close();
                 obj.hUdp = [];
             end
-            
         end
         function putData(obj, mplAngles)
             % Get current joint angles and send commands to vMpl

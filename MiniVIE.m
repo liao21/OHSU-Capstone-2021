@@ -716,15 +716,10 @@ classdef MiniVIE < Common.MiniVieObj
                     case 'MplVulcanX'
                         obj.println('Setting up presentation...',1);
                         h = MPL.MplVulcanX;
-                        h.VulcanXAddress = UserConfig.getUserConfigVar('mplVulcanXIpAddress','127.0.0.1');
-                        h.VulcanXCmdPort = str2double(UserConfig.getUserConfigVar('mplVulcanXCommandPort','9027'));
-                        h.VulcanXLocalPort = str2double(UserConfig.getUserConfigVar('mplVulcanXSensoryPort','25001'));
-                        h.IntentAddress = UserConfig.getUserConfigVar('mplVulcanXIntentIpAddress','127.0.0.1');
-                        h.IntentDestinationPort = str2double(UserConfig.getUserConfigVar('mplVulcanXIntentPort','9095'));
-                        h.IntentSourcePort = str2double(UserConfig.getUserConfigVar('mplVulcanXIntentPortLocal','78000'));
-                        
+                        h.hSink.MplAddress = UserConfig.getUserConfigVar('mplVulcanXIpAddress','127.0.0.1');
+                        h.hSink.MplCmdPort = str2double(UserConfig.getUserConfigVar('mplVulcanXCommandPort','9027'));
+                        h.hSink.MplLocalPort = str2double(UserConfig.getUserConfigVar('mplVulcanXSensoryPort','9029'));
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
-                        h.update();
                         h.Verbose = 0;
                         obj.println('Presentation setup complete',1);
                     case 'MplUnity'

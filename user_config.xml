@@ -46,9 +46,7 @@
     Intent Port (L=9094 R=9095) -->
     <add key="mplVulcanXIpAddress"          value="127.0.0.1"/>
     <add key="mplVulcanXCommandPort"        value="9024"/>
-    <add key="mplVulcanXSensoryPort"        value="25101"/>
-    <add key="mplVulcanXIntentPort"         value="9094"/>
-    <add key="mplVulcanXIntentPortLocal"    value="58001"/>
+    <add key="mplVulcanXSensoryPort"        value="9026"/>
     
     <!-- Myo Stream Ports -->
     <add key="myoUdpPort1"    value="10001"/>

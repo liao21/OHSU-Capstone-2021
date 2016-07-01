@@ -34,6 +34,7 @@
 % THUMB_CMC_AD_AB,	THUMB_CMC_FE,	THUMB_MCP,		THUMB_IP
 % };
 
+hSink = MPL.MplUnitySink();
 
 a = PnetClass(43897);
 a.initialize

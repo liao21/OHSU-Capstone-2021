@@ -91,8 +91,12 @@ classdef MplUnitySink < MPL.MplSink
             %   nRetries - number of times to attempt to get packet data
             %
             % Outputs:
-            %   data -  jointPercepts: [1x1 struct]
-            %           (TODO) segmentPercepts: [1x1 struct]
+            %   data -  
+            %         perceptData.jointPercepts
+            % 
+            %             position: [1x27 single]
+            %             velocity: [1x27 single]
+            %         (TODO) segmentPercepts
             
             if nargin < 2
                 nRetries = 5;
@@ -121,7 +125,7 @@ classdef MplUnitySink < MPL.MplSink
             
             %data = extract_mpl_percepts_v2(packets);
             data.jointPercepts.position = floatData(1,:);
-            
+            data.jointPercepts.velocity = floatData(2,:);
             
             armDegrees = round(data.jointPercepts.position(1:7) * 180 / pi);
             fprintf(['[%s] Arm Angles: SHFE=%6.1f | SHAA=%6.1f | HUM=%6.1f'...
@@ -129,6 +133,5 @@ classdef MplUnitySink < MPL.MplSink
                 mfilename,armDegrees);
             
         end % getPercepts
-
     end
 end

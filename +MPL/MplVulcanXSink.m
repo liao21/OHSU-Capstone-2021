@@ -36,7 +36,7 @@ classdef MplVulcanXSink < MPL.MplSink
             
             if nargin < 2
                 % prompt to select a side
-                reply = questdlg('Select Arm',obj.Name,'Left','Right','Left');
+                reply = questdlg('Select Arm','VulcanX','Left','Right','Left');
                 switch reply
                     case 'Left'
                         IsLeftArm = true;
@@ -111,8 +111,17 @@ classdef MplVulcanXSink < MPL.MplSink
             %   nRetries - number of times to attempt to get packet data
             %
             % Outputs:
-            %   data -  jointPercepts: [1x1 struct]
-            %           segmentPercepts: [1x1 struct]
+            %   data -  
+            %     perceptData.jointPercepts
+            %            position: [1x27 single]
+            %            velocity: [1x27 single]
+            %              torque: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+            %         temperature: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+            %
+            %     perceptData.segmentPercepts
+            %               fstnForce: [14x5 double]
+            %               fstnAccel: [3x5 double]
+            %         contactPercepts: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
             
             if nargin < 2
                 nRetries = 5;

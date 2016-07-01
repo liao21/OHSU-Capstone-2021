@@ -8,7 +8,7 @@
 a = PnetClass(3452,5005,'192.168.56.101');
 a.initialize;
 
-joystickType = 'Default';
+joystickType = 'Default'; % SNES equivalent. May use 2 axes and up to 8 buttons
 a.putData([255 uint8('T') uint8(joystickType)]) %send joystick selection to reciever
 
 

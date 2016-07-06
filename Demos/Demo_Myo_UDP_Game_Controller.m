@@ -2,7 +2,10 @@
 % By David Samson
 % July 1, 2016
 
-% Send controller data via UDP based on Myo input 
+% Send controller data via UDP based on Myo input
+% Contains simplified and complex control schemes
+% To use simplified, simply cancel selection of training data
+% To use complex, when prompted, select appropriate training data
 
 a = PnetClass(3452,5005,'192.168.56.101');
 a.initialize;

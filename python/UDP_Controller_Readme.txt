@@ -1,20 +1,20 @@
 How to use UDP controller:
 1. run UPD_Controller_Reciever.py
 2. ensure that controller is plugged in
-3. run UDP_Controller_Emitter in MATLAB
-controller should be streaming data
+3. run testJoystickUPD in MATLAB (or any other program that emits the properly formatted control bytes)
+controller should be receiving streaming data
 
-When run with zero input arguements, UDP_Controller_Reciever.py will default to a SNES style controller interface. An case sensitive command line argument can be used to specify the type of controller to use.
+When run with zero input arguements, UDP_Controller_Reciever.py will default to a SNES style controller interface. Command line argument can be used to specify the type of controller to use, the UDP IP address, the UDP port, and toggle debug mode. run program with '-h' or '--help' command-line arguments to see the full list of command-line arguments.
 
 Supported Controller types. 
 -Default
 -NES
 -SNES
--N64*
--Gamecube*
+-N64
+-Gamecube
 -Genesis
 -Playstation
--Xbox*
+-Xbox
 -Unknown*
 
 *these controlles currently exibit buggy/unstable behavior when test input is sent to them.
@@ -27,7 +27,7 @@ The controller type can also be set via UDP with an interrupt command from MATLA
     to
     "joystickType = '<controller_type>';"
 
-in order to prevent MATLAB from sending the interrupt signal to change controller types, comment out the line a.putData([255 uint8('T') uint8(joystickType)])" underneath the "joystickType = " line. In the future, this functionality should be moved to a more unified location so that the user can easily select which controller type they want. Ideally it would be controlled in a drop down menu of a GUI controlling the process.
+To prevent MATLAB from sending the interrupt signal to change controller types, comment out the line a.putData([255 uint8('T') uint8(joystickType)])" underneath the "joystickType = " line. In the future, this functionality should be moved to a more unified location so that the user can easily select which controller type they want. Ideally it would be controlled in a drop down menu of a GUI controlling the process.
 
 
 

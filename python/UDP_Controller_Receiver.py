@@ -3,9 +3,11 @@
 ## 
 ## June 28, 2016
 
+
 import uinput
 import socket
 import sys
+import argparse
 import struct
 import math
 import random
@@ -15,8 +17,12 @@ def main():
     """Run UDP controller receiver. Controller data received as bytearrays will be emitted to the system.
 
     Command-line arguments:
-    controller_type -- type of controller to listen for. Currently supports SNES, Playstation, Unknown
+    '-c <controller_type>' or '--controller_type <controller_type>' -- type of controller to listen for. 
+    -- Currently supports NES, SNES, N64, Gamecube, Genisis, Playstation, Xbox, Unknown
     -- if no argument or an incorrect argument is used, system defaults to Default (SNES equivalent)
+    '-i <UDP_IP_ADDRESS>' or '--UDP_IP <UDP_IP_ADDRESS>' -- IP address to listen to for UDP data
+    '-p <UDP_PORT_NUMBER>' or '--UDP_PORT <UDP_PORT_NUMBER>' -- port number to listen to at IP address
+    '-d' or '--DEBUG' -- set debug mode to true
 
     UDP interrupt codes:
     The following codes will cause the receiver to interrupt control data processing
@@ -28,8 +34,19 @@ def main():
     -- if no arguement or an incorrect argument is used, system defaults to Default (SNES equivalent)
     """
 
+
+    #parse command-line arguments
+    parser = argparse.ArgumentParser(description='test of arg parsing.')
+    parser.add_argument('-c', '--controller_type', help='type of controller to construct', default='Default')
+    parser.add_argument('-i', '--UDP_IP', help='IP address to listen at', default='127.0.0.1')
+    parser.add_argument('-p', '--UDP_PORT', help='UDP port to listen to', default=5005)
+    parser.add_argument('-d', '--DEBUG', help='Turn on debug mode', action='store_true')
+
+    args = parser.parse_args()
+    
+    
     #set debug = True to run debug mode tests
-    debug = False
+    debug = args.DEBUG
     if debug:
         print('Running debug tests.')
         #run tests before running
@@ -59,13 +76,13 @@ def main():
     same_endian = True  # is the python byte order the same as the matlab byte order?
                         # will be checked with interrupt code at matlab initialization
     
-    controller_type = sys.argv[1] if len(sys.argv) > 1 else 'Default' 
+    controller_type = args.controller_type 
     btn_events, axis_events, controller_type = setup_controller(controller_type)
 
     # Setup UDP Receiver
-    #UDP_IP = "127.0.0.1"
-    UDP_IP = "192.168.56.101"
-    UDP_PORT = 5005
+    #UDP_IP = "192.168.56.101"
+    UDP_IP = args.UDP_IP
+    UDP_PORT = args.UDP_PORT
     
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((UDP_IP, UDP_PORT))
@@ -211,14 +228,13 @@ def setup_controller(type):
         uinput.BTN_B,
         uinput.BTN_SELECT,
         uinput.BTN_START,
-        uinput.BTN_DPAD_UP,
-        uinput.BTN_DPAD_DOWN,
-        uinput.BTN_DPAD_LEFT,
-        uinput.BTN_DPAD_RIGHT,
     )
 
     #NES axes event codes
-    NES_axes = () # NES controller d-pad are 4 separate buttons, not 2 axes
+    NES_axes = (
+        uinput.ABS_X,
+        uinput.ABS_Y
+    )
 
     
     #SNES buttons
@@ -239,25 +255,26 @@ def setup_controller(type):
         uinput.ABS_Y        
     )
 
-    #BUGGY
+    
     #Nintendo 64 buttons
     N64_btns = (
         uinput.BTN_A,
         uinput.BTN_B,
         uinput.BTN_X,
         uinput.BTN_Y,
-        uinput.BTN_TL,
-        uinput.BTN_TR,
         uinput.BTN_Z,
         uinput.BTN_START,
-        uinput.BTN_DPAD_UP,
-        uinput.BTN_DPAD_DOWN,
-        uinput.BTN_DPAD_LEFT,
-        uinput.BTN_DPAD_RIGHT,
-        uinput.BTN_SOUTH,   #yellow c buttons
-        uinput.BTN_EAST,
-        uinput.BTN_NORTH,
-        uinput.BTN_WEST,
+        uinput.BTN_TRIGGER,
+        uinput.BTN_THUMB,
+        uinput.BTN_THUMB2,
+        uinput.BTN_TOP,
+        uinput.BTN_TOP2,
+        uinput.BTN_PINKIE,
+        uinput.BTN_BASE,
+        uinput.BTN_BASE2,
+        uinput.BTN_BASE3,
+        uinput.BTN_BASE4,
+        
     )
 
     #Nintendo 64 axes
@@ -267,7 +284,6 @@ def setup_controller(type):
     )
 
 
-    #BUGGY
     #Gamecube buttons
     GC_btns = (
         uinput.BTN_A,
@@ -276,20 +292,20 @@ def setup_controller(type):
         uinput.BTN_Y,
         uinput.BTN_Z,
         uinput.BTN_START,
-        uinput.BTN_DPAD_UP,
-        uinput.BTN_DPAD_DOWN,
-        uinput.BTN_DPAD_LEFT,
-        uinput.BTN_DPAD_RIGHT
+        uinput.BTN_BASE,
+        uinput.BTN_BASE2,
+        uinput.BTN_BASE3,
+        uinput.BTN_BASE4,
     )
 
     #Gamecube axes
     GC_axes = (
-        uinput.ABS_X,
-        uinput.ABS_Y,
-        uinput.ABS_RX,
-        uinput.ABS_RY,
-        uinput.ABS_Z,    #left trigger
-        uinput.ABS_RZ,   #right trigger
+        uinput.ABS_X,        #left stick X
+        uinput.ABS_Y,        #left stick Y
+        uinput.ABS_Z,        #right stick X
+        uinput.ABS_RZ,       #right stick Y
+        uinput.ABS_HAT0X,    #left trigger
+        uinput.ABS_HAT0Y     #right trigger
     )
 
 
@@ -337,23 +353,21 @@ def setup_controller(type):
         uinput.ABS_HAT0Y     #left D-pad Y
     )
 
-
-    #BUGGY
+    
     #Xbox 360 buttons
     Xbox_btns = (
         uinput.BTN_A,
         uinput.BTN_B,
         uinput.BTN_X,
         uinput.BTN_Y,
-        uinput.BTN_Z,
         uinput.BTN_START,
         uinput.BTN_SELECT,
-        uinput.BTN_TL,    #left bumper
-        uinput.BTN_TR,    #right bumper
-        uinput.BTN_DPAD_UP,
-        uinput.BTN_DPAD_DOWN,
-        uinput.BTN_DPAD_LEFT,
-        uinput.BTN_DPAD_RIGHT
+        uinput.BTN_BASE,
+        uinput.BTN_BASE2,
+        uinput.BTN_BASE3,
+        uinput.BTN_BASE4,
+        uinput.BTN_BASE5,
+        uinput.BTN_BASE6
     )
 
     #Xbox 360 axes
@@ -423,6 +437,7 @@ def unpack(string):
         lst = [int(x) for x in format(string[i], '#010b')[2:]]
         lst.reverse()
         btns += lst
+
         
     if l%8 !=0:
         fmt = '#0' + str(l%8 + 2) + 'b'
@@ -430,6 +445,7 @@ def unpack(string):
         lst.reverse()
         btns += lst
 
+        
     # get axis data from string
     string = string[nb+(l%8!=0):len(string)]
     l = string[0]

@@ -36,7 +36,7 @@ def main():
 
 
     #parse command-line arguments
-    parser = argparse.ArgumentParser(description='test of arg parsing.')
+    parser = argparse.ArgumentParser(description='UDP Receiver Command-line Arguments:')
     parser.add_argument('-c', '--controller_type', help='type of controller to construct', default='Default')
     parser.add_argument('-i', '--UDP_IP', help='IP address to listen at', default='127.0.0.1')
     parser.add_argument('-p', '--UDP_PORT', help='UDP port to listen to', default=5005)

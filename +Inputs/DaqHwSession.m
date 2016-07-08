@@ -91,11 +91,13 @@ classdef DaqHwSession < Inputs.SignalInput
             devList = {dev(:).ID};
             assert(ismember(obj.DaqDeviceId,devList),'Device %s is not found',obj.DaqDeviceId);
 
+            devId = obj.DaqDeviceId;
+            
             s = daq.createSession(obj.DaqDeviceName);
 
             % Create analog input voltage channels
             nChannels = length(obj.ChannelIds);
-            s.addAnalogInputChannel(dev.ID,obj.ChannelIds,'Voltage');
+            s.addAnalogInputChannel(devId,obj.ChannelIds,'Voltage');
             for i = 1:nChannels
                 s.Channels(i).InputType = 'SingleEnded';
                 s.Channels(i).Range = obj.ChannelInputRange;

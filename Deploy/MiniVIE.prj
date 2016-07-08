@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="3480770296" file="C:\git\minivie\Deploy\MiniVIE.prj" location="C:\git\minivie\Deploy" name="MiniVIE" preferred-package-location="C:\git\minivie\Deploy\MiniVIE\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+  <configuration build-checksum="3480770296" file="C:\tmp\clean\minivie\Deploy\MiniVIE.prj" location="C:\tmp\clean\minivie\Deploy" name="MiniVIE" preferred-package-location="C:\git\minivie\Deploy\MiniVIE\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
     <param.appname>MiniVIE</param.appname>
     <param.icon>${PROJECT_ROOT}\MiniVIE_resources\icon.ico</param.icon>
     <param.icons>
@@ -8,7 +8,7 @@
       <file>${PROJECT_ROOT}\MiniVIE_resources\icon_24.png</file>
       <file>${PROJECT_ROOT}\MiniVIE_resources\icon_16.png</file>
     </param.icons>
-    <param.version>1.9</param.version>
+    <param.version>1.95</param.version>
     <param.authnamewatermark>Robert Armiger</param.authnamewatermark>
     <param.email>robert.armiger@jhuapl.edu</param.email>
     <param.company>JHU/APL</param.company>
@@ -16,6 +16,7 @@
     <param.description>The MiniVIE code project reflects the concepts and workflow of the JHU/APLâ€™s VIE platform, but is a separate and lightweight MATLAB based implementation. 
 
 Revisions:
+07/18/2016: v1.95 Fixed Multi DAQ bug, R2016a Release
 04/16/2016: v1.9 Fixed Unity Bug, R2016a Release
 04/07/2016: v1.8 Added Myo Arm Tracking
 02/26/2016: v1.7 Added New Daq Session Based Inputs
@@ -225,9 +226,9 @@ Revisions:
       <file>C:\git\minivie\Utilities\ViePlant.m</file>
     </fileset.depfun>
     <build-deliverables>
-      <file location="${PROJECT_ROOT}\MiniVIE\for_testing" name="splash.png" optional="false">C:\git\minivie\Deploy\MiniVIE\for_testing\splash.png</file>
-      <file location="${PROJECT_ROOT}\MiniVIE\for_testing" name="MiniVIE.exe" optional="false">C:\git\minivie\Deploy\MiniVIE\for_testing\MiniVIE.exe</file>
-      <file location="${PROJECT_ROOT}\MiniVIE\for_testing" name="readme.txt" optional="true">C:\git\minivie\Deploy\MiniVIE\for_testing\readme.txt</file>
+      <file location="${PROJECT_ROOT}\MiniVIE\for_testing" name="MiniVIE.exe" optional="false">C:\tmp\clean\minivie\Deploy\MiniVIE\for_testing\MiniVIE.exe</file>
+      <file location="${PROJECT_ROOT}\MiniVIE\for_testing" name="readme.txt" optional="true">C:\tmp\clean\minivie\Deploy\MiniVIE\for_testing\readme.txt</file>
+      <file location="${PROJECT_ROOT}\MiniVIE\for_testing" name="splash.png" optional="false">C:\tmp\clean\minivie\Deploy\MiniVIE\for_testing\splash.png</file>
     </build-deliverables>
     <workflow />
     <matlab>

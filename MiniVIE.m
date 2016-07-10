@@ -76,7 +76,7 @@ classdef MiniVIE < Common.MiniVieObj
             newPos(2) = oldPos(2);
             
             set(obj.hg.Figure,'Position',newPos);
-            set(obj.hg.Figure,'CloseRequestFcn',@(src,evnt)closeFig(obj));
+            set(obj.hg.Figure,'CloseRequestFcn',@(src,evnt)cbCloseFig(obj));
             
             % Setup File Menu
             obj.hg.MenuFile = uimenu(obj.hg.Figure,...
@@ -103,16 +103,12 @@ classdef MiniVIE < Common.MiniVieObj
             obj.hg.MenuFileExportLdaParams = uimenu(obj.hg.MenuFile,...
                 'Label','Save LDA Wg, Cg, and Classes to TextFile',...
                 'Callback', @(src,evt)obj.saveTxt());
-            
-            function closeFig(obj)
-                try
-                    close(obj);
-                catch ME
-                    fprintf(2,'Error closing objects:\n"%s"\n',ME.message);
-                end
-                delete(obj.hg.Figure);
-            end
-            
+            obj.hg.MenuHelp = uimenu(obj.hg.Figure,...
+                'Label','Help');
+            obj.hg.MenuAbout = uimenu(obj.hg.MenuHelp,...
+                'Label','About', ...
+                'Callback', @(src,evt)obj.cbAbout());
+
             % Draw the body of the figure.  Create the following column
             % headers:
             header = {'Inputs:','Signal Analysis:','Training:','Plant:','Presentation:'};
@@ -1041,6 +1037,38 @@ classdef MiniVIE < Common.MiniVieObj
             end
             
         end
+        function cbCloseFig(obj)
+            try
+                close(obj);
+            catch ME
+                fprintf(2,'Error closing objects:\n"%s"\n',ME.message);
+            end
+            delete(obj.hg.Figure);
+        end        
+        function cbAbout(obj)
+            %% Revision Information
+            verMajor = 1;
+            verMinor = 95;
+            verDate = '10-JUL-2016';
+            
+            cellMsg = {
+                'MiniVIE'
+                'Mini Virtual Integration Environment'
+                '    for prosthetic control'
+                sprintf('Version %d.%d %s',verMajor,verMinor,verDate)
+                };
+            
+            if obj.Verbose
+                % print to console
+                for i = 1:length(cellMsg)
+                    fprintf('[%s.m] %s\n',mfilename,cellMsg{i}); 
+                end
+            end
+            
+            h = msgbox(cellMsg,'MiniVIE','modal');
+            uiwait(h);
+        end
+
     end
     methods (Static = true)
         function createShortcuts(suffix)

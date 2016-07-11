@@ -10,6 +10,14 @@ classdef Filter < handle
         Ha
         
         lastFilterState % store filter state to avoid filter edge effects
+        
+        % Use these parameters to reflect and invert the signal
+        % before applying the filter.  This reduces
+        % edge effects especially when the signal is
+        % noisy about zero or has a DC offest
+        ReflectOnApply = 0;
+        ReflectValue = 0;
+        
     end
     methods
         function filteredData = apply(obj,unfilteredData)
@@ -39,45 +47,54 @@ classdef Filter < handle
             end
             
             
-            % Now apply filter
-            if isa(obj,'Inputs.RemoveOffset')
-                % For a moving average filter, the filter is applied to get
-                % the mean, then the computed mean is subtracted from the
-                % signal
-                movingAverage = filter(obj.Hb,obj.Ha,unfilteredData);
+            % Typically, the filter is applied and filtered data is
+            % returned
+            
+            % If multiple filters are contained (e.g. notch filters at
+            % various frequencies, apply each filter
+            filteredData = unfilteredData;
+            
+            if obj.ReflectOnApply
+                % This approach effectivly rotates the signal 180 degrees
+                % about the origin to minimize edge effects when applying
+                % the lowpass filter
+                %
+                % The input signal is expected to be size [nSamples, nChannels]
+                sIn = double(unfilteredData);
                 
-                filteredData = unfilteredData - movingAverage;
+                nSamples = size(sIn,1);
                 
-                % elseif isa(obj,'Inputs.HighPass')
-                %     % ensure the offset is removed manually
-                % 
-                %     % If multiple filters are contained (e.g. notch filters at
-                %     % various frequencies, apply each filter
-                %     filteredData = unfilteredData;
-                % 
-                %     filteredData = bsxfun(@minus,filteredData,filteredData(1,:));
-                %     for i = 1:numFilters
-                %         % save the filter state for the next iteration
-                %         % obj.lastFilterState{i} = [];
-                %         [filteredData, obj.lastFilterState{i}] = ...
-                %             filter(obj.Hb(i,:),obj.Ha(i,:),filteredData,obj.lastFilterState{i});
-                %     end
+                % Find the offset.
+                % Note: this is currently disabled since the number of
+                % samples for computing offset may vary.  This could be
+                % made an input parameter but for now is left to the user
+                % to apply an offset filter before applying the LPF
+                %
+                % sOffset = mean(sIn(1:200,:),1);
+                sOffset = double(obj.ReflectValue);
                 
+                % Reverse and reflect
+                sReflected = [flipud(-bsxfun(@minus,sIn,sOffset)); bsxfun(@minus,sIn,sOffset) ];
+                
+                % Apply filter (phase corrected)
+                sFiltered = filtfilt(obj.Hb,obj.Ha,sReflected);
+                
+                % Shift back to original offset
+                sOffset = bsxfun(@plus,sFiltered,sOffset);
+                
+                % Remove added data
+                sOut = sOffset(nSamples+1:end,:);
+                
+                filteredData = sOut;
             else
-                % Typically, the filter is applied and filtered data is
-                % returned
-                
-                % If multiple filters are contained (e.g. notch filters at
-                % various frequencies, apply each filter
-                filteredData = unfilteredData;
-                
+                % Apply filter in the usual way
                 for i = 1:numFilters
                     % save the filter state for the next iteration
-                    %obj.lastFilterState{i} = [];
                     [filteredData, obj.lastFilterState{i}] = ...
                         filter(obj.Hb(i,:),obj.Ha(i,:),filteredData,obj.lastFilterState{i});
                 end
             end
+            
             
         end
     end

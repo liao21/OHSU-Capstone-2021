@@ -848,15 +848,8 @@ classdef TrainingData < handle
             beep
         end
         
-        function addTrainingData(obj,classLabel, features, rawSignal)
+        function addTrainingData(obj, classLabel, features, rawSignal)
             % Add a single new sample of labeled data
-            
-            % Increment Sample Count
-            obj.SampleCount = obj.SampleCount + 1;
-            if obj.SampleCount == obj.MaxSamples + 1
-                % This should only display once
-                warning('TrainingData:ExceededMaxSamples','Exceeded Preallocated Sample Buffer');
-            end
             
             % Get new data (getting raw data instead of filtered for logging)
             [numChannels,numSamplesPerWindow]= size(rawSignal);
@@ -871,9 +864,18 @@ classdef TrainingData < handle
                 %[numChannels,numSamplesPerWindow]= size(rawSignal);
 
                  assert(isequal(size(obj.SignalDataRaw,1),numChannels),...
-                     'New Data must match previous data number of channels');
+                     'New Data [%d] must match previous data number of channels',...
+                     numChannels,size(obj.SignalDataRaw,1));
                  assert(isequal(size(obj.SignalDataRaw,2),numSamplesPerWindow),...
-                     'New Data must match previous data number of samples');
+                     'New Data [%d] must match previous data number of samples [%d]',...
+                     numSamplesPerWindow,size(obj.SignalDataRaw,2));
+            end
+            
+            % Increment Sample Count
+            obj.SampleCount = obj.SampleCount + 1;
+            if obj.SampleCount == obj.MaxSamples + 1
+                % This should only display once
+                warning('TrainingData:ExceededMaxSamples','Exceeded Preallocated Sample Buffer');
             end
             
             % Update class label history

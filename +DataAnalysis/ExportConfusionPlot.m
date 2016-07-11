@@ -11,7 +11,7 @@ for i = 1:length(hTraining);
         continue
     end
     testName = hTraining(i).Name;
-
+    
     f = figure(i);
     set(f,'Units','pixels')
     set(f,'ToolBar','figure')

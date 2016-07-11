@@ -527,8 +527,31 @@ classdef PlotUtils
             
         end
         
-        function copyFiguresToPowerpoint(outputFile, titleInfo)
-            %% Copy figures to PPT
+        function copyFiguresToPowerpoint(titleInfo, outputFile)
+            %PlotUtils.copyFiguresToPowerpoint(titleInfo, outputFile)
+            % Copy all open figures to PPT
+            %
+            % Inputs:
+            %   titleInfo - Structure with te follow fields:
+            %       titleInfo.Title = ''
+            %       titleInfo.Author = ''
+            %       titleInfo.SubTitle = ''
+            %   outputFile - Output filename with pptx extension
+            
+            if nargin < 2
+                % Set output filename
+                outputFile = [tempname '.pptx'];
+            end
+            
+            if nargin < 1
+                % Set default title
+                titleInfo.Title = '';
+                titleInfo.Author = '';
+                titleInfo.SubTitle = '';
+            end
+            
+            % get figure handles
+            hFigs = flipud(findobj(0,'type','figure'));
             
             % Start new presentation
             isOpen  = exportToPPTX();
@@ -537,6 +560,7 @@ classdef PlotUtils
                 exportToPPTX('close');
             end
             
+            % Add title slide
             exportToPPTX('new','Title',titleInfo.Title, ...
                 'Author',titleInfo.Author);
             exportToPPTX('addslide');
@@ -550,9 +574,36 @@ classdef PlotUtils
                 'HorizontalAlignment','center', ...
                 'FontSize',20);
             
-            for i = 1:length(findobj(0,'type','figure'))
-                slideNum = exportToPPTX('addslide');
-                exportToPPTX('addpicture',figure(i),'Scale','maxfixed');
+            % Add TOC
+            exportToPPTX('addslide');
+            exportToPPTX('addtext','Table of Contents',...
+                'HorizontalAlignment','center');
+            
+            % Add content
+            for i = 1:length(hFigs)
+                hFig = hFigs(i);
+                hFig.Color = [1 1 1];
+                exportToPPTX('addslide');
+                exportToPPTX('addtext',hFig.Name); %,'Position','Title 1');
+                exportToPPTX('addpicture',hFig,'Scale','maxfixed');
+                
+                exportToPPTX('addtext','Table of Contents','Position',[1 7.25 8 0.25],...
+                    'OnClick',2,'HorizontalAlignment','center','FontSize',10);
+                
+            end
+            
+            % Add TOC
+            exportToPPTX('switchslide',2);
+            
+            dy = 0.25;
+            maxRows = 25;
+            for iFig = 1:length(hFigs)
+                i = mod(iFig-1,maxRows);
+                j = floor((iFig-1)/maxRows);
+                exportToPPTX('addtext',hFigs(iFig).Name,...
+                    'OnClick',iFig + 2, ...
+                    'Position',[0.2+(3*j) (dy*i)+1 3 dy],...
+                    'FontSize',10);
             end
             
             % Check current presentation

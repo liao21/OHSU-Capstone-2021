@@ -359,7 +359,10 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             
             
         end
-        
+        function plot_pca(obj)
+            % Pass thru for plotting principal components
+            GUIs.guiPlotPca(obj)
+        end
     end
     methods (Static = true)
         function plot_mav_per_class(filterSpec,channels)
@@ -552,10 +555,44 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             HPF = Inputs.HighPass(20,3,Fs);
             %NF = Inputs.Notch([120 240 360],64,1,Fs);
             
+            HPF.ReflectOnApply = 1;
+            HPF.ReflectValue = 1.2;
+            
             filteredData = HPF.apply(double(dataIn));
             %filteredData = NF.apply(filteredData);
         end
         
+        function hData = batchLoadTrainingData(dataPath)
+            % Load all training data in directory and return an array of
+            % TrainingData Objects
+            %
+            % Inputs: 
+            %   dataPath - Full path to directory containing *.trainingData files
+            %
+            % Usage:
+            %   TrainingDataAnalysis.batchLoadTrainingData('c:\data\Myo_01\')
+            
+            s = rdir(fullfile(dataPath,'*.trainingData'));
+
+            % sort by date
+            [~,idx] = sort([s.datenum]);
+            s = s(idx);
+
+            if isempty(s)
+                error('No files found in: %s',fullfile(dataPath,'*.trainingData'));
+            end
+            
+            for iFile = 1:length(s)
+                try 
+                    hData(iFile) = TrainingDataAnalysis(s(iFile).name); %#ok<AGROW>
+                catch ME
+                    fprintf('[%s.m] Error Loading %s. Aborting.\n',mfilename,s(iFile).name);
+                    warning(ME.message)
+                    return
+                end
+            end %iFiles
+            
+        end
         function batchRunQuickLook(pathName)
             %%
             % get files
@@ -695,57 +732,6 @@ else
 end
 
 end
-
-function test
-%%
-% check for filtering artifacts
-
-x = obj.getRawSignals;
-
-
-HPF = Inputs.HighPass(20,3,1000);
-
-l = obj.getClassLabels;
-
-figure(9)
-
-for i = 1:size(x,3)
-    dataIn = x(2,:,i);
-    filteredData = HPF.apply(dataIn);
-    
-    filteredDataOffset = HPF.apply(dataIn-dataIn(1));
-    
-    % Prepend
-    flippedData = rot90(dataIn,2);
-    
-    
-    o1 = dataIn(1);
-    o2 = dataIn(end);
-    
-    padSig = [o1-flippedData+o1 dataIn o2-flippedData+o2 ];
-    
-    filteredDataPadded = HPF.apply(padSig);
-    filteredDataPadded = filteredDataPadded(251:500);
-    
-    subplot(3,1,1)
-    plot(1:250,dataIn)
-    subplot(3,1,2)
-    plot(1:250,filteredData)
-    subplot(3,1,3)
-    %plot(1:250,dataIn,1:250,filteredData,1:250,filteredDataPadded,1:250,filteredDataOffset)
-    plot(1:250,filteredDataPadded,1:250,filteredDataOffset)
-    ylim([-5 5])
-    
-    fprintf('%5d %s \n',i,obj.ClassNames{l(i)});
-    pause(0.01)
-end
-
-
-
-
-
-end
-
 
 function save_output(dataLabel,pathName)
             % Save output

@@ -146,6 +146,11 @@ classdef UiTools
             % Provides a save dialog with the default file set as the
             % current date and time with extention reflecting contents
             % extension = '.assessmentLog'
+            %
+            % Revisions:
+            % 2016-Jul-02 Armiger: Updated date string to be more readable
+            %   using abbreviated month and spacing characters
+            %   PREFIX_2016-JUL-02 23-17-09.extension
             
             if nargin < 2
                 %tempFileName = 'defaultFilePrefix';
@@ -157,7 +162,7 @@ classdef UiTools
             
             FilterSpec = ['*' extension];
             DialogTitle = 'Select File to Write';
-            DefaultName = [filePrefix datestr(now,'yyyymmdd_HHMMSS') extension];
+            DefaultName = [filePrefix upper(datestr(now,'yyyy-mmm-dd_HH-MM-SS')) extension];
             [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,DialogTitle,DefaultName);
             
             if FilterIndex == 0

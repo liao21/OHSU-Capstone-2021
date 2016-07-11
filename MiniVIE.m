@@ -1103,12 +1103,13 @@ classdef MiniVIE < Common.MiniVieObj
             shortcutUtils.addShortcutToBottom(strcat('goto MiniVIE',suffix),cb,'','Shortcuts', 'true');
             
             % MiniVIE
-            % cd('C:\svn\myopen\MiniVIE');
+            % cd('C:\git\MiniVIE');
             % MiniVIE.configurePath;
             % obj = MiniVIE;
             cb = sprintf('cd(''%s'') \nMiniVIE.configurePath \nobj = MiniVIE;',...
                 fileparts(which('MiniVIE')));
-            shortcutUtils.addShortcutToBottom(strcat('MiniVIE',suffix),cb,'','Shortcuts', 'true');
+            iconPath = fullfile(fileparts(which('MiniVIE')),'Deploy','MiniVIE_resources','MiniVIE Icon 24.jpg');
+            shortcutUtils.addShortcutToBottom(strcat('MiniVIE',suffix),cb,iconPath,'Shortcuts', 'true');
             
             %cleanup
             % run('C:\svn\myopen\MiniVIE\Utilities\cleanup.m')

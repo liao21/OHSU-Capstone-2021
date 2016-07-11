@@ -1,8 +1,14 @@
-function hAxes = guiPlotPca(TrainingData)
+function hAxes = guiPlotPca(TrainingData,f)
 
 % plot the principal components of the current training data
 
 % TODO break out the math and the plotting parts
+
+if nargin < 2
+    f = UiTools.create_figure('Feature Data Principal Component Analysis','plot_pca');
+    set(f,'ToolBar','figure')
+    set(f,'Resize','on')
+end
 
 
 % hData = obj.TrainingData;
@@ -47,9 +53,6 @@ allPC = allPC(:,1:subSample:end);
 classLabelId = classLabelId(:,1:subSample:end);
 
 
-f = UiTools.create_figure('Feature Data Principal Component Analysis','plot_pca');
-set(f,'ToolBar','figure')
-set(f,'Resize','on')
 
 drawnow;
 clf(f)
@@ -84,10 +87,11 @@ for i = 1:3%length(pcIds)
         thisClass = classLabelId == uniqueLabels(iClass);
         hScatter(iClass) = plot(hAxes(i),PC(1,thisClass),PC(2,thisClass),'.');
         set(hScatter(iClass),'Color',c(iClass,:));
-        
+    end
+    
+    for iClass = 1:numClasses
         % Work around for contour labels in R2014B
-        hLabel(iClass) = plot(nan,'-','Color',c(iClass,:));
-        
+        hLabel(iClass) = line(0,0,'LineStyle','-','Color',c(iClass,:),'Parent',hAxes(i));        
     end
     axis(hAxes(i),[min(PC(:)) max(PC(:)) min(PC(:)) max(PC(:))]);
     xlabel(hAxes(i),sprintf('PC%d',pcIds{i}(1))); ylabel(hAxes(i),sprintf('PC%d',pcIds{i}(2))); title(hAxes(i),'');

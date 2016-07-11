@@ -19,12 +19,13 @@ end
 numSamples = hSignalClassifier.NumSamplesPerWindow;
 hSignalSource.NumSamples = numSamples;
 
-
+% pad the signal to avoid filter artifact.  this should be a non-issue
+% with the filter save state
 numPad = 250;
 rawSignals = hSignalSource.getData(numSamples+numPad);
 filteredSignals = hSignalSource.applyAllFilters(rawSignals);
 filteredSignals = filteredSignals(end-numSamples+1:end,:);
-
+rawSignals = rawSignals(end-numSamples+1:end,:);
 
 % Extract features and classify
 features2D = hSignalClassifier.extractfeatures(filteredSignals);

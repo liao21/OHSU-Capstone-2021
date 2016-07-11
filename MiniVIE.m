@@ -348,6 +348,11 @@ classdef MiniVIE < Common.MiniVieObj
         
         function close(obj)
             
+            if ~isempty(obj.SignalViewer)
+                %stop(obj.SignalViewer.hTimer)
+                obj.SignalViewer.close();
+            end
+            
             try obj.SignalSource.close();end
             try obj.SignalClassifier.close();end
             try obj.TrainingInterface.close();end

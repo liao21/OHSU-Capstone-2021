@@ -137,10 +137,12 @@ classdef TrainingManager < handle
     methods
         function obj = TrainingManager(source, classifier, data)
             % Creator
+            initialize(obj,source,classifier,data);
+        end
+        function initialize(obj)
             obj.SignalSource = source;
             obj.SignalClassifier = classifier;
             obj.TrainingData = data;
-            
         end
         function attachInterface(obj,hInterface)
             

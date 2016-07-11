@@ -14,7 +14,7 @@ classdef MiniVIE < Common.MiniVieObj
     %
     % % Launch the UI:
     % obj = MiniVIE
-    % 
+    %
     
     properties
         SignalSource
@@ -29,16 +29,13 @@ classdef MiniVIE < Common.MiniVieObj
         
         Verbose = 1;
     end
-    properties (Access = private, Constant = true)
-        %enum
-        INPUT = 1;
-        SA = 2;
-        TRAINING = 3;
-        PLANT = 4;
-        PRESENTATION = 5;
-    end
     properties (Access = private)
         SignalViewer = [];
+        
+        TabTitleInput       = '   Input Source   ';
+        TabTitleAnalysis    = '   Signal Analysis   ';
+        TabTitleTrainer     = '   Training   ';
+        TabTitleOutput      = '   Output Device   ';
     end
     methods
         function obj = MiniVIE
@@ -48,35 +45,34 @@ classdef MiniVIE < Common.MiniVieObj
             obj.FilePrefix = UserConfig.getUserConfigVar('userFilePrefix','NEW_USER_');
             
             obj.initialize();
-
+            
             % set figure name
             guiName = strcat(obj.FilePrefix,'MiniVIE');
             set(obj.hg.Figure,'Name',guiName);
-
+            
         end
         function initialize(obj)
             setupFigure(obj);
             
             % Set valid input options
-            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','Signal Simulator','EMG Simulator','DaqHwSession','DaqHwDevice','CpchSerial','NfuInput','UdpDevice','IntanDevBoard','OpenBCI','ThalmicLabs MyoUdp'});
-            set(obj.hg.popups(MiniVIE.INPUT),'Value',1);
-            set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier','DiscriminantAnalysis','SupportVectorMachine','SvmStatTlbx'});
-            set(obj.hg.popups(MiniVIE.SA),'Value',1);
-            set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero','Bar Trainer','Motion Trainer','vMPL Trainer'});
-            set(obj.hg.popups(MiniVIE.TRAINING),'Value',1);
-            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplVulcanX','MplNfu','MplUnity','MSMS_ADL','MSMS Tasks','Online Retraining Demo','Endpoint Controller'});
-            set(obj.hg.popups(MiniVIE.PRESENTATION),'Value',1);
+            set(obj.hg.popupInput,'String',{'None','Signal Simulator','EMG Simulator','DaqHwSession','DaqHwDevice','CpchSerial','NfuInput','UdpDevice','IntanDevBoard','OpenBCI','ThalmicLabs MyoUdp'});
+            set(obj.hg.popupInput,'Value',1);
+            set(obj.hg.popupAnalysis,'String',{'None','LDA Classifier','DiscriminantAnalysis','SupportVectorMachine','SvmStatTlbx'});
+            set(obj.hg.popupAnalysis,'Value',1);
+            set(obj.hg.popupTrainer,'String',{'None','Online Trainer','Simple Trainer','Mini Guitar Hero','Bar Trainer','Motion Trainer','vMPL Trainer'});
+            set(obj.hg.popupTrainer,'Value',1);
+            set(obj.hg.popupOutput,'String',{'None','MiniV','Breakout','AGH','MplVulcanX','MplNfu','MplUnity','MSMS_ADL','MSMS Tasks','Online Retraining Demo','Endpoint Controller'});
+            set(obj.hg.popupOutput,'Value',1);
         end
         function setupFigure(obj)
+            %%
             obj.hg.Figure = UiTools.create_figure('MiniVIE Configuration Utility','MiniVIE');
-            oldPos = get(obj.hg.Figure,'Position');
-            
-            newPos = pos('fig');
-            newPos(1) = oldPos(1);
-            newPos(2) = oldPos(2);
-            
-            set(obj.hg.Figure,'Position',newPos);
             set(obj.hg.Figure,'CloseRequestFcn',@(src,evnt)cbCloseFig(obj));
+            
+            obj.hg.Figure.Position = [1 1 1200 800];
+            % change position
+            movegui(obj.hg.Figure,'center');
+            %movegui(obj.hg.Figure,'northeast');
             
             % Setup File Menu
             obj.hg.MenuFile = uimenu(obj.hg.Figure,...
@@ -108,138 +104,149 @@ classdef MiniVIE < Common.MiniVieObj
             obj.hg.MenuAbout = uimenu(obj.hg.MenuHelp,...
                 'Label','About', ...
                 'Callback', @(src,evt)obj.cbAbout());
-
-            % Draw the body of the figure.  Create the following column
-            % headers:
-            header = {'Inputs:','Signal Analysis:','Training:','Plant:','Presentation:'};
             
-            % These are the callbacks for the pop-up menus:
-            puCallbacks = {
-                @(src,evt)setSignalSource(obj,src)
-                @(src,evt)setSignalAnalysis(obj,src)
-                @(src,evt)setTrainer(obj,src)
-                []
-                @(src,evt)setPresentation(obj,get(src,'String'),get(src,'Value'))
-                };
+            % add tabs
+            obj.hg.TabGroup = uitabgroup('Parent', obj.hg.Figure);
+            obj.hg.TabInput = uitab('Parent', obj.hg.TabGroup, 'Title', obj.TabTitleInput);
+            obj.hg.TabAnalysis = uitab('Parent', obj.hg.TabGroup, 'Title', obj.TabTitleAnalysis);
+            obj.hg.TabTrainer = uitab('Parent', obj.hg.TabGroup, 'Title', obj.TabTitleTrainer);
+            obj.hg.TabOutput = uitab('Parent', obj.hg.TabGroup, 'Title', obj.TabTitleOutput);
+            obj.hg.TabGroup.SelectionChangedFcn = @(src,evt)cbTabChanged(obj,src,evt);
             
+            % Draw the body of the figure.
             
-            for iColumn = 1:length(header)
-                % title:
-                uicontrol(...
-                    'Parent',obj.hg.Figure,...
-                    'String',header{iColumn},...
-                    'Style','text',...
-                    'Position',pos('cntrl',iColumn,1,1,1),...
-                    'HorizontalAlignment','Left'...
-                    );
-                
-                % popup
-                obj.hg.popups(iColumn) = uicontrol(obj.hg.Figure,...
-                    'Position',pos('cntrl',iColumn,2,1,1),...
-                    'Style','popupmenu',...
-                    'String','None',...
-                    'Callback',puCallbacks{iColumn},...
-                    'Background','White');
-                
-            end
+            % popup - Input Select
+            obj.hg.TabInput.Units = 'pixels';
+            p = obj.hg.TabInput.Position;
+            obj.hg.popupInput = uicontrol(obj.hg.TabInput,...
+                'Position',[20 p(4)-70 200 20],...
+                'Style','popupmenu',...
+                'String','None',...
+                'FontSize',14,...
+                'Callback',@(src,evt)setSignalSource(obj,src),...
+                'Background','White');
+            
+            % draw input viewer panel
+            pad = 20;
+            obj.hg.SignalPanel = uipanel(obj.hg.TabInput,'Title','Signal Viewer','FontSize',12,...
+                'Units','pixels',...
+                'Position',[pad pad p(3)-pad-pad p(4)-pad-pad-70]);
+            
+            % popup - Signal Analysis Select
+            obj.hg.TabAnalysis.Units = 'pixels';
+            p = obj.hg.TabAnalysis.Position;
+            obj.hg.popupAnalysis = uicontrol(obj.hg.TabAnalysis,...
+                'Position',[20 p(4)-70 200 20],...
+                'Style','popupmenu',...
+                'String','None',...
+                'FontSize',14,...
+                'Callback',@(src,evt)setSignalAnalysis(obj,src),...
+                'Background','White');
+            
+            % popup - Training Select
+            obj.hg.TabTrainer.Units = 'pixels';
+            p = obj.hg.TabTrainer.Position;
+            obj.hg.popupTrainer = uicontrol(obj.hg.TabTrainer,...
+                'Position',[20 p(4)-70 200 20],...
+                'Style','popupmenu',...
+                'String','None',...
+                'FontSize',14,...
+                'Callback',@(src,evt)setTrainer(obj,src),...
+                'Background','White');
+            
+            % popup - Output Select
+            obj.hg.TabOutput.Units = 'pixels';
+            p = obj.hg.TabOutput.Position;
+            obj.hg.popupOutput = uicontrol(obj.hg.TabOutput,...
+                'Position',[20 p(4)-70 200 20],...
+                'Style','popupmenu',...
+                'String','None',...
+                'FontSize',14,...
+                'Callback',@(src,evt)setPresentation(obj,src),...
+                'Background','White');
             
             % Create some pushbuttons for configuring each VIE object:
             
-            
-            % SignalSourceButtons
-            obj.hg.SignalSourceButtons(1) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.INPUT,3,1,1),...
-                'Style','pushbutton',...
-                'Enable','off',...
-                'String','SignalViewer',...
-                'Callback',@(src,evt)obj.pbSignalView);
-            obj.hg.SignalSourceButtons(2) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.INPUT,4,1,1),...
-                'Style','pushbutton',...
-                'Enable','off',...
-                'String','Audio Preview',...
-                'Callback',@(src,evt)obj.pbSignalAudio);
-            
             % SignalAnalysisButtons
-            obj.hg.SignalAnalysisButtons(1) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.SA,3,1,1),...
+            obj.hg.SignalAnalysisButtons(1) = uicontrol(obj.hg.TabAnalysis,...
+                'Position',pos('cntrl',1,3,1,1),...
                 'Style','pushbutton',...
                 'String','Select Classes',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.SignalClassifier.uiEnterClassNames);
-            obj.hg.SignalAnalysisButtons(2) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.SA,4,1,1),...
+            obj.hg.SignalAnalysisButtons(2) = uicontrol(obj.hg.TabAnalysis,...
+                'Position',pos('cntrl',1,4,1,1),...
                 'Style','pushbutton',...
                 'String','Classifier Parameters',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbClassifierProperties);
-            obj.hg.SignalAnalysisButtons(3) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.SA,5,1,1),...
+            obj.hg.SignalAnalysisButtons(3) = uicontrol(obj.hg.TabAnalysis,...
+                'Position',pos('cntrl',1,5,1,1),...
                 'Style','pushbutton',...
                 'String','Clear Training Data',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbTrainClear());
-            obj.hg.SignalAnalysisButtons(4) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.SA,6,1,1),...
+            obj.hg.SignalAnalysisButtons(4) = uicontrol(obj.hg.TabAnalysis,...
+                'Position',pos('cntrl',1,6,1,1),...
                 'Style','pushbutton',...
                 'String','Train',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbTrain());
-            obj.hg.SignalAnalysisButtons(5) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.SA,7,1,1),...
+            obj.hg.SignalAnalysisButtons(5) = uicontrol(obj.hg.TabAnalysis,...
+                'Position',pos('cntrl',1,7,1,1),...
                 'Style','pushbutton',...
                 'String','Plot PCA',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbPlotPca());
-            obj.hg.SignalAnalysisButtons(6) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.SA,8,1,1),...
+            obj.hg.SignalAnalysisButtons(6) = uicontrol(obj.hg.TabAnalysis,...
+                'Position',pos('cntrl',1,8,1,1),...
                 'Style','pushbutton',...
                 'String','Plot Confusion Matrix',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbPlotConfusion());
             
             % TrainingButtons
-            obj.hg.TrainingButtons(1) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.TRAINING,3,1,1),...
+            obj.hg.TrainingButtons(1) = uicontrol(obj.hg.TabTrainer,...
+                'Position',pos('cntrl',1,3,1,1),...
                 'Style','pushbutton',...
                 'String','Begin Training',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbBeginTraining());
             
             % PresentationButtons
-            obj.hg.PresentationButtons(1) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.PRESENTATION,3,1,1),...
+            obj.hg.PresentationButtons(1) = uicontrol(obj.hg.TabOutput,...
+                'Position',pos('cntrl',1,3,1,1),...
                 'Style','pushbutton',...
                 'String','Adjust Gains',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbAdjustGains());
-            obj.hg.PresentationButtons(2) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.PRESENTATION,4,1,1),...
+            obj.hg.PresentationButtons(2) = uicontrol(obj.hg.TabOutput,...
+                'Position',pos('cntrl',1,4,1,1),...
                 'Style','pushbutton',...
                 'String','Adjust Limits',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbAdjustLimits());
-            obj.hg.PresentationButtons(3) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.PRESENTATION,5,1,1),...
+            obj.hg.PresentationButtons(3) = uicontrol(obj.hg.TabOutput,...
+                'Position',pos('cntrl',1,5,1,1),...
                 'Style','pushbutton',...
                 'String','Start',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbPresentationStart());
-            obj.hg.PresentationButtons(4) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.PRESENTATION,6,1,1),...
+            obj.hg.PresentationButtons(4) = uicontrol(obj.hg.TabOutput,...
+                'Position',pos('cntrl',1,6,1,1),...
                 'Style','pushbutton',...
                 'String','Stop',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbPresentationStop());
-            obj.hg.PresentationButtons(5) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.PRESENTATION,7,1,1),...
+            obj.hg.PresentationButtons(5) = uicontrol(obj.hg.TabOutput,...
+                'Position',pos('cntrl',1,7,1,1),...
                 'Style','pushbutton',...
                 'String','Assessment',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbAssessment());
-
-            obj.hg.PlantButtons(1) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.PLANT,3,1,1),...
+            
+            obj.hg.PlantButtons(1) = uicontrol(obj.hg.TabOutput,...
+                'Position',pos('cntrl',1,8,1,1),...
                 'Style','pushbutton',...
                 'String','Complex Mode',...
                 'Enable','on',...
@@ -366,7 +373,7 @@ classdef MiniVIE < Common.MiniVieObj
                 % in there's an old one, try to close it
                 if ~isempty(h)
                     try %#ok<TRYNC>
-                        close(h); 
+                        close(h);
                     end
                 end
                 
@@ -438,14 +445,22 @@ classdef MiniVIE < Common.MiniVieObj
                 end
                 
                 if isempty(h)
-                    % Disable buttons
-                    set(obj.hg.SignalSourceButtons(:),'Enable','off');
+                    % Disable viewer
+                    obj.SignalSource = h;
+                    
+                    if ~isempty(obj.SignalViewer)
+                        obj.SignalViewer.close()
+                        obj.SignalViewer = [];
+                    end
+                    delete(obj.hg.SignalPanel.Children)
+                    
                 else
                     % Enable buttons
-                    set(obj.hg.SignalSourceButtons(:),'Enable','on');
-                    
                     h.NumSamples = 2000;
                     h.initialize();
+                    obj.SignalSource = h;
+                    
+                    pbSignalView(obj);
                 end
                 
             catch ME
@@ -454,7 +469,6 @@ classdef MiniVIE < Common.MiniVieObj
                 return
             end
             
-            obj.SignalSource = h;
             lastValue = value;
             
         end
@@ -572,6 +586,19 @@ classdef MiniVIE < Common.MiniVieObj
                 end
                 
                 switch string{value}
+                    case 'Online Trainer'
+                        hManager = PatternRecognition.TrainingManager(obj.SignalSource,obj,SignalAnalysis,obj.TrainingData);
+                        
+                        hInterface = PatternRecognition.JoystickTrainer();
+                        hManager.attachInterface(hInterface);
+                        hInterface.initialize(hManager);
+                        
+                        hInterface = PatternRecognition.GuiTrainer();
+                        hManager.attachInterface(hInterface);
+                        hInterface.initialize(hManager);
+
+                        h = hManager;
+                        
                     case 'Simple Trainer'
                         h = PatternRecognition.SimpleTrainer();
                         
@@ -664,7 +691,9 @@ classdef MiniVIE < Common.MiniVieObj
             lastValue = value;
             
         end
-        function setPresentation(obj,string,value)
+        function setPresentation(obj,src)
+            string = src.String;
+            value = src.Value;
             try
                 h = obj.Presentation;
                 if ~isempty(h)
@@ -724,7 +753,7 @@ classdef MiniVIE < Common.MiniVieObj
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
                         h.update();
                         h.Verbose = 0;
-
+                        
                         obj.println('Presentation setup complete',1);
                     case 'Endpoint Controller'
                         obj.println('Setting up presentation...',1);
@@ -732,8 +761,8 @@ classdef MiniVIE < Common.MiniVieObj
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
                         h.update();
                         h.Verbose = 0;
-
-                        obj.println('Presentation setup complete',1); 
+                        
+                        obj.println('Presentation setup complete',1);
                     case 'Breakout'
                         h = Presentation.MiniBreakout(obj.SignalSource,obj.SignalClassifier);
                     case 'AGH'
@@ -802,7 +831,7 @@ classdef MiniVIE < Common.MiniVieObj
                 end
                 
                 obj.Presentation = h;
-
+                
                 drawnow
                 
                 if ~isempty(obj.Presentation)
@@ -835,7 +864,7 @@ classdef MiniVIE < Common.MiniVieObj
             
             % get save file from xml instead of object
             filePrefix = obj.FilePrefix;
-                        
+            
             FilterSpec = ['*' extension];
             DialogTitle = 'Select File to Write';
             DefaultName = [filePrefix datestr(now,'yyyymmdd_HHMMSS') extension];
@@ -851,7 +880,7 @@ classdef MiniVIE < Common.MiniVieObj
     methods (Access = private)
         function pbSignalView(obj)
             
-            obj.SignalViewer = GUIs.guiSignalViewer(obj.SignalSource);
+            obj.SignalViewer = GUIs.guiSignalViewer(obj.SignalSource,obj.hg.SignalPanel);
             
             % link the viewer with a classifier if it exists
             
@@ -1003,8 +1032,26 @@ classdef MiniVIE < Common.MiniVieObj
             end
         end
         % Callback (cb) functions
+        function cbTabChanged(obj, ~, eventdata)
+            
+            if obj.Verbose
+                fprintf('[%s.m] Disable %s\n', mfilename, eventdata.OldValue.Title)
+                fprintf('[%s.m] Enable %s\n\n', mfilename, eventdata.NewValue.Title)
+            end
+            
+            % If 'Signal Input' was the previous tab, disable refresh
+            if strcmp(eventdata.OldValue.Title, obj.TabTitleInput) && ~isempty(obj.SignalViewer);
+                stop(obj.SignalViewer.hTimer);
+            end
+            % If 'Signal Input' was the previous tab, disable refresh
+            if strcmp(eventdata.NewValue.Title, obj.TabTitleInput) && ~isempty(obj.SignalViewer)
+                start(obj.SignalViewer.hTimer);
+            end
+            
+        end
+        
         function cbRocEditor(obj)
-            % Launch the ROC Editor.  
+            % Launch the ROC Editor.
             
             % Ensure that if a scenario exists that it is not running
             drawnow
@@ -1044,7 +1091,7 @@ classdef MiniVIE < Common.MiniVieObj
                 fprintf(2,'Error closing objects:\n"%s"\n',ME.message);
             end
             delete(obj.hg.Figure);
-        end        
+        end
         function cbAbout(obj)
             %% Revision Information
             verMajor = 1;
@@ -1061,14 +1108,14 @@ classdef MiniVIE < Common.MiniVieObj
             if obj.Verbose
                 % print to console
                 for i = 1:length(cellMsg)
-                    fprintf('[%s.m] %s\n',mfilename,cellMsg{i}); 
+                    fprintf('[%s.m] %s\n',mfilename,cellMsg{i});
                 end
             end
             
             h = msgbox(cellMsg,'MiniVIE','modal');
             uiwait(h);
         end
-
+        
     end
     methods (Static = true)
         function createShortcuts(suffix)
@@ -1126,7 +1173,7 @@ classdef MiniVIE < Common.MiniVieObj
             % RunMpl();
             cb = 'obj = RunMpl()';
             shortcutUtils.addShortcutToBottom(strcat('RunMpl',suffix),cb,'','Shortcuts', 'true');
-
+            
             %RunTakeHome
             % cd('C:\svn\myopen\MiniVIE');
             % MiniVIE.configurePath;
@@ -1139,7 +1186,7 @@ classdef MiniVIE < Common.MiniVieObj
         end
         function configurePath
             pathName = fileparts(which('MiniVIE'));
-
+            
             addpath(pathName);
             addpath([pathName filesep 'Utilities']);
             %addpath(fullfile(pathName,'GUIDE_GUIs'));
@@ -1252,7 +1299,7 @@ end
 function h = loadDaqHwDevice(version)
 % Load a dawHwDevice with default prompts
 
-if nargin < 1 
+if nargin < 1
     version = 'Session';
 end
 

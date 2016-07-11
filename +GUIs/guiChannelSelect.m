@@ -39,11 +39,11 @@ classdef guiChannelSelect < Common.MiniVieObj
         function obj = guiChannelSelect(parent)
             % Creator.  Default is no arguments.  Parent should be a
             % uipanel object
-
+            
             if nargin < 1
                 parent = [];
             end
-
+            
             obj.setupFigure(parent);
             selectedChannels = obj.getLastChannels;
             obj.setActiveChannels(selectedChannels);
@@ -63,7 +63,7 @@ classdef guiChannelSelect < Common.MiniVieObj
             %selectedChannels = find(maxChannels(1:obj.numChannelsMax));
             selectedChannels = find(isSelected(1:obj.numChannelsAvailable));
             
-            % Ensure that the selected channels are row vectors so that they 
+            % Ensure that the selected channels are row vectors so that they
             % can be used as indexes in e.g. a for loop (for i = selectedChannels)
             selectedChannels = reshape(selectedChannels,1,[]);
         end
@@ -73,7 +73,7 @@ classdef guiChannelSelect < Common.MiniVieObj
             %     errordlg(msg);
             %     return
             % end
-
+            
             validIds = activeChannelIds(activeChannelIds <= obj.numChannelsMax);
             set(obj.handles.pbChannels,'Value',0);
             set(obj.handles.pbChannels(validIds),'Value',1);
@@ -101,7 +101,7 @@ classdef guiChannelSelect < Common.MiniVieObj
             if get(obj.handles.pbChannels(iChannel),'Value') ~= state
                 set(obj.handles.pbChannels(iChannel),'Value',state);
             end
-
+            
             if get(obj.handles.pbChannels(iChannel),'Value')
                 set(obj.handles.pbChannels(iChannel),'ForegroundColor','w');
                 set(obj.handles.pbChannels(iChannel),'BackgroundColor',obj.ColorOrder(iChannel,:));
@@ -183,7 +183,25 @@ classdef guiChannelSelect < Common.MiniVieObj
                 end
                 set(obj.hFigure,'Position',[200 500 200 70],'CloseRequestFcn',@(src,evt)close(obj));
                 set(obj.hFigure,'Position',pos('fig'));
+                
                 parent = obj.hFigure;
+                obj.handles.menuFile = uimenu(obj.hFigure, 'Label','&File');
+                obj.handles.menuFileDefault = uimenu(...
+                    'Label','&Open...',...
+                    'Callback',@(src,evt)openFile(obj),...
+                    'Parent',obj.handles.menuFile);
+                obj.handles.menuFileDefault = uimenu(...
+                    'Label','Save &As...',...
+                    'Callback',@(src,evt)saveasFile(obj),...
+                    'Parent',obj.handles.menuFile);
+                obj.handles.menuFileDefault = uimenu(...
+                    'Label','Set &Defaults',...
+                    'Callback',@(src,evt)obj.setDefaultChannels(obj.SelectedChannels),...
+                    'Parent',obj.handles.menuFile);
+                obj.handles.menuFileDefault = uimenu(...
+                    'Label','E&xit',...
+                    'Callback',@(src,evt)close(obj),...
+                    'Parent',obj.handles.menuFile);
             end
             
             obj.hParent = parent;
@@ -204,24 +222,6 @@ classdef guiChannelSelect < Common.MiniVieObj
             obj.ColorOrder = [distinguishable_colors(16); distinguishable_colors(16)];
             
             
-            obj.handles.menuFile = uimenu(obj.hFigure, 'Label','&File');
-            
-            obj.handles.menuFileDefault = uimenu(...
-                'Label','&Open...',...
-                'Callback',@(src,evt)openFile(obj),...
-                'Parent',obj.handles.menuFile);
-            obj.handles.menuFileDefault = uimenu(...
-                'Label','Save &As...',...
-                'Callback',@(src,evt)saveasFile(obj),...
-                'Parent',obj.handles.menuFile);
-            obj.handles.menuFileDefault = uimenu(...
-                'Label','Set &Defaults',...
-                'Callback',@(src,evt)obj.setDefaultChannels(obj.SelectedChannels),...
-                'Parent',obj.handles.menuFile);
-            obj.handles.menuFileDefault = uimenu(...
-                'Label','E&xit',...
-                'Callback',@(src,evt)close(obj),...
-                'Parent',obj.handles.menuFile);
             
             % layout channel buttons in rows of 8
             numColumns = obj.numChannelsPerRow;
@@ -238,6 +238,7 @@ classdef guiChannelSelect < Common.MiniVieObj
                     'Style','togglebutton',...
                     'Position',pos('cntrl',iColumn,iRow,1,1),...
                     'String',num2str(iChannel),...
+                    'FontSize',10,...
                     'Visible','off',...
                     'Callback',@(src,evt)setChannelState(obj,iChannel,get(src,'Value')),...
                     'FontWeight','bold');
@@ -322,7 +323,7 @@ p = zeros( 1, 4 ) - 999;
 
 nCol = 8;
 nRow = 5;
-CntrlHeight = 20;
+CntrlHeight = 23;
 CntrlWidth = CntrlHeight;
 CntrlGap = 0;
 CntrlMarg = 6;

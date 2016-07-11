@@ -38,6 +38,7 @@ classdef guiSignalViewer < Common.MiniVieObj
     end
     properties (SetAccess = private)
         featureBuffer = [];
+        FigureParent
     end
     properties (Constant = true)
         numFeatures = 4;
@@ -53,11 +54,15 @@ classdef guiSignalViewer < Common.MiniVieObj
         
     end
     methods
-        function obj = guiSignalViewer(hSignalSource)
+        function obj = guiSignalViewer(hSignalSource,hParent)
             % Object creator.  If called with no arguments, user must
             % assign signal source and initialize.  When called with a
             % signal source, the guis will display automatically
             
+            if nargin > 1
+                obj.FigureParent = hParent;
+            end
+
             if nargin > 0
                 setSignalSource(obj,hSignalSource);
                 initialize(obj);
@@ -107,10 +112,6 @@ classdef guiSignalViewer < Common.MiniVieObj
             % throwing a real error)
             obj.update()
             
-            obj.update()
-            obj.update()
-            obj.update()
-            obj.update()
             start(obj.hTimer);
             
         end
@@ -123,9 +124,13 @@ classdef guiSignalViewer < Common.MiniVieObj
             obj.SelectedChannels = obj.hChannelSelect.SelectedChannels;
         end
         function setupFigure(obj)
-            obj.hg.Figure = UiTools.create_figure('Signal Viewer','Signal Viewer');
-            set(obj.hg.Figure,'Position',[50 120 900 600]);
-            set(obj.hg.Figure,'CloseRequestFcn',@(src,evnt)obj.close);
+            if isempty(obj.FigureParent)
+                obj.hg.Figure = UiTools.create_figure('Signal Viewer','Signal Viewer');
+                set(obj.hg.Figure,'Position',[50 120 900 600]);
+                set(obj.hg.Figure,'CloseRequestFcn',@(src,evnt)obj.close);
+            else
+                obj.hg.Figure = obj.FigureParent;
+            end
             
             obj.hg.PanelAxes = uipanel(obj.hg.Figure,'Units','Pixels','Position',[80 200 750 400]);
             
@@ -145,7 +150,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             obj.hg.ButtonTimeDomain = uicontrol('Style','Togglebutton','String','Time','Units','Normalized',...
                 'pos',[0.1 0.45 0.8 0.2],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
             obj.hg.ButtonSpectrogram = uicontrol('Style','Togglebutton','String','Spectrogram','Units','Normalized',...
-                'pos',[0.1 0.25 0.8 0.2],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
+                'pos',[0.1 0.25 0.8 0.2],'parent',obj.hg.PanelDomain,'HandleVisibility','off','Enable','off');
             obj.hg.ButtonFFT = uicontrol('Style','Togglebutton','String','FFT','Units','Normalized',...
                 'pos',[0.1 0.05 0.8 0.2],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
             % Initialize some button group properties.
@@ -517,11 +522,15 @@ classdef guiSignalViewer < Common.MiniVieObj
             try
                 stop(obj.hTimer);
             end
-            try
-                close(obj.hChannelSelect)
-            end
             delete(obj.hTimer);
-            delete(obj.hg.Figure);
+            
+            % don't delete the parent if passed
+            if isempty(obj.FigureParent)
+                try
+                    close(obj.hChannelSelect)
+                end
+                delete(obj.hg.Figure);
+            end
             
         end
     end

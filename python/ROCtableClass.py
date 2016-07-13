@@ -8,9 +8,6 @@ import xml.etree.cElementTree as ET
 import time
 
 timeBegin = time.time()
-
-# give temporary file to practice on
-filename = '/Users/lydiacarroll/Documents/MiniVIE/minivie/GraspAndWholeArmRoc.xml'
     
 class rocElem:
    def __init__(self, name):
@@ -20,7 +17,6 @@ class rocElem:
        self.waypoints = 0 # number of waypoints
        self.angles = {} # dictionary of angles for each waypoint
        self.impedance = {} # dictionary of impedances for each waypoint
-
 
 # function to read in ROC xml file and store as dictionary       
 def storeROC(file): 
@@ -41,7 +37,7 @@ def storeROC(file):
             index = waypoint.get('index')
             # use index as key for angles and impedance dictionaries
             elem.angles[index] = waypoint.find('angles').text
-            elem.impedance[index] = waypoint.find('impedance').text
+            #elem.impedance[index] = waypoint.find('impedance').text
         rocTable[name] = elem
     # return completed dictionary
     return rocTable

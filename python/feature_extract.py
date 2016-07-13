@@ -74,29 +74,29 @@ def feature_extract(y, zc_thresh = 0.15, ssc_thresh = 0.15):
     
     return features.T.reshape(1, 32)
 
-# Offline test code
-#
-#
-#import matplotlib.pyplot as plt
-#import math
-#import timeit
-#
-#NUM = 2000
-#emg_buffer = np.zeros((NUM,8))
-#sinArray = np.sin(2*math.pi*10*np.linspace(0,1,num=NUM))
-#
-#emg_buffer[:,:1] = np.reshape(sinArray,(NUM,1))
-#emg_buffer[:,:7] = np.reshape(sinArray,(NUM,1))
-#plt.plot(sinArray)
-#
-#
-#start_time = timeit.default_timer()
-## code you want to evaluate
-#f = feature_extract(emg_buffer)
-## code you want to evaluate
-#elapsed = timeit.default_timer() - start_time
-#print(elapsed)
-#
-#print(f)
+        
+if __name__ == "__main__":
+
+    # Offline test code
+    import matplotlib.pyplot as plt
+    import math
+    import timeit
+
+    NUM = 2000
+    emg_buffer = np.zeros((NUM,8))
+    sinArray = np.sin(2*math.pi*10*np.linspace(0,1,num=NUM))
+
+    emg_buffer[:,:1] = np.reshape(sinArray,(NUM,1))
+    emg_buffer[:,:7] = np.reshape(sinArray,(NUM,1))
+    plt.plot(sinArray)
+
+    start_time = timeit.default_timer()
+    # code you want to evaluate
+    f = feature_extract(emg_buffer)
+    # code you want to evaluate
+    elapsed = timeit.default_timer() - start_time
+    print(elapsed)
+
+    print(f)
 
 

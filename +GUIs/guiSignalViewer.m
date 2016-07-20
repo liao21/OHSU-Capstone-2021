@@ -524,6 +524,10 @@ classdef guiSignalViewer < Common.MiniVieObj
             end
             delete(obj.hTimer);
             
+            try
+                obj.hChannelSelect.setLastChannels(obj.hChannelSelect.SelectedChannels)
+            end
+            
             % don't delete the parent if passed
             if isempty(obj.FigureParent)
                 try

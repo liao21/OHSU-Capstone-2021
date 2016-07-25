@@ -38,7 +38,7 @@ def setup():
     # Signal Source get external bio-signal data
     # For MPL, this might be CPC Headstage, External Signal Acquisition, MyoBand, etc.
     #hMyo = MyoUdp()#("192.168.1.3")
-    hMyo = MyoUdp(UDP_IP='127.0.0.1',UDP_PORT=15001,numSamples=20)#("192.168.1.3")
+    hMyo = MyoUdp(UDP_IP='127.0.0.1',UDP_PORT=10001,numSamples=20)#("192.168.1.3")
 
     # Training Data holds data labels 
     hTrain = TrainingUdp()

@@ -5,6 +5,7 @@
 0.1.a Edited on Sat APR 30 2016 - Python 3 ready, fixed compatibility to sample_main.py
 0.1.b Edited on Sun May 01 2016 - numSamples input argument added
 0.1.c Edited on Sun May 19 2016 - fixed stream receive for EMG Data Only: 16 bytes, not 8
+0.1.c Edited on 7/20/2016 - RSA: fixed processing using MyoUdp.exe (Windows)
 
 Read Myo Armband data from UDP.  Buffer EMG Data and record the most recent IMU data.
 If this module is executed as ' $ python MyoUdp.py', the output generated can
@@ -31,7 +32,7 @@ import sys
 import time
 import binascii
 
-__version__ = "0.1.b"
+__version__ = "0.1.d"
 print (sys.argv[0]  + " Version: " + __version__)
 
 class MyoUdp(object):
@@ -72,43 +73,28 @@ class MyoUdp(object):
             # Blocking call until data received
             try:
                 # recv call will error if socket closed on exit
-##                print('going for data')
                 data, address = self.__sock.recvfrom(1024)
             except socket.error as e:
                 print("Socket read error. Socket Closed?")
                 print(e)
                 return
                 
-            if len(data) == 48: #NOTE: this is true if IMU data packs as a float point type
-##            if len(data) == 28: # NOTE: length==28 is true if IMU data packs as hex type
+            if len(data) == 48: #NOTE: This is the packet size for MyoUdp.exe
                 with self.__lock:
-##                with self.lock:
                     # unpack formatted data bytes
-                    #  orientaiton:   int16 w, x, y, z
-                    #  accelerometer: int16 +/-16 units of g
-                    #  gyroscope:     int16 +/-2000 units of deg/s
-##                    output = struct.unpack("8b4h3h3h", data)
+                    # Note: these have been scaled in MyoUdp from the raw hardware values
                     output = struct.unpack("8b4f3f3f", data)
-                    
-                    # update internal variables and buffers
-                    if sum(output[0:8]) == 1016:
-                        #IMU Data Update
-                        vectAccel=output[12:15]
-                        vectGyro=output[15:18]
-                        if ((abs(a)<=16 for a in vectAccel) or
-                            (abs(g)<=2000 for g in vectGyro)):
-                            self.__quat = output[8:12]   #[ q * 16384.0 for q in output[8:12]]
-                            self.__accel = vectAccel #[ a * 2048.0 for a in vectAccel]
-                            self.__gyro = vectGyro  #[ g * 16.0 for g in vectGyro]
-                        else:
-                            self.invalidDataValues += 1
-                    elif sum(output[8:]) == 1:
-                        #Populate EMG Data Buffer (newest on top)
-                        self.dataEMG = numpy.roll(self.dataEMG, 1, axis=0)
-                        self.dataEMG[:1, :] = output[:8] #insert in first buffer entry
-                    else:
-                        print('NOTE: unlikely outcome: all EMG signals at max value and all IMU is zeros')
-                        self.invalidDataValues += 1
+
+                    #Populate EMG Data Buffer (newest on top)
+                    self.dataEMG = numpy.roll(self.dataEMG, 1, axis=0)
+                    self.dataEMG[:1, :] = output[:8] #insert in first buffer entry
+
+                    #IMU Data Update
+                    self.__quat = output[8:12]
+                    self.__accel = output[12:15]
+                    self.__gyro = output[15:18]  
+
+            # TODO: these remaining cases are not threadsafe
             elif len(data) == 40 or len(data) == 20: #IMU data only
                 if len(data) == 40:
                     output = struct.unpack("4f3f3f", data)

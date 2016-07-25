@@ -4,6 +4,8 @@ classdef PptMaker < handle
         Author = '';
         SubTitle = '';
         
+        EnableTOC = 1;
+        
         SlideNames = {};
         
         OutputFile = [tempname '.pptx'];
@@ -32,11 +34,12 @@ classdef PptMaker < handle
                 'HorizontalAlignment','center', ...
                 'FontSize',20);
             
-            % Add TOC
-            exportToPPTX('addslide');
-            exportToPPTX('addtext','Table of Contents',...
-                'HorizontalAlignment','center');
-            
+            if obj.EnableTOC
+                % Add TOC
+                exportToPPTX('addslide');
+                exportToPPTX('addtext','Table of Contents',...
+                    'HorizontalAlignment','center');
+            end
         end
         
         function addslide(obj,hFigs)
@@ -56,9 +59,10 @@ classdef PptMaker < handle
                 exportToPPTX('addtext',hFig.Name); %,'Position','Title 1');
                 exportToPPTX('addpicture',hFig,'Scale','maxfixed');
                 
-                exportToPPTX('addtext','Table of Contents','Position',[1 7.25 8 0.25],...
-                    'OnClick',2,'HorizontalAlignment','center','FontSize',10);
-                
+                if obj.EnableTOC
+                    exportToPPTX('addtext','Table of Contents','Position',[1 7.25 8 0.25],...
+                        'OnClick',2,'HorizontalAlignment','center','FontSize',10);
+                end
             end
             
         end
@@ -76,18 +80,21 @@ classdef PptMaker < handle
         
         
         function close(obj)
-            % Add TOC
-            exportToPPTX('switchslide',2);
             
-            dy = 0.25;
-            maxRows = 25;
-            for iSlide = 1:size(obj.SlideNames,1)
-                i = mod(iSlide-1,maxRows);
-                j = floor((iSlide-1)/maxRows);
-                exportToPPTX('addtext',obj.SlideNames{iSlide},...
-                    'OnClick',iSlide + 2, ...
-                    'Position',[0.1+(5*j) (dy*i)+1 5 dy],...
-                    'FontSize',10);
+            if obj.EnableTOC
+                % Add TOC
+                exportToPPTX('switchslide',2);
+                
+                dy = 0.25;
+                maxRows = 25;
+                for iSlide = 1:size(obj.SlideNames,1)
+                    i = mod(iSlide-1,maxRows);
+                    j = floor((iSlide-1)/maxRows);
+                    exportToPPTX('addtext',obj.SlideNames{iSlide},...
+                        'OnClick',iSlide + 2, ...
+                        'Position',[0.1+(5*j) (dy*i)+1 5 dy],...
+                        'FontSize',10);
+                end
             end
             
             % Check current presentation
@@ -106,7 +113,7 @@ classdef PptMaker < handle
                 uiwait(reply);
                 newFile = exportToPPTX('save',obj.OutputFile);
             end
-                
+            
             % Close presentation
             exportToPPTX('close');
             

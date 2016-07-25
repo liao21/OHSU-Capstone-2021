@@ -465,6 +465,8 @@ classdef MiniVIE < Common.MiniVieObj
                     h.initialize();
                     obj.SignalSource = h;
                     
+                    drawnow
+                    
                     pbSignalView(obj);
                 end
                 
@@ -592,7 +594,7 @@ classdef MiniVIE < Common.MiniVieObj
                 
                 switch string{value}
                     case 'Online Trainer'
-                        hManager = PatternRecognition.TrainingManager(obj.SignalSource,obj,SignalAnalysis,obj.TrainingData);
+                        hManager = PatternRecognition.TrainingManager(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
                         
                         hInterface = PatternRecognition.JoystickTrainer();
                         hManager.attachInterface(hInterface);
@@ -1044,11 +1046,15 @@ classdef MiniVIE < Common.MiniVieObj
                 fprintf('[%s.m] Enable %s\n\n', mfilename, eventdata.NewValue.Title)
             end
             
+            obj.SignalViewer
+            
             % If 'Signal Input' was the previous tab, disable refresh
             if strcmp(eventdata.OldValue.Title, obj.TabTitleInput) && ~isempty(obj.SignalViewer);
                 stop(obj.SignalViewer.hTimer);
+                fprintf('[%s.m] Setting default channels\n', mfilename);
+                obj.SignalViewer.hChannelSelect.setLastChannels(obj.SignalViewer.hChannelSelect.SelectedChannels)
             end
-            % If 'Signal Input' was the previous tab, disable refresh
+            % If 'Signal Input' is new tab, start refreshing
             if strcmp(eventdata.NewValue.Title, obj.TabTitleInput) && ~isempty(obj.SignalViewer)
                 start(obj.SignalViewer.hTimer);
             end

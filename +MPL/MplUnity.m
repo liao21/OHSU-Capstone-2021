@@ -91,7 +91,7 @@ classdef MplUnity < Scenarios.OnlineRetrainer
             if isa(rocId,'Controls.GraspTypes')
                 % convert char grasp class name (e.g. 'Spherical') to numerical mpl
                 % grasp value (e.g. 7)
-                rocId = MPL.GraspConverter.graspLookup(rocId);
+                rocId = MPL.GraspConverter.graspLookup(rocId, {obj.RocTable.name});
             end
             
             % Note the joint ids for the MPL are different than the older

@@ -162,7 +162,7 @@ classdef UiTools
             
             FilterSpec = ['*' extension];
             DialogTitle = 'Select File to Write';
-            DefaultName = [filePrefix upper(datestr(now,'yyyy-mmm-dd_HH-MM-SS')) extension];
+            DefaultName = [filePrefix upper(datestr(now,'yyyymmmdd_HH-MM-SS')) extension];
             [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,DialogTitle,DefaultName);
             
             if FilterIndex == 0

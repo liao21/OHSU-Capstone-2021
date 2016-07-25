@@ -139,7 +139,7 @@ classdef TrainingManager < handle
             % Creator
             initialize(obj,source,classifier,data);
         end
-        function initialize(obj)
+        function initialize(obj,source,classifier,data)
             obj.SignalSource = source;
             obj.SignalClassifier = classifier;
             obj.TrainingData = data;

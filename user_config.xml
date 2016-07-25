@@ -8,7 +8,7 @@
     <add key="userFilePrefix"   value="USER_"/>
     
     <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
-    <add key="rocTable"         value="GraspAndWholeArmRoc.xml"/>
+    <add key="rocTable"         value="WrRocDefaults.xml"/>
     
     <!--Signal Source for MiniVIE Session-->
     <add key="SignalSource"     value="Inputs.SignalSimulator()"/>

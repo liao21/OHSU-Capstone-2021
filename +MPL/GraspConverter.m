@@ -1,6 +1,63 @@
 classdef GraspConverter < handle
+    % See also: Controls.GraspTypes
     methods (Static)
-        function graspId = graspLookup(enumGraspName)
+        function graspId = graspLookup(enumGraspName, rocNames)
+            if nargin < 2
+                graspId = MPL.GraspConverter.lookupStatic(enumGraspName);
+            else
+                graspId = MPL.GraspConverter.lookupByName(enumGraspName,rocNames);
+            end
+        end
+        function graspId = lookupByName(enumGraspName,rocNames)
+            % MPL.GraspConverted.graspLookup
+            % Map the minivie grasp enumeration to the ROC ids on the
+            % Limb
+            if isempty(enumGraspName)
+                graspId = 0;
+            else
+                
+                % setup a cell array of the enumerated grasps, with thos
+                % specified in ROC table.
+                graspNameMap = {
+                    'Tip', {'FinePinch(American)'}
+                    'Lateral', {'Lateral'}
+                    'Tripod', {'ThreeFingerPinch'}
+                    'Spherical', {'Spherical'}
+                    'Power', {'Cylindrical'}
+                    'Extension', {'Palmar(Tray)'}
+                    'Hook', {'Hook'}
+                    'Relaxed', {'rest'}
+                    'Index', {'Index Only'}
+                    'Middle', {'Middle Only'}
+                    'Ring', {'Ring Only'}
+                    'Little', {'Little Only'}
+                    'Thumb', {'Thumb Only'}
+                    'Cylindrical', {'Cylindrical'}
+                    'Point', {'Trigger(Drill)'}
+                    'Trigger', {'Trigger(Drill)'}
+                    };
+                
+                thisGrasp = find(strcmp(char(enumGraspName),graspNameMap(:,1)),1);
+                if isempty(thisGrasp)
+                    warning('Unmatched INPUT grasp %s\n',char(enumGraspName));
+                    graspId = 0;
+                    return
+                end
+                thisRoc = graspNameMap{thisGrasp,2};
+                graspId = find(strcmp(rocNames,thisRoc{1}),1);
+                if isempty(graspId)
+                    warning('Unmatched ROC grasp %s\n',thisRoc{1});
+                    graspId = 0;
+                    return
+                end
+                
+                % return zero based grasp
+                graspId = graspId - 1;
+                
+            end
+        end
+        
+        function graspId = lookupStatic(enumGraspName)
             % MPL.GraspConverted.graspLookup
             % Map the minivie grasp enumeration to the ROC ids on the
             % Limb

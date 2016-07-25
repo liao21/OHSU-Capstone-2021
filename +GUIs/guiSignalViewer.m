@@ -99,7 +99,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             obj.SelectedChannels = obj.hChannelSelect.SelectedChannels;
             
             obj.hTimer = UiTools.create_timer(mfilename,@(src,evt)obj.update());
-            obj.hTimer.Period = 0.05;
+            obj.hTimer.Period = 0.1;
             
             obj.resetTimePlot();
             

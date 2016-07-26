@@ -4,6 +4,17 @@ Created on Tue Jul 19 11:16:36 2016
 
 Initial creation of the training methods for LDA classification in Python
 
+--VERBOSE  set to 2 or higher
+Output timing information 
+
+Most of the functionality is controlled by command line flags, so if you want 
+ to do a demo (plus timing info), you can run: 
+“python MyoUDPTrainer.py --VERBOSE 2 --TRAIN 20  --PREDICT 1000”. 
+Training builds on whatever saved training data is in the directory, so if you 
+want to train from scratch, delete all of the files in the “\python\training_data\” 
+folder, and then rerun the script with the train flag.
+
+
 @author: D. Samson
 """
 
@@ -217,7 +228,7 @@ def predict(TrainingName, clf, hPlant, hMyo, hSink, dt=0.5, length=1000, verb = 
 def output(hPlant, hMyo, hSink, TrainingName, classDecision):
 	# Move joints using classifier
 	jointId, jointDir = hPlant.class_map(classDecision)
-
+	
 	# Set joint velocities
 	hPlant.velocity[:hPlant.NUM_JOINTS] = [0.0] * hPlant.NUM_JOINTS
 	if jointId:

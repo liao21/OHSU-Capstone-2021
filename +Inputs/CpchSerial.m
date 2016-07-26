@@ -1,5 +1,13 @@
 classdef CpchSerial < Inputs.CpcHeadstage
     % Class for interfacing CPCH via serial port
+    % 
+    % This class is used to interface the JHU/APL Conventional Prosthetics Control Headstage (CPCH)
+    % via a USB-RS485 adaptor.  The adaptor is based on the FTDI chipset and drivers for the device 
+    % can be found here:  
+    %  http://www.ftdichip.com/Drivers/VCP.htm
+    % Note the Virtual Com Port (VCP) drivers should be used (as opposed to the D2XX Direct Drivers)
+    % 
+    % Typical Baud rate for the device is 921600 bps
     %
     % % Example Usage:
     % obj = Inputs.CpchSerial('COM11',...

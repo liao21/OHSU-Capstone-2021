@@ -7,13 +7,16 @@ Initial creation of the training methods for LDA classification in Python
 --VERBOSE  set to 2 or higher
 Output timing information 
 
-Most of the functionality is controlled by command line flags, so if you want 
- to do a demo (plus timing info), you can run: 
+Most of the functionality is controlled by command line flags
+e.g. if you want to do a demo (plus timing info), you can run: 
 “python MyoUDPTrainer.py --VERBOSE 2 --TRAIN 20  --PREDICT 1000”. 
 Training builds on whatever saved training data is in the directory, so if you 
 want to train from scratch, delete all of the files in the “\python\training_data\” 
-folder, and then rerun the script with the train flag.
+folder, and then rerun the script with the train flag (alternatively run delete() function).
 
+WIP add delete flag to run delete method instead of manually deleting saved data
+WIP change path behavior so that all paths use self.path
+WIP add UDP communication to/from unity for training cues and other functionality
 
 @author: D. Samson
 """
@@ -25,7 +28,7 @@ import numpy as np
 from MyoUdp import MyoUdp
 from Plant import Plant
 from UnityUdp import UnityUdp
-from TrainingUdp import TrainingUdp
+#from TrainingUdp import TrainingUdp
 from feature_extract import feature_extract
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
@@ -35,242 +38,344 @@ import argparse
 from sklearn.externals import joblib
 
 
-def main():
+def demo():
 	# get path to where this script is being run
 	# any saved training data will be save here in a folder called "\training_data"
 	path = os.path.dirname(os.path.abspath(__file__))
+	args = parse()
 	
-    #parse command-line arguments
-	#want to combine train and number of samples
-	#maybe debug should be true if verbose > 1
+	print('parsed args')
+	# Machine learning Myo UDP trainer controller
+	trainer = MyoUDPTrainer(path, args.QUADRATIC, args.TRAIN, args.FREQUENCY, args.VERBOSE, args.PREDICT)
+
+	print('')
+
+	#trainer.delete()
+	trainer.load()
+	#trainer.addClass('randomClass')
+	trainer.trainAll()
+	#trainer.removeClass('randomClass')
+	trainer.save()
+	trainer.fit()
+	
+	print('')
+	print(str(trainer))
+	
+	print('Running prediction model:')
+	trainer.predict()
+	
+	trainer.close()
+	print('\nEnding program in 5 seconds...')
+	time.sleep(5)
+
+	
+def parse():
+	#parse command-line arguments
 	parser = argparse.ArgumentParser(description='Myo Trainer Command-line Arguments:')
 	parser.add_argument('-q', '--QUADRATIC', help='Run quadratic analysis of data instead of linear', action='store_true')
 	parser.add_argument('-t', '--TRAIN', help='Run training regime at start of program. Specify number of sample per class', default=0, type=int)
-	parser.add_argument('-p', '--PREDICT', help='Run prediction sequence. Specify number of cycles to run for', default=0, type=int)
+	parser.add_argument('-p', '--PREDICT', help='Run prediction sequence. Specify number of cycles to run for (-1 for infinite)', default=0, type=int)
 	parser.add_argument('-f', '--FREQUENCY', help='Set frequency to update at (Hz)', default=50, type=int)
 	#parser.add_argument('-i', '--UDP_IP', help='IP address to send controls to', default='127.0.0.1')
 	#parser.add_argument('-p', '--UDP_PORT', help='UDP port to send controls to', default=10001)
 	parser.add_argument('-v', '--VERBOSE', help='How much console information. 0=minimal, 1=some, 2=more, etc.', default=1, type=int)
-	#args relating to creating new data/etc.
+	#other args relating to creating new data/etc.
 	
-	args = parser.parse_args()
+	return parser.parse_args()
+
+	
+def main():
+	# get path to where this script is being run
+	# any saved training data will be save here in a folder called "\training_data"
+	path = os.path.dirname(os.path.abspath(__file__))
+	args = parse()
+	
+	# Machine learning Myo UDP trainer controller
+	trainer = MyoUDPTrainer(path, args.QUADRATIC, args.TRAIN, args.FREQUENCY, args.VERBOSE, args.PREDICT)
 	
 	
-	# Manage args here
-	
-	# Set quadratic mode
-	quadratic = args.QUADRATIC
-	
-	# Samples per class
-	train = args.TRAIN
-
-	# Delta time between cycles
-	dt = 1.0/args.FREQUENCY
-
-	# Verbosity of program output.
-	verb = args.VERBOSE
-	
-	# Number of cycles to predict for
-	pcycles = args.PREDICT
-		
-	
-	# Create data objects
-
-	# Signal Source get external bio-signal data
-	hMyo = MyoUdp()
-
-	# Training Data holds data labels 
-	#hTrain = TrainingUdp()
-
-	ROCFile = open(path + '\\..\\WrRocDefaults.xml', 'r')
-	
-	# Plant maintains current limb state (positions) during velocity control
-	hPlant = Plant(dt, ROCFile)
-
-	# Sink is output to ouside world (in this case to VIE)
-	hSink = UnityUdp() #("192.168.1.24")
-
-
-	# Start of main program execution
-	print('')
-	
-		
-
-	# Check if data already exists
-	# Manipulate data as python arrays, then convert to numpy arrays when final size reached
-	saved = isfile(path + '\\training_data\\X.pkl') and isfile(path + '\\training_data\\y.pkl') and isfile(path + '\\training_data\\className.pkl')
-	if saved:
-		# load from files
-		print('Found saved training data. Loading training data from files.')
-		TrainingData, TrainingClass, TrainingName = load(path)
-		
-	else:
-		# create new files from default
-		print('No training data found. Creating new set of training data.')
-		TrainingData = []
-		TrainingClass = []
-		TrainingName = ['Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp', 'No Movement']
-
-
-
-	if train > 0:
-		TrainingData, TrainingClass = trainAll(TrainingData, TrainingClass, TrainingName, hMyo, dt, verb, train)
-		start = time.time()
-		save(TrainingData, TrainingClass, TrainingName, path)
-		if verb >= 2:
-			print('Save training data execution time: ' + str(time.time() - start) + 's')
-	
-	if verb >= 1:
-		print('\nFitting data to ' + ('QDA' if quadratic else 'LDA') + ' model.')
-	start = time.time()
-	clf = fit(TrainingData, TrainingClass, quadratic)
-	if verb >= 2:
-		print('Fit LDA model execution time: ' + str(time.time() - start) + 's')
-	
-	print('')
-	
-	if pcycles > 0:
-		predict(TrainingName, clf, hPlant, hMyo, hSink, dt=dt, length=pcycles, verb=verb)
-		
-	print("")
-	print("Cleaning up...")
-	print("")
-	hSink.close()
-	hMyo.close()
-	#hTrain.close()
-	#hPlant.close()
-	print('Ending program in 5 seconds...')
-	time.sleep(5)
 	pass
 
-
-def trainAll(TrainingData, TrainingClass, TrainingName, hMyo, dt, verb=1, samples=20):
-	print('\n\nBeginning training Regime in 5 seconds...')
-	print('(Ready for first pose "Wrist Rotate In")')
-	time.sleep(5)
-
-	print('')
-	for classNum, className in enumerate(TrainingName):
-		TrainingData, TrainingClass = trainSingle(TrainingData, TrainingClass, TrainingName, classNum, hMyo, dt, verb, samples)
 	
-	return TrainingData, TrainingClass
-
+class MyoUDPTrainer:
 	
-def trainSingle(TrainingData, TrainingClass, TrainingName, classNum, hMyo, dt, verb=1, samples=20):
-	print('pose: ' + TrainingName[classNum])
-	time.sleep(3)
 	
-	if verb == 0:
-		print('Collecting EMG samples...')
-	
-	for i in list(range(samples)):
-		loopStart = time.time()
-		emgData = hMyo.getData()*0.01
-		f = (feature_extract(emgData)).tolist()[0]
-		TrainingData.append(f)
-		TrainingClass.append(classNum)
+	def __init__(self, path, quad = False, train = 0, freq = 50, verb = 1, plength = 0):
+		self.TrainingData = []	# List of all feature extracted samples
+		self.TrainingClass = [] # List of class indices that each sample belongs to
+		self.TrainingName = []	# Name of each class
 		
-		if verb >= 1:
-			print('%8.4f %8.4f %8.4f %8.4f' % (f[0], f[8], f[16], f[24]))
-		if verb >= 2:
-			print('Get training data loop extraction time: ' + str(time.time() - loopStart) + 's')
-		#if verb >= 3:
-			#print('Emg Buffer: \n' + str(hMyo.getData()))
+		self.path = path		# path to script location. Saved data will be saved/accessed from here.
+		self.quadratic = quad	# set Quadratic Discriminant Analysis mode. False means LDA mode
+		self.tsamples = train	# how many samples per training each class
+		self.dt = 1.0/freq		# how frequently do training and prediction loops run
+		self.verb = verb		# how much information output to the console
+		self.pcycles = plength	# how many cycles to predict for. setting to -1 means infinite cycles
+		self.hMyo = MyoUdp()	# Signal Source get external bio-signal data
+		self.ROCFile = open(self.path + '\\..\\WrRocDefaults.xml', 'r')	# ROC file for possible motion classes
+		self.hPlant = Plant(self.dt, self.ROCFile)			# Plant maintains current limb state (positions) during velocity control
+		self.hSink = UnityUdp() #("192.168.1.24")	# Sink is output to ouside world (in this case to VIE)
+		self.clf = None			# Fit training data model
 		
-		if time.time() - loopStart < dt:
-			time.sleep(dt - (time.time() - loopStart))
+
+	def trainAll(self, samples=None):
+		if samples == None:
+			samples = self.tsamples
+			
+		if samples > 0:
+			print('\n\nBeginning training Regime in 5 seconds...')
+			print('(Ready for first pose "Wrist Rotate In")')
+			time.sleep(5)
+
+			print('')
+			for classNum, className in enumerate(self.TrainingName):
+				self.trainSingle(classNum, samples)
+
+	
+	def trainSingle(self, classNum, samples=None):
+		if samples == None:
+			samples = self.tsamples
+			
+		print('pose: ' + self.TrainingName[classNum])
+		time.sleep(3)
+		
+		if self.verb == 0:
+			print('Collecting EMG samples...')
+		
+		for i in list(range(samples)):
+			loopStart = time.time()
+			emgData = self.hMyo.getData()*0.01
+			f = (feature_extract(emgData)).tolist()[0]
+			self.TrainingData.append(f)
+			self.TrainingClass.append(classNum)
+			
+			if self.verb >= 1:
+				print('%8.4f %8.4f %8.4f %8.4f' % (f[0], f[8], f[16], f[24]))
+			if self.verb >= 2:
+				print('Get training data loop extraction time: ' + str(time.time() - loopStart) + 's')
+			#if self.verb >= 3:
+				#print('Emg Buffer:\n' + str(emgData))
+			
+			loopTime = time.time() - loopStart
+			if loopTime < self.dt:
+				time.sleep(self.dt - loopTime)
+			else:
+				print("Timing Overload")
+		
+		if self.verb == 0:
+			print('Done.')
+		
+		print('')
+	
+	
+	def fit(self):
+		
+		if self.verb >= 1:
+			print('Fitting data to ' + ('QDA' if self.quadratic else 'LDA') + ' model.')
+		start = time.time()
+		
+		if len(self.TrainingData) == 0 or len(self.TrainingClass) == 0:
+			raise ValueError('Training Data or Class array(s) is empty. Did you forget to save training data?')
+		if len(self.TrainingData) != len(self.TrainingClass):
+			raise ValueError('Training Data and Training class arrays are incompatable sizes. Try generating new training data from scratch.')
+			
+		X = np.array(self.TrainingData)
+		y = np.array(self.TrainingClass)
+		# if self.verb >= 3
+			# print('Training data Numpy arrays')
+			# print('shape of X: ' + str(X.shape))
+			# print('shape of y: ' + str(y.shape))
+		if self.quadratic:
+			self.clf = QuadraticDiscriminantAnalysis()
 		else:
-			print("Timing Overload")
-	
-	if verb == 0:
-		print('Done.')
-	
-	print('')
-	return TrainingData, TrainingClass
-	
-	
-def fit(TrainingData, TrainingClass, quadratic=False):
-	if len(TrainingData) == 0 or len(TrainingClass) == 0:
-		raise ValueError('Training Data or Class array(s) is empty. Did you forget to save training data?')
-	if len(TrainingData) != len(TrainingClass):
-		raise ValueError('Training Data and Training class arrays are incompatable sizes. Try generating new training data from scratch.')
+			self.clf = LinearDiscriminantAnalysis()
+		self.clf.fit(X, y)
 		
-	X = np.array(TrainingData)
-	y = np.array(TrainingClass)
-	#print('shape of X: ' + str(X.shape))
-	#print('shape of y: ' + str(y.shape))
-	if quadratic:
-		clf = QuadraticDiscriminantAnalysis()
-	else:
-		clf = LinearDiscriminantAnalysis()
-	clf.fit(X, y)
-	
-	return clf
+		if self.verb >= 2:
+			print('Fit LDA model execution time: ' + str(time.time() - start) + 's')
 	
 	
-def predict(TrainingName, clf, hPlant, hMyo, hSink, dt=0.5, length=1000, verb = 1):
-	for i in list(range(length)):
-		loopStart = time.time()
-		prediction = TrainingName[clf.predict(feature_extract(hMyo.getData()*0.01))]
-		if verb >= 1:
-			print('prediction: ' + prediction)
-		if verb >= 2:
-			print('LDA prediction execution time: ' + str(time.time() - loopStart) + 's')
-		
-		output(hPlant, hMyo, hSink, TrainingName, prediction)
+	#maybe break up into predictSingle and predictAll
+	def predict(self, cycles=None):
+		if cycles == None:
+			cycles = self.pcycles
+			
+		i = 0
+		while i != cycles:
+			loopStart = time.time()
+			prediction = self.TrainingName[self.clf.predict(feature_extract(self.hMyo.getData()*0.01))]
+			if self.verb >= 1:
+				print('prediction: ' + prediction)
+			if self.verb >= 2:
+				print(('QDA' if self.quadratic else 'LDA') + ' prediction execution time: ' + str(time.time() - loopStart) + 's')
+			
+			self.output(prediction)
 
-		if time.time() - loopStart < dt:
-			time.sleep(dt - (time.time() - loopStart))
+			loopTime = time.time() - loopStart
+			if loopTime < self.dt:
+				time.sleep(self.dt - loopTime)
+			else:
+				print("Timing Overload")
+			
+			i += 1
+
+			
+	def output(self, classDecision):
+		# Move joints using classifier
+		try:
+			jointId, jointDir = self.hPlant.class_map(classDecision)
+
+			# Set joint velocities
+			self.hPlant.velocity[:self.hPlant.NUM_JOINTS] = [0.0] * self.hPlant.NUM_JOINTS
+			if jointId:
+				for i in jointId:
+					self.hPlant.velocity[i] = jointDir
+
+			self.hPlant.update()
+
+			# perform joint motion update
+			vals = self.hMyo.getAngles()
+			self.hPlant.position[3] = vals[1] + math.pi/2
+
+			# transmit output
+			self.hSink.sendJointAngles(self.hPlant.position)
+	
+		except:
+			print('Class "' + classDecision + '" not available from ROC table.')
+			#jointId, jointDir = [[],0]
+			pass	
+	
+	
+	def save(self, path=None):
+		if path == None:
+			path = self.path
+			
+		start = time.time()
+		
+		print('\nSaving emg feature data to test file')
+		
+		if not os.path.exists(path + '\\training_data'):
+			os.makedirs(path + '\\training_data')
+		
+		joblib.dump(np.array(self.TrainingData), path + '\\training_data\\X.pkl')
+		joblib.dump(np.array(self.TrainingClass), path + '\\training_data\\y.pkl')
+		joblib.dump(self.TrainingName, path + '\\training_data\\className.pkl')
+		
+		if self.verb >= 2:
+			print('Save training data execution time: ' + str(time.time() - start) + 's')
+
+
+	def load(self, path=None):
+		if path == None:
+			path = self.path
+		
+		# Check if data already exists
+		# Manipulate data as python arrays, then convert to numpy arrays when final size reached
+		saved = isfile(path + '\\training_data\\X.pkl') and isfile(path + '\\training_data\\y.pkl') and isfile(path + '\\training_data\\className.pkl')
+		if saved:
+			# load from files
+			print('Found saved training data. Loading training data from files.')
+			self.TrainingData = joblib.load(path + '\\training_data\\X.pkl').tolist()
+			self.TrainingClass = joblib.load(path + '\\training_data\\y.pkl').tolist()
+			self.TrainingName = joblib.load(path + '\\training_data\\className.pkl')	
 		else:
-			print("Timing Overload")
+			print('No training data found.')
+			self.create(path)
+			
+		#perform error checks here:
+		#if error: self.create()
+		pass
+			
+
+	def delete(self, path=None):
+		print('Deleting saved data.')
 		
-
-def output(hPlant, hMyo, hSink, TrainingName, classDecision):
-	# Move joints using classifier
-	jointId, jointDir = hPlant.class_map(classDecision)
+		if path == None:
+			path = self.path
 	
-	# Set joint velocities
-	hPlant.velocity[:hPlant.NUM_JOINTS] = [0.0] * hPlant.NUM_JOINTS
-	if jointId:
-		for i in jointId:
-			hPlant.velocity[i] = jointDir
+		if isfile(path + '\\training_data\\X.pkl'):
+			os.remove(path + '\\training_data\\X.pkl')
+		if isfile(path + '\\training_data\\y.pkl'):
+			os.remove(path + '\\training_data\\y.pkl')
+		if isfile(path + '\\training_data\\className.pkl'):
+			os.remove(path + '\\training_data\\className.pkl')
 
-	hPlant.update()
 
-	# perform joint motion update
-	vals = hMyo.getAngles()
-	hPlant.position[3] = vals[1] + math.pi/2
-
-	# transmit output
-	hSink.sendJointAngles(hPlant.position)
+	def create(self, path=None):
+		if path == None:
+			path = self.path
+	
+		# create new data from default
+		print('Creating new set of training data.')
+		self.TrainingData = []
+		self.TrainingClass = []
+		#TrainingName should be loaded from the current ROC file, or start blank, and then addClass for each class
+		self.TrainingName = ['Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp', 'No Movement']
 		
+		#save empty arrays to files @ path\\training_data\\<array>
+		pass
+			
+	
+	def close(self):
+		print('')
+		print('Cleaning up...')
+		print('')
+		self.hSink.close()
+		self.hMyo.close()
+	
+	
+	def addClass(self, newClass):
+		if newClass not in self.TrainingName:
+			self.TrainingName.append(newClass)
+		else:
+			raise ValueError('Cannot add class "' + newClass + '" to training set. Class already exists in object.')
+
+
+	def removeClass(self, toRemove):
+		print('Attemptint to remove class "' + toRemove +'."')
 		
-def save(TrainingData, TrainingClass, TrainingName, path):
-	print('\n')
-	print('Saving emg feature data to test file')
-	
-	if not os.path.exists(path + '\\training_data'):
-		os.makedirs(path + '\\training_data')
-	
-	joblib.dump(np.array(TrainingData), path + '\\training_data\\X.pkl')
-	joblib.dump(np.array(TrainingClass), path + '\\training_data\\y.pkl')
-	joblib.dump(TrainingName, path + '\\training_data\\className.pkl')
+		newData = []
+		newClass = []
+		newName = []
+		remIndex = None
+		
+		for i in range(len(self.TrainingName)):
+			if self.TrainingName[i] != toRemove:
+				newName.append(self.TrainingName[i])
+			else:
+				if remIndex == None:
+					remIndex = i
+				else:
+					raise ValueError('Multiple instances of class "' + toRemove + '" in training class list.')
+		
+		if remIndex == None:
+			raise ValueError('No class named "' + toRemove + '" was found in current training data.')
+		else:
+			for i in range(len(self.TrainingClass)):
+				if self.TrainingClass[i] != remIndex:
+					newClass.append(self.TrainingClass[i])
+					newData.append(self.TrainingData[i])
+		
+		self.TrainingData = newData
+		self.TrainingClass = newClass
+		self.TrainingName = newName
 
 
-def load(path):
-	#need to error check
-	TrainingData = joblib.load(path + '\\training_data\\X.pkl').tolist()
-	TrainingClass = joblib.load(path + '\\training_data\\y.pkl').tolist()
-	TrainingName = joblib.load(path + '\\training_data\\className.pkl')
-	
-	return TrainingData, TrainingClass, TrainingName
+	def __str__(self):
+		#perhaps adjust output based on VERBOSE
+		sizes = [0]*len(self.TrainingName)
+		for i in range(len(self.TrainingClass)):
+			sizes[self.TrainingClass[i]] += 1
+			
+		string = 'Myo Trainer Object\n'
+		for i, name in enumerate(self.TrainingName):
+			string += 'Class: ' + name + '\tSamples: ' + str(sizes[i]) + '\n'
+		
+		return string		
 
-	
-def addClass(newClass, TrainingName=[]):
-	TrainingName.append(newClass)
-	return TrainingName
-	
-	
+		
 if __name__ == "__main__":
-	main()
+	demo() #run demo trainer
+	#main() #run unity communicator
+	pass
 

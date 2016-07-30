@@ -112,7 +112,7 @@ class MyoUDPTrainer:
 		self.verb = verb		# how much information output to the console
 		self.pcycles = plength	# how many cycles to predict for. setting to -1 means infinite cycles
 		self.hMyo = MyoUdp()	# Signal Source get external bio-signal data
-		self.ROCFile = open(self.path + '\\..\\WrRocDefaults.xml', 'r')	# ROC file for possible motion classes
+		self.ROCFile = open(os.path.join(self.path,'..','WrRocDefaults.xml'), 'r')	# ROC file for possible motion classes
 		self.hPlant = Plant(self.dt, self.ROCFile)			# Plant maintains current limb state (positions) during velocity control
 		self.hSink = UnityUdp() #("192.168.1.24")	# Sink is output to ouside world (in this case to VIE)
 		self.clf = None			# Fit training data model
@@ -253,13 +253,15 @@ class MyoUDPTrainer:
 		start = time.time()
 		
 		print('\nSaving emg feature data to test file')
+		trainFolder = os.path.join(path,'training_data')
+
+
+		if not os.path.exists(trainFolder):
+			os.makedirs(trainFolder)
 		
-		if not os.path.exists(path + '\\training_data'):
-			os.makedirs(path + '\\training_data')
-		
-		joblib.dump(np.array(self.TrainingData), path + '\\training_data\\X.pkl')
-		joblib.dump(np.array(self.TrainingClass), path + '\\training_data\\y.pkl')
-		joblib.dump(self.TrainingName, path + '\\training_data\\className.pkl')
+		joblib.dump(np.array(self.TrainingData), trainFolder +  os.sep + 'X.pkl')
+		joblib.dump(np.array(self.TrainingClass), trainFolder + os.sep + 'y.pkl')
+		joblib.dump(self.TrainingName, trainFolder + os.sep + 'className.pkl')
 		
 		if self.verb >= 2:
 			print('Save training data execution time: ' + str(time.time() - start) + 's')
@@ -268,16 +270,17 @@ class MyoUDPTrainer:
 	def load(self, path=None):
 		if path == None:
 			path = self.path
+		trainFolder = os.path.join(path,'training_data')
 		
 		# Check if data already exists
 		# Manipulate data as python arrays, then convert to numpy arrays when final size reached
-		saved = isfile(path + '\\training_data\\X.pkl') and isfile(path + '\\training_data\\y.pkl') and isfile(path + '\\training_data\\className.pkl')
+		saved = isfile(trainFolder + os.sep + 'X.pkl') and isfile(trainFolder + os.sep + 'y.pkl') and isfile(trainFolder + os.sep + 'className.pkl')
 		if saved:
 			# load from files
 			print('Found saved training data. Loading training data from files.')
-			self.TrainingData = joblib.load(path + '\\training_data\\X.pkl').tolist()
-			self.TrainingClass = joblib.load(path + '\\training_data\\y.pkl').tolist()
-			self.TrainingName = joblib.load(path + '\\training_data\\className.pkl')	
+			self.TrainingData = joblib.load(trainFolder + os.sep + 'X.pkl').tolist()
+			self.TrainingClass = joblib.load(trainFolder + os.sep + 'y.pkl').tolist()
+			self.TrainingName = joblib.load(trainFolder + os.sep + 'className.pkl')	
 		else:
 			print('No training data found.')
 			self.create(path)
@@ -292,13 +295,14 @@ class MyoUDPTrainer:
 		
 		if path == None:
 			path = self.path
+		trainFolder = os.path.join(path,'training_data') + os.sep
 	
-		if isfile(path + '\\training_data\\X.pkl'):
-			os.remove(path + '\\training_data\\X.pkl')
-		if isfile(path + '\\training_data\\y.pkl'):
-			os.remove(path + '\\training_data\\y.pkl')
-		if isfile(path + '\\training_data\\className.pkl'):
-			os.remove(path + '\\training_data\\className.pkl')
+		if isfile(trainFolder + 'X.pkl'):
+			os.remove(trainFolder + 'X.pkl')
+		if isfile(trainFolder + 'y.pkl'):
+			os.remove(trainFolder + 'y.pkl')
+		if isfile(trainFolder + 'className.pkl'):
+			os.remove(trainFolder + 'className.pkl')
 
 
 	def create(self, path=None):

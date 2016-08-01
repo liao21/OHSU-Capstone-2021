@@ -40,82 +40,48 @@ import argparse
 from sklearn.externals import joblib
 import socket
 import errno
+import random
 
 
 def demo():
-    # get path to where this script is being run
-    # any saved training data will be save here in a folder called "\training_data"
-    path = os.path.dirname(os.path.abspath(__file__))
     args = parse()
     
     # Machine learning Myo UDP trainer controller
-    trainer = MyoUDPTrainer(path, args.QUADRATIC, args.TRAIN, args.FREQUENCY, args.VERBOSE, args.PREDICT)
-    
+    trainer = MyoUDPTrainer(args)
 
-    UDP_IP = args.UDP_IP
-    PYTHON_SEND_PORT = args.PYTHON_PORT
-    UNITY_RECEIVE_PORT = args.UNITY_PORT
-    
-    
-
-    
-    UnityReceiverSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    UnityReceiverSock.bind((UDP_IP, UNITY_RECEIVE_PORT))
-    UnityReceiverSock.setblocking(0)
-    #fcntl.fcntl(UnityReceiverSock, fcntl.F_SETFL, os.O_NONBLOCK) #set receiver to be non-blocking
-    #data, addr = UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes
-    
-    print('UDP Unity reciever has started.')
-    print('IP Address: ' + str(UDP_IP))
-    print('Port: ' + str(UNITY_RECEIVE_PORT) + '\n')
-	
-	
-	
-    PythonSenderSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    #PythonSenderSock.sendto(MESSAGE, (UDP_IP, PYTHON_SEND_PORT)) #send something from python to unity
-	
-    print('UDP Python sender has started.')
-    print('IP Address: ' + str(UDP_IP))
-    print('Port: ' + str(PYTHON_SEND_PORT) + '\n')
-	
     #handshake between unity and python
+    trainer.handshake()
+    
+    
+    
+    # print('Listening for Unity signals. Sending Python signals')
+    # i = 0
     # while True:
-        # data, addr = receive(UnityReceiverSock)
-        # if (Data != None and addr != None):
-            # break
-    #take data (A) and return (A+1,B)
-    #wait for (B+1)
-    #can start sending to unity
-    
-    
-    print('Listening for Unity signals. Sending Python signals')
-    i = 0
-    while True:
-        i += 1
+        # i += 1
 		
-        #sender
-        if i % 1234567 == 0:
-            print('sending udp message to unity: ' + str(i))
-            PythonSenderSock.sendto(bytearray('Message from python. i = ' + str(i), 'utf-8'), (UDP_IP, PYTHON_SEND_PORT))
+        # #sender
+        # if i % 1234567 == 0:
+            # print('sending udp message to unity: ' + str(i))
+            # PythonSenderSock.sendto(bytearray(str(i), 'utf-8'), (UDP_IP, PYTHON_SEND_PORT))
             
             
-        #receiver
-        try:
-            data, addr = UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes
-        except socket.error as e:
-            err = e.args[0]
-            if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
-                #sleep(1)
-                #print('No data available')
-                continue
-            else:
-                # a "real" error occurred
-                print(e)
-                sys.exit(1)
-        else:
-            #do stuff with data from receiver
-            data = bytearray(data)
-            print('received message: ' + str(data))
+        # #receiver
+        # try:
+            # data, addr = UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes
+        # except socket.error as e:
+            # err = e.args[0]
+            # if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
+                # #sleep(1)
+                # #print('No data available')
+                # continue
+            # else:
+                # # a "real" error occurred
+                # print(e)
+                # sys.exit(1)
+        # else:
+            # #do stuff with data from receiver
+            # data = bytearray(data)
+            # print('received message: ' + str(data))
             
             
             
@@ -175,26 +141,10 @@ def demo():
     time.sleep(5)
 
     
-#maybe send and receive should be in the trainer class	
-def receive(UnityReceiverSock):
-	#receiver
-	try:
-		data, addr = UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes
-	except socket.error as e:
-		err = e.args[0]
-		if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
-			return None, None
-		else:
-			# a "real" error occurred
-			print(e)
-			sys.exit(1)
-	else:
-		#do stuff with data from receiver
-		return data, addr
+
     
     
-def send(PythonSenderSock, UDP_IP, PYTHON_SEND_PORT, message):
-	PythonSenderSock.sendto(bytearray(message, 'utf-8'), (UDP_IP, PYTHON_SEND_PORT))
+
    
     
 def parse():
@@ -220,8 +170,8 @@ def main():
     args = parse()
     
     # Machine learning Myo UDP trainer controller
-    trainer = MyoUDPTrainer(path, args.QUADRATIC, args.TRAIN, args.FREQUENCY, args.VERBOSE, args.PREDICT)
-    
+    #trainer = MyoUDPTrainer(path, args.QUADRATIC, args.TRAIN, args.FREQUENCY, args.VERBOSE, args.PREDICT)
+    trainer = MyoUDPTrainer(args)
     
     pass
 
@@ -234,22 +184,45 @@ def UnityTrainer():
 class MyoUDPTrainer:
     
     
-    def __init__(self, path, quad = False, train = 0, freq = 50, verb = 1, plength = 0):
-        self.TrainingData = []  # List of all feature extracted samples
-        self.TrainingClass = [] # List of class indices that each sample belongs to
-        self.TrainingName = []  # Name of each class
+
+    def __init__(self, args, path=None):
+        self.TrainingData = []                      # List of all feature extracted samples
+        self.TrainingClass = []                     # List of class indices that each sample belongs to
+        self.TrainingName = []                      # Name of each class
         
-        self.path = path        # path to script location. Saved data will be saved/accessed from here.
-        self.quadratic = quad   # set Quadratic Discriminant Analysis mode. False means LDA mode
-        self.tsamples = train   # how many samples per training each class
-        self.dt = 1.0/freq      # how frequently do training and prediction loops run
-        self.verb = verb        # how much information output to the console
-        self.pcycles = plength  # how many cycles to predict for. setting to -1 means infinite cycles
-        self.hMyo = MyoUdp()    # Signal Source get external bio-signal data
+        if path == None:                            # path to script location. Saved data will be saved/accessed from here.
+            self.path = os.path.dirname(os.path.abspath(__file__))
+        else:
+            self.path = path
+               
+        self.quadratic = args.QUADRATIC             # set Quadratic Discriminant Analysis mode. False means LDA mode
+        self.tsamples = args.TRAIN                  # how many samples per training each class
+        self.dt = 1.0/args.FREQUENCY                # how frequently do training and prediction loops run
+        self.verb = args.VERBOSE                    # how much information output to the console
+        self.pcycles = args.PREDICT                 # how many cycles to predict for. setting to -1 means infinite cycles
+        self.hMyo = MyoUdp()                        # Signal Source get external bio-signal data
         self.ROCFile = open(os.path.join(self.path,'..','WrRocDefaults.xml'), 'r')  # ROC file for possible motion classes
-        self.hPlant = Plant(self.dt, self.ROCFile)          # Plant maintains current limb state (positions) during velocity control
-        self.hSink = UnityUdp() #("192.168.1.24")   # Sink is output to ouside world (in this case to VIE)
-        self.clf = None         # Fit training data model
+        self.hPlant = Plant(self.dt, self.ROCFile)  # Plant maintains current limb state (positions) during velocity control
+        self.hSink = UnityUdp()                     #("192.168.1.24")   # Sink is output to ouside world (in this case to VIE)
+        self.clf = None                             # Fit training data model
+        
+        
+        self.UDP_IP = args.UDP_IP                   # IP address to communicate with unity through (directed to localhost).
+        self.PYTHON_SEND_PORT = args.PYTHON_PORT    # from python send data to unity using this port
+        self.UNITY_RECEIVE_PORT = args.UNITY_PORT   # from unity receive data in python using this port
+        
+        # UDP communication to and from Unity
+        self.UnityReceiverSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.UnityReceiverSock.bind((self.UDP_IP, self.UNITY_RECEIVE_PORT))
+        self.UnityReceiverSock.setblocking(0)
+        #https://docs.python.org/2/library/socket.html consider settimeout(<small number>) instead of disabling blocking
+        print('UnityPythonUDP UI IP: ' + str(self.UDP_IP))
+        print('UnityUDP UI Port: ' + str(self.UNITY_RECEIVE_PORT))
+	
+        self.PythonSenderSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        #print('PythonUDP UI IP: ' + str(self.UDP_IP))
+        print('PythonUDP UI Port: ' + str(self.PYTHON_SEND_PORT))
+        print('')
         
 
     def trainAll(self, samples=None):
@@ -498,7 +471,59 @@ class MyoUDPTrainer:
         self.TrainingClass = newClass
         self.TrainingName = newName
 
+    
+    def send(self, message):
+        self.PythonSenderSock.sendto(bytearray(message, 'utf-8'), (self.UDP_IP, self.PYTHON_SEND_PORT))
+    
+    
+    def receive(self):
+        #receiver
+        try:
+            data, addr = self.UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes
+        except socket.error as e:
+            err = e.args[0]
+            if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
+                return None, None
+            else:
+                # a "real" error occurred
+                print(e)
+                sys.exit(1)
+        else:
+            #do stuff with data from receiver
+            return data, addr
+        
 
+    def handshake(self):
+        #take data (A) and return (A+1,B)
+        #wait for (B+1)
+        #can start sending to unity
+        
+        #set receive to blocking so that python waits for unity to send something
+        self.UnityReceiverSock.setblocking(1)
+        acquainted = False      # has the handshake been successful
+        print('Attempting handshake with Unity.')
+        
+        data, addr = self.UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes    
+        data = bytearray(data)
+        print('Received handshake request from Unity: ' + str(int(data[0])))
+        
+        #send response with random byte
+        response = random.randint(0,255)
+        print('Sending response to Unity: ' + str(data[0]+1) + ' ' + str(response))
+        self.send(str(data[0]+1) + ' ' + str(response))
+        
+        #wait for second response
+        while not acquainted:
+            data, addr = self.UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes
+            data = bytearray(data)
+            print('Received handshake response from Unity: ' + str(int(data[0])))
+            if data[0] == response + 1:
+                acquainted = True
+            
+        print('Successful handshake between Unity and Python.')
+        self.UnityReceiverSock.setblocking(0)
+        
+        
     def __str__(self):
         #perhaps adjust output based on VERBOSE
         sizes = [0]*len(self.TrainingName)

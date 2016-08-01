@@ -21,6 +21,8 @@ WIP add UDP communication to/from unity for training cues and other functionalit
 @author: D. Samson
 """
 
+
+#perhaps import only into necessary scripts
 import sys
 import time
 import math
@@ -36,6 +38,8 @@ import os
 from os.path import isfile
 import argparse
 from sklearn.externals import joblib
+import socket
+import errno
 
 
 def demo():
@@ -44,30 +48,154 @@ def demo():
     path = os.path.dirname(os.path.abspath(__file__))
     args = parse()
     
-    print('parsed args')
     # Machine learning Myo UDP trainer controller
     trainer = MyoUDPTrainer(path, args.QUADRATIC, args.TRAIN, args.FREQUENCY, args.VERBOSE, args.PREDICT)
-
-    print('')
-
-    #trainer.delete()
-    trainer.load()
-    #trainer.addClass('randomClass')
-    trainer.trainAll()
-    #trainer.removeClass('randomClass')
-    trainer.save()
-    trainer.fit()
     
-    print('')
-    print(str(trainer))
+
+    UDP_IP = args.UDP_IP
+    PYTHON_SEND_PORT = args.PYTHON_PORT
+    UNITY_RECEIVE_PORT = args.UNITY_PORT
     
-    print('Running prediction model:')
-    trainer.predict()
+    
+
+    
+    UnityReceiverSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    UnityReceiverSock.bind((UDP_IP, UNITY_RECEIVE_PORT))
+    UnityReceiverSock.setblocking(0)
+    #fcntl.fcntl(UnityReceiverSock, fcntl.F_SETFL, os.O_NONBLOCK) #set receiver to be non-blocking
+    #data, addr = UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes
+    
+    print('UDP Unity reciever has started.')
+    print('IP Address: ' + str(UDP_IP))
+    print('Port: ' + str(UNITY_RECEIVE_PORT) + '\n')
+	
+	
+	
+    PythonSenderSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    #PythonSenderSock.sendto(MESSAGE, (UDP_IP, PYTHON_SEND_PORT)) #send something from python to unity
+	
+    print('UDP Python sender has started.')
+    print('IP Address: ' + str(UDP_IP))
+    print('Port: ' + str(PYTHON_SEND_PORT) + '\n')
+	
+    #handshake between unity and python
+    # while True:
+        # data, addr = receive(UnityReceiverSock)
+        # if (Data != None and addr != None):
+            # break
+    #take data (A) and return (A+1,B)
+    #wait for (B+1)
+    #can start sending to unity
+    
+    
+    print('Listening for Unity signals. Sending Python signals')
+    i = 0
+    while True:
+        i += 1
+		
+        #sender
+        if i % 1234567 == 0:
+            print('sending udp message to unity: ' + str(i))
+            PythonSenderSock.sendto(bytearray('Message from python. i = ' + str(i), 'utf-8'), (UDP_IP, PYTHON_SEND_PORT))
+            
+            
+        #receiver
+        try:
+            data, addr = UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes
+        except socket.error as e:
+            err = e.args[0]
+            if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
+                #sleep(1)
+                #print('No data available')
+                continue
+            else:
+                # a "real" error occurred
+                print(e)
+                sys.exit(1)
+        else:
+            #do stuff with data from receiver
+            data = bytearray(data)
+            print('received message: ' + str(data))
+            
+            
+            
+    #wait for unity to load training scene
+    #add classes into model (send to unity lists)
+    #listen to changes in lists made by unity
+    #listen for begin training
+    #enter training loop
+    
+    #after training loop, fit model
+    #infinite control of vMPL
+    #(should split training and running vMPL into multiple functions)
+    
+    
+    
+    # print('')
+
+    # trainer.delete()
+    # trainer.create()
+    
+    # testClasses = ['Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp', 'No Movement']
+    # #import poses example
+    # for pose in testClasses:
+        # try:
+            # trainer.addClass(pose)
+        # except:
+            # pass
+    
+    # trainer.addClass('randomClass')
+    
+    # trainer.removeClass('randomClass')
+    # trainer.removeClass('No Movement')
+    # trainer.addClass('No Movement')
+    
+    # try:
+        # trainer.addClass('Hand Open')
+    # except:
+        # print('tried to add class already in list.')
+        # pass
+	
+	
+    # #trainer.load()
+    # #trainer.addClass('randomClass')
+    # #trainer.trainAll()
+    # #trainer.removeClass('randomClass')
+    # #trainer.save()
+    # #trainer.fit()
+    
+    # print('')
+    # print(str(trainer))
+	
+    # print('Running prediction model:')
+    # trainer.predict()
     
     trainer.close()
     print('\nEnding program in 5 seconds...')
     time.sleep(5)
 
+    
+#maybe send and receive should be in the trainer class	
+def receive(UnityReceiverSock):
+	#receiver
+	try:
+		data, addr = UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes
+	except socket.error as e:
+		err = e.args[0]
+		if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
+			return None, None
+		else:
+			# a "real" error occurred
+			print(e)
+			sys.exit(1)
+	else:
+		#do stuff with data from receiver
+		return data, addr
+    
+    
+def send(PythonSenderSock, UDP_IP, PYTHON_SEND_PORT, message):
+	PythonSenderSock.sendto(bytearray(message, 'utf-8'), (UDP_IP, PYTHON_SEND_PORT))
+   
     
 def parse():
     #parse command-line arguments
@@ -76,8 +204,9 @@ def parse():
     parser.add_argument('-t', '--TRAIN', help='Run training regime at start of program. Specify number of sample per class', default=0, type=int)
     parser.add_argument('-p', '--PREDICT', help='Run prediction sequence. Specify number of cycles to run for (-1 for infinite)', default=0, type=int)
     parser.add_argument('-f', '--FREQUENCY', help='Set frequency to update at (Hz)', default=50, type=int)
-    #parser.add_argument('-i', '--UDP_IP', help='IP address to send controls to', default='127.0.0.1')
-    #parser.add_argument('-p', '--UDP_PORT', help='UDP port to send controls to', default=10001)
+    parser.add_argument('-i', '--UDP_IP', help='IP address to send controls to', default='127.0.0.1')
+    parser.add_argument('-u', '--UNITY_PORT', help='UDP port to receive unity packets from', default=8051)
+    parser.add_argument('-y', '--PYTHON_PORT', help='UDP port to send python controls to', default=8050)
     parser.add_argument('-v', '--VERBOSE', help='How much console information. 0=minimal, 1=some, 2=more, etc.', default=1, type=int)
     #other args relating to creating new data/etc.
     
@@ -96,7 +225,12 @@ def main():
     
     pass
 
-    
+
+def UnityTrainer():
+	#run training program paired with Unity
+	pass
+
+
 class MyoUDPTrainer:
     
     

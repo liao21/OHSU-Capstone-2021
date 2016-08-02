@@ -9,7 +9,7 @@ Output timing information
 
 Most of the functionality is controlled by command line flags
 e.g. if you want to do a demo (plus timing info), you can run: 
-'python MyoUDPTrainer.py --VERBOSE 2 --TRAIN 20  --PREDICT 1000'
+'python MyoUDPTrainer.py --EXECUTE demo --VERBOSE 2 --TRAIN 20  --PREDICT 1000'
 Training builds on whatever saved training data is in the directory, so if you 
 want to train from scratch, delete all of the files in the 'python\training_data\'
 folder, and then rerun the script with the train flag (alternatively run delete() function).
@@ -43,114 +43,111 @@ import errno
 import random
 
 
-def demo():
-    args = parse()
+def UnityTrainer(args):
+    #Run Myo trainer in Unity. Then control vMPL using training data
+    STATES = enum(waitingHandshake=0, waitingStart=1, setupRecord=2, waitingRecord=3, recording=4, cooldown=5, inactive=6, off=7, none=8)
     
+    #message = ''    # most recent message from Unity
+    
+    state = STATES.waitingHandshake
     # Machine learning Myo UDP trainer controller
     trainer = MyoUDPTrainer(args)
 
     #handshake between unity and python
     trainer.handshake()
     
+    state = STATES.waitingStart
+    
+    #get possible classes to train
+    #send to unity for UI possible
+    #wait for requests from unity to add individual classes to training set, then add in python class.
+    #wait for signal to begin training
+    #run training regime, while telling unity UI what to display
+    #control vMPL with newly trained data. (allow for more training)
+    
+    #communication protocal between unity and python
+    # e.g. Unity -> '<command code><data>' -> Python
+    # Python -> '<Acknowledgement>' -> Unity
+    
+    # Set arm to demonstration position
+    trainer.hPlant.position[0] = 1
+    trainer.hPlant.position[3] = 1.3
+    trainer.hSink.sendJointAngles(trainer.hPlant.position)
     
     
-    # print('Listening for Unity signals. Sending Python signals')
-    # i = 0
-    # while True:
-        # i += 1
-		
-        # #sender
-        # if i % 1234567 == 0:
-            # print('sending udp message to unity: ' + str(i))
-            # PythonSenderSock.sendto(bytearray(str(i), 'utf-8'), (UDP_IP, PYTHON_SEND_PORT))
-            
-            
-        # #receiver
-        # try:
-            # data, addr = UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes
-        # except socket.error as e:
-            # err = e.args[0]
-            # if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
-                # #sleep(1)
-                # #print('No data available')
-                # continue
-            # else:
-                # # a "real" error occurred
-                # print(e)
-                # sys.exit(1)
-        # else:
-            # #do stuff with data from receiver
-            # data = bytearray(data)
-            # print('received message: ' + str(data))
-            
-            
-            
-    #wait for unity to load training scene
-    #add classes into model (send to unity lists)
-    #listen to changes in lists made by unity
-    #listen for begin training
-    #enter training loop
-    
-    #after training loop, fit model
-    #infinite control of vMPL
-    #(should split training and running vMPL into multiple functions)
+    while state == STATES.waitingStart:
+        # wait for signal to begin 'b'
+        data, addr = trainer.receiveBlock()
+        data = bytearray(data)
+        if data[0] == ord('b'):
+            state = STATES.setupRecord
+            print('Beginning training session.\n')
     
     
+    #adjust in future to read in classes based on unity settings/take all from ROC file
+    trainer.TrainingName = ['No Movement', 'Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Adduction',
+            'Wrist Abduction', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp']
     
-    # print('')
-
-    # trainer.delete()
-    # trainer.create()
+    for pose in trainer.TrainingName:
+        # Set arm to demonstration position
+        trainer.hPlant.position[0] = 1
+        trainer.hPlant.position[3] = 1.3
+        trainer.hSink.sendJointAngles(trainer.hPlant.position)
+        
+        #train each pose while communicating with unity UI
+        #tell unity pose name to be trained
+        print('waiting for acknowledgement that unity received pose: ' + pose + '.')
+        while data == None or data[0] != ord('a'):
+            trainer.send(pose)
+            data, addr = trainer.receiveBlock()
+            print('received packet: ' + str(data))
+            if data != None:
+                data = bytearray(data)
+        
+        start = time.time()
+        while time.time() - start < 1:
+            trainer.output(pose)
+        
+        state = STATES.waitingRecord
+        print('waiting for training signal.')
+        #wait for unity to signal recording of pose
+        while data == None or data[0] != ord('r'):
+            trainer.output(pose)
+            data, addr = trainer.receiveBlock()
+            print('received packet: ' + str(data))
+            if data != None:
+                data = bytearray(data)
+        trainer.send('a')
+        trainer.trainSingle(trainer.TrainingName.index(pose), pause=1)
+        trainer.send('d')
+        
+        #zero out hand joints
+        for i in list(range(len(trainer.hPlant.position))):
+            trainer.hPlant.position[i] = 0
+        #trainer.hPlant.position[0] = 0
+        #trainer.hPlant.position[3] = 1.3
+        trainer.hSink.sendJointAngles(trainer.hPlant.position)
     
-    # testClasses = ['Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp', 'No Movement']
-    # #import poses example
-    # for pose in testClasses:
-        # try:
-            # trainer.addClass(pose)
-        # except:
-            # pass
+    trainer.save()
+    trainer.fit()
     
-    # trainer.addClass('randomClass')
-    
-    # trainer.removeClass('randomClass')
-    # trainer.removeClass('No Movement')
-    # trainer.addClass('No Movement')
-    
-    # try:
-        # trainer.addClass('Hand Open')
-    # except:
-        # print('tried to add class already in list.')
-        # pass
+    print('')
+    print(str(trainer))
 	
-	
-    # #trainer.load()
-    # #trainer.addClass('randomClass')
-    # #trainer.trainAll()
-    # #trainer.removeClass('randomClass')
-    # #trainer.save()
-    # #trainer.fit()
+    print('Running prediction model:')
+    trainer.predictMult(-1)
     
-    # print('')
-    # print(str(trainer))
-	
-    # print('Running prediction model:')
-    # trainer.predict()
     
     trainer.close()
     print('\nEnding program in 5 seconds...')
     time.sleep(5)
-
-    
-
-    
-    
-
-   
+  
     
 def parse():
     #parse command-line arguments
     parser = argparse.ArgumentParser(description='Myo Trainer Command-line Arguments:')
     parser.add_argument('-q', '--QUADRATIC', help='Run quadratic analysis of data instead of linear', action='store_true')
+    parser.add_argument('-d', '--DELETE', help='Delete currently saved training data if any.', action='store_true')
     parser.add_argument('-t', '--TRAIN', help='Run training regime at start of program. Specify number of sample per class', default=0, type=int)
     parser.add_argument('-p', '--PREDICT', help='Run prediction sequence. Specify number of cycles to run for (-1 for infinite)', default=0, type=int)
     parser.add_argument('-f', '--FREQUENCY', help='Set frequency to update at (Hz)', default=50, type=int)
@@ -158,31 +155,62 @@ def parse():
     parser.add_argument('-u', '--UNITY_PORT', help='UDP port to receive unity packets from', default=8051)
     parser.add_argument('-y', '--PYTHON_PORT', help='UDP port to send python controls to', default=8050)
     parser.add_argument('-v', '--VERBOSE', help='How much console information. 0=minimal, 1=some, 2=more, etc.', default=1, type=int)
+    parser.add_argument('-e', '--EXECUTE', help='What "Main()" should this script execute: UnityTrainer, demo, main, etc.?', type=str, default='UnityTrainer')
     #other args relating to creating new data/etc.
     
     return parser.parse_args()
 
     
-def main():
-    # get path to where this script is being run
-    # any saved training data will be save here in a folder called "\training_data"
-    path = os.path.dirname(os.path.abspath(__file__))
-    args = parse()
-    
+def main(args):
     # Machine learning Myo UDP trainer controller
-    #trainer = MyoUDPTrainer(path, args.QUADRATIC, args.TRAIN, args.FREQUENCY, args.VERBOSE, args.PREDICT)
     trainer = MyoUDPTrainer(args)
     
     pass
-
-
-def UnityTrainer():
-	#run training program paired with Unity
-	pass
-
-
-class MyoUDPTrainer:
     
+
+def demo(args):
+    #console demo of training
+    
+    trainer = MyoUDPTrainer(args)
+    print('')
+
+    if args.DELETE == True:
+        trainer.delete()
+    #trainer.create()
+    
+    testClasses = ['Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp', 'No Movement']
+    #import poses example
+    for pose in testClasses:
+        try:
+            trainer.addClass(pose)
+        except:
+            pass
+    
+    # trainer.addClass('randomClass')
+    
+    # trainer.removeClass('randomClass')
+    # trainer.removeClass('No Movement')
+    # trainer.addClass('No Movement')
+    
+    if args.DELETE == False:
+        trainer.load()
+    trainer.trainAll()
+    trainer.save()
+    trainer.fit()
+    
+    print('')
+    print(str(trainer))
+	
+    print('Running prediction model:')
+    trainer.predictMult()
+    pass
+
+    
+def enum(**enums):
+    return type('Enum', (), enums)
+
+    
+class MyoUDPTrainer:
     
 
     def __init__(self, args, path=None):
@@ -223,7 +251,7 @@ class MyoUDPTrainer:
         #print('PythonUDP UI IP: ' + str(self.UDP_IP))
         print('PythonUDP UI Port: ' + str(self.PYTHON_SEND_PORT))
         print('')
-        
+
 
     def trainAll(self, samples=None):
         if samples == None:
@@ -238,13 +266,13 @@ class MyoUDPTrainer:
             for classNum, className in enumerate(self.TrainingName):
                 self.trainSingle(classNum, samples)
 
-    
-    def trainSingle(self, classNum, samples=None):
+
+    def trainSingle(self, classNum, samples=None, pause=3):
         if samples == None:
             samples = self.tsamples
             
         print('pose: ' + self.TrainingName[classNum])
-        time.sleep(3)
+        time.sleep(pause)
         
         if self.verb == 0:
             print('Collecting EMG samples...')
@@ -273,8 +301,8 @@ class MyoUDPTrainer:
             print('Done.')
         
         print('')
-    
-    
+
+
     def fit(self):
         
         if self.verb >= 1:
@@ -300,23 +328,22 @@ class MyoUDPTrainer:
         
         if self.verb >= 2:
             print('Fit LDA model execution time: ' + str(time.time() - start) + 's')
-    
-    
-    #maybe break up into predictSingle and predictAll
-    def predict(self, cycles=None):
+
+
+    def predictMult(self, cycles=None):
         if cycles == None:
             cycles = self.pcycles
             
         i = 0
         while i != cycles:
             loopStart = time.time()
-            prediction = self.TrainingName[self.clf.predict(feature_extract(self.hMyo.getData()*0.01))]
+            prediction = self.predictSingle()
             if self.verb >= 1:
                 print('prediction: ' + prediction)
             if self.verb >= 2:
                 print(('QDA' if self.quadratic else 'LDA') + ' prediction execution time: ' + str(time.time() - loopStart) + 's')
             
-            self.output(prediction)
+            self.output(prediction, True)
 
             loopTime = time.time() - loopStart
             if loopTime < self.dt:
@@ -326,8 +353,12 @@ class MyoUDPTrainer:
             
             i += 1
 
-            
-    def output(self, classDecision):
+
+    def predictSingle(self):
+        return self.TrainingName[self.clf.predict(feature_extract(self.hMyo.getData()*0.01))]
+
+
+    def output(self, classDecision, upperAngles=False):
         # Move joints using classifier
         try:
             jointId, jointDir = self.hPlant.class_map(classDecision)
@@ -340,9 +371,10 @@ class MyoUDPTrainer:
 
             self.hPlant.update()
 
-            # perform joint motion update
-            vals = self.hMyo.getAngles()
-            self.hPlant.position[3] = vals[1] + math.pi/2
+            if upperAngles:
+                # perform joint motion update
+                vals = self.hMyo.getAngles()
+                self.hPlant.position[3] = vals[1] + math.pi/2
 
             # transmit output
             self.hSink.sendJointAngles(self.hPlant.position)
@@ -351,8 +383,8 @@ class MyoUDPTrainer:
             print('Class "' + classDecision + '" not available from ROC table.')
             #jointId, jointDir = [[],0]
             pass    
-    
-    
+
+
     def save(self, path=None):
         if path == None:
             path = self.path
@@ -395,7 +427,7 @@ class MyoUDPTrainer:
         #perform error checks here:
         #if error: self.create()
         pass
-            
+
 
     def delete(self, path=None):
         print('Deleting saved data.')
@@ -425,16 +457,16 @@ class MyoUDPTrainer:
         
         #save empty arrays to files @ path\\training_data\\<array>
         pass
-            
-    
+
+
     def close(self):
         print('')
         print('Cleaning up...')
         print('')
         self.hSink.close()
         self.hMyo.close()
-    
-    
+
+
     def addClass(self, newClass):
         if newClass not in self.TrainingName:
             self.TrainingName.append(newClass)
@@ -471,18 +503,21 @@ class MyoUDPTrainer:
         self.TrainingClass = newClass
         self.TrainingName = newName
 
-    
+
     def send(self, message):
         self.PythonSenderSock.sendto(bytearray(message, 'utf-8'), (self.UDP_IP, self.PYTHON_SEND_PORT))
-    
-    
-    def receive(self):
-        #receiver
+
+
+    def receiveNoBlock(self, timeout=0.0):
+        #receiver that will return None, None if it doesn't receive immediately
+        #self.UnityReceiverSock.setblocking(0)
+        self.UnityReceiverSock.settimeout(timeout)
+        
         try:
             data, addr = self.UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes
         except socket.error as e:
             err = e.args[0]
-            if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
+            if err == errno.EAGAIN or err == errno.EWOULDBLOCK or errno.ETIMEDOUT:
                 return None, None
             else:
                 # a "real" error occurred
@@ -491,19 +526,24 @@ class MyoUDPTrainer:
         else:
             #do stuff with data from receiver
             return data, addr
-        
+
+
+    def receiveBlock(self):
+        #receiver that will wait until it receives data
+        self.UnityReceiverSock.setblocking(1)
+        return self.UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes
+
 
     def handshake(self):
         #take data (A) and return (A+1,B)
         #wait for (B+1)
         #can start sending to unity
         
-        #set receive to blocking so that python waits for unity to send something
-        self.UnityReceiverSock.setblocking(1)
+        #self.UnityReceiverSock.setblocking(1)
         acquainted = False      # has the handshake been successful
         print('Attempting handshake with Unity.')
         
-        data, addr = self.UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes    
+        data, addr = self.receiveBlock()
         data = bytearray(data)
         print('Received handshake request from Unity: ' + str(int(data[0])))
         
@@ -514,16 +554,16 @@ class MyoUDPTrainer:
         
         #wait for second response
         while not acquainted:
-            data, addr = self.UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes
+            data, addr = self.receiveBlock()
             data = bytearray(data)
             print('Received handshake response from Unity: ' + str(int(data[0])))
             if data[0] == response + 1:
                 acquainted = True
             
-        print('Successful handshake between Unity and Python.')
+        print('Successful handshake between Unity and Python.\n')
         self.UnityReceiverSock.setblocking(0)
-        
-        
+
+
     def __str__(self):
         #perhaps adjust output based on VERBOSE
         sizes = [0]*len(self.TrainingName)
@@ -536,9 +576,16 @@ class MyoUDPTrainer:
         
         return string       
 
-        
+
 if __name__ == "__main__":
-    demo() #run demo trainer
-    #main() #run unity communicator
-    pass
+    args = parse()
+    switch = args.EXECUTE
+    if (switch == 'UnityTrainer'):
+        UnityTrainer(args)
+    elif (switch == 'demo'):
+        demo(args)
+    elif(switch == 'main'):
+        main(args)
+    else:
+        print('Invalid main method requested. No method mapped to "' + switch + '."')
 

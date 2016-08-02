@@ -220,6 +220,8 @@ classdef MyoUdp < Inputs.SignalInput
                 for i = 1:numReads
                     bytes = cellDataBytes{i};
                     switch length(bytes)
+                        case 1
+                            fprintf('[%s] %s Port 15001 Battery Value: %d\n',mfilename,datestr(now),bytes)
                         case 16
                             % EMG Samples (2 per packet)
                             d = double(typecast(bytes,'int8'));
@@ -250,6 +252,8 @@ classdef MyoUdp < Inputs.SignalInput
                 for i = 1:numReads
                     bytes = cellDataBytes{i};
                     switch length(bytes)
+                        case 1
+                            fprintf('[%s] %s Port 15002 Battery Value: %d\n',mfilename,datestr(now),bytes)
                         case 16
                             % EMG Samples (2 per packet)
                             d = double(typecast(bytes,'int8'));

@@ -112,7 +112,7 @@ def UnityTrainer(args):
         print('waiting for training signal.')
         #wait for unity to signal recording of pose
         while data == None or data[0] != ord('r'):
-            trainer.output(pose)
+            #trainer.output(pose)
             data, addr = trainer.receiveBlock()
             print('received packet: ' + str(data))
             if data != None:
@@ -124,10 +124,17 @@ def UnityTrainer(args):
         #zero out hand joints
         for i in list(range(len(trainer.hPlant.position))):
             trainer.hPlant.position[i] = 0
-        #trainer.hPlant.position[0] = 0
-        #trainer.hPlant.position[3] = 1.3
+        trainer.hPlant.position[0] = 1
+        trainer.hPlant.position[3] = 1.3
         trainer.hSink.sendJointAngles(trainer.hPlant.position)
     
+    #wait for end of unity cooldown. Notify that training is done.
+    while data == None or data[0] != ord('a'):
+            trainer.send('f')
+            data, addr = trainer.receiveNoBlock(timeout=1.0)
+            print('received packet: ' + str(data))
+            if data != None:
+                data = bytearray(data)
     trainer.save()
     trainer.fit()
     
@@ -135,7 +142,7 @@ def UnityTrainer(args):
     print(str(trainer))
 	
     print('Running prediction model:')
-    trainer.predictMult(-1)
+    trainer.predictMult()
     
     
     trainer.close()

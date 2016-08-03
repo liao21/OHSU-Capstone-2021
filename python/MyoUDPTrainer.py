@@ -56,6 +56,8 @@ def UnityTrainer(args):
     #handshake between unity and python
     trainer.handshake()
     
+    trainer.load()
+    
     state = STATES.waitingStart
     
     #get possible classes to train
@@ -85,7 +87,8 @@ def UnityTrainer(args):
     
     
     #adjust in future to read in classes based on unity settings/take all from ROC file
-    trainer.TrainingName = ['No Movement', 'Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Adduction',
+    if trainer.TrainingName == []:
+        trainer.TrainingName = ['No Movement', 'Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Adduction',
             'Wrist Abduction', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp']
     
     for pose in trainer.TrainingName:

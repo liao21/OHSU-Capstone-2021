@@ -44,6 +44,27 @@ import random
 
 
 def UnityTrainer(args):
+    """Run Unity/Python sample trainer program. Python records myo data/runs LDA classifier based on Unity UDP cues
+    
+    Keyword arguments:
+    args -- command line arguments parsed by python argparse. see function parse() for list of arguments
+    
+    UDP codes (received from Unity):
+    'b' --
+    'a' --
+    'd' --
+    'r' --
+    'f' --
+    
+    UDP codes (sent from Python)
+    'b' --
+    'a' --
+    'd' --
+    'r' --
+    'f' --
+    """
+
+
     #Run Myo trainer in Unity. Then control vMPL using training data
     STATES = enum(waitingHandshake=0, waitingStart=1, setupRecord=2, waitingRecord=3, recording=4, cooldown=5, inactive=6, off=7, none=8)
     
@@ -87,49 +108,50 @@ def UnityTrainer(args):
     
     
     #adjust in future to read in classes based on unity settings/take all from ROC file
-    if trainer.TrainingName == []:
-        trainer.TrainingName = ['No Movement', 'Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Adduction',
-            'Wrist Abduction', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp']
+    # if trainer.TrainingName == []:
+        # trainer.TrainingName = ['No Movement', 'Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Adduction',
+            # 'Wrist Abduction', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp']
     
-    for pose in trainer.TrainingName:
-        # Set arm to demonstration position
-        trainer.hPlant.position[0] = 1
-        trainer.hPlant.position[3] = 1.3
-        trainer.hSink.sendJointAngles(trainer.hPlant.position)
-        
-        #train each pose while communicating with unity UI
-        #tell unity pose name to be trained
-        print('waiting for acknowledgement that unity received pose: ' + pose + '.')
-        while data == None or data[0] != ord('a'):
-            trainer.send(pose)
-            data, addr = trainer.receiveBlock()
-            print('received packet: ' + str(data))
-            if data != None:
-                data = bytearray(data)
-        
-        start = time.time()
-        while time.time() - start < 1:
-            trainer.output(pose)
-        
-        state = STATES.waitingRecord
-        print('waiting for training signal.')
-        #wait for unity to signal recording of pose
-        while data == None or data[0] != ord('r'):
-            #trainer.output(pose)
-            data, addr = trainer.receiveBlock()
-            print('received packet: ' + str(data))
-            if data != None:
-                data = bytearray(data)
-        trainer.send('a')
-        trainer.trainSingle(trainer.TrainingName.index(pose), pause=1)
-        trainer.send('d')
-        
-        #zero out hand joints
-        for i in list(range(len(trainer.hPlant.position))):
-            trainer.hPlant.position[i] = 0
-        trainer.hPlant.position[0] = 1
-        trainer.hPlant.position[3] = 1.3
-        trainer.hSink.sendJointAngles(trainer.hPlant.position)
+    for trainCycle in list(range(trainer.tcycles)):     #repeat training process a specified number of times
+        for pose in trainer.TrainingName:               #run training process for each pose
+            # Set arm to demonstration position
+            trainer.hPlant.position[0] = 1
+            trainer.hPlant.position[3] = 1.3
+            trainer.hSink.sendJointAngles(trainer.hPlant.position)
+            
+            #train each pose while communicating with unity UI
+            #tell unity pose name to be trained
+            print('waiting for acknowledgement that unity received pose: ' + pose + '.')
+            while data == None or data[0] != ord('a'):
+                trainer.send(pose)
+                data, addr = trainer.receiveBlock()
+                print('received packet: ' + str(data))
+                if data != None:
+                    data = bytearray(data)
+            
+            start = time.time()
+            while time.time() - start < 1:
+                trainer.output(pose)
+            
+            state = STATES.waitingRecord
+            print('waiting for training signal.')
+            #wait for unity to signal recording of pose
+            while data == None or data[0] != ord('r'):
+                #trainer.output(pose)
+                data, addr = trainer.receiveBlock()
+                print('received packet: ' + str(data))
+                if data != None:
+                    data = bytearray(data)
+            trainer.send('a')
+            trainer.trainSingle(trainer.TrainingName.index(pose), pause=1)
+            trainer.send('d')
+            
+            #zero out hand joints
+            for i in list(range(len(trainer.hPlant.position))):
+                trainer.hPlant.position[i] = 0
+            trainer.hPlant.position[0] = 1
+            trainer.hPlant.position[3] = 1.3
+            trainer.hSink.sendJointAngles(trainer.hPlant.position)
     
     #wait for end of unity cooldown. Notify that training is done.
     while data == None or data[0] != ord('a'):
@@ -154,11 +176,23 @@ def UnityTrainer(args):
   
     
 def parse():
+    """Parse command line arguments into argparse model.
+    
+    Command-line arguments:
+    -q or --QUADTRATIC -- Run QDA classifier as opposed to default LDA classifier. args.QUADRATIC returns bool of argument.
+    -d or --DELETE -- Deletes saved data stored in \MiniVIEPath\python\training_data\ if available.
+    -t or --TRAIN -- Instructs the trainer class how many feature extraction samples to collect for each pose while training.
+    #--TRAIN is only used in the trainSingle() function which records training data for a single pose. 
+    -l or TRAIN_LOOP -- Specify number of times to repeat training regime for standard training process
+    
+    """
+    
     #parse command-line arguments
     parser = argparse.ArgumentParser(description='Myo Trainer Command-line Arguments:')
     parser.add_argument('-q', '--QUADRATIC', help='Run quadratic analysis of data instead of linear', action='store_true')
     parser.add_argument('-d', '--DELETE', help='Delete currently saved training data if any.', action='store_true')
     parser.add_argument('-t', '--TRAIN', help='Run training regime at start of program. Specify number of sample per class', default=0, type=int)
+    parser.add_argument('-l', '--TRAIN_LOOP', help='Specify number of cycles to repeat each pose during training', default=1, type=int)
     parser.add_argument('-p', '--PREDICT', help='Run prediction sequence. Specify number of cycles to run for (-1 for infinite)', default=0, type=int)
     parser.add_argument('-f', '--FREQUENCY', help='Set frequency to update at (Hz)', default=50, type=int)
     parser.add_argument('-i', '--UDP_IP', help='IP address to send controls to', default='127.0.0.1')
@@ -232,9 +266,13 @@ class MyoUDPTrainer:
             self.path = os.path.dirname(os.path.abspath(__file__))
         else:
             self.path = path
-               
+        
+        if args.DELETE:
+            self.delete()
+        
         self.quadratic = args.QUADRATIC             # set Quadratic Discriminant Analysis mode. False means LDA mode
         self.tsamples = args.TRAIN                  # how many samples per training each class
+        self.tcycles = args.TRAIN_LOOP              # hoe many cycles of training each pose to repeat
         self.dt = 1.0/args.FREQUENCY                # how frequently do training and prediction loops run
         self.verb = args.VERBOSE                    # how much information output to the console
         self.pcycles = args.PREDICT                 # how many cycles to predict for. setting to -1 means infinite cycles
@@ -273,8 +311,10 @@ class MyoUDPTrainer:
             time.sleep(5)
 
             print('')
-            for classNum, className in enumerate(self.TrainingName):
-                self.trainSingle(classNum, samples)
+            for cycle in list(range(self.tcycles)):
+                print('Training Cycle #' + str(cycle) + '\n')
+                for classNum, className in enumerate(self.TrainingName):
+                    self.trainSingle(classNum, samples)
 
 
     def trainSingle(self, classNum, samples=None, pause=3):
@@ -463,7 +503,9 @@ class MyoUDPTrainer:
         self.TrainingData = []
         self.TrainingClass = []
         #TrainingName should be loaded from the current ROC file, or start blank, and then addClass for each class
-        self.TrainingName = ['Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp', 'No Movement']
+        #self.TrainingName = ['Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp', 'No Movement']
+        self.TrainingName = ['No Movement', 'Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Adduction',
+            'Wrist Abduction', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp']
         
         #save empty arrays to files @ path\\training_data\\<array>
         pass
@@ -551,24 +593,28 @@ class MyoUDPTrainer:
         
         #self.UnityReceiverSock.setblocking(1)
         acquainted = False      # has the handshake been successful
-        print('Attempting handshake with Unity.')
         
-        data, addr = self.receiveBlock()
-        data = bytearray(data)
-        print('Received handshake request from Unity: ' + str(int(data[0])))
-        
-        #send response with random byte
-        response = random.randint(0,255)
-        print('Sending response to Unity: ' + str(data[0]+1) + ' ' + str(response))
-        self.send(str(data[0]+1) + ' ' + str(response))
-        
-        #wait for second response
         while not acquainted:
+            print('Attempting handshake with Unity.')
+            
+            data, addr = self.receiveBlock()
+            data = bytearray(data)
+            print('Received handshake request from Unity: ' + str(int(data[0])))
+            
+            #send response with random byte
+            response = random.randint(0,255)
+            print('Sending response to Unity: ' + str(data[0]+1) + ' ' + str(response))
+            self.send(str(data[0]+1) + ' ' + str(response))
+            
+            #wait for second response
             data, addr = self.receiveBlock()
             data = bytearray(data)
             print('Received handshake response from Unity: ' + str(int(data[0])))
             if data[0] == response + 1:
                 acquainted = True
+            else:
+                print('Failed handshake. Retrying...\n')
+                continue
             
         print('Successful handshake between Unity and Python.\n')
         self.UnityReceiverSock.setblocking(0)

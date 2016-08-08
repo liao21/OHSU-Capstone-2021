@@ -179,12 +179,19 @@ def parse():
     """Parse command line arguments into argparse model.
     
     Command-line arguments:
+    -h or --help -- ouput help text describing command-line arguments.
     -q or --QUADTRATIC -- Run QDA classifier as opposed to default LDA classifier. args.QUADRATIC returns bool of argument.
     -d or --DELETE -- Deletes saved data stored in \MiniVIEPath\python\training_data\ if available.
     -t or --TRAIN -- Instructs the trainer class how many feature extraction samples to collect for each pose while training.
     #--TRAIN is only used in the trainSingle() function which records training data for a single pose. 
-    -l or TRAIN_LOOP -- Specify number of times to repeat training regime for standard training process
-    
+    -l or TRAIN_LOOP -- Specify number of times to repeat training regime for standard training process.
+    -p or --PREDICT -- Should the script run a pose predition loop after all training? number specifies how many cycles to predict for (-1 for infinite, 0 for none).
+    -f or --FREQUENCY -- set the data collection frequency, as well as the data output frequency.
+    -i or --UDP_IP -- set the IP address to communicate training cues on.
+    -u or --UNITY_PORT -- set the port that python listens on for UDP packets from Unity.
+    -y or --PYTHON_PORT -- set the port that python sends UDP packets on to Unity.
+    -v or --VERBOSE -- specify how much console output the python program makes. 0 for minimum, 1 for some, 2 for more, etc.
+    -e or --EXECUTE -- specify what main method to run when this script is called. Input is a string with the name of the method, which is then selected in a switch-like statement at the end of this file.
     """
     
     #parse command-line arguments

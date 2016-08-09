@@ -9,7 +9,7 @@ Output timing information
 
 Most of the functionality is controlled by command line flags
 e.g. if you want to do a demo (plus timing info), you can run: 
-'python MyoUDPTrainer.py --EXECUTE demo --VERBOSE 2 --TRAIN 20  --PREDICT 1000'
+'python MyoUDPTrainer.py --EXECUTE demo --VERBOSE 2 --TRAIN 20 --PREDICT 1000'
 Training builds on whatever saved training data is in the directory, so if you 
 want to train from scratch, delete all of the files in the 'python\training_data\'
 folder, and then rerun the script with the train flag (alternatively run delete() function).
@@ -22,7 +22,7 @@ WIP add UDP communication to/from unity for training cues and other functionalit
 """
 
 
-#perhaps import only into necessary scripts
+#perhaps import only into necessary scripts, rather than importing all at the beginning
 import sys
 import time
 import math
@@ -50,54 +50,83 @@ def UnityTrainer(args):
     args -- command line arguments parsed by python argparse. see function parse() for list of arguments
     
     UDP codes (received from Unity):
-    'b' --
-    'a' --
-    'd' --
-    'r' --
-    'f' --
+    'b' -- "Begin training"
+    'a' -- "Acknowledged"
+    'r' -- "Start Recording"
     
     UDP codes (sent from Python)
-    'b' --
-    'a' --
-    'd' --
-    'r' --
-    'f' --
+    '<pose name>' -- the name of the current pose to be recorded. Unity uses this to construct the UI text
+    '<next pose>' -- synonym of above. Used to denote next pose in the sequence of training poses
+    'a' -- "Acknowledged"
+    'd' -- "Done Recording Pose"
+    'f' -- "Finished Recording All Poses"
+    
+    UDP Unity/Python communication protocol
+    Handshake - run to sync Python operations with Unity operations at the start of the program
+    --Python waits for data signal from Unity
+    --Unity generates a random byte [A] and sends it to Python
+    --Python receives random byte [A], generates a random byte [B] and sends [A+1,B] to python as an acknowledgement
+    --Unity receives [A+1,B], checks that the first byte is in fact [A+1], and sends [B+1] in response to Python. Unity now enters its main program
+    --Python receives [B+1], checks that it is in fact [B+1], and then enters its main program section. The handshale is complete. Now Unity and Python are "acquainted".
+    
+    General training sequence - Unity cues Python to record training data when Unity receives UI input
+    --When the "Begin Training" button is clicked, Unity sends to Python ['b'] for "begin training"
+    --When python receives ['b'] it starts the training cycle, and responds with the name of the current pose ['<pose name>']
+    --Unity receives ['<pose name>'] and uses it to update the UI text. Unity then sends to Python ['a'] for "acknowledged"
+    --When the "Record Pose: <pose name>" button is clicked, Unity sends to Python ['r'] for "start recording <pose>"
+    --Python receives ['r'] it responds with ['a'] for "acknowledged" and begins saving feature extracted Myo data into a list of data
+    --When Python finishes recording the specified number of samples (controlled by input arg -t or --TRAIN) Python sends to Unity ['d'] for "done training"
+    --Unity receives the ['d'] and then enters the cooldown phase.
+    --Python begins transmitting ['<next pose>'] to Unity to reset the cycle for the new pose
+    --When the cooldown is complete, Unity receives ['<next pose>'] responds with ['a'] for "acknowledged"
+    --This process repeats until all of the poses have been trained.
+    --At the end of recording the last pose, Python sends ['f'] for "finished training cycle" instead of ['<next pose>']
+    --Unity receives ['f'], and hides the UI, then sends to Python ['a'] for "acknowledged"
+    --Python receives ['a'], and saves the training data, then fits the training data to the LDA model.
+    --Python then enters the prediction phase where it outputs joint angles to the vMPL based on the predicted pose for current Myo data 
+    
+    To-Do
+    --When Unity quits, send a UDP command to Python to quit if it is running, so that things close properly
+    --Make general training sequence less sequential, and more controllable by UDP cues. E.g.:
+        --ability to progress to next pose signaled by Unity UI input
+        --ability to return to previous pose signaled by Unity UI input
+        --ability to pause/resume training sequence signaled by Unity UI input
+        --ability to save/delete training data signaled by Unity UI input
+        --<see Bobby for other python control features controlled by UDP from Unity UI>
+        --(General Note about UDP control) UDP cues should be able to be from any arbitrary source, not just the Unity UI. I.e. Any program that sends the proper sequence of UDP cues to python should be able to control the training process.
+    --Discover bug where vMPL changes position during resting phase. vMPl should remain in the same spot except for the hand motions
+    --Update Plant.py so that control model uses ROC tables with interpolation as opposed to basic Python dictionary implemented. Update internal control model to handle ROC style Plant model
     """
 
 
-    #Run Myo trainer in Unity. Then control vMPL using training data
+    #state machine variable. Same states are mirrored in Unity script.
     STATES = enum(waitingHandshake=0, waitingStart=1, setupRecord=2, waitingRecord=3, recording=4, cooldown=5, inactive=6, off=7, none=8)
-    
-    #message = ''    # most recent message from Unity
-    
+    #initial state is waiting for Handshake from Unity
     state = STATES.waitingHandshake
+    
     # Machine learning Myo UDP trainer controller
     trainer = MyoUDPTrainer(args)
 
     #handshake between unity and python
     trainer.handshake()
     
-    trainer.load()
-    
     state = STATES.waitingStart
     
-    #get possible classes to train
-    #send to unity for UI possible
-    #wait for requests from unity to add individual classes to training set, then add in python class.
-    #wait for signal to begin training
-    #run training regime, while telling unity UI what to display
-    #control vMPL with newly trained data. (allow for more training)
+    #load saved data from disk if available
+    trainer.load()
+     
     
-    #communication protocal between unity and python
+    # Ideal communication protocal between unity and python
     # e.g. Unity -> '<command code><data>' -> Python
     # Python -> '<Acknowledgement>' -> Unity
+    # sometimes the acknowledgement is omitted
     
     # Set arm to demonstration position
     trainer.hPlant.position[0] = 1
     trainer.hPlant.position[3] = 1.3
     trainer.hSink.sendJointAngles(trainer.hPlant.position)
     
-    
+    print('Waiting for Unity to send "Begin Training" cue.')
     while state == STATES.waitingStart:
         # wait for signal to begin 'b'
         data, addr = trainer.receiveBlock()
@@ -121,6 +150,7 @@ def UnityTrainer(args):
             
             #train each pose while communicating with unity UI
             #tell unity pose name to be trained
+            state = STATES.setupRecord    #Unity will initially still be in cooldown, so python waits until Unity acknowledges the start of the setupRecord phase
             print('waiting for acknowledgement that unity received pose: ' + pose + '.')
             while data == None or data[0] != ord('a'):
                 trainer.send(pose)
@@ -143,6 +173,7 @@ def UnityTrainer(args):
                 if data != None:
                     data = bytearray(data)
             trainer.send('a')
+            state = STATES.recording
             trainer.trainSingle(trainer.TrainingName.index(pose), pause=1)
             trainer.send('d')
             
@@ -152,6 +183,8 @@ def UnityTrainer(args):
             trainer.hPlant.position[0] = 1
             trainer.hPlant.position[3] = 1.3
             trainer.hSink.sendJointAngles(trainer.hPlant.position)
+            
+            state = STATES.cooldown    #python will immediately enter the setupRecord state while Unity will remain in cooldown until the cooldown timer completes
     
     #wait for end of unity cooldown. Notify that training is done.
     while data == None or data[0] != ord('a'):
@@ -192,6 +225,10 @@ def parse():
     -y or --PYTHON_PORT -- set the port that python sends UDP packets on to Unity.
     -v or --VERBOSE -- specify how much console output the python program makes. 0 for minimum, 1 for some, 2 for more, etc.
     -e or --EXECUTE -- specify what main method to run when this script is called. Input is a string with the name of the method, which is then selected in a switch-like statement at the end of this file.
+    
+    Return Arguments:
+    args (parser.parse_args()) -- command line arguments parsed into a dictionary for easy use.
+    -- args is generally are stored into the MyoUDPTrainer object on initialization as instance data
     """
     
     #parse command-line arguments
@@ -213,14 +250,12 @@ def parse():
 
     
 def main(args):
-    # Machine learning Myo UDP trainer controller
-    trainer = MyoUDPTrainer(args)
-    
+    """setup as the default to run when this file is invoked"""
     pass
     
 
 def demo(args):
-    #console demo of training
+    """console demo of training sequence."""
     
     trainer = MyoUDPTrainer(args)
     print('')
@@ -256,15 +291,26 @@ def demo(args):
     trainer.predictMult()
     pass
 
-    
+
 def enum(**enums):
+    """adding Enum support to Python."""
     return type('Enum', (), enums)
 
     
 class MyoUDPTrainer:
-    
+    """Python Class for managing machine learning and Myo training operations."""
 
     def __init__(self, args, path=None):
+        """
+        Initialize the MyoUDPTrainer object.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        args -- preparsed command-line arguments. Comprise most of the instance data of this object
+        path -- (Optional) If passed in, sets the path to load/save data from. Otherwise path is set to current location of this file
+        """
+        
+        # Set MyoUDPTrainer object instance data
         self.TrainingData = []                      # List of all feature extracted samples
         self.TrainingClass = []                     # List of class indices that each sample belongs to
         self.TrainingName = []                      # Name of each class
@@ -309,6 +355,14 @@ class MyoUDPTrainer:
 
 
     def trainAll(self, samples=None):
+        """
+        Run training regime for all poses sequentially.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        samples -- (Optional) If passed in, overrides number of samples to collect for each pose. Otherwise uses number of samples specified in self.tsamples
+        """
+    
         if samples == None:
             samples = self.tsamples
             
@@ -325,6 +379,16 @@ class MyoUDPTrainer:
 
 
     def trainSingle(self, classNum, samples=None, pause=3):
+        """
+        Run training regime for single specified pose.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        samples -- (Optional) If passed in, overrides number of samples to collect for each pose. Otherwise uses number of samples specified in self.tsamples
+        pause -- (Optional) If passed in, set how long to pause before recording the Myo data. Otherwise default pasue is 3 seconds
+        """
+    
+    
         if samples == None:
             samples = self.tsamples
             
@@ -361,6 +425,16 @@ class MyoUDPTrainer:
 
 
     def fit(self):
+        """
+        Fit data currently stored in self.TrainingData and self.TrainingClass to LDA or QDA model
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        
+        Training Data Format:
+        self.TrainingData is the array X which lists out all of the samples of feature extracted data as a [N*32] array for N samples of training data
+        self.TrainingClass is the array y which specifies which class each sample in X belongs to as a [N*1] array for N samples of training data.
+        """
         
         if self.verb >= 1:
             print('Fitting data to ' + ('QDA' if self.quadratic else 'LDA') + ' model.')
@@ -388,6 +462,15 @@ class MyoUDPTrainer:
 
 
     def predictMult(self, cycles=None):
+        """
+        Run the LDA or QDA classifier prediction based on current myo data for multiple cycles.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        cycles -- (Optional) If passed in, overrides how many cycles to predict for. Otherwise uses number of cycles specified in self.pcycles
+        -- setting cycles to 0 causes no predictions to be made. Setting cycles to -1 (or any negative number) causes infinite prediction cycles to occur
+        """
+        
         if cycles == None:
             cycles = self.pcycles
             
@@ -412,10 +495,28 @@ class MyoUDPTrainer:
 
 
     def predictSingle(self):
+        """
+        Run the LDA or QDA classifier prediction based on current myo data for a single sample.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        
+        Return Arguments:
+        prediction -- model class prediction of current class based on current Myo data
+        """
         return self.TrainingName[self.clf.predict(feature_extract(self.hMyo.getData()*0.01))]
 
 
     def output(self, classDecision, upperAngles=False):
+        """
+        Update and output joint angles to vMPL based on class specified.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        classDecision -- string that names the pose to output
+        upperAngles -- (Optional) If passed in, specifies whether or not to output upper arm angles based on Myo orientation data. Otherwise defaults to False
+        """
+        
         # Move joints using classifier
         try:
             jointId, jointDir = self.hPlant.class_map(classDecision)
@@ -443,6 +544,14 @@ class MyoUDPTrainer:
 
 
     def save(self, path=None):
+        """
+        Save the current data to the disk.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        path -- (Optional) If passed in, overrides the path to save the data to. Otherwise save data to path at self.path
+        """
+        
         if path == None:
             path = self.path
             
@@ -464,6 +573,14 @@ class MyoUDPTrainer:
 
 
     def load(self, path=None):
+        """
+        Load training data from disk. Training data is stored into self.TrainingData, self.TrainingClass, and self.TrainingName.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        path -- (Optional) If passed in, overrides path that training data is loaded from. Otherwise data is loaded from self.path
+        """
+        
         if path == None:
             path = self.path
         trainFolder = os.path.join(path,'training_data')
@@ -483,10 +600,18 @@ class MyoUDPTrainer:
             
         #perform error checks here:
         #if error: self.create()
+        print('')
         pass
 
 
     def delete(self, path=None):
+        """
+        Delete training data from disk.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        path -- (Optional) If passed in, overrides path that training data is deleted from. Otherwise data is deleted from self.path
+        """
         print('Deleting saved data.')
         
         if path == None:
@@ -501,9 +626,14 @@ class MyoUDPTrainer:
             os.remove(trainFolder + 'className.pkl')
 
 
-    def create(self, path=None):
-        if path == None:
-            path = self.path
+    def create(self):
+        """
+        Create initial training data from scratch. Blank training data is stored into self.TrainingData, self.TrainingClass, and self.TrainingName.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        """
+        
     
         # create new data from default
         print('Creating new set of training data.')
@@ -514,11 +644,11 @@ class MyoUDPTrainer:
         self.TrainingName = ['No Movement', 'Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Adduction',
             'Wrist Abduction', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp']
         
-        #save empty arrays to files @ path\\training_data\\<array>
         pass
 
 
     def close(self):
+        """Cleanup currently opened UDP objects."""
         print('')
         print('Cleaning up...')
         print('')
@@ -527,6 +657,13 @@ class MyoUDPTrainer:
 
 
     def addClass(self, newClass):
+        """
+        Add a pose to the list of poses that are in the training set. New class is added to self.TrainingName (with no initial training data).
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        newClass -- string that names the pose to add
+        """
         if newClass not in self.TrainingName:
             self.TrainingName.append(newClass)
         else:
@@ -534,7 +671,14 @@ class MyoUDPTrainer:
 
 
     def removeClass(self, toRemove):
-        print('Attemptint to remove class "' + toRemove +'."')
+        """
+        Delete a pose from the list of poses that are in the training set. New class is deleted from self.TrainingName along with all associated training data in self.TrainingData and self.TrainingClass.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        newClass -- string that names the pose to add
+        """
+        print('Attempting to remove class "' + toRemove +'."')
         
         newData = []
         newClass = []
@@ -564,11 +708,32 @@ class MyoUDPTrainer:
 
 
     def send(self, message):
+        """
+        Send a UDP message to Unity from Python.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        message -- string to send to Unity via UDP
+        """
         self.PythonSenderSock.sendto(bytearray(message, 'utf-8'), (self.UDP_IP, self.PYTHON_SEND_PORT))
 
 
     def receiveNoBlock(self, timeout=0.0):
-        #receiver that will return None, None if it doesn't receive immediately
+        """
+        Receive data from Unity while allowing timeout.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        timeout -- (Optional) If passed in, sets the amount of time the receiver will wait for before it times out, no data
+        
+        Return Arguments:
+        data, addr -- data string and data address for message received from Unity. Set to None, None if timeout occurs
+        
+        Notes: 
+        for more information see: https://docs.python.org/2/library/socket.html
+        """
+        
+        #receiver that will return None, None if it doesn't receive immediately/within timout limit
         #self.UnityReceiverSock.setblocking(0)
         self.UnityReceiverSock.settimeout(timeout)
         
@@ -588,15 +753,30 @@ class MyoUDPTrainer:
 
 
     def receiveBlock(self):
+        """
+        Receive data from Unity while while waiting indefinitely until received.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        
+        Return Arguments:
+        data, addr -- data string and data address for message received from Unity.
+        
+        Notes: 
+        for more information see: https://docs.python.org/2/library/socket.html
+        """
+        
         #receiver that will wait until it receives data
         self.UnityReceiverSock.setblocking(1)
         return self.UnityReceiverSock.recvfrom(1024) # buffer size is 1024 bytes
 
 
     def handshake(self):
-        #take data (A) and return (A+1,B)
-        #wait for (B+1)
-        #can start sending to unity
+        """Perform handshake with Unity over UDP to ensure that Unity and Python are synced"""
+        
+        #wait to receive data [A] and then send [A+1,B]
+        #wait to receive data [B+1]
+        #handhsake complete. Unity and Python are synced
         
         #self.UnityReceiverSock.setblocking(1)
         acquainted = False      # has the handshake been successful
@@ -628,6 +808,16 @@ class MyoUDPTrainer:
 
 
     def __str__(self):
+        """
+        Output current state of MyoUDPTrainer object as a string.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        
+        Return Arguments:
+        string -- string detailing this object. Lists class names and number of samples of training data per each class
+        """
+        
         #perhaps adjust output based on VERBOSE
         sizes = [0]*len(self.TrainingName)
         for i in range(len(self.TrainingClass)):
@@ -641,6 +831,8 @@ class MyoUDPTrainer:
 
 
 if __name__ == "__main__":
+    """Select a method to execute as main if specified in command line arguments."""
+    
     args = parse()
     switch = args.EXECUTE
     if (switch == 'UnityTrainer'):

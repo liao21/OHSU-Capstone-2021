@@ -250,7 +250,167 @@ def parse():
 
     
 def main(args):
-    """setup as the default to run when this file is invoked"""
+    """
+    Default execution case. Fully controllable training process via agnostically generatied UDP cues.
+    
+    <more documentation will go here...>
+    """
+    
+    print('Running UDP driven trainer. Progress will only continue if proper UDP cues are returned.\n')
+    
+    #state machine variable. Same states are mirrored in Unity script.
+    #STATES = enum(waitingHandshake=0, waitingStart=1, setupRecord=2, waitingRecord=3, recording=4, cooldown=5, inactive=6, off=7, none=8)
+    #initial state is waiting for Handshake from Unity
+    #state = STATES.waitingHandshake
+    
+    # Machine learning Myo UDP trainer controller
+    trainer = MyoUDPTrainer(args)
+    
+    #handshake between unity and python
+    trainer.handshake()
+    
+    #state = STATES.waitingStart
+    
+    data, addr = None, None
+    
+    #handle generic UDP cues
+    while data == None or data[0] != ord('q'): # 'q' cue for "quit"
+        print('Waiting for UDP data packet.')
+        data, addr = trainer.receiveBlock()
+        data = bytearray(data)
+        
+        if data[0] == ord('s'):      #save
+            trainer.save()
+            pass
+        elif data[0] == ord('l'):    #load
+            trainer.load()
+            pass
+        elif data[0] == ord('d'):    #delete    
+            trainer.delete()
+            pass
+        elif data[0] == ord('c'):    #class
+            if data[1] == ord('c'):      #create
+                pass
+            elif data[1] == ord('a'):    #add
+                pass
+            elif data[1] == ord('r'):    #remove    
+                pass
+            pass
+        elif data[0] == '':
+            pass
+        elif data[0] == '':
+            pass
+        elif data[0] == '':
+            pass
+        elif data[0] == '':
+            pass
+        elif data[0] == '':
+            pass
+        
+        pass # do stuff
+    
+    trainer.close()
+    
+    
+    
+    
+    
+    # #load saved data from disk if available
+    # trainer.load()
+     
+    
+    # # Ideal communication protocal between unity and python
+    # # e.g. Unity -> '<command code><data>' -> Python
+    # # Python -> '<Acknowledgement>' -> Unity
+    # # sometimes the acknowledgement is omitted
+    
+    # # Set arm to demonstration position
+    # trainer.hPlant.position[0] = 1
+    # trainer.hPlant.position[3] = 1.3
+    # trainer.hSink.sendJointAngles(trainer.hPlant.position)
+    
+    # print('Waiting for Unity to send "Begin Training" cue.')
+    # while state == STATES.waitingStart:
+        # # wait for signal to begin 'b'
+        # data, addr = trainer.receiveBlock()
+        # data = bytearray(data)
+        # if data[0] == ord('b'):
+            # state = STATES.setupRecord
+            # print('Beginning training session.\n')
+    
+    
+    # #adjust in future to read in classes based on unity settings/take all from ROC file
+    # # if trainer.TrainingName == []:
+        # # trainer.TrainingName = ['No Movement', 'Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Adduction',
+            # # 'Wrist Abduction', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp']
+    
+    # for trainCycle in list(range(trainer.tcycles)):     #repeat training process a specified number of times
+        # for pose in trainer.TrainingName:               #run training process for each pose
+            # # Set arm to demonstration position
+            # trainer.hPlant.position[0] = 1
+            # trainer.hPlant.position[3] = 1.3
+            # trainer.hSink.sendJointAngles(trainer.hPlant.position)
+            
+            # #train each pose while communicating with unity UI
+            # #tell unity pose name to be trained
+            # state = STATES.setupRecord    #Unity will initially still be in cooldown, so python waits until Unity acknowledges the start of the setupRecord phase
+            # print('waiting for acknowledgement that unity received pose: ' + pose + '.')
+            # while data == None or data[0] != ord('a'):
+                # trainer.send(pose)
+                # data, addr = trainer.receiveBlock()
+                # print('received packet: ' + str(data))
+                # if data != None:
+                    # data = bytearray(data)
+            
+            # start = time.time()
+            # while time.time() - start < 1:
+                # trainer.output(pose)
+            
+            # state = STATES.waitingRecord
+            # print('waiting for training signal.')
+            # #wait for unity to signal recording of pose
+            # while data == None or data[0] != ord('r'):
+                # #trainer.output(pose)
+                # data, addr = trainer.receiveBlock()
+                # print('received packet: ' + str(data))
+                # if data != None:
+                    # data = bytearray(data)
+            # trainer.send('a')
+            # state = STATES.recording
+            # trainer.trainSingle(trainer.TrainingName.index(pose), pause=1)
+            # trainer.send('d')
+            
+            # #zero out hand joints
+            # for i in list(range(len(trainer.hPlant.position))):
+                # trainer.hPlant.position[i] = 0
+            # trainer.hPlant.position[0] = 1
+            # trainer.hPlant.position[3] = 1.3
+            # trainer.hSink.sendJointAngles(trainer.hPlant.position)
+            
+            # state = STATES.cooldown    #python will immediately enter the setupRecord state while Unity will remain in cooldown until the cooldown timer completes
+    
+    # #wait for end of unity cooldown. Notify that training is done.
+    # while data == None or data[0] != ord('a'):
+            # trainer.send('f')
+            # data, addr = trainer.receiveNoBlock(timeout=1.0)
+            # print('received packet: ' + str(data))
+            # if data != None:
+                # data = bytearray(data)
+    # trainer.save()
+    # trainer.fit()
+    
+    # print('')
+    # print(str(trainer))
+	
+    # print('Running prediction model:')
+    # trainer.predictMult()
+    
+    
+    # trainer.close()
+    # print('\nEnding program in 5 seconds...')
+    # time.sleep(5)
+    
+    
     pass
     
 

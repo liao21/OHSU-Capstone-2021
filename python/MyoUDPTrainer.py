@@ -244,7 +244,7 @@ def parse():
     parser.add_argument('-u', '--UNITY_PORT', help='UDP port to receive unity packets from', default=8051)
     parser.add_argument('-y', '--PYTHON_PORT', help='UDP port to send python controls to', default=8050)
     parser.add_argument('-v', '--VERBOSE', help='How much console information. 0=minimal, 1=some, 2=more, etc.', default=1, type=int)
-    parser.add_argument('-e', '--EXECUTE', help='What "Main()" should this script execute: UnityTrainer, demo, main, etc.?', type=str, default='UnityTrainer')
+    parser.add_argument('-e', '--EXECUTE', help='What "Main()" should this script execute: UnityTrainer, demo, main, etc.?', type=str, default='main')
     #other args relating to creating new data/etc.
     
     return parser.parse_args()

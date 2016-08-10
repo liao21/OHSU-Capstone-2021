@@ -41,6 +41,7 @@ from sklearn.externals import joblib
 import socket
 import errno
 import random
+import traceback
 
 
 def UnityTrainer(args):
@@ -253,8 +254,50 @@ def main(args):
     """
     Default execution case. Fully controllable training process via agnostically generatied UDP cues.
     
-    <more documentation will go here...>
+    For control from Matlab PnetClass:
+    (goto MiniVIE)
+    >> a = PnetClass(8050, 8051,'127.0.0.1')
+    >> a.initialize
+    >> a.putData([uint8(<data_to_transmit>)])
+    
+    At start of this method, this program expects a handhsake response (see handshake function).
+    Then this program enters the main UDP flow control loop.
+    
+    UDP Cues for Trainer Functions
+    (~ for no cue)
+    Cue:                Function:                   Meaning:            Details:    
+    ~                   __init__()            
+    cc                  create()                    "class create"
+    ca<class>           addClass(class)             "class add"
+    cr<class>           removeClass(class)          "class remove"
+    dc                  clear()                     "data clear"        
+    dd                  delete()                    "data delete"
+    df                  fit()                       "data fit"
+    dl                  load()                      "data load"
+    ds                  save()                      "data save"
+    op                  output()                    "output plant"
+    os                  print(__str__)              "output string"
+    pm<count>           predictMult(count)          "predict multiple"  (<count> is optional. 'infinite' for -1, else, 1 uint8 for <count> value.)
+    ps                  predictsingle()             "predict single"
+    ta<samples,cycles>  trainall(samples, cycles)   "train all"         (<samples> is optional; 1 uint8 for value at data[2]. <cycles> is optional (requires samples present); 1 uint8 at data[3].)
+    tn                  (next pose)                 "train next"        ((not a function) increments a class counter by 1) (overflow causes a UDP reply 'o')
+    tp                  (previous pose)             "train previous"    ((not a function) decrements a class counter by 1) (underflow causes a UDP reply 'o')
+    ts<cycles>          trainsingle()               "train single"      (<cycles> is optional. 1 uint8 for <cycles> value)
+    ~                   send()           
+    ~                   receiveNoBlock()
+    ~                   receiveBlock()
+    ~                   handshake()
+
+    Others UDP Codes:
+    code:               Meaning:                    Details:
+    {ACK} (0x06)        "Acknowledged"
+    {NAK} (0x15)        "Negative Acknowledge"
+    o                   "counter out of bounds"     (sent when 'tn' or 'tp' is received and counter would progress past -1, or len(classes)) (i.e. counter at start or end of class list)
+    q                   "quit (current loop)"
+    
     """
+    
+    
     
     print('Running UDP driven trainer. Progress will only continue if proper UDP cues are returned.\n')
     
@@ -271,142 +314,152 @@ def main(args):
     
     #state = STATES.waitingStart
     
-    data, addr = None, None
+    data, addr = None, None     #current UDP packet received from Unity
+    curPose = 0                 #index of the current pose being operated on
     
     #handle generic UDP cues
+    print('Start of UDP flow control section.')
     while data == None or data[0] != ord('q'): # 'q' cue for "quit"
-        print('Waiting for UDP data packet.')
-        data, addr = trainer.receiveBlock()
-        data = bytearray(data)
+        try:
         
-        if data[0] == ord('s'):      #save
-            trainer.save()
-            pass
-        elif data[0] == ord('l'):    #load
-            trainer.load()
-            pass
-        elif data[0] == ord('d'):    #delete    
-            trainer.delete()
-            pass
-        elif data[0] == ord('c'):    #class
-            if data[1] == ord('c'):      #create
+            print('Waiting for UDP data packet...')
+            data, addr = trainer.receiveBlock()
+            data = bytearray(data)
+            print('Received packet: ' + str(data)[12:-2])
+            
+            if data[0] == ord('d'):           #data        
+                if data[1] == ord('s'):         #save
+                    trainer.save()
+                    
+                elif data[1] == ord('l'):       #load
+                    trainer.load()
+                    
+                elif data[1] == ord('d'):       #delete
+                    trainer.delete()
+                
+                elif data[1] == ord('c'):       #clear
+                    trainer.clear()
+                
+                elif data[1] == ord('f'):       #fit to model
+                    trainer.fit()
+                
+            
+            
+            elif data[0] == ord('c'):       #class (poses)
+                if data[1] == ord('c'):       #create (defaults)
+                    trainer.create()
+                
+                elif data[1] == ord('a'):       #add
+                    className = data[2:].decode('utf-8')
+                    trainer.addClass(className)                
+                    
+                elif data[1] == ord('r'):       #remove    
+                    className = data[2:].decode('utf-8')
+                    trainer.removeClass(className)
+                
+            
+            
+            elif data[0] == ord('o'):       #output
+                if data[1] == ord('s'):         #tostring
+                    print(str(trainer))
+                
+                elif data[1] == ord('p'):       #plant
+                    #output plant. not sure how this would be used...
+                    pass
+                
+            
+            
+            
+            elif data[0] == ord('p'):       #predict
+                if data[1] == ord('m'):         #multiple
+                    if len(data) == 3:
+                        trainer.predictMult(data[2])
+                    elif len(data) > 3 and data[2:].decode('utf-8').lower() == 'infinity':
+                        trainer.predictMult(-1)
+                    else:
+                        trainer.predictMult()   #use settings in object   
+                    
+                elif data[1] == ord('s'):       #single
+                    print(trainer.predictSingle())     #this isn't useful in generic UDP control mode
+                    pass
+                
+            
+            
+            
+            elif data[0] == ord('t'):       #train (handles sequence for training poses, e.g. progressing to next pose, training current pose, etc.)
+                if data[1] == ord('a'):         #all poses
+                    if len(data) >= 3:
+                        cycles = 1 if len(data) == 3 else data[3]
+                        trainer.trainAll(data[2], cycles)
+                    else:
+                        trainer.trainAll()
+                
+                elif data[1] == ord('s'):       #single pose
+                    if len(data) >= 3:
+                        trainer.trainSingle(curPose, samples=data[2],pause=0)
+                    else:
+                        trainer.trainSingle(curPose,pause=0)
+                
+                elif data[1] == ord('n'):       #(goto) next pose
+                    if curPose + 1 < len(trainer.TrainingName):
+                        curPose += 1
+                        print('Current pose set to "' + trainer.TrainingName[curPose] + '."\n')
+                    else:
+                        #curPose = 0  #may want to delete this line
+                        print('Already at last pose "' + trainer.TrainingName[curPose] + '."\n')
+                        trainer.send('o')       #pose overflow
+                
+                elif data[1] == ord('p'):       #(goto) previous pose
+                    
+                    if curPose > 0:
+                        curPose -= 1
+                        print('Current pose set to "' + trainer.TrainingName[curPose] + '."\n')
+                    else:
+                        #curPose = len(trainer.TrainingName) - 1 #may want to delete this line.
+                        print('Already at first pose "' + trainer.TrainingName[curPose] + '."\n')
+                        trainer.send('o')
+                        
+                elif data[1] == ord('f'):       #(goto) first pose
+                    curPose = 0
+                    print('Current pose set to "' + trainer.TrainingName[curPose] + '."\n')
+                
+                elif data[1] == ord('l'):       #(goto) last pose
+                    curPose = len(trainer.TrainingName) - 1
+                    print('Current pose set to "' + trainer.TrainingName[curPose] + '."\n')
+                
+            
+            
+            
+            elif data[0] == '':
                 pass
-            elif data[1] == ord('a'):    #add
+                
+            
+            
+            
+            elif data[0] == '':
                 pass
-            elif data[1] == ord('r'):    #remove    
-                pass
-            pass
-        elif data[0] == '':
-            pass
-        elif data[0] == '':
-            pass
-        elif data[0] == '':
-            pass
-        elif data[0] == '':
-            pass
-        elif data[0] == '':
-            pass
+                
+            else:
+                print('Unrecognized data packet. Restarting control loop.\n')
+            
+            pass # do stuff
         
-        pass # do stuff
+        #error handling
+        except Exception as err:   #print the exception, and continue running UDP flow control loop
+            try:
+                exc_info = sys.exc_info()
+            finally:
+                print('\nError occured in execution loop.')
+                traceback.print_exception(*exc_info)
+                print('')
+                del exc_info
+            pass
+        pass
+    #End of UDP flow control loop    
+    
+    print('Exiting UDP flow control section.\n')
     
     trainer.close()
-    
-    
-    
-    
-    
-    # #load saved data from disk if available
-    # trainer.load()
-     
-    
-    # # Ideal communication protocal between unity and python
-    # # e.g. Unity -> '<command code><data>' -> Python
-    # # Python -> '<Acknowledgement>' -> Unity
-    # # sometimes the acknowledgement is omitted
-    
-    # # Set arm to demonstration position
-    # trainer.hPlant.position[0] = 1
-    # trainer.hPlant.position[3] = 1.3
-    # trainer.hSink.sendJointAngles(trainer.hPlant.position)
-    
-    # print('Waiting for Unity to send "Begin Training" cue.')
-    # while state == STATES.waitingStart:
-        # # wait for signal to begin 'b'
-        # data, addr = trainer.receiveBlock()
-        # data = bytearray(data)
-        # if data[0] == ord('b'):
-            # state = STATES.setupRecord
-            # print('Beginning training session.\n')
-    
-    
-    # #adjust in future to read in classes based on unity settings/take all from ROC file
-    # # if trainer.TrainingName == []:
-        # # trainer.TrainingName = ['No Movement', 'Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Adduction',
-            # # 'Wrist Abduction', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp']
-    
-    # for trainCycle in list(range(trainer.tcycles)):     #repeat training process a specified number of times
-        # for pose in trainer.TrainingName:               #run training process for each pose
-            # # Set arm to demonstration position
-            # trainer.hPlant.position[0] = 1
-            # trainer.hPlant.position[3] = 1.3
-            # trainer.hSink.sendJointAngles(trainer.hPlant.position)
-            
-            # #train each pose while communicating with unity UI
-            # #tell unity pose name to be trained
-            # state = STATES.setupRecord    #Unity will initially still be in cooldown, so python waits until Unity acknowledges the start of the setupRecord phase
-            # print('waiting for acknowledgement that unity received pose: ' + pose + '.')
-            # while data == None or data[0] != ord('a'):
-                # trainer.send(pose)
-                # data, addr = trainer.receiveBlock()
-                # print('received packet: ' + str(data))
-                # if data != None:
-                    # data = bytearray(data)
-            
-            # start = time.time()
-            # while time.time() - start < 1:
-                # trainer.output(pose)
-            
-            # state = STATES.waitingRecord
-            # print('waiting for training signal.')
-            # #wait for unity to signal recording of pose
-            # while data == None or data[0] != ord('r'):
-                # #trainer.output(pose)
-                # data, addr = trainer.receiveBlock()
-                # print('received packet: ' + str(data))
-                # if data != None:
-                    # data = bytearray(data)
-            # trainer.send('a')
-            # state = STATES.recording
-            # trainer.trainSingle(trainer.TrainingName.index(pose), pause=1)
-            # trainer.send('d')
-            
-            # #zero out hand joints
-            # for i in list(range(len(trainer.hPlant.position))):
-                # trainer.hPlant.position[i] = 0
-            # trainer.hPlant.position[0] = 1
-            # trainer.hPlant.position[3] = 1.3
-            # trainer.hSink.sendJointAngles(trainer.hPlant.position)
-            
-            # state = STATES.cooldown    #python will immediately enter the setupRecord state while Unity will remain in cooldown until the cooldown timer completes
-    
-    # #wait for end of unity cooldown. Notify that training is done.
-    # while data == None or data[0] != ord('a'):
-            # trainer.send('f')
-            # data, addr = trainer.receiveNoBlock(timeout=1.0)
-            # print('received packet: ' + str(data))
-            # if data != None:
-                # data = bytearray(data)
-    # trainer.save()
-    # trainer.fit()
-    
-    # print('')
-    # print(str(trainer))
-	
-    # print('Running prediction model:')
-    # trainer.predictMult()
-    
-    
-    # trainer.close()
     # print('\nEnding program in 5 seconds...')
     # time.sleep(5)
     
@@ -505,16 +558,16 @@ class MyoUDPTrainer:
         self.UnityReceiverSock.bind((self.UDP_IP, self.UNITY_RECEIVE_PORT))
         self.UnityReceiverSock.setblocking(0)
         #https://docs.python.org/2/library/socket.html consider settimeout(<small number>) instead of disabling blocking
-        print('UnityPythonUDP UI IP: ' + str(self.UDP_IP))
-        print('UnityUDP UI Port: ' + str(self.UNITY_RECEIVE_PORT))
+        print('UDP Program Control IP: ' + str(self.UDP_IP))
+        print('Listening to Port: ' + str(self.UNITY_RECEIVE_PORT))
 	
         self.PythonSenderSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         #print('PythonUDP UI IP: ' + str(self.UDP_IP))
-        print('PythonUDP UI Port: ' + str(self.PYTHON_SEND_PORT))
+        print('Sending to Port: ' + str(self.PYTHON_SEND_PORT))
         print('')
 
 
-    def trainAll(self, samples=None):
+    def trainAll(self, samples=None, cycles=None):
         """
         Run training regime for all poses sequentially.
         
@@ -525,17 +578,20 @@ class MyoUDPTrainer:
     
         if samples == None:
             samples = self.tsamples
+        if cycles == None:
+            samples = self.tcycles
             
         if samples > 0:
             print('\n\nBeginning training Regime in 5 seconds...')
-            print('(Ready for first pose "Wrist Rotate In")')
+            print('(Ready for first pose "' + self.TrainingName[0] + '"')')
             time.sleep(5)
 
             print('')
-            for cycle in list(range(self.tcycles)):
+            for cycle in list(range(cycles)):
                 print('Training Cycle #' + str(cycle) + '\n')
                 for classNum, className in enumerate(self.TrainingName):
                     self.trainSingle(classNum, samples)
+        print('Finished training all poses.\n')
 
 
     def trainSingle(self, classNum, samples=None, pause=3):
@@ -619,6 +675,8 @@ class MyoUDPTrainer:
         
         if self.verb >= 2:
             print('Fit LDA model execution time: ' + str(time.time() - start) + 's')
+        
+        print('')
 
 
     def predictMult(self, cycles=None):
@@ -633,9 +691,12 @@ class MyoUDPTrainer:
         
         if cycles == None:
             cycles = self.pcycles
-            
+        
+        data, addr = None, None     #current UDP packet received from Unity
+        
         i = 0
-        while i != cycles:
+        while i != cycles and (data == None or data[0] != ord('q')):
+            data, addr = self.receiveNoBlock()  #receive UDP data to allow for exiting infinite loop
             loopStart = time.time()
             prediction = self.predictSingle()
             if self.verb >= 1:
@@ -652,6 +713,8 @@ class MyoUDPTrainer:
                 print("Timing Overload")
             
             i += 1
+        
+        print('')
 
 
     def predictSingle(self):
@@ -717,7 +780,7 @@ class MyoUDPTrainer:
             
         start = time.time()
         
-        print('\nSaving emg feature data to test file')
+        print('Saving emg feature data to test file.')
         trainFolder = os.path.join(path,'training_data')
 
 
@@ -730,6 +793,8 @@ class MyoUDPTrainer:
         
         if self.verb >= 2:
             print('Save training data execution time: ' + str(time.time() - start) + 's')
+        
+        print('')
 
 
     def load(self, path=None):
@@ -761,7 +826,6 @@ class MyoUDPTrainer:
         #perform error checks here:
         #if error: self.create()
         print('')
-        pass
 
 
     def delete(self, path=None):
@@ -772,7 +836,7 @@ class MyoUDPTrainer:
         self -- pointer to this object
         path -- (Optional) If passed in, overrides path that training data is deleted from. Otherwise data is deleted from self.path
         """
-        print('Deleting saved data.')
+        print('Deleting saved data.\n')
         
         if path == None:
             path = self.path
@@ -786,9 +850,10 @@ class MyoUDPTrainer:
             os.remove(trainFolder + 'className.pkl')
 
 
-    def create(self):
+    def clear(self):
         """
-        Create initial training data from scratch. Blank training data is stored into self.TrainingData, self.TrainingClass, and self.TrainingName.
+        Clear training data. 
+        Blank training data is stored into self.TrainingData, self.TrainingClass, and self.TrainingName.
         
         Keyword Arguments:
         self -- pointer to this object
@@ -796,7 +861,25 @@ class MyoUDPTrainer:
         
     
         # create new data from default
-        print('Creating new set of training data.')
+        print('Clearning set of training data.\n')
+        self.TrainingData = []
+        self.TrainingClass = []
+        self.TrainingName = []
+
+            
+    def create(self):
+        """
+        Create initial training data from scratch. 
+        Blank training data is stored into self.TrainingData and self.TrainingClass
+        Default data is stored into self.TrainingName.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        """
+        
+    
+        # create new data from default
+        print('Creating new set of training data with default classes.\n')
         self.TrainingData = []
         self.TrainingClass = []
         #TrainingName should be loaded from the current ROC file, or start blank, and then addClass for each class
@@ -825,12 +908,14 @@ class MyoUDPTrainer:
         newClass -- string that names the pose to add
         """
         if newClass not in self.TrainingName:
+            print('Adding class "' + newClass + '" to pose list.\n')
             self.TrainingName.append(newClass)
         else:
             raise ValueError('Cannot add class "' + newClass + '" to training set. Class already exists in object.')
 
 
     def removeClass(self, toRemove):
+        #bug, need to shift indexes so that class numbers are correctly sized
         """
         Delete a pose from the list of poses that are in the training set. New class is deleted from self.TrainingName along with all associated training data in self.TrainingData and self.TrainingClass.
         
@@ -838,7 +923,7 @@ class MyoUDPTrainer:
         self -- pointer to this object
         newClass -- string that names the pose to add
         """
-        print('Attempting to remove class "' + toRemove +'."')
+        print('Attempting to remove class "' + toRemove +'."\n')
         
         newData = []
         newClass = []
@@ -859,12 +944,20 @@ class MyoUDPTrainer:
         else:
             for i in range(len(self.TrainingClass)):
                 if self.TrainingClass[i] != remIndex:
-                    newClass.append(self.TrainingClass[i])
+                    # classNum = self.TrainingClass[i]
+                    # if classNum > remIndex:
+                        # classNum -= 1
+                       
+                    newClass.append(self.TrainingClass[i] - (1 if i > remIndex else 0)) #Convert indexes above removed class
                     newData.append(self.TrainingData[i])
         
         self.TrainingData = newData
         self.TrainingClass = newClass
         self.TrainingName = newName
+        if self.verb > 3:
+            print(newData)
+            print(newClass)
+            print(newName)
 
 
     def send(self, message):
@@ -938,11 +1031,13 @@ class MyoUDPTrainer:
         #wait to receive data [B+1]
         #handhsake complete. Unity and Python are synced
         
+        #IMPORTANT NOTE: if A=255, then the expected A+1=0 because only a single byte is checked
+        
         #self.UnityReceiverSock.setblocking(1)
         acquainted = False      # has the handshake been successful
         
         while not acquainted:
-            print('Attempting handshake with Unity.')
+            print('Attempting handshake with UDP driver.')
             
             data, addr = self.receiveBlock()
             data = bytearray(data)
@@ -950,14 +1045,14 @@ class MyoUDPTrainer:
             
             #send response with random byte
             response = random.randint(0,255)
-            print('Sending response to Unity: ' + str(data[0]+1) + ' ' + str(response))
-            self.send(str(data[0]+1) + ' ' + str(response))
+            print('Sending response to Unity: ' + str((data[0]+1)%256) + ' ' + str(response))
+            self.send(str((data[0]+1)%256) + ' ' + str(response))
             
             #wait for second response
             data, addr = self.receiveBlock()
             data = bytearray(data)
             print('Received handshake response from Unity: ' + str(int(data[0])))
-            if data[0] == response + 1:
+            if data[0] == (response + 1)%256:
                 acquainted = True
             else:
                 print('Failed handshake. Retrying...\n')

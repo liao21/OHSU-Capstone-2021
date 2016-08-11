@@ -583,7 +583,7 @@ class MyoUDPTrainer:
             
         if samples > 0:
             print('\n\nBeginning training Regime in 5 seconds...')
-            print('(Ready for first pose "' + self.TrainingName[0] + '"')')
+            print('(Ready for first pose "' + self.TrainingName[0] + '"')
             time.sleep(5)
 
             print('')

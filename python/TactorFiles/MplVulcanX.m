@@ -6,6 +6,8 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
     %
     % 01-Sept-2010 Armiger: Created
     % 17-May-2013 Armiger: Isolated only the vulcanX components
+    % 11-Aug-2016 Franke: Modified thumb and tactor value output to account for limitations.
+    
     properties
         % Handles
         hSource % use for getting kinematic data

@@ -1,6 +1,9 @@
 from Adafruit_PWM_Servo_Driver import PWM
 import time
 
+# This file is used by the UDP client to drive the servo motors.
+# Revisions: 
+# 11-August-2016 Franke: Initial revision
 
 pwm = PWM(0x40, debug=False)
 servoChannels = [0, 1, 2, 3, 4]

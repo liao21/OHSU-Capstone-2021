@@ -1,8 +1,10 @@
 MiniVIE
 
+MATLAB Users:
+
 The MiniVIE is a package library based on the Johns Hopkins University 
 Applied Physics Laboratory Virtual Integration Environment (JHU/APL VIE).
-This is a completely seperate and independent code base that is designed to 
+This is a completely separate and independent code base that is designed to 
 take the modularity and themes of the VIE and make them readily accessible.
 
 The most interesting things you can do with this code base requires data acquisition
@@ -12,7 +14,21 @@ simulator exists and can be used to test the functionality.
 Use the tutorial.m script as a guide to see how the modules are created and 
 interact with one another.
 
-Bob Armiger 11/9/2010
+Python Users:
+
+We have begun the process of replicating / augmenting the MiniVIE paradigm and functionality
+in the python environment.  The intent is to facilitate code reuse across operating systems as 
+well as enabling use on embedded hardware (e.g. Raspberry Pi).  The code based is and should maintain
+python 2.x and 3.x compatibility.
+
+At present (Aug 2016) the code based supports signal inputs from the Myo Armband, signal processing and 
+classification using numpy and sklearn, and command outputs to both the physical and virtual versions 
+of the JHU/APL Modular Prosthetic Limb System.
+
+
+
+
+Initial Creation: 11/9/2010
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -130,6 +146,3 @@ Presentation.MiniBreakout(SignalSource,SignalClassifier)
 %% Optional:
 % Adjust output gain for classifier
 GUIs.guiGainAdjust(SignalClassifier)
-
-
-

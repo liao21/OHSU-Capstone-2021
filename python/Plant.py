@@ -18,6 +18,7 @@ Revisions:
 # Created 1/23/2016 Armiger
 from ROCtableClass import storeROC
 import math
+from scipy.interpolate import interp1d
 
 VERBOSE = 1;
 DEBUG = 0;

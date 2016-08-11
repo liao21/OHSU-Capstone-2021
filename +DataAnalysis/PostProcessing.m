@@ -40,8 +40,10 @@ classdef PostProcessing
             
             for i = 1:length(hData)
                 % setup figure named with filename
-                [~,fname,~] = fileparts(hData(i).fullFileName);
-                f.Name = fname ;
+                [pname,fname,~] = fileparts(hData(i).fullFileName);
+                [~,lastFolder,~] = fileparts(pname);
+                
+                f.Name = fullfile(lastFolder,fname);
                 
                 if hData(i).SampleCount > 0
                     [~] = hData(i).plot_emg_with_breaks(doFilter); % output arg disables image export
@@ -228,7 +230,7 @@ classdef PostProcessing
             hPpt.close();
             
         end
-        function structData = processTac1Batch(dataPath,subjectId)
+        function fileData = processTac1Batch(dataPath,subjectId)
             
             % Output file (PPTX)
             outDir = pwd;
@@ -238,12 +240,24 @@ classdef PostProcessing
                 % treat input as a path and load the data
                 s = rdir(fullfile(dataPath,'*.tacAssessment'));
                 
+                if isempty(s)
+                    error('No files found: %s\n',fullfile(dataPath,'*.tacAssessment'))
+                end
+                
                 % sort by date
                 [~,idx] = sort([s.datenum]);
                 s = s(idx);
                 
                 for i = 1:length(s)
-                    structData(i) = load(s(i).name,'-mat');  %#ok<AGROW>
+                    try
+                        newData = load(s(i).name,'-mat');
+                    catch loadError
+                        newData = [];
+                        warning(loadError.message);
+                    end
+                    
+                    % Load whatever is in the file
+                    fileData{i} = newData; %#ok<AGROW>
                 end
                 
             else
@@ -257,20 +271,27 @@ classdef PostProcessing
             hPpt.OutputFile = outputFile;
             hPpt.initialize();
             
-            for i = 1:length(structData)
+            for i = 1:length(fileData)
                 [pname,fname,~] = fileparts(s(i).name);
                 [~,basedir,~] = fileparts(pname);
                 
                 fname = fullfile(basedir,fname);
                 
-                if isnumeric(structData(i).structTrialLog(1).targetClass)
+                thisAssessment = fileData{i};
+                
+                % handle case where loaded file is empty (corrupt?)
+                if isempty(thisAssessment)
+                    continue
+                end
+                
+                if isfield(thisAssessment.structTrialLog(1),'targetClass') && isnumeric(fileData{i}.structTrialLog(1).targetClass)
                     fprintf(' %s is a TAC-3\n',s(i).name);
                     continue
                 else
                     fprintf(' %s is a TAC-1\n',s(i).name);
                 end
                 
-                [completionPct, cellSummary, cellHistory, pathEfficiency] = DataAnalysis.Assessments.parseTac1(structData(i).structTrialLog);
+                [completionPct, cellSummary, cellHistory, pathEfficiency] = DataAnalysis.Assessments.parseTac1(fileData{i}.structTrialLog);
                 
                 % convert precision
                 for iCell = 1:numel(cellSummary)
@@ -296,7 +317,7 @@ classdef PostProcessing
                 hPpt.SlideNames = cat(1,hPpt.SlideNames,fname);
                 exportToPPTX('addslide');
                 exportToPPTX('addtext',fname); %,'Position','Title 1');
-
+                
                 exportToPPTX('addtable',cellHistory,...
                     'Position',[0.05 0.5 4.95 size(cellHistory,1) * 0.10 ],...
                     'FontSize',10)
@@ -311,6 +332,5 @@ classdef PostProcessing
             hPpt.close();
             
         end
-        
     end
 end

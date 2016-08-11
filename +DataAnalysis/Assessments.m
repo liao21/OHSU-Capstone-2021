@@ -59,6 +59,15 @@ classdef Assessments
             for i = 1:nTrials
                 t = structTrialLog(i);
                 
+                if ~isfield(t,'targetAngle')
+                    % Some legacy tests c 2014 may omit this
+                    cellSummary = {};
+                    cellHistory = {};
+                    meanEfficiency = [];
+                    return
+                end
+                
+                
                 % perfect path efficiency is each incremental motion (diff)
                 % sums to exactly the angle difference.  deviations from
                 % path will add to the user length

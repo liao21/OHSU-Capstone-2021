@@ -1,6 +1,9 @@
 classdef BluetoothTactor_UDP < handle
-    % Class for interfacing bluetooth vibro tactor controller.  Basic
-    % command protocol is: [ 0, 0, 0, 0, 0]
+    % This is used to create a UDP server to send values to the servo motors.
+    % It takes in an IP:port value to send data to a UDP port.
+    % 
+    % Revisions: 11-August-2016 Franke: Initial Revision
+    
     properties
         hUDP
         hTimer

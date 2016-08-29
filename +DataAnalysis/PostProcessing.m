@@ -20,7 +20,10 @@ classdef PostProcessing
             outDir = pwd;
             outputFile = fullfile(outDir,[subjectId '_EmgData.pptx']);
             
-            if ischar(dataPath)
+            if isempty(dataPath)
+                hData = [];
+                return
+            elseif ischar(dataPath)
                 % treat input as a path and load the data
                 hData = TrainingDataAnalysis.batchLoadTrainingData(dataPath);
             else
@@ -74,7 +77,10 @@ classdef PostProcessing
             outDir = pwd;
             outputFile = fullfile(outDir,[subjectId '_Pca.pptx']);
             
-            if ischar(dataPath)
+            if isempty(dataPath)
+                hData = [];
+                return
+            elseif ischar(dataPath)
                 % treat input as a path and load the data
                 hData = TrainingDataAnalysis.batchLoadTrainingData(dataPath);
             else
@@ -120,7 +126,10 @@ classdef PostProcessing
             outDir = pwd;
             outputFile = fullfile(outDir,[subjectId '_DataConfusion.pptx']);
             
-            if ischar(dataPath)
+            if isempty(dataPath)
+                hData = [];
+                return
+            elseif ischar(dataPath)
                 % treat input as a path and load the data
                 hData = TrainingDataAnalysis.batchLoadTrainingData(dataPath);
             else
@@ -143,7 +152,7 @@ classdef PostProcessing
                 [~,fname,~] = fileparts(hData(i).fullFileName);
                 f.Name = fname;
                 
-                if hData(i).SampleCount == 0
+                if isempty(hData(i).getEnabledClassLabels)
                     continue
                 end
                 

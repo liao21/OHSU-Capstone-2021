@@ -222,17 +222,50 @@ classdef TrainingData < handle
             signalData = reshape(s(channels,:,sortOrder),length(channels),[])';
         end
         function [signalData, signalLabel] = getStichedData(obj,channels,sortOrder)
+            % The objective here is to get the Raw signals, which start out
+            % as data frames, then align them so that ovrelapping portions
+            % are removed resulting in a continuous time history
+            %
+            % Inputs: 
+            %   channels - [Optional] specify which channels to return in
+            %   the time history.  By default, all channels are recorded,
+            %   but only those specified by the ActiveChannels property
+            %   will be returned
+            %
+            %   sort - [Optional] true/false whether results should be
+            %   grouped by classname.  Since multiple repitions of the same
+            %   movement might be contained in the same data set, this will
+            %   consolidate each to a single pool. Defualt is unsorted
+            %
 
-            s = obj.SignalDataRaw;
-            assert(~isempty(s),'No Raw Data Found');
+            % Rather then accessing the raw data property directly (which
+            % is buffered with NaNs for speed.  use the get method, but
+            % note this will only apply to 'enabled' data samples
+            %s = obj.SignalDataRaw;
+            s = obj.getRawSignals();
+            if isempty(s)
+                warning('No Raw Data Found');
+                signalData = [];
+                signalLabel = [];
+                return
+            end
+
             if nargin < 2
                 channels = obj.ActiveChannels;
             end
             if nargin < 3
-                sortOrder = 1:obj.SampleCount;
+                %sortOrder = 1:obj.SampleCount;
+                sortOrder = false;
             end
             
-            s = s(channels,:,sortOrder);
+            if sortOrder
+                % get the labels
+                classLabelId = obj.getClassLabels;
+                [~, sortOrder] = sort(classLabelId);
+                s = s(channels,:,sortOrder);
+            else
+                s = s(channels,:,:);
+            end
             
             lag = zeros(1,size(s,3)-1);
             warning('off','signal:finddelay:noSignificantCorrelationVector');
@@ -275,7 +308,7 @@ classdef TrainingData < handle
                     newData = s(:,1+end-L:end,i+1);
                 end
                 emgWave = cat(2,emgWave,newData);
-                thisClass = obj.ClassLabelId(sortOrder(i));
+                thisClass = classLabelId(sortOrder(i));
                 emgLabel = cat(2,emgLabel,thisClass*ones(1,size(newData,2)));
             end
             
@@ -295,7 +328,7 @@ classdef TrainingData < handle
         function signalData = getRawSignals(obj)
             % returns valid data (since buffers initialized to larger size)
             %
-            % Note this also applies the 'enabled' flag so that onlt active
+            % Note this also applies the 'enabled' flag so that only active
             % data is returned
             signalData = [];
             

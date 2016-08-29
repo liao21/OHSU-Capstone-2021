@@ -208,17 +208,53 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             [p, f, e] = fileparts(obj.fullFileName);
             dataLabel = [f '_emgChannels'];
 
-            % sort to group similar classes
-            l = obj.getAllClassLabels;
+            % The training data object contains partially overlapping
+            % frames of emg time data.  Each frame is also labeled with a
+            % class label.  The class label number should correspond to the
+            % ClassNames property.
+            %MPL_0320140612_133016.trainingData
+            
+            % Class labels here will be 'filtered' by those that are
+            % enabled
             l = obj.getClassLabels;
-            [l, sortOrder] = sort(l);
+            classNames = obj.ClassNames;
+            
+            uniqueLabels = unique(l);
+            nClassIds = length(uniqueLabels);            
+            nClassNames = length(classNames);
+            
+            % it's common to have more named classes than label ids (some
+            % classes might not have been trained).  It's uncommon to have
+            % more ids than labels
+            % this is an error state in which the numeric labels don't
+            % match the named classes.  we can try to recover by
+            % disabling any unmatched labels
+            if nClassIds > nClassNames
+                warning('TrainingData:MismatchedLabels','More numeric data labels found than named data labels')
+                unmatched = setdiff(uniqueLabels,1:nClassNames);
+                for i = unmatched
+                    obj.disableLabeledData(i);
+                end
+                
+                % % recompute now that unmatched data is disabled
+                % l = obj.getClassLabels;
+                % uniqueLabels = unique(l);
+                % nClassIds = length(uniqueLabels);
+                % nClassNames = length(classNames);
+                
+            end
             
             if nargin < 3
                 channels = obj.ActiveChannels;
             end
             
             % get data and labels
-            [emgDataRaw, emgLabels] = obj.getStichedData(channels,sortOrder);
+            [emgDataRaw, emgLabels] = obj.getStichedData(channels,1);
+            
+            if isempty(emgDataRaw)
+                dataLabel = [];
+                return
+            end
             emgDataRaw = emgDataRaw';
             
             chEmg = emgDataRaw;
@@ -579,7 +615,9 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             s = s(idx);
 
             if isempty(s)
-                error('No files found in: %s',fullfile(dataPath,'*.trainingData'));
+                warning('No files found in: %s',fullfile(dataPath,'*.trainingData'));
+                hData = [];
+                return
             end
             
             for iFile = 1:length(s)

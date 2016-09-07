@@ -132,9 +132,13 @@ def UnityTrainer(args):
         # wait for signal to begin 'b'
         data, addr = trainer.receiveBlock()
         data = bytearray(data)
+        if data[0] == ord('q'):     #quit training session
+            trainer.close()
+            quit()
         if data[0] == ord('b'):
             state = STATES.setupRecord
             print('Beginning training session.\n')
+        
     
     
     #adjust in future to read in classes based on unity settings/take all from ROC file
@@ -159,6 +163,10 @@ def UnityTrainer(args):
                 print('received packet: ' + str(data))
                 if data != None:
                     data = bytearray(data)
+                
+                if data[0] == ord('q'):     #quit training session
+                    trainer.close()
+                    quit()
             
             start = time.time()
             while time.time() - start < 1:
@@ -173,6 +181,9 @@ def UnityTrainer(args):
                 print('received packet: ' + str(data))
                 if data != None:
                     data = bytearray(data)
+                if data[0] == ord('q'):     #quit training session
+                    trainer.close()
+                    quit()
             trainer.send('a')
             state = STATES.recording
             trainer.trainSingle(trainer.TrainingName.index(pose), pause=1)

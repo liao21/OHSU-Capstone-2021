@@ -96,6 +96,14 @@ set(handles.txtCounter,'String','0');
 
 set(handles.editCounterTotal,'String','10');
 
+% Update figure width
+try
+    handles.figure1.Position(3) = handles.figure1.Position(3) * 1.1;
+catch ME
+    warning('Failed to update figure width: "%s"',ME.message)
+end
+    
+
 
 % Update handles structure
 guidata(hObject, handles);

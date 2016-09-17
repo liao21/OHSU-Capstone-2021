@@ -144,10 +144,11 @@ classdef MplVulcanXSink < MPL.MplSink
             % convert packets to percept struct
             data = extract_mpl_percepts_v2(packets);
             armDegrees = round(data.jointPercepts.position(1:7) * 180 / pi);
-            fprintf(['[%s] Arm Angles: SHFE=%6.1f | SHAA=%6.1f | HUM=%6.1f'...
-                '| EL=%6.1f | WR=%6.1f | DEV=%6.1f | WFE=%6.1f Degrees\n'],...
-                mfilename,armDegrees);
-            
+            if obj.Verbose
+                fprintf(['[%s] Arm Angles: SHFE=%6.1f | SHAA=%6.1f | HUM=%6.1f'...
+                    '| EL=%6.1f | WR=%6.1f | DEV=%6.1f | WFE=%6.1f Degrees\n'],...
+                    mfilename,armDegrees);
+            end
         end % getPercepts
     end
 end

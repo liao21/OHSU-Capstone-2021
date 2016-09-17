@@ -30,7 +30,13 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             
             % tactor initialization ************************************
             obj.TactorPort = UserConfig.getUserConfigVar('TactorComPort','');
-            obj.hTactors = BluetoothTactor(obj.TactorPort);
+            
+            if any(obj.TactorPort == ':') % this is a IP:port
+                obj.hTactors = BluetoothTactor_UDP(obj.TactorPort);
+            else
+                obj.hTactors = BluetoothTactor(obj.TactorPort);
+            end
+            
             obj.hTactors.initialize();
             
         end
@@ -110,6 +116,7 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
         end
         function update_sensory(obj)
             
+            %%
             try
                 % percepts will be sent to the local port
                 percepts = obj.hSink.getPercepts; %gets latest packets
@@ -120,27 +127,58 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             if ~isempty(obj.TactorPort)
                 % parse the percept packet
                 
+                % this function does two things: transfer function of
+                % sensor to tactor command, then transmit command.
+                % Consider isolating functionality
+                
                 % extract torqueVals
+                % Note Flip signs here if needed
                 tactorVals = zeros(1,5);
-                sensorVals = percepts.jointPercepts.torque([...
-                    MPL.EnumArm.THUMB_MCP,...
-                    MPL.EnumArm.INDEX_MCP,...
-                    MPL.EnumArm.MIDDLE_MCP,...
-                    MPL.EnumArm.RING_MCP,...
-                    MPL.EnumArm.LITTLE_MCP]);
-                minSensor = 0.05;
-                sensorVals(1) = -sensorVals(1);
-                sensorVals = max(sensorVals,minSensor);
+                indexSensorVal = double(percepts.jointPercepts.torque(MPL.EnumArm.INDEX_MCP));
+                middleSensorVal = double(percepts.jointPercepts.torque(MPL.EnumArm.MIDDLE_MCP));
+                ringSensorVal = double(percepts.jointPercepts.torque(MPL.EnumArm.RING_MCP));
+                littleSensorVal = double(percepts.jointPercepts.torque(MPL.EnumArm.LITTLE_MCP));
+                thumbSensorVal = double(percepts.jointPercepts.torque(MPL.EnumArm.THUMB_MCP));
+                
+                % TODO: Setup GUI to display sensor ranges and confirm
+                % function
+                
+                if obj.Verbose
+                fprintf('MPL Percepts: LittleMCP=%6.3f | RingMCP=%6.3f | MiddleMCP=%6.3f | IndexMCP=%6.3f | ThumbMCP=%6.3f\n',...
+                    littleSensorVal,ringSensorVal,middleSensorVal,indexSensorVal,thumbSensorVal);
+                end
+                % start sensor to tactor command map
+                thumbSensorLowHigh = [0.1 0.2];
+                thumbActuatorLowHigh = [0 255];
+                indexSensorLowHigh = [0 0.1];
+                indexActuatorLowHigh = [0 255];
+                middleSensorLowHigh = [0 0.1];
+                middleActuatorLowHigh = [0 255];
+                ringSensorLowHigh = [0 0.1];
+                ringActuatorLowHigh = [0 255];
+                littleSensorLowHigh = [0 0.1];
+                littleActuatorLowHigh = [0 255];
+                
+                % check range for interpolation
+                indexSensorVal = min(max(indexSensorVal,min(indexSensorLowHigh)),max(indexSensorLowHigh));
+                middleSensorVal = min(max(middleSensorVal,min(middleSensorLowHigh)),max(middleSensorLowHigh));
+                ringSensorVal = min(max(ringSensorVal,min(ringSensorLowHigh)),max(ringSensorLowHigh));
+                littleSensorVal = min(max(littleSensorVal,min(littleSensorLowHigh)),max(littleSensorLowHigh));
+                thumbSensorVal = min(max(thumbSensorVal,min(thumbSensorLowHigh)),max(thumbSensorLowHigh));
                 
                 % scale the torque values and perform mapping
-                tactorVals(5) = interp1([minSensor 0.1],[0 255],sensorVals(1),'linear',255);
-                tactorVals(4) = interp1([minSensor 0.3],[0 255],sensorVals(2),'linear',255);
-                tactorVals(3) = interp1([minSensor 0.3],[0 255],sensorVals(3),'linear',255);
-                tactorVals(2) = interp1([minSensor 0.3],[0 255],sensorVals(4),'linear',255);
-                tactorVals(1) = interp1([minSensor 0.3],[0 255],sensorVals(5),'linear',255);
+                tactorVals(1) = interp1(littleSensorLowHigh,littleActuatorLowHigh,littleSensorVal,'linear');
+                tactorVals(2) = interp1(ringSensorLowHigh,ringActuatorLowHigh,ringSensorVal,'linear');
+                tactorVals(3) = interp1(middleSensorLowHigh,middleActuatorLowHigh,middleSensorVal,'linear');
+                tactorVals(4) = interp1(indexSensorLowHigh,indexActuatorLowHigh,indexSensorVal,'linear');
+                tactorVals(5) = interp1(thumbSensorLowHigh,thumbActuatorLowHigh,thumbSensorVal,'linear');
                 
+                % fprintf('[%d,%d,%d,%d,%d]\n', round(tactorVals));
+                
+                % send tactor commands to device
                 obj.hTactors.tactorVals = double(round(tactorVals));
             end
         end
     end
 end
+

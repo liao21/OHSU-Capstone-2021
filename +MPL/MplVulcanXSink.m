@@ -139,10 +139,22 @@ classdef MplVulcanXSink < MPL.MplSink
                 end
             end
             
-            assert(~isempty(packets),'Unable to get percept data on port %d. Check VulcanX. Check Firewall.',obj.MplLocalPort);
+            if isempty(packets)
+                warning('Unable to get percept data on port %d. Check VulcanX. Check Firewall.',...
+                    obj.MplLocalPort);
+                data = [];
+                return
+            end
             
             % convert packets to percept struct
             data = extract_mpl_percepts_v2(packets);
+            
+            if isempty(data)
+                warning('Unable to convert percept packet data.');
+                data = [];
+                return
+            end
+            
             armDegrees = round(data.jointPercepts.position(1:7) * 180 / pi);
             if obj.Verbose
                 fprintf(['[%s] Arm Angles: SHFE=%6.1f | SHAA=%6.1f | HUM=%6.1f'...

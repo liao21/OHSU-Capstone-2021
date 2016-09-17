@@ -752,6 +752,7 @@ classdef MiniVIE < Common.MiniVieObj
                         h.hSink.MplCmdPort = str2double(UserConfig.getUserConfigVar('mplVulcanXCommandPort','9027'));
                         h.hSink.MplLocalPort = str2double(UserConfig.getUserConfigVar('mplVulcanXSensoryPort','9029'));
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
+                        h.hSink.Verbose = 0;
                         h.Verbose = 0;
                         obj.println('Presentation setup complete',1);
                     case 'MplUnity'

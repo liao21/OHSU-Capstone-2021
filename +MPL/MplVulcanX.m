@@ -13,6 +13,12 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
         
         TactorPort = '';
         hTactors = [];
+
+        DemoMyoElbow = 0;
+        DemoMyoShoulder = 0;
+        DemoMyoShoulderLeft = 0;
+        
+        Fref = eye(4);
         
     end
     methods
@@ -38,6 +44,10 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             end
             
             obj.hTactors.initialize();
+
+            obj.DemoMyoElbow = str2double(UserConfig.getUserConfigVar('myoElbowEnable','0'));
+            obj.DemoMyoShoulder = str2double(UserConfig.getUserConfigVar('myoElbowShoulder','0'));
+            obj.DemoMyoShoulderLeft = str2double(UserConfig.getUserConfigVar('myoElbowShoulderLeft','0'));
             
         end
         function close(obj)
@@ -111,6 +121,42 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             % perform local interpolation
             mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
             
+            
+            
+            if obj.DemoMyoElbow
+                % Demo for using myo band for elbow angle
+                try
+                    ang = obj.SignalSource.getEulerAngles;
+                    EL = ang(2) + 90;
+                    EL = EL * pi/180;
+                    mplAngles(4) = EL;
+                end
+            end
+            if obj.DemoMyoShoulder
+                
+                R = obj.SignalSource.getRotationMatrix();
+                F = [R [0; 0; 0]; 0 0 0 1];
+                
+                if isequal(obj.Fref, eye(4))
+                    % set offset the first time
+                    obj.Fref = F;
+                end
+                
+                newXYZ = LinAlg.decompose_R(pinv(obj.Fref)*F);
+                
+                if obj.DemoMyoShoulderLeft
+                    % left side angle decomposition
+                    mplAngles(1) = -newXYZ(3) * pi / 180;
+                    mplAngles(2) = -newXYZ(2) * pi / 180;
+                    mplAngles(3) = -newXYZ(1) * pi / 180;
+                else
+                    % right side angle decomposition
+                    mplAngles(1) = newXYZ(3) * pi / 180;
+                    mplAngles(2) = -newXYZ(2) * pi / 180;
+                    mplAngles(3) = newXYZ(1) * pi / 180;
+                end
+            end
+            
             obj.hSink.putData(mplAngles);
             
         end
@@ -121,10 +167,12 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 % percepts will be sent to the local port
                 percepts = obj.hSink.getPercepts; %gets latest packets
             catch ME
-                warning('MplVulcanX:NoPercepts',ME.message);
+                warning('MplVulcanXSink:badPercepts','MplVulcanXSink.getPercepts FAILED: %s',...
+                    ME.message);
+                return
             end
             
-            if ~isempty(obj.TactorPort)
+            if ~isempty(obj.TactorPort) && ~isempty(percepts)
                 % parse the percept packet
                 
                 % this function does two things: transfer function of

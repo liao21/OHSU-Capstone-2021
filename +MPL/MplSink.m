@@ -88,7 +88,7 @@ classdef MplSink < Common.DataSink
             tolArm = 2.5*pi/180;
             tolHand = 10*pi/180;
             timeoutCount = 0;
-            maxTries = 300;
+            maxTries = 400;
             targetPos = jointAngles;
             targetPos(1:length(anglesRadians)) = anglesRadians;
             while 1
@@ -107,6 +107,7 @@ classdef MplSink < Common.DataSink
                     fprintf('[%s] Move Complete\n', mfilename)
                     break
                 elseif (timeoutCount > maxTries)
+                    disp(delta)
                     error('Unable to complete move');
                 else
                     timeoutCount = timeoutCount + 1;

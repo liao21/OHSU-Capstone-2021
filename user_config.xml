@@ -41,9 +41,8 @@
     <add key="mplNfuUdpCommandPortLocal"    value="52000"/>         <!--(L=52000 R=52010)-->
 
     <!-- Vulcan X Command port typically:  
-    MUD Port (L=9024 R=9027) 
-    Percept Port (L=25101 R=25001)
-    Intent Port (L=9094 R=9095) -->
+    MUD/Command Port (L=9024 R=9027) 
+    Percept/Sensory Port (L=9026 R=9029) -->
     <add key="mplVulcanXIpAddress"          value="127.0.0.1"/>
     <add key="mplVulcanXCommandPort"        value="9024"/>
     <add key="mplVulcanXSensoryPort"        value="9026"/>
@@ -54,6 +53,15 @@
     <add key="myoElbowEnable"    value="1"/>
     <add key="myoElbowShoulder"    value="0"/>
     <add key="myoElbowShoulderLeft"    value="0"/>
+
+    <!-- Tactor Ports 
+    Options include:
+    DEBUG - Echo commands to console only
+    COM9 - send tactor via serial bluetooth
+    192.168.1.1:12001 - send tactor via UDP
+    '' - Null / Disable
+    -->
+    <add key="TactorComPort"    value=""/>
     
     <!-- User defined joint limits
      Optionally limit the range of each joint prior to sending to the MPL

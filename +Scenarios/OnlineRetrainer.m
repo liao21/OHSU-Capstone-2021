@@ -242,7 +242,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 doTrain = true;
                 
                 %reset counter
-                joy.buttonsHeldCount(obj.JoystickButtonTrain) = 1;
+                joy.resetButtonCounter(obj.JoystickButtonTrain,1);
                 
             else
                 doTrain = false;

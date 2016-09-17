@@ -7,7 +7,7 @@ classdef BluetoothTactor_UDP < handle
         udpPort = 12001;
         udpIP = '127.0.0.1';
         echoResponse = 0;
-        echoCommand = 1;
+        echoCommand = 0;
         maxAngle = 45;
         
         tactorVals = [0 0 0 0 0];

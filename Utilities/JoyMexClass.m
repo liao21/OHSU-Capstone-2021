@@ -176,7 +176,23 @@ classdef JoyMexClass < handle
             obj.buttonValLast = obj.buttonVal;
 
         end
-        
+        function resetButtonCounter(obj, id, val)
+            % Reset the 'hold' timer for the joystick.
+            % with no args it sets all buttons to 0
+            % with 'id' only the specified button is set
+            % with 'val' the counter is set to the value instead of zero
+            
+            
+            if nargin < 3
+                val = 0;
+            end
+            
+            if nargin < 2
+                obj.buttonsHeldCount(:) = val;
+            else
+                obj.buttonsHeldCount(id) = val;
+            end
+        end
         function [success, msg] = getdata(obj)
             %[success, msg] = getdata(obj)
             % Call JoyMex function to get latest button and axis values.

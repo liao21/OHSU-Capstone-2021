@@ -60,13 +60,30 @@ classdef MplSink < Common.DataSink
         function success = gotoSmooth(obj, anglesRadians)
             % Send incremental updates in a blocking while loop to achieve
             % a desired position.  Requires that percepts are active and
-            % updated
+            % updated.
             %
+            % Usage:
             % gotoSmooth(obj, anglesRadians)
             %
             % Inputs:
             %   anglesRadians - 1x7 array OR 1x27 array of arm joint angles
             %   in radians
+            %
+            % The algorithm here applys linear segments with parabolic
+            % blends, delivering a velocity limited result.
+            %
+            % Step 1: compute the minimum time required for all the joints.
+            % the actual time will be the max of these
+            %
+            % Step 2: generate trajectories for all joints (note, check the
+            % maximum speed required)
+            %
+            % Step 3: execute motion
+            % 
+            % 
+            % Revisions:
+            %   2016JUN01 Armiger: Created
+            %   2016SEP21 Armiger: Changed motions to lspb approach
             
             if nargin < 2
                 anglesRadians = [0.0 -0.3 0.0 1.9 0.0 0.0 0.0 zeros(1,20)];
@@ -79,72 +96,64 @@ classdef MplSink < Common.DataSink
                 'mplAngles out of range.  Expected all values to be from -pi to pi');
 
             anglesRadians = obj.enforceLimits(anglesRadians);
-            
-            % Get current position
-            jointAngles = [];
-            nRetries = 5;
-            for iTry = 1:nRetries
+
+            % RSA: repeat the get percepts command to make sure that there
+            % aren't too many buffered.  
+            for iRepeat = 1:5
                 perceptData = obj.getPercepts();
-                if ~isempty(perceptData)
-                    jointAngles = perceptData.jointPercepts.position; %radians
-                    break;
-                end
+                jointAngles = perceptData.jointPercepts.position; %radians
+            end            
+            
+            assert(~isempty(jointAngles),'Unable to get percept data on port %d. Check Network Connectivity. Check Firewall.',obj.MplLocalPort);
+
+            %%
+            % constants
+            numJointsMpl = length(properties(MPL.EnumArm));
+            dt = 0.02;  % CAN refresh rate
+
+            targetPos = double(jointAngles); % instatiate with current position
+            targetPos(1:length(anglesRadians)) = anglesRadians; % update with input positions
+
+            % compute time
+            tMin = zeros(numJointsMpl,1);
+
+            % Maximum move velocity
+            vMax = 0.3;
+            
+            for i = 1:numJointsMpl
+                % compute minimum time
+                qf = targetPos(i);
+                q0 = jointAngles(i);
+                tMin(i) = abs(qf - q0) / vMax;
             end
             
-            assert(~isempty(jointAngles),'Unable to get percept data on port %d. Check VulcanX. Check Firewall.',obj.MplLocalPort);
+            fprintf('[%s.m] Minimum time for move is %6.1f\n',mfilename,max(tMin));
             
-            vMax = 0.1;
-            tolArm = 2.5*pi/180;
-            tolHand = 10*pi/180;
-            tolConverge = 1e-6;
-            timeoutCount = 0;
-            maxTries = 400;
-            convergeCount = 0;
-            targetPos = jointAngles; % instatiate with current position
-            targetPos(1:length(anglesRadians)) = anglesRadians; % update with input positions
-            lastActualPosition = jointAngles;
-            while 1
-                pause(0.02);
+            % add 10% to get nice blends 
+            tFinal = max(tMin) * 1.1;
+            numSteps = length(0:dt:tFinal);
+                        
+            qAll = zeros(numJointsMpl,numSteps);
+            
+            % generate joint trajectories
+            for i = 1:numJointsMpl
+                % compute minimum time
+                qf = targetPos(i);
+                q0 = jointAngles(i);
+                q = lspb(q0,qf,vMax,tFinal);
+                qAll(i,:) = q;
+            end
+            
+            % execute move
+            for i = 1:numSteps
+                anglesTransmit = qAll(:,i);
+                obj.putData(anglesTransmit);
                 
-                perceptData = obj.getPercepts();
-                if isempty(perceptData)
-                    continue
-                end
-                currentPos = perceptData.jointPercepts.position;
-                delta = targetPos - currentPos;
-                
-                if all(abs(delta(1:7)) < tolArm) && all(abs(delta(8:27)) < tolHand)
-                    fprintf('[%s] Move Complete\n', mfilename)
-                    break
-                elseif (timeoutCount > maxTries)
-                    disp(delta)
-                    warning('Unable to complete move');
-                    success = false;
-                    return
-                elseif all( abs( lastActualPosition - currentPos ) < tolConverge)
-                    fprintf('[%s] Move Converged\n', mfilename)
-                    convergeCount = convergeCount + 1;
-                    
-                    if convergeCount > 20
-                        break
-                    end
-                else
-                    timeoutCount = timeoutCount + 1;
-                end
+                fprintf(['[%s] Arm Angles: SHFE=%6.1f | SHAA=%6.1f | HUM=%6.1f'...
+                    '| EL=%6.1f | WR=%6.1f | DEV=%6.1f | WFE=%6.1f Degrees\n'],...
+                    mfilename,anglesTransmit(1:7)*180/pi);
 
-                [maxVal, maxId] = max(abs(delta' * 180/pi));
-                jointNames = properties(MPL.EnumArm);
-                
-                %fprintf('Max Error: %6.1f degrees Joint: %s Desired: %6.1f Actual: %6.1f\n',...
-                %    maxVal,jointNames{maxId},targetPos(maxId)*180/pi,currentPos(maxId)*180/pi)
-                
-                % make only incremental changes at each timestep
-                delta(delta > vMax) = vMax;
-                delta(delta < -vMax) = -vMax;
-                
-                newPos = currentPos + delta;
-                lastActualPosition = currentPos;
-                obj.putData(newPos);
+                pause(dt)
             end
             
             success = true;

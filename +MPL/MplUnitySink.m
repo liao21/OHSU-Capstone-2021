@@ -114,20 +114,21 @@ classdef MplUnitySink < MPL.MplSink
                 end
             end
             
-            assert(~isempty(packets),'Unable to get percept data on port %d. Check VulcanX. Check Firewall.',obj.MplLocalPort);
+            assert(~isempty(packets),'Unable to get percept data on port %d. Check Network Connectivity. Check Firewall.',obj.MplLocalPort);
             
             % convert packets to percept struct
             nJoints = 27;
             nBytesPerFloat = 4;
             floatData = typecast(packets(1:nJoints*nBytesPerFloat*3),'single');
-            floatData = reshape(floatData,3,nJoints);
-            
+            % reshape to position velocity accel and convert to double
+            % precision floating point
+            floatData = double(reshape(floatData,3,nJoints));
             
             %data = extract_mpl_percepts_v2(packets);
             data.jointPercepts.position = floatData(1,:);
             data.jointPercepts.velocity = floatData(2,:);
             
-            armDegrees = round(data.jointPercepts.position(1:7) * 180 / pi);
+            armDegrees = data.jointPercepts.position(1:7) * 180 / pi;
             fprintf(['[%s] Arm Angles: SHFE=%6.1f | SHAA=%6.1f | HUM=%6.1f'...
                 '| EL=%6.1f | WR=%6.1f | DEV=%6.1f | WFE=%6.1f Degrees\n'],...
                 mfilename,armDegrees);

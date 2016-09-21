@@ -11,7 +11,8 @@ classdef MplSink < Common.DataSink
         MplAddress;         % Command IP (127.0.0.1)
         MplCmdPort;         % Command Port e.g. (L=9024 R=9027)
         MplLocalPort;       % Percept Port e.g. (L=9026 R=9029)
-        
+
+        MplJointLimits      % [27x2] matrix of each joints limits.  These are read in from the config xml file
         Verbose = 1;        % Control Console Printing Verbosity
     end
     methods (Abstract = true)
@@ -35,6 +36,9 @@ classdef MplSink < Common.DataSink
             if isempty(obj.MplLocalPort)
                 error('UDP Port Not Specified');
             end
+            
+            % set joint limits
+            loadLimits(obj);
             
             % PnetClass(localPort,remotePort,remoteIP)
             obj.hUdp = PnetClass(...
@@ -65,11 +69,16 @@ classdef MplSink < Common.DataSink
             %   in radians
             
             if nargin < 2
-                anglesRadians = [0.0 -0.3 0.0 1.9 0.0 0.0 0.0];
+                anglesRadians = [0.0 -0.3 0.0 1.9 0.0 0.0 0.0 zeros(1,20)];
             end
             
             assert((length(anglesRadians) == 7) || ...
-                (length(anglesRadians) == 27),'Expected an array of length 7 or 27')
+                (length(anglesRadians) == 27),'Expected an array of length 7 or 27');
+            
+            assert (all(abs(anglesRadians)) <= pi, ...
+                'mplAngles out of range.  Expected all values to be from -pi to pi');
+
+            anglesRadians = obj.enforceLimits(anglesRadians);
             
             % Get current position
             jointAngles = [];
@@ -87,10 +96,13 @@ classdef MplSink < Common.DataSink
             vMax = 0.1;
             tolArm = 2.5*pi/180;
             tolHand = 10*pi/180;
+            tolConverge = 1e-6;
             timeoutCount = 0;
             maxTries = 400;
-            targetPos = jointAngles;
-            targetPos(1:length(anglesRadians)) = anglesRadians;
+            convergeCount = 0;
+            targetPos = jointAngles; % instatiate with current position
+            targetPos(1:length(anglesRadians)) = anglesRadians; % update with input positions
+            lastActualPosition = jointAngles;
             while 1
                 pause(0.02);
                 
@@ -100,24 +112,77 @@ classdef MplSink < Common.DataSink
                 end
                 currentPos = perceptData.jointPercepts.position;
                 delta = targetPos - currentPos;
-                delta(delta > vMax) = vMax;
-                delta(delta < -vMax) = -vMax;
                 
                 if all(abs(delta(1:7)) < tolArm) && all(abs(delta(8:27)) < tolHand)
                     fprintf('[%s] Move Complete\n', mfilename)
                     break
                 elseif (timeoutCount > maxTries)
                     disp(delta)
-                    error('Unable to complete move');
+                    warning('Unable to complete move');
+                    success = false;
+                    return
+                elseif all( abs( lastActualPosition - currentPos ) < tolConverge)
+                    fprintf('[%s] Move Converged\n', mfilename)
+                    convergeCount = convergeCount + 1;
+                    
+                    if convergeCount > 20
+                        break
+                    end
                 else
                     timeoutCount = timeoutCount + 1;
                 end
+
+                [maxVal, maxId] = max(abs(delta' * 180/pi));
+                jointNames = properties(MPL.EnumArm);
+                
+                %fprintf('Max Error: %6.1f degrees Joint: %s Desired: %6.1f Actual: %6.1f\n',...
+                %    maxVal,jointNames{maxId},targetPos(maxId)*180/pi,currentPos(maxId)*180/pi)
+                
+                % make only incremental changes at each timestep
+                delta(delta > vMax) = vMax;
+                delta(delta < -vMax) = -vMax;
                 
                 newPos = currentPos + delta;
+                lastActualPosition = currentPos;
                 obj.putData(newPos);
             end
             
             success = true;
+        end
+        function success = loadLimits(obj)
+            % check and load joint limits from the user config xml file
+            %
+            % Get joint names from enumeration
+            % Use this as a based string to then get xml defaults from user
+            % config file
+            jointNames = fieldnames(MPL.EnumArm);
+            numJoints = length(jointNames);
+            obj.MplJointLimits = repmat([0 0],numJoints,1); 
+            
+            for i = 1:numJoints
+                r = UserConfig.getUserConfigVar(strcat(jointNames{i},'_LIMITS'),[0 0.5]);
+                
+                obj.MplJointLimits(i,1) = r(1) * pi / 180;
+                obj.MplJointLimits(i,2) = r(2) * pi / 180;
+            end
+            
+            success = true;
+
+        end
+        function anglesOut = enforceLimits(obj,mplAngles)
+            % Apply the joint limits to the angles provided as input
+            % Input:
+            %   mplAngles - [27x1] array of joint angles in radians
+            %
+            % Output:
+            %   anglesOut - [27x1] array of joint angles, clipped to limit
+            %       range as specified in the MplJointLimits property
+            
+            anglesOut = mplAngles;
+            
+            for i = 1:length(anglesOut)
+                anglesOut(i) = min(max(anglesOut(i),obj.MplJointLimits(i,1)),obj.MplJointLimits(i,2));
+            end  
         end
         function close(obj)
             % Cleanup and close udp port

@@ -160,7 +160,7 @@ Fref2 = eye(4);
 while StartStopForm()
     drawnow
     hMyo.getData();
-    q = hMyo.Quaternion(:,end);
+    q = hMyo.Orientation';
     R = LinAlg.quaternionToRMatrix(q);
     [U, S, V]=svd(R);
     R = U*V'; % Square up the rotaiton matrix
@@ -176,7 +176,7 @@ while StartStopForm()
     %set(hT,'Matrix', F_offset*R);
 
     % Compute relative orientation between myo 1 and myo 2
-    q = hMyo.SecondMyo.Quaternion(:,end);
+    q = hMyo.SecondMyo.Orientation';
     R2 = LinAlg.quaternionToRMatrix(q);
     [U, S, V] = svd(R2);
     R2 = U*V'; % Square up the rotaiton matrix

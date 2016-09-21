@@ -216,7 +216,12 @@ classdef ArmStateModel < handle
             if ~success
                 return
             else
-                obj.structState = s;
+                % 9/21/2016 RSA Update: Only update the Value, otherwise
+                % the joint limits and other parameters will always be
+                % reset
+                for i = 1:length([s.Value])
+                    obj.structState(i).Value = s(i).Value;
+                end
                 success = true;
             end
             

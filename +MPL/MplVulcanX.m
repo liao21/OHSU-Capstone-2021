@@ -60,6 +60,9 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 obj.hSink.close();
             end
             
+            try
+                obj.ArmStateModel.saveTempState()
+            end
         end
         
         function update(obj)
@@ -90,38 +93,8 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             %   - get joint angles based on roc table
             %       - if it's a whole arm roc, it should overwrite the
             %       upper arm joint values
-            
-            m = obj.ArmStateModel;
-            rocValue = m.structState(m.RocStateId).Value;
-            rocId = m.structState(m.RocStateId).State;
-            if isa(rocId,'Controls.GraspTypes')
-                % convert char grasp class name (e.g. 'Spherical') to numerical mpl
-                % grasp value (e.g. 7)
-                rocId = MPL.GraspConverter.graspLookup(rocId);
-            end
-            
-            mplAngles = zeros(1,27);
-            mplAngles(1:7) = [m.structState(1:7).Value];
-            
-            % Generate vulcanX message.  If local roc table exists, use it
-            
-            % check bounds
-            rocValue = max(min(rocValue,1),0);
-            % lookup the Roc id and find the right table
-            iEntry = (rocId == [obj.RocTable(:).id]);
-            if sum(iEntry) < 1
-                error('Roc Id %d not found',rocId);
-            elseif sum(iEntry) > 1
-                warning('More than 1 Roc Tables share the id # %d',rocId);
-                roc = obj.RocTable(find(iEntry,1,'first'));
-            else
-                roc = obj.RocTable(iEntry);
-            end
-            
-            % perform local interpolation
-            mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
-            
-            
+
+            mplAngles = obj.getArmAngles();
             
             if obj.DemoMyoElbow
                 % Demo for using myo band for elbow angle

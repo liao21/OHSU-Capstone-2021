@@ -754,6 +754,14 @@ classdef MiniVIE < Common.MiniVieObj
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
                         h.hSink.Verbose = 0;
                         h.Verbose = 0;
+                        % Check last Values against current position and
+                        % goto smoothly
+                        
+                        targetAngles = h.getArmAngles;
+                        h.hSink.gotoSmooth(targetAngles);
+                        
+                        
+                        h.update();
                         obj.println('Presentation setup complete',1);
                     case 'MplUnity'
                         obj.println('Setting up presentation...',1);

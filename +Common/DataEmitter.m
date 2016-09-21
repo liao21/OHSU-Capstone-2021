@@ -36,6 +36,18 @@ classdef DataEmitter < handle
                 obj.sinks = [obj.sinks {sink}];
             end
         end
+        function removeSink(obj,hSink)
+            
+            for i = length(obj.sinks):-1:1
+                if obj.sinks{i} == hSink;
+                    obj.sinks{i} = [];
+                end
+            end
+            
+            % remove empty
+            obj.sinks = obj.sinks(~cellfun(@isempty, obj.sinks));
+            
+        end
         
         function putData(dataEmitter, jointAngles, jointVelocities)
             % PUTDATA

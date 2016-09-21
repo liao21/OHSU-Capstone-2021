@@ -17,7 +17,7 @@ classdef guiRocEditor < handle
     %
     %
     % 07NOV2013 Armiger: Created
-    % 16JUN2016 Samson: Added +/- ROC and Waypoint 
+    % 16JUN2016 Samson: Added +/- ROC and Waypoint
     properties
         hDataEmitter = Common.DataEmitter;  % handle to the data output sinks (udp)
         hMud = MPL.MudCommandEncoder;       % handle for the message encoder
@@ -26,14 +26,14 @@ classdef guiRocEditor < handle
         
         CurrentFilename = 'NEW_ROC.xml';
         IsDirty = 0;
-
+        
         % All Ids are 1 based since this is matlab
         CurrentRocId = 1;
         CurrentWaypointId = 1;
         
         NumOpenSteps = 100;
         NumCloseSteps = 100;
-                
+        
         CommsHold = 1; % controlled by toggle to delay communications with limb until released
         
         Verbose = 0;
@@ -77,7 +77,7 @@ classdef guiRocEditor < handle
             
             % Set Roc Names Listbox after creating the ROC Tables
             set(obj.hRocNames,'String',{obj.structRoc.name})
-                        
+            
             obj.updateFigure();
         end
         function createFigure(obj,hParent,nSliders)
@@ -138,7 +138,7 @@ classdef guiRocEditor < handle
                     'Parent',hAx(i),...
                     'Type',{'Vertical'},...
                     'PatchWidth',patchWidth(i),...
-                    ...'ButtonMotionFcn',@(src,evnt) set_position(src,evnt,obj,i),...
+                    'ButtonMotionFcn',@(src,evnt) set_position(src,evnt,obj,i),...
                     'ButtonUpFcn',@(src,evnt) set_position(src,evnt,obj,i),...
                     'Range',sliderRange(i,:));
                 set(hAx(i),'YTick',[axesRange(i,1) 0 axesRange(i,2)]);
@@ -157,13 +157,13 @@ classdef guiRocEditor < handle
             %menuEdit = uimenu(hParent,'Label','&Edit');
             %menuEditRenameROC = uimenu(menuEdit,'Label','Rename ROC','Callback',@(src,evt)uiRenameROC(obj));
             %menuFileSetWaypoint = uimenu(menuEdit,'Label','Set Waypoint','Callback',@(src,evt)uiSetWaypoint(obj));
-
-            menuOutput = uimenu(hParent,'Label','&Output');            
+            
+            menuOutput = uimenu(hParent,'Label','&Output');
             menuOutputUnity = uimenu(menuOutput,'Label','Unity');
             uimenu(menuOutputUnity,'Label','Left Arm','Callback',@cbSetOutput);
             uimenu(menuOutputUnity,'Label','Right Arm','Callback',@cbSetOutput);
             uimenu(menuOutputUnity,'Label','Custom','Callback',@cbSetOutput);
-
+            
             menuOutputVulcanX = uimenu(menuOutput,'Label','VulcanX');
             uimenu(menuOutputVulcanX,'Label','Left Arm','Callback',@cbSetOutput);
             uimenu(menuOutputVulcanX,'Label','Right Arm','Callback',@cbSetOutput);
@@ -245,7 +245,7 @@ classdef guiRocEditor < handle
             % Edit Waypoint text box
             uicontrol(hParent,'Style','edit','Position',[320 540, 120, 16],'HorizontalAlignment','left',...
                 'TooltipString','Edit Waypoint Value...','Callback',@(src,evt)cbEditWaypoint(src));
-
+            
             obj.IsDirty = false;
             
             return
@@ -261,32 +261,22 @@ classdef guiRocEditor < handle
                     warning('sink removal not implemented')
                     return
                 end
-
+                
                 % Get Text labels
                 parentLabel = get(get(src,'Parent'),'Label');
                 armLabel = get(src,'Label');
                 
-                % Determine source                
+                % Determine source
                 switch parentLabel
                     
                     case 'Unity'
-                        hSink = MPL.MplUnitySink;
-                        hSink.setPortDefaults(strcmp(armLabel,'Left Arm'));
+                        hSink = MPL.MplUnitySink();
+                        hSink.setPortDefaults( strcmp(armLabel,'Left Arm') );
                         hSink.initialize();
                     case 'VulcanX'
-                        
-                        if strcmp(armLabel,'Left Arm')
-                            hSink = MPL.MplVulcanXSink;
-                            hSink.MplCmdPort = 9024;          % MUD Port (L=9024 R=9027)
-                            hSink.MplLocalPort = 25101;       % Percept Port (L=25101 R=25001)
-                        else
-                            hSink = MPL.MplVulcanXSink;
-                            hSink.MplCmdPort = 9027;          % MUD Port (L=9024 R=9027)
-                            hSink.MplLocalPort = 25001;       % Percept Port (L=25101 R=25001)
-                        end
-                        
+                        hSink = MPL.MplVulcanXSink();
+                        hSink.setPortDefaults( strcmp(armLabel,'Left Arm') );
                         hSink.initialize();
-                        
                     case 'MPL-NFU'
                         hSink = MPL.MplNfuSink();
                         hSink.initialize();
@@ -411,14 +401,14 @@ classdef guiRocEditor < handle
                 % element to delete is not first or last
                 if (idx < length(struct) && idx > 1)
                     obj.structRoc = [struct(1:idx-1) struct(idx+1:length(struct))];
-                % element to delete is first
+                    % element to delete is first
                 elseif (idx == 1 && length(struct) ~= 1)
                     obj.structRoc = struct(idx+1:length(struct));
-                % element to delete is last
+                    % element to delete is last
                 elseif (idx == length(struct) && length(struct) ~= 1)
                     obj.structRoc = struct(1:length(struct)-1)
                     obj.CurrentRocId = obj.CurrentRocId -1;
-                % element to delete is the only element
+                    % element to delete is the only element
                 elseif (length(struct) == 1)
                     obj.structRoc(1).name = 'NewROC';
                     obj.structRoc(1).waypoint = [0];
@@ -460,18 +450,18 @@ classdef guiRocEditor < handle
                     obj.structRoc(idx).waypoint = [waypt(1:idw-1) waypt(idw+1:length(waypt))];
                     obj.structRoc(idx).angles = [angs(1:idw-1, 1:size(angs,2)); angs(idw+1:size(angs,1), 1:size(angs,2))];
                     obj.structRoc(idx).impedance = [imps(1:idw-1, 1:size(imps,2)); imps(idw+1:size(imps,1), 1:size(imps,2))];
-                % element to delete is first
+                    % element to delete is first
                 elseif (idw == 1 && length(waypt) ~= 1)
                     obj.structRoc(idx).waypoint = waypt(idw+1:length(waypt));
                     obj.structRoc(idx).angles = angs(idw+1:size(angs,1), 1:size(angs,2));
                     obj.structRoc(idx).impedance = imps(idw+1:size(imps,1), 1:size(imps,2));
-                % element to delete is last
+                    % element to delete is last
                 elseif (idw == length(waypt) && length(waypt) ~= 1)
                     obj.structRoc(idx).waypoint = waypt(1:length(waypt)-1);
                     obj.structRoc(idx).angles = angs(1:idw-1, 1:size(angs,2));
                     obj.structRoc(idx).impedance = imps(1:idw-1, 1:size(imps,2));
                     obj.CurrentWaypointId = obj.CurrentWaypointId -1;
-                % element to delete is the only element
+                    % element to delete is the only element
                 elseif (length(waypt) == 1)
                     obj.structRoc(idx).waypoint = [0];
                     obj.structRoc(idx).angles = zeros(1,length(obj.structRoc(1).joints));
@@ -591,7 +581,7 @@ classdef guiRocEditor < handle
             
             % set angle text box
             setAngleTextBox(obj)
-
+            
             % Update figure title
             if obj.IsDirty
                 figTitle = sprintf('JHU/APL: Reduced Order Control (ROC) Editor - %s*',obj.CurrentFilename);
@@ -601,7 +591,7 @@ classdef guiRocEditor < handle
             if ishandle(obj.hParent) && isa(obj.hParent,'matlab.ui.Figure')
                 set(obj.hParent,'Name',figTitle)
             end
-
+            
         end
         
         function setAngleTextBox(obj)
@@ -716,9 +706,10 @@ classdef guiRocEditor < handle
                 end
             end
             
-            for iSink = 1:length(obj.hDataEmitter.sinks)
+            for iSink = length(obj.hDataEmitter.sinks):-1:1
                 hSink = obj.hDataEmitter.sinks{iSink};
                 hSink.close();
+                obj.hDataEmitter.removeSink(hSink);
             end
             
             

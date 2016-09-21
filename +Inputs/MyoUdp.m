@@ -199,7 +199,8 @@ classdef MyoUdp < Inputs.SignalInput
             
             obj.update();
             
-            if obj.UdpPortNum8 == 15001
+            if obj.UdpPortNum8 == 15001 || obj.UdpPortNum8 == 15002 || ...
+                    obj.UdpPortNum8 == 15003 || obj.UdpPortNum8 == 15004
                 % get upsampled data
                 desiredRate = 1000;
                 %actualRate = 200;
@@ -215,7 +216,8 @@ classdef MyoUdp < Inputs.SignalInput
             end
         end
         function update(obj)
-            if obj.UdpPortNum8 == 15001
+            if obj.UdpPortNum8 == 15001 || obj.UdpPortNum8 == 15002 || ...
+                    obj.UdpPortNum8 == 15003 || obj.UdpPortNum8 == 15004
                 [cellDataBytes, numReads] = obj.UdpSocket8.getAllData(100);
                 for i = 1:numReads
                     bytes = cellDataBytes{i};

@@ -758,8 +758,11 @@ classdef MiniVIE < Common.MiniVieObj
                         % goto smoothly
                         
                         targetAngles = h.getArmAngles;
-                        h.hSink.gotoSmooth(targetAngles);
-                        
+                        try
+                            h.hSink.gotoSmooth(targetAngles);
+                        catch ME
+                            warning(ME.message);
+                        end
                         
                         h.update();
                         obj.println('Presentation setup complete',1);

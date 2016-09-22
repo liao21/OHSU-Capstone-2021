@@ -44,7 +44,8 @@ dt = 0.02;
 % define implicit time
 t = 0:dt:tf;
 
-if q0 == qf
+% check if start and end angles are the same
+if abs(q0 - qf) < 0.01
     qt = qf*ones(size(t));
     t_1 = 0;
     t_3 = tf;
@@ -59,6 +60,7 @@ else
     %assert( (2*(qf - q0) / V) >= tf, ' max velocity reached')
     if (2*(qf - q0) / V) <= tf
         V = 2*(qf - q0) / tf;
+        V = max(V,0.01);  % ensure V is never zero
     end
     
     % qt is the time history trajectory for the motion
@@ -84,7 +86,9 @@ else
     
 end
 
-assert(length(t) == length(qt),'error creating trajectory')
+if length(t) ~= length(qt)
+    error('error creating trajectory')
+end
 
 % Plot trajectory
 if nargout < 1

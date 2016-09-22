@@ -12,8 +12,9 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
         hSink   % send to vulcanx
         
         TactorPort = '';
+        TactorType = '';
         hTactors = [];
-
+        
         DemoMyoElbow = 0;
         DemoMyoShoulder = 0;
         DemoMyoShoulderLeft = 0;
@@ -36,15 +37,18 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             
             % tactor initialization ************************************
             obj.TactorPort = UserConfig.getUserConfigVar('TactorComPort','');
+            obj.TactorType = UserConfig.getUserConfigVar('TactorType','');
             
-            if any(obj.TactorPort == ':') % this is a IP:port
-                obj.hTactors = BluetoothTactor_UDP(obj.TactorPort);
-            else
-                obj.hTactors = BluetoothTactor(obj.TactorPort);
+            switch obj.TactorType
+                case 'ServoUDP'
+                    obj.hTactors = BluetoothTactor_UDP(obj.TactorPort);
+                case 'VibroUDP'
+                    obj.hTactors = TactorUdp(obj.TactorPort);
+                case 'VibroBluetooth'
+                    obj.hTactors = BluetoothTactor(obj.TactorPort);
             end
-            
             obj.hTactors.initialize();
-
+            
             obj.DemoMyoElbow = str2double(UserConfig.getUserConfigVar('myoElbowEnable','0'));
             obj.DemoMyoShoulder = str2double(UserConfig.getUserConfigVar('myoElbowShoulder','0'));
             obj.DemoMyoShoulderLeft = str2double(UserConfig.getUserConfigVar('myoElbowShoulderLeft','0'));
@@ -93,7 +97,7 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             %   - get joint angles based on roc table
             %       - if it's a whole arm roc, it should overwrite the
             %       upper arm joint values
-
+            
             mplAngles = obj.getArmAngles();
             
             if obj.DemoMyoElbow
@@ -165,8 +169,8 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 % function
                 
                 if obj.Verbose
-                fprintf('MPL Percepts: LittleMCP=%6.3f | RingMCP=%6.3f | MiddleMCP=%6.3f | IndexMCP=%6.3f | ThumbMCP=%6.3f\n',...
-                    littleSensorVal,ringSensorVal,middleSensorVal,indexSensorVal,thumbSensorVal);
+                    fprintf('MPL Percepts: LittleMCP=%6.3f | RingMCP=%6.3f | MiddleMCP=%6.3f | IndexMCP=%6.3f | ThumbMCP=%6.3f\n',...
+                        littleSensorVal,ringSensorVal,middleSensorVal,indexSensorVal,thumbSensorVal);
                 end
                 % start sensor to tactor command map
                 thumbSensorLowHigh = [0.1 0.2];
@@ -198,6 +202,11 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 
                 % send tactor commands to device
                 obj.hTactors.tactorVals = double(round(tactorVals));
+                
+                if strcmp(obj.TactorType,'VibroUDP')
+                    obj.hTactors.transmit()
+                end
+                
             end
         end
     end

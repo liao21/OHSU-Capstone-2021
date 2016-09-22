@@ -20,7 +20,7 @@ classdef BluetoothTactor_UDP < handle
                 try
                     udpIPAndPort = strsplit(udpIPAndPort, ':');
                     obj.udpIP = udpIPAndPort{1};
-                    obj.udpPort = str2num(udpIPAndPort{2});
+                    obj.udpPort = str2double(udpIPAndPort{2});
                 catch
                     warning('invalid IP and port, using localhost:12001');
                 end

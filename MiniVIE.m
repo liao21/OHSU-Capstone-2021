@@ -760,6 +760,7 @@ classdef MiniVIE < Common.MiniVieObj
                         targetAngles = h.getArmAngles;
                         try
                             h.hSink.gotoSmooth(targetAngles);
+                            h.hSink.gotoSmooth(targetAngles);
                         catch ME
                             warning(ME.message);
                         end

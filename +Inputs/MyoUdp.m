@@ -86,7 +86,7 @@ classdef MyoUdp < Inputs.SignalInput
         
         EMG_GAIN = 0.01;  %Scaling from int8 to voltage
         
-        InputFrequency = 300; % Hz
+        InputFrequency; % Hz
     end
     properties (SetAccess = private)
         IsInitialized = 0;
@@ -119,6 +119,7 @@ classdef MyoUdp < Inputs.SignalInput
             % Note, true sample rate is 200 Hz, but this is upsampled to
             % 100Hz for compatability
             obj.SampleFrequency = 1000; % Hz
+            obj.InputFrequency = str2double(UserConfig.getUserConfigVar('myoUdpRate','200'));
             obj.ChannelIds = 1:16;
             
             status = 0;

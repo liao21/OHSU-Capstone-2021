@@ -60,7 +60,7 @@ else
     %assert( (2*(qf - q0) / V) >= tf, ' max velocity reached')
     if (2*(qf - q0) / V) <= tf
         V = 2*(qf - q0) / tf;
-        V = max(V,0.01);  % ensure V is never zero
+        V = max(V,1e-6);  % ensure V is never zero
     end
     
     % qt is the time history trajectory for the motion
@@ -70,9 +70,16 @@ else
     
     tb = (q0 - qf + V*tf) / V;
     alpha = V / tb;
-    t_1 = t( t <= tb );
-    t_2 = t( (tb < t) & (t <= (tf-tb) ) );
-    t_3 = t( (tf-tb) < t);
+    
+    % label the time history into segments:
+    tLabel = 3*ones(size(t));
+    tLabel(t <= tb) = 1;
+    tLabel( (tb < t) & (t <= (tf-tb) ) ) = 2;
+    tLabel( (tf-tb) < t ) = 3;
+    
+    t_1 = t( tLabel == 1 );
+    t_2 = t( tLabel == 2 );
+    t_3 = t( tLabel == 3);
     
     qt_1 = q0 + (0.5*alpha*t_1.^2);
     qt_2 = 0.5*(qf + q0 - V*tf) + V*t_2;

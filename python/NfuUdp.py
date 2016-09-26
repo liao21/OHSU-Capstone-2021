@@ -15,6 +15,9 @@ def main():
     """ 
     Run NFU interface
     """
+    
+
+    
     h = NfuUdp(Hostname="192.168.1.111")
     
     NUM_ARM_JOINTS = 7;
@@ -30,6 +33,21 @@ def main():
     armPosition[3] = 0.3
     h.sendJointAngles(armPosition+armVelocity+handPosition+handVelocity)
     time.sleep(3)
+    
+    
+    #quick output of test for msgUpdateParam
+    print('\n\n\nstarting test of msgUpdateParam:\n')
+    a = [[i*3.1415+j for i in list(range(10))] for j in list(range(13))]    #create random 2D float array for sample class data
+    
+    aClass = type('param', (object,), dict(Value=a,Dimensions=[len(a),len(a[0])],Description='Generic Description of object'))  #define class in form of expected data
+    
+    print(aClass)
+    print(aClass.Value)
+    print(aClass.Dimensions)
+    print('\n')
+    print(h.msgUpdateParam(aClass))
+    #end of output of test for msgUpdateParam
+    
     
     h.close()
     
@@ -121,8 +139,37 @@ class NfuUdp:
     def sendUdpCommand(self,msg):
         self.__UdpSock.sendto(msg, (self.Hostname, self.UdpCommandPort))
         
+    
+    
+    def msgUpdateParam(self,param):
+        #update_param Summary of this function goes here
+        #Translated from MATLAB to Python by David Samson on 9/23/16
         
+        # calculate dimensions
+        dim_X = bytearray(struct.pack('I',param.Dimensions[0]))
+        dim_Y = bytearray(struct.pack('I',param.Dimensions[1]))
+        
+        
+        # calculate fields
+        bval = bytearray(4*param.Dimensions[0]*param.Dimensions[1])
+        
+        #convert 2D float32 array to 1D byte array
+        for i in list(range(param.Dimensions[0])):
+            for j in list(range(param.Dimensions[1])):
+                #c = bytearray(struct.pack('f',param.Value[i,j])) ####May need to use this line instead of the one below ####
+                c = bytearray(struct.pack('f',param.Value[i][j])) ####based on how the array param.Value is indexed      ####
+                bval[((j*param.Dimensions[0] + i) * 4) : ((j*param.Dimensions[0] + i) * 4) + 4] = c
+                
+        
+        msgId = 4
+        write_cfg_Nfu = bytearray([msgId]) +  bytearray(param.Description,'utf-8') + bytearray(128-len(param.Description)) + bytearray([8, 0, 0, 0]) + dim_X + dim_Y + bval[:]
+        
+        msg = write_cfg_Nfu
+        return msg
+    
 
+    
+    
     def close(self):
         """ Cleanup socket """
         print("\n\nClosing NfuUdp Socket IP={} Port={}".format(self.Hostname,self.UdpTelemPort) )

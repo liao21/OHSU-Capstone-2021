@@ -8,18 +8,19 @@ import time
 import socket
 import binascii
 import struct
+import numpy as np
 
 VERBOSE = 2
 
 def main():
     """ 
     Run NFU interface
-    """
+    """    
     
-
-    
+    # Establish netork inferface to MPL at address below
     h = NfuUdp(Hostname="192.168.1.111")
     
+    # Run a quick motion test to vreify joints are working
     NUM_ARM_JOINTS = 7;
     NUM_HAND_JOINTS = 20;
     armPosition = [0.0]*NUM_ARM_JOINTS
@@ -27,28 +28,15 @@ def main():
     handPosition = [0.0]*NUM_HAND_JOINTS
     handVelocity = [0.0]*NUM_HAND_JOINTS
 
+    # goto zero position
     h.sendJointAngles(armPosition+armVelocity+handPosition+handVelocity)
     time.sleep(3)
-    
+
+    # goto elbow bent position
     armPosition[3] = 0.3
     h.sendJointAngles(armPosition+armVelocity+handPosition+handVelocity)
     time.sleep(3)
-    
-    
-    #quick output of test for msgUpdateParam
-    print('\n\n\nstarting test of msgUpdateParam:\n')
-    a = [[i*3.1415+j for i in list(range(10))] for j in list(range(13))]    #create random 2D float array for sample class data
-    
-    aClass = type('param', (object,), dict(Value=a,Dimensions=[len(a),len(a[0])],Description='Generic Description of object'))  #define class in form of expected data
-    
-    print(aClass)
-    print(aClass.Value)
-    print(aClass.Dimensions)
-    print('\n')
-    print(h.msgUpdateParam(aClass))
-    #end of output of test for msgUpdateParam
-    
-    
+
     h.close()
     
   
@@ -95,19 +83,15 @@ class NfuUdp:
         # TODO: Properly encode NFU Algorithm Messages. For now these are just hard coded
         
         # Set NFU Algorithm State
-        val = 0
         # [NfuUdp] Setting NFU parameter NFU_run_algorithm to 0
-        msg2 = bytearray([    4,   78,   70,   85,   95,  114,  117,  110,   95,   97,  108,  103,  111,  114,  105,  116,  104,  109,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    8,    0,    0,    0,    1,    0,    0,    0,    1,    0,    0,    0,    0,    0,    0,    0])
-        self.sendUdpCommand(msg2)
+        self.sendUdpCommand(self.msgUpdateParam('NFU_run_algorithm',0))
 
         # wait
         time.sleep(0.1)
         
         # Set NFU output state
-        val = 2
         #[NfuUdp] Setting NFU parameter NFU_output_to_MPL to 2
-        msg3 = bytearray([    4,   78,   70,   85,   95,  111,  117,  116,  112,  117,  116,   95,  116,  111,   95,   77,   80,   76,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    8,    0,    0,    0,    1,    0,    0,    0,    1,    0,    0,    0,    0,    0,    0,   64   ])
-        self.sendUdpCommand(msg3)
+        self.sendUdpCommand(self.msgUpdateParam('NFU_output_to_MPL',2))
         
         # wait
         time.sleep(0.1)
@@ -125,44 +109,50 @@ class NfuUdp:
         packer = struct.Struct('54f')
         msg = bytearray([219, 0, 5, 1])
         msg.extend(packer.pack(*values))
-        if VERBOSE > 1:
+        if VERBOSE >= 2:
             print('Sending "%s"' % binascii.hexlify(msg), values)
-        print(sum(msg) % 256)
+        #print(sum(msg) % 256)
         chksum = bytearray([sum(msg) % 256])
         out = bytearray([61])
         out.extend(msg)
         out.extend( chksum )
 
         self.sendUdpCommand(out)
-        print('Out "%s"' % binascii.hexlify(out))
+        #print('Out "%s"' % binascii.hexlify(out))
         
     def sendUdpCommand(self,msg):
+    
+        if VERBOSE >= 2:
+            print(msg)
         self.__UdpSock.sendto(msg, (self.Hostname, self.UdpCommandPort))
         
     
     
-    def msgUpdateParam(self,param):
+    def msgUpdateParam(self,paramName, paramValue):
         #update_param Summary of this function goes here
         #Translated from MATLAB to Python by David Samson on 9/23/16
+        #Armiger simplified and tested 9/27/16
+        
+        if VERBOSE >= 1:
+            print('Converting bytes from parameter: ' + paramName)
+
+        if len( paramName ) > 127 :
+            print('Trimming Name to max 127 characters')
+            paramName = paramName[:127]
+        
+        
+        # convert to numpy matrix        
+        A = np.matrix(paramValue, dtype=np.dtype('<f4'))  # little-endian single-precision float
         
         # calculate dimensions
-        dim_X = bytearray(struct.pack('I',param.Dimensions[0]))
-        dim_Y = bytearray(struct.pack('I',param.Dimensions[1]))
-        
-        
-        # calculate fields
-        bval = bytearray(4*param.Dimensions[0]*param.Dimensions[1])
-        
-        #convert 2D float32 array to 1D byte array
-        for i in list(range(param.Dimensions[0])):
-            for j in list(range(param.Dimensions[1])):
-                #c = bytearray(struct.pack('f',param.Value[i,j])) ####May need to use this line instead of the one below ####
-                c = bytearray(struct.pack('f',param.Value[i][j])) ####based on how the array param.Value is indexed      ####
-                bval[((j*param.Dimensions[0] + i) * 4) : ((j*param.Dimensions[0] + i) * 4) + 4] = c
-                
-        
+        dimA = A.shape
+
+        # convert to byte array
+        bval = A.tobytes()
+
+        # format message
         msgId = 4
-        write_cfg_Nfu = bytearray([msgId]) +  bytearray(param.Description,'utf-8') + bytearray(128-len(param.Description)) + bytearray([8, 0, 0, 0]) + dim_X + dim_Y + bval[:]
+        write_cfg_Nfu = bytearray([msgId]) +  bytearray(paramName,'utf-8') + bytearray(128-len(paramName)) + bytearray([8, 0, 0, 0]) + bytearray(dimA[0]) + bytearray(dimA[1]) + bval[:]
         
         msg = write_cfg_Nfu
         return msg
@@ -174,13 +164,6 @@ class NfuUdp:
         """ Cleanup socket """
         print("\n\nClosing NfuUdp Socket IP={} Port={}".format(self.Hostname,self.UdpTelemPort) )
         self.__UdpSock.close()
-        
-        
-
-
-
-    
-    
     
 
 if __name__ == "__main__":

@@ -22,37 +22,89 @@ from scipy.interpolate import interp1d
 
 VERBOSE = 1;
 DEBUG = 0;
-   
+
+#print (JOINT['SHOULDER_FE'])
+    
 class Plant(object):
 
     def __init__(self,dt,file):
-        self.NUM_JOINTS = 27;
-        self.position = [0.0]*self.NUM_JOINTS
-        self.velocity = [0.0]*self.NUM_JOINTS
-        self.limit = [45.0 * math.pi / 180.0]*self.NUM_JOINTS
+
+        self.JOINT = {\
+            'SHOULDER_FE'       : 0, \
+            'SHOULDER_AB_AD'    : 1, \
+            'HUMERAL_ROT'       : 2, \
+            'ELBOW'             : 3, \
+            'WRIST_ROT'         : 4, \
+            'WRIST_AB_AD'       : 5, \
+            'WRIST_FE'          : 6, \
+            'INDEX_AB_AD'       : 7, \
+            'INDEX_MCP'         : 8, \
+            'INDEX_PIP'         : 9, \
+            'INDEX_DIP'         : 10, \
+            'MIDDLE_AB_AD'      : 11, \
+            'MIDDLE_MCP'        : 12, \
+            'MIDDLE_PIP'        : 13, \
+            'MIDDLE_DIP'        : 14, \
+            'RING_AB_AD'        : 15, \
+            'RING_MCP'          : 16, \
+            'RING_PIP'          : 17, \
+            'RING_DIP'          : 18, \
+            'LITTLE_AB_AD'      : 19, \
+            'LITTLE_MCP'        : 20, \
+            'LITTLE_PIP'        : 21, \
+            'LITTLE_DIP'        : 22, \
+            'THUMB_CMC_AB_AD'   : 23, \
+            'THUMB_CMC_FE'      : 24, \
+            'THUMB_MCP'         : 25, \
+            'THUMB_DIP'         : 26, \
+            'NUM_JOINTS'        : 27}
+            
+        JOINT = self.JOINT
+    
+        self.position = [0.0]*JOINT['NUM_JOINTS']
+        self.velocity = [0.0]*JOINT['NUM_JOINTS']
+        self.upperLimit = [60.0 * math.pi / 180.0]*JOINT['NUM_JOINTS']
+        self.lowerLimit = [0.0 * math.pi / 180.0]*  JOINT['NUM_JOINTS']
+        
+        # Set joint limits.  TODO pull from xml
+        self.lowerLimit[JOINT['SHOULDER_FE']] = -35
+        self.upperLimit[JOINT['SHOULDER_FE']] = 170
+        self.lowerLimit[JOINT['SHOULDER_AB_AD']] = -90
+        self.upperLimit[JOINT['SHOULDER_AB_AD']] = 15
+        self.lowerLimit[JOINT['HUMERAL_ROT']] = -35
+        self.upperLimit[JOINT['HUMERAL_ROT']] = 80
+        self.lowerLimit[JOINT['ELBOW']] = 5
+        self.upperLimit[JOINT['ELBOW']] = 140
+        self.lowerLimit[JOINT['WRIST_ROT']] = -90
+        self.upperLimit[JOINT['WRIST_ROT']] = 90
+        self.lowerLimit[JOINT['WRIST_AB_AD']] = -45
+        self.upperLimit[JOINT['WRIST_AB_AD']] = 45
+        self.lowerLimit[JOINT['WRIST_FE']] = -60
+        self.upperLimit[JOINT['WRIST_FE']] = 60
+		
         self.dt = dt
 
         # TODO: this is a final mapping for upper arm, but a temporary mapping for Hand entries, which 
         # should come form a ROC table
         
-        # ----------|-Class Name------------------|-----Joint ID-------|-Direction-|
-        self.Joint={'No Movement'               : [                  [], 0 ],
-                    'Shoulder Flexion'          : [                 [0],+1 ],
-                    'Shoulder Extension'        : [                 [0],-1 ],
-                    'Shoulder Adduction'        : [                 [1],+1 ],
-                    'Shoulder Abduction'        : [                 [1],-1 ],
-                    'Humeral Internal Rotation' : [                 [2],+1 ],
-                    'Humeral External Rotation' : [                 [2],-1 ],
-                    'Elbow Flexion'             : [                 [3],+1 ],
-                    'Elbow Extension'           : [                 [3],-1 ],
-                    'Wrist Rotate In'           : [                 [4],+1 ],
-                    'Wrist Rotate Out'          : [                 [4],-1 ],
-                    'Wrist Adduction'           : [                 [5],+1 ],
-                    'Wrist Abduction'           : [                 [5],-1 ],
-                    'Wrist Flex In'             : [                 [6],+1 ],
-                    'Wrist Extend Out'          : [                 [6],-1 ],
-                    'Hand Open'                 : [ list(range(7,26+1)),-1 ],
-                    'Spherical Grasp'           : [ list(range(7,26+1)),+1 ]
+        # ----------|-Class Name------------------|-----Joint ID------------|-Direction-|
+        self.Class={'No Movement'               : [                     []  , 0 ],
+                    'Shoulder Flexion'          : [JOINT['SHOULDER_FE']     ,+1 ],
+                    'Shoulder Extension'        : [JOINT['SHOULDER_FE']     ,-1 ],
+                    'Shoulder Adduction'        : [JOINT['SHOULDER_AB_AD']  ,+1 ],
+                    'Shoulder Abduction'        : [JOINT['SHOULDER_AB_AD']  ,-1 ],
+                    'Humeral Internal Rotation' : [JOINT['HUMERAL_ROT']     ,+1 ],
+                    'Humeral External Rotation' : [JOINT['HUMERAL_ROT']     ,-1 ],
+                    'Elbow Flexion'             : [JOINT['ELBOW']           ,+1 ],
+                    'Elbow Extension'           : [JOINT['ELBOW']           ,-1 ],
+                    'Wrist Rotate In'           : [JOINT['WRIST_ROT']       ,+1 ],
+                    'Wrist Rotate Out'          : [JOINT['WRIST_ROT']       ,-1 ],
+                    'Wrist Adduction'           : [JOINT['WRIST_AB_AD']     ,+1 ],
+                    'Wrist Abduction'           : [JOINT['WRIST_AB_AD']     ,-1 ],
+                    'Wrist Flex In'             : [JOINT['WRIST_FE']        ,+1 ],
+                    'Wrist Extend Out'          : [JOINT['WRIST_FE']        ,-1 ],
+                    'Hand Open'                 : [ list(range(7,26+1))     ,-1 ],
+                    'Spherical Grasp'           : [ list(range(7,26+1))     ,+1 ]
                     }
 
         # Implement ROC based hand commands 
@@ -68,19 +120,23 @@ class Plant(object):
         for i,item in enumerate(self.position):  
             self.position[i] = self.position[i] + self.velocity[i]*self.dt;
         
-            # TODO: only works symmetrically
-            if abs(self.position[i]) > self.limit[i] :
-                # Saturate at either high or low limit
-                self.position[i] = math.copysign(self.limit[i],self.position[i])
+            # Apply limits
+            if self.position[i] > self.upperLimit[i] :
+                # Saturate at high limit
+                self.position[i] = self.upperLimit[i]
                 
-                if DEBUG:
-                    # Debug only 
-                    self.velocity[i] = -self.velocity[i]
+            if self.position[i] < self.lowerLimit[i] :
+                # Saturate at low limit
+                self.position[i] = self.lowerLimit[i]
 
+            if DEBUG:
+                # Debug only 
+                self.velocity[i] = -self.velocity[i]
+                
     def class_map(self, class_name):
         #return JointId, Direction    
     #   'No Movement' is not necessary in dict_Joint with '.get default return
         #JointId, Direction = self.Joint.get(class_name,[ [], 0 ])
-        JointId, Direction = self.Joint[class_name]
+        JointId, Direction = self.Class[class_name]
     
         return JointId, Direction

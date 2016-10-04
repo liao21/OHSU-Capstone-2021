@@ -515,6 +515,25 @@ def demo(args):
     trainer.predictMult()
     pass
 
+def replay(args):
+    """replay using saved training data"""
+    
+    trainer = MyoUDPTrainer(args)
+    print('')
+    trainer.load()
+    trainer.fit()
+    
+    print('')
+    print(str(trainer))
+	
+    print('Running prediction model:')
+    trainer.predictMult()
+    pass
+   
+    
+
+
+
 
 def enum(**enums):
     """adding Enum support to Python."""
@@ -752,30 +771,32 @@ class MyoUDPTrainer:
         """
         
         # Move joints using classifier
-        try:
-            gain = 2.0
-            jointId, jointDir = self.hPlant.class_map(classDecision)
+        #try:
+        gain = 2.0
+        jointId, jointDir = self.hPlant.class_map(classDecision)
 
-            # Set joint velocities
-            self.hPlant.velocity[:self.hPlant.NUM_JOINTS] = [0.0] * self.hPlant.NUM_JOINTS
-            if jointId:
-                for i in jointId:
-                    self.hPlant.velocity[i] = jointDir * gain
+        # Set joint velocities
+        self.hPlant.velocity[:self.hPlant.JOINT['NUM_JOINTS']] = [0.0] * self.hPlant.JOINT['NUM_JOINTS']
+        if type(jointId) is list:
+            for i in jointId:
+                self.hPlant.velocity[i] = jointDir * gain
+        if type(jointId) is int:
+            self.hPlant.velocity[jointId] = jointDir * gain
+                
+        self.hPlant.update()
 
-            self.hPlant.update()
+        if upperAngles:
+            # perform joint motion update
+            vals = self.hMyo.getAngles()
+            self.hPlant.position[3] = vals[1] + math.pi/2
 
-            if upperAngles:
-                # perform joint motion update
-                vals = self.hMyo.getAngles()
-                self.hPlant.position[3] = vals[1] + math.pi/2
-
-            # transmit output
-            self.hSink.sendJointAngles(self.hPlant.position)
+        # transmit output
+        self.hSink.sendJointAngles(self.hPlant.position)
     
-        except:
-            print('Class "' + classDecision + '" not available from ROC table.')
-            #jointId, jointDir = [[],0]
-            pass    
+        #except:
+        #    print('Class "' + classDecision + '" not available from ROC table.')
+        #    #jointId, jointDir = [[],0]
+        #    pass    
 
 
     def save(self, path=None):
@@ -1109,6 +1130,8 @@ if __name__ == "__main__":
         demo(args)
     elif(switch == 'main'):
         main(args)
+    elif(switch == 'replay'):
+        replay(args)
     else:
         print('Invalid main method requested. No method mapped to "' + switch + '."')
 

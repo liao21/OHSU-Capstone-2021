@@ -612,7 +612,7 @@ class MyoUDPTrainer:
         Keyword Arguments:
         self -- pointer to this object
         samples -- (Optional) If passed in, overrides number of samples to collect for each pose. Otherwise uses number of samples specified in self.tsamples
-        pause -- (Optional) If passed in, set how long to pause before recording the Myo data. Otherwise default pasue is 3 seconds
+        pause -- (Optional) If passed in, set how long to pause before recording the Myo data. Otherwise default pause is 3 seconds
         """
     
     
@@ -753,13 +753,14 @@ class MyoUDPTrainer:
         
         # Move joints using classifier
         try:
+            gain = 2.0
             jointId, jointDir = self.hPlant.class_map(classDecision)
 
             # Set joint velocities
             self.hPlant.velocity[:self.hPlant.NUM_JOINTS] = [0.0] * self.hPlant.NUM_JOINTS
             if jointId:
                 for i in jointId:
-                    self.hPlant.velocity[i] = jointDir
+                    self.hPlant.velocity[i] = jointDir * gain
 
             self.hPlant.update()
 
@@ -832,7 +833,7 @@ class MyoUDPTrainer:
             self.TrainingName = joblib.load(trainFolder + os.sep + 'className.pkl') 
         else:
             print('No training data found.')
-            self.create(path)
+            self.create()
             
         #perform error checks here:
         #if error: self.create()
@@ -895,8 +896,9 @@ class MyoUDPTrainer:
         self.TrainingClass = []
         #TrainingName should be loaded from the current ROC file, or start blank, and then addClass for each class
         #self.TrainingName = ['Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp', 'No Movement']
-        self.TrainingName = ['No Movement', 'Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Adduction',
-            'Wrist Abduction', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp']
+        #self.TrainingName = ['No Movement', 'Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Adduction',
+        #    'Wrist Abduction', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp']
+        self.TrainingName = ['No Movement', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp']
         
         pass
 

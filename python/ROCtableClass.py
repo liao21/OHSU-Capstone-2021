@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 """
+Load an xml Roc file and store as a dictionary that can be 
+referenced by the name of the ROC table entry
+
 Created on Mon Mar  7 08:21:58 2016
 
 @author: carrolm1
 
-Modified on Thu Aug 11 2016 by David Samson
+Revisions:
+2016Aug11 David Samson
+2016OCT05 Armiger: updated angle storage and added print / main functions
+
 """
 import xml.etree.cElementTree as ET
 import time
-import bisect
-
-timeBegin = time.time()
+import numpy as np
     
 class rocElem:
    def __init__(self, name):
@@ -33,27 +37,58 @@ def storeROC(file):
         name = table.find('name').text
         # create a rocElem object for that grasp
         elem = rocElem(name)
-        elem.id = table.find('id').text
+        elem.id = int(table.find('id').text)
         elem.joints = [int(val) for val in table.find('joints').text.split(',')]
         # check each waypoint for angles and impedance measurements
+        
+        # initialize array that will be nWayPoints*nJoints
+        angleArray = []
+        elem.waypoints = []
         for waypoint in table.iter('waypoint'):
             index = waypoint.get('index')
-            bisect.insort(elem.waypoints, index) # insert waypoint into sorted list of waypoints
+            #bisect.insort(elem.waypoints, index) # insert waypoint into sorted list of waypoints
+            elem.waypoints.append(index)
+            
             # use index as key for angles and impedance dictionaries
-            elem.angles[index] = [float(val) for val in waypoint.find('angles').text.split(',')]
+            angleArray.append([float(val) for val in waypoint.find('angles').text.split(',')])
             #elem.impedance[index] = [float(val) for val in waypoint.find('impedance').text.split(',')]
+        elem.angles = np.reshape(np.asarray(angleArray), [-1, len(elem.joints)])
         rocTable[name] = elem
     # return completed dictionary
     return rocTable
+
+def printROC(rocElem):
+    # print an element in the ROC tables
+    print("ROC NAME = '" + rocElem.name + "'")
+    print("ROC ID = " + str(rocElem.id))
+    print("ROC JOINTS = [" + ' '.join(str(e) for e in rocElem.joints) + "]")
+    print("ROC WAYPOINTS = [" + ' '.join(str(e) for e in rocElem.waypoints) + "]")
+    print("ROC ANGLES " + str(rocElem.angles.shape) + " = ")
+    for row in rocElem.angles:
+        print(['{:.4f}'.format(i) for i in row])
+        print('\n')
+
+def getRocId(rocTable, id):
+    # get a roc table entry by the ID
     
-   
-timeElapsed  = time.time() - timeBegin
+    for rocKey, rocElem in rocTable.items():
+        if (rocElem.id == id):
+            return rocElem
+    return None    
 
-#def main():
-#    print(timeElapsed)
-#    print (storeROC(filename))
-#    
-#main()
 
+if __name__ == "__main__":
+    
+    filename = "../WrRocDefaults.xml"
+    rocTable = storeROC(filename)
+    
+    for rocKey, rocElem in sorted(rocTable.items()):
+        printROC(rocElem)
+
+    print("\n\nGet ROC By ID :" )   
+    printROC(getRocId(rocTable, 1))
+    
+    
+    # add delay if before console closes
+    time.sleep(3)
         
-    

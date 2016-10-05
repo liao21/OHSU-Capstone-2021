@@ -15,6 +15,8 @@ Revisions:
 import xml.etree.cElementTree as ET
 import time
 import numpy as np
+from scipy.interpolate import interp1d
+
     
 class rocElem:
    def __init__(self, name):
@@ -26,7 +28,7 @@ class rocElem:
        self.impedance = {} # dictionary of impedances for each waypoint
 
 # function to read in ROC xml file and store as dictionary       
-def storeROC(file): 
+def readROC(file): 
     rocTableTree = ET.parse(file) # store ROC table as an ElementTree
     rocTable = {} # make dictionary of ROC grasps
     root = rocTableTree.getroot()
@@ -45,7 +47,7 @@ def storeROC(file):
         angleArray = []
         elem.waypoints = []
         for waypoint in table.iter('waypoint'):
-            index = waypoint.get('index')
+            index = float(waypoint.get('index'))
             #bisect.insort(elem.waypoints, index) # insert waypoint into sorted list of waypoints
             elem.waypoints.append(index)
             
@@ -65,8 +67,8 @@ def printROC(rocElem):
     print("ROC WAYPOINTS = [" + ' '.join(str(e) for e in rocElem.waypoints) + "]")
     print("ROC ANGLES " + str(rocElem.angles.shape) + " = ")
     for row in rocElem.angles:
-        print(['{:.4f}'.format(i) for i in row])
-        print('\n')
+        print(['{:6.3f}'.format(i) for i in row])
+    print('\n')
 
 def getRocId(rocTable, id):
     # get a roc table entry by the ID
@@ -76,17 +78,27 @@ def getRocId(rocTable, id):
             return rocElem
     return None    
 
+def getRocValues(rocElem, val):
+    
+    x = np.array(rocElem.waypoints);
+    y = rocElem.angles;
+    newAngles = interp1d(x,y,axis=0,kind='linear')(val)
+    return newAngles
 
 if __name__ == "__main__":
     
     filename = "../WrRocDefaults.xml"
-    rocTable = storeROC(filename)
+    rocTable = readROC(filename)
     
     for rocKey, rocElem in sorted(rocTable.items()):
         printROC(rocElem)
 
-    print("\n\nGet ROC By ID :" )   
+    print("\n\nGet ROC By ID:" )   
     printROC(getRocId(rocTable, 1))
+    
+    print("\n\nGet ROC Vals:" )  
+    newVals = getRocValues(getRocId(rocTable, 1), 0.1)
+    print(['{:6.3f}'.format(i) for i in newVals])
     
     
     # add delay if before console closes

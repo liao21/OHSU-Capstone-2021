@@ -2,8 +2,8 @@
 """
 Created on Sat Jan 23 20:38:47 2016
 
-The Plant object should hold the state information for the limb system.  This 
-Allows generating velocity commands that are locally integrated to update position 
+The Plant object should hold the state information for the limb system.  This
+Allows generating velocity commands that are locally integrated to update position
 as a funciton of time.  The update() method should be called repeatedly at fixed intervals
 to advance the kinematic state
 
@@ -16,7 +16,7 @@ Revisions:
 # Initial pass and simulating MiniVIE processing using python so that this runs on an embedded device
 #
 # Created 1/23/2016 Armiger
-from ROCtableClass import storeROC
+from ROCtableClass import readROC
 import math
 from scipy.interpolate import interp1d
 
@@ -24,7 +24,7 @@ VERBOSE = 1;
 DEBUG = 0;
 
 #print (JOINT['SHOULDER_FE'])
-    
+
 class Plant(object):
 
     def __init__(self,dt,file):
@@ -58,14 +58,14 @@ class Plant(object):
             'THUMB_MCP'         : 25, \
             'THUMB_DIP'         : 26, \
             'NUM_JOINTS'        : 27}
-            
+
         JOINT = self.JOINT
-    
+
         self.position = [0.0]*JOINT['NUM_JOINTS']
         self.velocity = [0.0]*JOINT['NUM_JOINTS']
         self.upperLimit = [60.0 * math.pi / 180.0]*JOINT['NUM_JOINTS']
         self.lowerLimit = [0.0 * math.pi / 180.0]*  JOINT['NUM_JOINTS']
-        
+
         # Set joint limits.  TODO pull from xml
         self.lowerLimit[JOINT['SHOULDER_FE']] = -35
         self.upperLimit[JOINT['SHOULDER_FE']] = 170
@@ -81,12 +81,12 @@ class Plant(object):
         self.upperLimit[JOINT['WRIST_AB_AD']] = 45
         self.lowerLimit[JOINT['WRIST_FE']] = -60
         self.upperLimit[JOINT['WRIST_FE']] = 60
-		
+
         self.dt = dt
 
         # TODO: this is a final mapping for upper arm, but a temporary mapping for Hand entries, which 
         # should come form a ROC table
-        
+
         # ----------|-Class Name------------------|-----Joint ID------------|-Direction-|
         self.Class={'No Movement'               : [                     []  , 0 ],
                     'Shoulder Flexion'          : [JOINT['SHOULDER_FE']     ,+1 ],
@@ -107,36 +107,36 @@ class Plant(object):
                     'Spherical Grasp'           : [ list(range(7,26+1))     ,+1 ]
                     }
 
-        # Implement ROC based hand commands 
+        # Implement ROC based hand commands
         #self.Joint = storeROC(file)  # dictionary of rocElems, key = grasp name
-          
+
         if DEBUG:
             # debug, set a joint to move
             self.velocity[4] = 30.0 * math.pi / 180.0
 
     def update(self):
         # perform time integration based on elapsed time, dt
-        
-        for i,item in enumerate(self.position):  
+
+        for i,item in enumerate(self.position):
             self.position[i] = self.position[i] + self.velocity[i]*self.dt;
-        
+
             # Apply limits
             if self.position[i] > self.upperLimit[i] :
                 # Saturate at high limit
                 self.position[i] = self.upperLimit[i]
-                
+
             if self.position[i] < self.lowerLimit[i] :
                 # Saturate at low limit
                 self.position[i] = self.lowerLimit[i]
 
             if DEBUG:
-                # Debug only 
+                # Debug only
                 self.velocity[i] = -self.velocity[i]
-                
+
     def class_map(self, class_name):
-        #return JointId, Direction    
-    #   'No Movement' is not necessary in dict_Joint with '.get default return
+        #return JointId, Direction
+        #   'No Movement' is not necessary in dict_Joint with '.get default return
         #JointId, Direction = self.Joint.get(class_name,[ [], 0 ])
         JointId, Direction = self.Class[class_name]
-    
+
         return JointId, Direction

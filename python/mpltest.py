@@ -4,7 +4,11 @@
 # 2016OCT05 Armiger: Created
 
 # Python 2 and 3:
+import time
+import numpy as np
 from builtins import input
+from UnityUdp import UnityUdp 
+import ROCtableClass
 
 def ping(host):
     """
@@ -20,11 +24,11 @@ def ping(host):
 
 ## Show menu ##
 print (30 * '-')
-print ("   M A I N - M E N U")
+print ("   M P L - T E S T ")
 print (30 * '-')
 print ("1. Ping: Limb system and router using OS")
-print ("2. User management")
-print ("3. Reboot the server")
+print ("2. MPL Wrist")
+print ("3. MPL Grasps")
 print (30 * '-')
  
 ## Get input ###
@@ -34,19 +38,77 @@ assert isinstance(choice, str)    # native str on Py2 and Py3
  
 ### Convert string to int type ##
 choice = int(choice)
- 
+
+AA = -0.3
+EL = 0
+armTestStart = [0, AA, 0, EL, 0, 0, 0]
+
+
 ### Take action as per selected menu-option ###
 if choice == 1:
         print ("Starting ping...")
-        result = ping('192.0.0.10')
+        #result = ping('192.0.0.10')
+        result = ping('127.0.0.1')
         print(result)
 elif choice == 2:
-        print ("Starting user management...")
+        print ("Starting MPL Wrist...")
+        hSink = UnityUdp()
+
+        hSink.sendJointAngles([0, AA, 0, EL, -0.7, -0.5, -0.5]);
+        time.sleep(1.0)
+        AA = -0.25;
+        hSink.sendJointAngles([0, AA, 0, EL+0.05, -0.7, -0.5, -0.5]);
+        time.sleep(1.0)
+        hSink.sendJointAngles([0, AA, 0, EL, 0.7, 0.5, 0.5]);
+        time.sleep(1.0)
+        hSink.sendJointAngles(armTestStart);
+        hSink.close()
+        
 elif choice == 3:
-        print ("Rebooting the server...")
+        print ("Starting MPL Grasps...")
+        hSink = UnityUdp()
+
+        # Read ROC Table
+
+        filename = "../WrRocDefaults.xml"
+        rocTable = ROCtableClass.readROC(filename)
+
+        for iRoc in [2, 4, 5, 7, 15]:
+            numOpenSteps = 60;
+            numWaitSteps = 10;
+            numCloseSteps = 60;
+            
+            mplAngles = np.zeros(27);
+            mplAngles[1] = -0.3;
+            mplAngles[3] = EL+0.05;
+            
+            rocElem = ROCtableClass.getRocId(rocTable, iRoc)
+            
+            graspVal = np.append(np.linspace(0,1,numOpenSteps),np.ones(numWaitSteps));
+            graspVal = np.append(graspVal,np.linspace(1,0,numCloseSteps));
+            for iVal in graspVal:
+                print('Entry #{}, RocId={}, {} {:6.1f} Pct'.format(iRoc,rocElem.id,rocElem.name,iVal*100))
+                
+                
+                newVals = ROCtableClass.getRocValues(rocElem, iVal)
+                
+                mplAngles[rocElem.joints] = newVals
+                
+                hSink.sendJointAngles(mplAngles);
+                time.sleep(0.02);
+            
+
+        
+        
 else:    ## default ##
         print ("Invalid number. Try again...")
-
+        
+        
+        
+        
+        
+        
+        
         
         
         

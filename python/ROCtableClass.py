@@ -40,7 +40,9 @@ def readROC(file):
         # create a rocElem object for that grasp
         elem = rocElem(name)
         elem.id = int(table.find('id').text)
-        elem.joints = [int(val) for val in table.find('joints').text.split(',')]
+        
+        # Note the joint ids here are (-1) so that indices are 0-based for python
+        elem.joints = [int(val)-1 for val in table.find('joints').text.split(',')]
         # check each waypoint for angles and impedance measurements
         
         # initialize array that will be nWayPoints*nJoints
@@ -85,6 +87,8 @@ def getRocValues(rocElem, val):
     newAngles = interp1d(x,y,axis=0,kind='linear')(val)
     return newAngles
 
+    
+# Main Function (for demo)
 if __name__ == "__main__":
     
     filename = "../WrRocDefaults.xml"
@@ -103,4 +107,3 @@ if __name__ == "__main__":
     
     # add delay if before console closes
     time.sleep(3)
-        

@@ -152,7 +152,8 @@ class NfuUdp:
         dimA = np.array(A.shape,dtype=np.uint32)
 
         # convert to byte array
-        bval = A.tobytes()
+        #bval = A.tobytes()
+        bval = A.tostring() # compatibility alias for tobytes
 
         # format message
         msgId = 4

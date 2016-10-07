@@ -1,0 +1,4 @@
+# Package dependencies for MiniVIE/Python  currently vesions are not specified
+future
+numpy
+scipy

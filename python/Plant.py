@@ -19,6 +19,7 @@ Revisions:
 # Created 1/23/2016 Armiger
 import math
 from UserConfigXml import userConfig
+import time
 
 VERBOSE = 1;
 DEBUG = 0;
@@ -27,6 +28,7 @@ class Plant(object):
 
     def __init__(self,dt,filename):
 
+        # dictionary is really an enumeration.  problem here is that reverse lookup not supported
         self.JOINT = {\
             'SHOULDER_FE'       : 0, \
             'SHOULDER_AB_AD'    : 1, \
@@ -101,6 +103,19 @@ class Plant(object):
         # Implement ROC based hand commands
         #self.Joint = storeROC(file)  # dictionary of rocElems, key = grasp name
 
+    def newStep(self):
+        # set all velocities to 0 to prepare for a new timestep 
+        # Typically followed by a call to setVelocity
+        self.velocity[:self.JOINT['NUM_JOINTS']] = [0.0] * self.JOINT['NUM_JOINTS']
+    def setVelocity(self,jointId, jointVelocity):
+        # set the velocities of the list of joint ids
+        
+        if isinstance(jointId, list):
+            for i in jointId:
+                self.velocity[i] = jointVelocity # set non-zero velocity for joints we care about
+        else :
+            self.velocity[jointId] = jointVelocity
+
     def update(self):
         # perform time integration based on elapsed time, dt
 
@@ -122,14 +137,31 @@ class Plant(object):
 
         return JointId, Direction
 
-# Main Function (for demo)
-if __name__ == "__main__":
-    
+def main():    
     filename = "../user_config.xml"
+    dt = 0.02
+    p = Plant(dt,filename)
     
-    p = Plant(0.02,filename)
-        
     print(p.lowerLimit)
     print(p.upperLimit)
-    
-    
+
+    timeBegin = time.time()
+    while time.time() < (timeBegin + 2.5): # main loop
+        time.sleep(dt)
+        class_name = 'Shoulder Flexion'
+        jointId, jointDir = p.class_map(class_name)
+
+        # Set joint velocities
+        p.newStep()
+        # set the mapped class
+        p.setVelocity(jointId,jointDir)    
+        # set a few other joints with a new velocity
+        p.setVelocity([3, 5],1.2)    
+        p.update()
+
+        print('Angles (deg):' + ''.join('{:6.1f}'.format(k*180/math.pi) for k in p.position[:7] ))
+
+# Main Function (for demo)
+if __name__ == "__main__":
+    main()
+        

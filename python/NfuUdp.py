@@ -24,11 +24,11 @@ def main():
     """ 
     Run NFU interface as standalone test function
     """
-    # Establish netork inferface to MPL at address below
+    # Establish network inferface to MPL at address below
     #h = NfuUdp(Hostname="192.168.1.111")
     h = NfuUdp(Hostname="localhost")
     
-    # Run a quick motion test to vreify joints are working
+    # Run a quick motion test to verify joints are working
     NUM_ARM_JOINTS = 7;
     NUM_HAND_JOINTS = 20;
     armPosition = [0.0]*NUM_ARM_JOINTS

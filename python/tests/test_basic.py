@@ -16,8 +16,17 @@ RocTableClass.main()
 import UserConfigXml
 UserConfigXml.main()
 
+import NfuUdp
+NfuUdp.main()
+# generates warning for too long parameter name
+nfu = NfuUdp.NfuUdp()
+nfu.msgUpdateParam('-' *160, 0.0)
+
 import OpenNfuMain
 OpenNfuMain.main()
+
+import Plant
+Plant.main()
 
 #import sample_main
 #sample_main.main()

@@ -91,12 +91,9 @@ def model(SignalSource,SignalClassifier,Plant,DataSink,Trainer):
     jointId, jointDir = Plant.class_map(classNames[classNum])
 
     # Set joint velocities
+    Plant.newStep()
+    Plant.setVelocity(jointId,jointDir)    
     # TODO [Lydia1]: Needs ROC implementation
-    Plant.velocity[:Plant.NUM_JOINTS] = [0.0] * Plant.NUM_JOINTS # initially set all to zero
-    if jointId:
-        for i in jointId:
-            Plant.velocity[i] = jointDir # set non-zero velocity for joints we care about
-
     Plant.update()
 
     # Non-EMG Motion based inputs [Optional]

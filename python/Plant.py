@@ -25,7 +25,7 @@ DEBUG = 0;
 
 class Plant(object):
 
-    def __init__(self,dt,file):
+    def __init__(self,dt,filename):
 
         self.JOINT = {\
             'SHOULDER_FE'       : 0, \

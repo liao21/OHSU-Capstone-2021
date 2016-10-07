@@ -32,7 +32,8 @@ def setup():
     
     
     # TODO [Lydia1]: need to include xml file with ROC tables
-    filename = "../WrRocDefaults.xml"
+    #filename = "../WrRocDefaults.xml"
+    filename = "../user_config.xml"
     # Create data objects
 
     # Signal Source get external bio-signal data

@@ -1,4 +1,17 @@
 # Package dependencies for MiniVIE/Python  currently vesions are not specified
+#
+# Prerequisites:
+# 	bluepy - requires libglib2.0-dev (sudo apt-get install libglib2.0-dev) 
+#
+#
+# Usage:
+#    sudo pip install --upgrade pip
+#    sudo pip install -r requirements.txt
+
 future
 numpy
 scipy
+scikit-learn
+bluepy
+#serial
+#pygame

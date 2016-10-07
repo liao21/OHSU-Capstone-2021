@@ -8,7 +8,7 @@ import time
 import numpy as np
 from builtins import input
 from UnityUdp import UnityUdp 
-import ROCtableClass
+import RocTableClass
 
 def ping(host):
     """
@@ -71,44 +71,32 @@ elif choice == 3:
         # Read ROC Table
 
         filename = "../WrRocDefaults.xml"
-        rocTable = ROCtableClass.readROC(filename)
+        rocTable = RocTableClass.readRoc(filename)
 
         for iRoc in [2, 4, 5, 7, 15]:
-            numOpenSteps = 60;
-            numWaitSteps = 10;
-            numCloseSteps = 60;
+            numOpenSteps = 50;
+            numWaitSteps = 50;
+            numCloseSteps = 50;
             
             mplAngles = np.zeros(27);
             mplAngles[1] = -0.3;
             mplAngles[3] = EL+0.05;
             
-            rocElem = ROCtableClass.getRocId(rocTable, iRoc)
+            rocElem = RocTableClass.getRocId(rocTable, iRoc)
             
-            graspVal = np.append(np.linspace(0,1,numOpenSteps),np.ones(numWaitSteps));
-            graspVal = np.append(graspVal,np.linspace(1,0,numCloseSteps));
+            graspVal = np.concatenate((np.linspace(0,1,numOpenSteps),np.ones(numWaitSteps),np.linspace(1,0,numCloseSteps)));
             for iVal in graspVal:
                 print('Entry #{}, RocId={}, {} {:6.1f} Pct'.format(iRoc,rocElem.id,rocElem.name,iVal*100))
                 
                 
-                newVals = ROCtableClass.getRocValues(rocElem, iVal)
+                newVals = RocTableClass.getRocValues(rocElem, iVal)
                 
                 mplAngles[rocElem.joints] = newVals
                 
                 hSink.sendJointAngles(mplAngles);
                 time.sleep(0.02);
-            
-
-        
+        hSink.close()
         
 else:    ## default ##
         print ("Invalid number. Try again...")
-        
-        
-        
-        
-        
-        
-        
-        
-        
         

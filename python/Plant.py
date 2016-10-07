@@ -8,7 +8,8 @@ as a funciton of time.  The update() method should be called repeatedly at fixed
 to advance the kinematic state
 
 Revisions:
-7/26/2016: Reverted changes back to the simple Joint dictionary since ROC table not working
+2016JUL26: Reverted changes back to the simple Joint dictionary since ROC table not working
+2016OCT07: Added joint limit from xml file
 
 @author: R. Armiger
 """
@@ -16,14 +17,11 @@ Revisions:
 # Initial pass and simulating MiniVIE processing using python so that this runs on an embedded device
 #
 # Created 1/23/2016 Armiger
-from ROCtableClass import readROC
 import math
-from scipy.interpolate import interp1d
+from UserConfigXml import userConfig
 
 VERBOSE = 1;
 DEBUG = 0;
-
-#print (JOINT['SHOULDER_FE'])
 
 class Plant(object):
 
@@ -63,24 +61,17 @@ class Plant(object):
 
         self.position = [0.0]*JOINT['NUM_JOINTS']
         self.velocity = [0.0]*JOINT['NUM_JOINTS']
-        self.upperLimit = [60.0 * math.pi / 180.0]*JOINT['NUM_JOINTS']
-        self.lowerLimit = [0.0 * math.pi / 180.0]*  JOINT['NUM_JOINTS']
 
-        # Set joint limits.  TODO pull from xml
-        self.lowerLimit[JOINT['SHOULDER_FE']] = -35
-        self.upperLimit[JOINT['SHOULDER_FE']] = 170
-        self.lowerLimit[JOINT['SHOULDER_AB_AD']] = -90
-        self.upperLimit[JOINT['SHOULDER_AB_AD']] = 15
-        self.lowerLimit[JOINT['HUMERAL_ROT']] = -35
-        self.upperLimit[JOINT['HUMERAL_ROT']] = 80
-        self.lowerLimit[JOINT['ELBOW']] = 5
-        self.upperLimit[JOINT['ELBOW']] = 140
-        self.lowerLimit[JOINT['WRIST_ROT']] = -90
-        self.upperLimit[JOINT['WRIST_ROT']] = 90
-        self.lowerLimit[JOINT['WRIST_AB_AD']] = -45
-        self.upperLimit[JOINT['WRIST_AB_AD']] = 45
-        self.lowerLimit[JOINT['WRIST_FE']] = -60
-        self.upperLimit[JOINT['WRIST_FE']] = 60
+        # Load limits from xml config file
+        UC = userConfig(filename)
+        self.lowerLimit = [0.0] * JOINT['NUM_JOINTS']
+        self.upperLimit = [30.0] * JOINT['NUM_JOINTS']
+        
+        for (name,id) in JOINT.items():
+            if name != 'NUM_JOINTS':
+                limit = UC.getUserConfigVar(name+'_LIMITS',(0.0, 30.0))
+                self.lowerLimit[id] = limit[0] * math.pi / 180
+                self.upperLimit[id] = limit[1] * math.pi / 180
 
         self.dt = dt
 
@@ -110,10 +101,6 @@ class Plant(object):
         # Implement ROC based hand commands
         #self.Joint = storeROC(file)  # dictionary of rocElems, key = grasp name
 
-        if DEBUG:
-            # debug, set a joint to move
-            self.velocity[4] = 30.0 * math.pi / 180.0
-
     def update(self):
         # perform time integration based on elapsed time, dt
 
@@ -121,17 +108,11 @@ class Plant(object):
             self.position[i] = self.position[i] + self.velocity[i]*self.dt;
 
             # Apply limits
-            if self.position[i] > self.upperLimit[i] :
-                # Saturate at high limit
-                self.position[i] = self.upperLimit[i]
+            # Saturate at high limit
+            if self.position[i] > self.upperLimit[i] : self.position[i] = self.upperLimit[i]
 
-            if self.position[i] < self.lowerLimit[i] :
-                # Saturate at low limit
-                self.position[i] = self.lowerLimit[i]
-
-            if DEBUG:
-                # Debug only
-                self.velocity[i] = -self.velocity[i]
+            # Saturate at low limit
+            if self.position[i] < self.lowerLimit[i] : self.position[i] = self.lowerLimit[i]
 
     def class_map(self, class_name):
         #return JointId, Direction
@@ -140,3 +121,15 @@ class Plant(object):
         JointId, Direction = self.Class[class_name]
 
         return JointId, Direction
+
+# Main Function (for demo)
+if __name__ == "__main__":
+    
+    filename = "../user_config.xml"
+    
+    p = Plant(0.02,filename)
+        
+    print(p.lowerLimit)
+    print(p.upperLimit)
+    
+    

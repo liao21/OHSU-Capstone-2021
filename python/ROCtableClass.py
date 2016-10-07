@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Load an xml Roc file and store as a dictionary that can be 
+Load an xml Reduced Order Control (ROC) file and store as a dictionary that can be 
 referenced by the name of the ROC table entry
 
 Created on Mon Mar  7 08:21:58 2016
@@ -28,7 +28,7 @@ class rocElem:
        self.impedance = {} # dictionary of impedances for each waypoint
 
 # function to read in ROC xml file and store as dictionary       
-def readROC(file): 
+def readRoc(file): 
     rocTableTree = ET.parse(file) # store ROC table as an ElementTree
     rocTable = {} # make dictionary of ROC grasps
     root = rocTableTree.getroot()
@@ -61,7 +61,7 @@ def readROC(file):
     # return completed dictionary
     return rocTable
 
-def printROC(rocElem):
+def printRoc(rocElem):
     # print an element in the ROC tables
     print("ROC NAME = '" + rocElem.name + "'")
     print("ROC ID = " + str(rocElem.id))
@@ -92,13 +92,13 @@ def getRocValues(rocElem, val):
 if __name__ == "__main__":
     
     filename = "../WrRocDefaults.xml"
-    rocTable = readROC(filename)
+    rocTable = readRoc(filename)
     
     for rocKey, rocElem in sorted(rocTable.items()):
-        printROC(rocElem)
+        printRoc(rocElem)
 
     print("\n\nGet ROC By ID:" )   
-    printROC(getRocId(rocTable, 1))
+    printRoc(getRocId(rocTable, 1))
     
     print("\n\nGet ROC Vals:" )  
     newVals = getRocValues(getRocId(rocTable, 1), 0.1)

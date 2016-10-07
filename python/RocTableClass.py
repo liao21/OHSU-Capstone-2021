@@ -12,12 +12,12 @@ Revisions:
 2016OCT05 Armiger: updated angle storage and added print / main functions
 
 """
+import logging
 import xml.etree.cElementTree as ET
 import time
 import numpy as np
 from scipy.interpolate import interp1d
 
-    
 class rocElem:
    def __init__(self, name):
        self.name = name # grasp name
@@ -62,6 +62,9 @@ def readRoc(file):
     return rocTable
 
 def printRoc(rocElem):
+
+    if rocElem is None: return
+
     # print an element in the ROC tables
     print("ROC NAME = '" + rocElem.name + "'")
     print("ROC ID = " + str(rocElem.id))
@@ -78,6 +81,7 @@ def getRocId(rocTable, id):
     for rocKey, rocElem in rocTable.items():
         if (rocElem.id == id):
             return rocElem
+    logging.warning('Invlaid ROC ID : {}'.format(id))
     return None    
 
 def getRocValues(rocElem, val):
@@ -87,10 +91,9 @@ def getRocValues(rocElem, val):
     newAngles = interp1d(x,y,axis=0,kind='linear')(val)
     return newAngles
 
-    
-# Main Function (for demo)
-if __name__ == "__main__":
-    
+
+def main():
+
     filename = "../WrRocDefaults.xml"
     rocTable = readRoc(filename)
     
@@ -100,10 +103,15 @@ if __name__ == "__main__":
     print("\n\nGet ROC By ID:" )   
     printRoc(getRocId(rocTable, 1))
     
+    # Get out of range ROC ID
+    print("\n\nGet ROC By ID:" )   
+    printRoc(getRocId(rocTable, 99))
+
     print("\n\nGet ROC Vals:" )  
     newVals = getRocValues(getRocId(rocTable, 1), 0.1)
     print(['{:6.3f}'.format(i) for i in newVals])
     
-    
-    # add delay if before console closes
-    time.sleep(3)
+# Main Function (for demo)
+if __name__ == "__main__":
+    main()
+

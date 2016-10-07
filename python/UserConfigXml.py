@@ -51,7 +51,7 @@ class userConfig(Singleton):
                 elif type(defaultValue) is tuple:
                     return tuple( float(i) for i in strValue.split(','))
                 else:
-                    logging.warning('Unknown type [' + str(type(defaultValue)) + '] for default value for key = ' + key)
+                    logging.warning('Unhandled type [{}] for default value for key = {}'.format(type(defaultValue), key))
         
         # Unmatched isn't a problem, parameter just happens to not be in xml, so use default
         #logging.warning(key + ' : UNMATCHED')
@@ -60,20 +60,20 @@ class userConfig(Singleton):
         logging.info(key + ' : ' + str(defaultValue) + ' (default)')
         return defaultValue
 
-    
-# Main Function (for demo)
-if __name__ == "__main__":
-    
+def main():
     filename = "../user_config.xml"
     UC = userConfig(filename)
     
+    # check known types
     UC.getUserConfigVar('rocTable','')
     UC.getUserConfigVar('FeatureExtract.zcThreshold',0.0)
     UC.getUserConfigVar('mplVulcanXCommandPort',9000)
 
+    # check invlaid types
     UC.getUserConfigVar('_rocTable','')
     UC.getUserConfigVar('_FeatureExtract.zcThreshold',0.0)
     UC.getUserConfigVar('_mplVulcanXCommandPort',9000)
+    UC.getUserConfigVar('rocTable',None)
     
     elbowLim = UC.getUserConfigVar('ELBOW_LIMITS',(0.0, 140.0))
     print(type(elbowLim[0]))
@@ -82,4 +82,8 @@ if __name__ == "__main__":
     print(type(elbowLim[0]))
     print(elbowLim[1])
     
-    
+# Main Function (for demo)
+if __name__ == "__main__":
+    main()
+
+

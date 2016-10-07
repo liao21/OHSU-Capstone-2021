@@ -46,7 +46,7 @@ def main():
     time.sleep(3)
 
     h.close()
-    logging.info('Ending OpenNFU')
+    logging.info('Ending NfuUdp')
     logging.info('-----------------------------------------------')
     
   

@@ -1,8 +1,11 @@
 ## OpenNfuMain.py
 # Designed to be the main startup target for a prosthetic system
 #
-# Usage: python OpenNfuMain.py
-# Help: python OpenNfuMain.py -h
+# Usage: 
+#   python OpenNfuMain.py
+#   python OpenNfuMain.py --log DEBUG
+# Help: 
+#   python OpenNfuMain.py -h
 #
 # Requirements:
 #   bluepy
@@ -30,6 +33,7 @@ def main():
 
     waitForLimbConnection()
     waitForSignals()
+    testLimbConnection(h)
 
     runAlgorithm()
     close(h)
@@ -102,7 +106,7 @@ def waitForLimbConnection():
 def waitForSignals():
     pass
 	
-def testLimbConnection():
+def testLimbConnection(h):
     
     # Run a quick motion test to verify joints are working
     NUM_ARM_JOINTS = 7;
@@ -130,7 +134,7 @@ def close(h):
     logging.info('Ending OpenNFU')
     logging.info('-----------------------------------------------')
     # Add short delay to view any final messages at console
-    time.sleep(2.0)
+    time.sleep(1.0)
 
 	
 if __name__ == "__main__":

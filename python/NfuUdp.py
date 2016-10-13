@@ -49,12 +49,27 @@ def main():
 
     # test percept decoding
     f = open(os.path.join(os.path.dirname(__file__), "tests\\heartbeat.bin"), "r")
-    uint8_heartbeat = np.fromfile(f, dtype=np.uint8)
+
     print('Testing heartbeat uint8 decoding...')
+    uint8_heartbeat = np.fromfile(f, dtype=np.uint8)
     h.decode_heartbeat_msg(uint8_heartbeat)
+
     print('Testing heartbeat byte decoding...')
     bytes_heartbeat = uint8_heartbeat.tobytes()
     h.decode_heartbeat_msg(bytes_heartbeat)
+
+    f = open(os.path.join(os.path.dirname(__file__), "tests\\percepts.bin"), "r")
+    u = np.fromfile(f, dtype=np.uint8)
+
+    print('Testing cpch uint8 decoding...')
+    uint8_cpch = u[0:1366]
+    h.cpch_bytes_to_signal(uint8_cpch)
+
+    print('Testing cpch byte decoding...')
+    bytes_cpch = uint8_cpch.tobytes()
+    h.cpch_bytes_to_signal(bytes_cpch)
+
+   #h.decode_percept_msg(uint8_percepts[1366:])
 
     h.close()
     logging.info('Ending NfuUdp')
@@ -183,7 +198,7 @@ class NfuUdp:
 
         # Check if b is input as bytes, if so, convert to uint8
         if isinstance(b, (bytes, bytearray)):
-            b = struct.unpack('B'*36, b[0:36])
+            b = struct.unpack('B' * b.__len__(), b)
             b = np.array(b, np.uint8)
 
         # List of software states
@@ -215,6 +230,47 @@ class NfuUdp:
         print("NFU: V = ", msg['busVoltage'], ", State = ", msg['strState'], ", CPC msgs = ", msg['numMsgs'],  ", Streaming NFU = ", msg['nfuStreaming'], ", LC = ", msg['lcStreaming'], ", CPCH = ", msg['cpchStreaming'])
 
         return msg
+
+    def cpch_bytes_to_signal(self, b):
+        # Log: Translated to Python by COP on 12OCT2016
+
+        # Check if b is input as bytes, if so, convert to uint8
+        if isinstance(b, (bytes, bytearray)):
+            b = struct.unpack('B' * b.__len__(), b)
+            b = np.array(b, np.uint8)
+
+        # Determine expected packet size
+        numPacketHeaderBytes = 6
+        numSamplesPerPacket = 20
+        numSampleHeaderBytes = 4
+        if b.size == 1366:
+            numChannelsPerPacket = 32
+        elif b.size == 726:
+            numChannelsPerPacket = 16
+        elif b.size == 406:
+            numChannelsPerPacket = 8
+        numBytesPerChannel = 2
+        numBytesPerSample = numChannelsPerPacket * numBytesPerChannel + numSampleHeaderBytes
+        cpchpacketSize = numPacketHeaderBytes + numBytesPerSample * numSamplesPerPacket
+
+        # First 6 bytes of message are global header
+        data = b[numPacketHeaderBytes:cpchpacketSize].reshape(numBytesPerSample, numSamplesPerPacket, order='F')
+
+        # First 5 bytes per sample are header
+        databytes = data[numSampleHeaderBytes:, :]
+
+        # Reshape into vector and then convert to int16
+        s = databytes.reshape(1, databytes.size, order='F')[0, :].view(np.int16).reshape(numChannelsPerPacket, numSamplesPerPacket, order='F')
+
+        sequenceNumber = data[2, :].astype('int16')
+        s[-1, :] = sequenceNumber
+
+        signalDict = {'s': s, 'sequenceNumber': sequenceNumber}
+        return signalDict
+
+    def decode_percepts_msg(self, b):
+        # Log: Translated to Python by COP on 12OCT2016
+        b = b
 
 if __name__ == "__main__":
     main()

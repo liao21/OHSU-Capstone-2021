@@ -17,6 +17,8 @@ import logging
 import binascii
 import struct
 import numpy as np
+import os
+import struct
 
 VERBOSE = 2
 
@@ -44,6 +46,30 @@ def main():
     armPosition[3] = 0.3
     h.sendJointAngles(armPosition+armVelocity+handPosition+handVelocity)
     time.sleep(3)
+
+    # test percept decoding
+    f = open(os.path.join(os.path.dirname(__file__), "tests\\heartbeat.bin"), "r")
+
+    print('Testing heartbeat uint8 decoding...')
+    uint8_heartbeat = np.fromfile(f, dtype=np.uint8)
+    h.decode_heartbeat_msg(uint8_heartbeat)
+
+    print('Testing heartbeat byte decoding...')
+    bytes_heartbeat = uint8_heartbeat.tobytes()
+    h.decode_heartbeat_msg(bytes_heartbeat)
+
+    f = open(os.path.join(os.path.dirname(__file__), "tests\\percepts.bin"), "r")
+    u = np.fromfile(f, dtype=np.uint8)
+
+    print('Testing cpch uint8 decoding...')
+    uint8_cpch = u[0:1366]
+    h.cpch_bytes_to_signal(uint8_cpch)
+
+    print('Testing cpch byte decoding...')
+    bytes_cpch = uint8_cpch.tobytes()
+    h.cpch_bytes_to_signal(bytes_cpch)
+
+   #h.decode_percept_msg(uint8_percepts[1366:])
 
     h.close()
     logging.info('Ending NfuUdp')
@@ -166,7 +192,85 @@ class NfuUdp:
         """ Cleanup socket """
         logging.info("Closing NfuUdp Socket IP={} Port={}".format(self.Hostname,self.UdpTelemPort) )
         self.__UdpSock.close()
-    
+
+    def decode_heartbeat_msg(self, b):
+        # Log: Translated to Python by COP on 12OCT2016
+
+        # Check if b is input as bytes, if so, convert to uint8
+        if isinstance(b, (bytes, bytearray)):
+            b = struct.unpack('B' * b.__len__(), b)
+            b = np.array(b, np.uint8)
+
+        # List of software states
+        nfuStates = [
+                    'SW_STATE_INIT',
+                    'SW_STATE_PRG',
+                    'SW_STATE_FS',
+                    'SW_STATE_NOS_CONTROL_STIMULATION',
+                    'SW_STATE_NOS_IDLE',
+                    'SW_STATE_NOS_SLEEP',
+                    'SW_STATE_NOS_CONFIGURATION',
+                    'SW_STATE_NOS_HOMING',
+                    'SW_STATE_NOS_DATA_ACQUISITION',
+                    'SW_STATE_NOS_DIAGNOSTICS',
+                    'SW_STATE_NUM_STATES',
+                    ]
+
+        msg = {}
+        # Recast from uint8 to correct format
+        msg['SW_STATE'] = b[0:4].view(np.uint32)[0]
+        msg['strState'] = nfuStates[msg['SW_STATE']]
+        msg['numMsgs'] = b[4:8].view(np.uint32)[0]
+        msg['nfuStreaming'] = b[8:16].view(np.uint64)[0]
+        msg['lcStreaming'] = b[16:24].view(np.uint64)[0]
+        msg['cpchStreaming'] = b[24:32].view(np.uint64)[0]
+        msg['busVoltageCounts'] = b[32:34].view(np.uint16)[0]
+        msg['busVoltage'] = msg['busVoltageCounts'].astype(float)/148.95
+
+        print("NFU: V = ", msg['busVoltage'], ", State = ", msg['strState'], ", CPC msgs = ", msg['numMsgs'],  ", Streaming NFU = ", msg['nfuStreaming'], ", LC = ", msg['lcStreaming'], ", CPCH = ", msg['cpchStreaming'])
+
+        return msg
+
+    def cpch_bytes_to_signal(self, b):
+        # Log: Translated to Python by COP on 12OCT2016
+
+        # Check if b is input as bytes, if so, convert to uint8
+        if isinstance(b, (bytes, bytearray)):
+            b = struct.unpack('B' * b.__len__(), b)
+            b = np.array(b, np.uint8)
+
+        # Determine expected packet size
+        numPacketHeaderBytes = 6
+        numSamplesPerPacket = 20
+        numSampleHeaderBytes = 4
+        if b.size == 1366:
+            numChannelsPerPacket = 32
+        elif b.size == 726:
+            numChannelsPerPacket = 16
+        elif b.size == 406:
+            numChannelsPerPacket = 8
+        numBytesPerChannel = 2
+        numBytesPerSample = numChannelsPerPacket * numBytesPerChannel + numSampleHeaderBytes
+        cpchpacketSize = numPacketHeaderBytes + numBytesPerSample * numSamplesPerPacket
+
+        # First 6 bytes of message are global header
+        data = b[numPacketHeaderBytes:cpchpacketSize].reshape(numBytesPerSample, numSamplesPerPacket, order='F')
+
+        # First 5 bytes per sample are header
+        databytes = data[numSampleHeaderBytes:, :]
+
+        # Reshape into vector and then convert to int16
+        s = databytes.reshape(1, databytes.size, order='F')[0, :].view(np.int16).reshape(numChannelsPerPacket, numSamplesPerPacket, order='F')
+
+        sequenceNumber = data[2, :].astype('int16')
+        s[-1, :] = sequenceNumber
+
+        signalDict = {'s': s, 'sequenceNumber': sequenceNumber}
+        return signalDict
+
+    def decode_percepts_msg(self, b):
+        # Log: Translated to Python by COP on 12OCT2016
+        b = b
 
 if __name__ == "__main__":
     main()

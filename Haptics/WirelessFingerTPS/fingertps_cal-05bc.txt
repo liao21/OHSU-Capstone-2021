@@ -1,0 +1,13 @@
+Calibration
+Left Ring| 0
+Left Pinky| 0
+Left Index| 0
+Left Palm 2| 0
+Left Middle| 0
+Left Thumb| 0
+Elem6| 32767	
+Elem7| 32767	
+Elem8| 32767	
+Elem9| 32767	
+Elem10| 32767	
+Elem11| 32767	

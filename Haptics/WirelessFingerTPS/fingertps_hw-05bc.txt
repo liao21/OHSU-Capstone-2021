@@ -1,0 +1,7 @@
+HwD600ComPort	13
+HwD600BluetoothAddress	"00043e2605bc"
+HwD600I2cAddresses 2 1 2
+HwD600I2cLengths 2 6 6
+HwD600CapSenseDacCurrent	45
+HwD600CapSenseScanCount		50
+HwD600CapSenseAveLength		4

@@ -25,8 +25,8 @@ nfu.msgUpdateParam('-' *160, 0.0)
 import OpenNfuMain
 OpenNfuMain.main()
 
-import Plant
-Plant.main()
+#import Plant
+#Plant.main()
 
 #import sample_main
 #sample_main.main()

@@ -17,6 +17,8 @@ import logging
 import binascii
 import struct
 import numpy as np
+import os
+import struct
 
 VERBOSE = 2
 
@@ -44,6 +46,15 @@ def main():
     armPosition[3] = 0.3
     h.sendJointAngles(armPosition+armVelocity+handPosition+handVelocity)
     time.sleep(3)
+
+    # test percept decoding
+    f = open(os.path.join(os.path.dirname(__file__), "tests\\heartbeat.bin"), "r")
+    uint8_heartbeat = np.fromfile(f, dtype=np.uint8)
+    print('Testing heartbeat uint8 decoding...')
+    h.decode_heartbeat_msg(uint8_heartbeat)
+    print('Testing heartbeat byte decoding...')
+    bytes_heartbeat = uint8_heartbeat.tobytes()
+    h.decode_heartbeat_msg(bytes_heartbeat)
 
     h.close()
     logging.info('Ending NfuUdp')
@@ -166,7 +177,44 @@ class NfuUdp:
         """ Cleanup socket """
         logging.info("Closing NfuUdp Socket IP={} Port={}".format(self.Hostname,self.UdpTelemPort) )
         self.__UdpSock.close()
-    
+
+    def decode_heartbeat_msg(self, b):
+        # Log: Translated to Python by COP on 12OCT2016
+
+        # Check if b is input as bytes, if so, convert to uint8
+        if isinstance(b, (bytes, bytearray)):
+            b = struct.unpack('B'*36, b[0:36])
+            b = np.array(b, np.uint8)
+
+        # List of software states
+        nfuStates = [
+                    'SW_STATE_INIT',
+                    'SW_STATE_PRG',
+                    'SW_STATE_FS',
+                    'SW_STATE_NOS_CONTROL_STIMULATION',
+                    'SW_STATE_NOS_IDLE',
+                    'SW_STATE_NOS_SLEEP',
+                    'SW_STATE_NOS_CONFIGURATION',
+                    'SW_STATE_NOS_HOMING',
+                    'SW_STATE_NOS_DATA_ACQUISITION',
+                    'SW_STATE_NOS_DIAGNOSTICS',
+                    'SW_STATE_NUM_STATES',
+                    ]
+
+        msg = {}
+        # Recast from uint8 to correct format
+        msg['SW_STATE'] = b[0:4].view(np.uint32)[0]
+        msg['strState'] = nfuStates[msg['SW_STATE']]
+        msg['numMsgs'] = b[4:8].view(np.uint32)[0]
+        msg['nfuStreaming'] = b[8:16].view(np.uint64)[0]
+        msg['lcStreaming'] = b[16:24].view(np.uint64)[0]
+        msg['cpchStreaming'] = b[24:32].view(np.uint64)[0]
+        msg['busVoltageCounts'] = b[32:34].view(np.uint16)[0]
+        msg['busVoltage'] = msg['busVoltageCounts'].astype(float)/148.95
+
+        print("NFU: V = ", msg['busVoltage'], ", State = ", msg['strState'], ", CPC msgs = ", msg['numMsgs'],  ", Streaming NFU = ", msg['nfuStreaming'], ", LC = ", msg['lcStreaming'], ", CPCH = ", msg['cpchStreaming'])
+
+        return msg
 
 if __name__ == "__main__":
     main()

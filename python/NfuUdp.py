@@ -69,7 +69,13 @@ def main():
     bytes_cpch = uint8_cpch.tobytes()
     h.cpch_bytes_to_signal(bytes_cpch)
 
-   #h.decode_percept_msg(uint8_percepts[1366:])
+    print('Testing percept uint8 decoding...')
+    uint8_percept = u[1366:]
+    h.decode_percept_msg(uint8_percept)
+
+    print('Testing percept byte decoding...')
+    bytes_percept = uint8_percept.tobytes()
+    h.decode_percept_msg(uint8_percept)
 
     h.close()
     logging.info('Ending NfuUdp')
@@ -268,9 +274,162 @@ class NfuUdp:
         signalDict = {'s': s, 'sequenceNumber': sequenceNumber}
         return signalDict
 
-    def decode_percepts_msg(self, b):
+    def decode_percept_msg(self, b):
         # Log: Translated to Python by COP on 12OCT2016
-        b = b
+
+        tlm = {}
+        # Enable Flags
+        PERCEPT_ENABLE_ACTUATED_PERCEPTS = 1
+        PERCEPT_ENABLE_UNACTUATED_PERCEPTS = 2
+        PERCEPT_ENABLE_INDEX_FTSN = 3
+        PERCEPT_ENABLE_MIDDLE_FTSN = 4
+        PERCEPT_ENABLE_RING_FTSN = 5
+        PERCEPT_ENABLE_LITTLE_FTSN = 6
+        PERCEPT_ENABLE_THUMB_FTSN = 7
+        PERCEPT_ENABLE_CONTACT = 8
+        PERCEPT_ENABLE_NUM_IDS = 8
+
+        # Actuated
+        PERCEPTID_INDEX_AB_AD = 1
+        PERCEPTID_INDEX_MCP = 2
+        PERCEPTID_MIDDLE_MCP = 3
+        PERCEPTID_RING_MCP = 4
+        PERCEPTID_LITTLE_AB_AD = 5
+        PERCEPTID_LITTLE_MCP = 6
+        PERCEPTID_THUMB_CMC_AD_AB = 7
+        PERCEPTID_THUMB_CMC_FE = 8
+        PERCEPTID_THUMB_MCP = 9
+        PERCEPTID_THUMB_DIP = 10
+        PERCEPT_NUM_IDS = 10
+
+        # UnActuated
+        PERCEPTID_INDEX_PIP = 1
+        PERCEPTID_INDEX_DIP = 2
+        PERCEPTID_MIDDLE_PIP = 3
+        PERCEPTID_MIDDLE_DIP = 4
+        PERCEPTID_RING_PIP = 5
+        PERCEPTID_RING_DIP = 6
+        PERCEPTID_LITTLE_PIP = 7
+        PERCEPTID_LITTLE_DIP = 8
+        UNACTUATED_PERCEPT_NUM_IDS = 8
+
+        # FTSN
+        PERCEPTID_INDEX_FTSN = 1
+        PERCEPTID_MIDDLE_FTSN = 2
+        PERCEPTID_RING_FTSN = 3
+        PERCEPTID_LITTLE_FTSN = 4
+        PERCEPTID_THUMB_FTSN = 5
+        FTSN_PERCEPT_NUM_IDS = 5
+
+        # Check if b is input as bytes, if so, convert to uint8
+        if isinstance(b, (bytes, bytearray)):
+            b = struct.unpack('B' * b.__len__(), b)
+            b = np.array(b, np.uint8)
+
+        data_bytes = b[0:4].view(np.uint32)
+        data = b[4:]
+
+        percepts_config = np.fliplr([np.unpackbits(data[0])[8 - PERCEPT_ENABLE_NUM_IDS:]])[0]
+        ftsn_config = np.fliplr([np.unpackbits(data[1])[8 - FTSN_PERCEPT_NUM_IDS:]])[0]
+
+        index_size = data[0]
+
+        data_index = int(2)
+
+        tlm['Percept'] = []
+        if percepts_config[PERCEPT_ENABLE_ACTUATED_PERCEPTS-1]:
+            for i in np.linspace(0, PERCEPT_NUM_IDS-1, PERCEPT_NUM_IDS):
+                i = int(i)
+                d = {}
+                posStartIdx = data_index + i*7
+                d['Position'] = data[posStartIdx: posStartIdx+2].view(np.int16)[0]
+                velStartIdx = data_index + 2 + i*7
+                d['Velocity'] = data[velStartIdx: velStartIdx+2].view(np.int16)[0]
+                torqStartIdx = data_index + 4 + i*7
+                d['Torque'] = data[torqStartIdx: torqStartIdx + 2].view(np.int16)[0]
+                d['Temperature'] = data[data_index + 6 + i*7]
+                tlm['Percept'].append(d)
+
+            data_index = data_index + 70
+
+        tlm['UnactuatedPercept'] = []
+        if percepts_config[PERCEPT_ENABLE_UNACTUATED_PERCEPTS-1]:
+            for i in np.linspace(0, UNACTUATED_PERCEPT_NUM_IDS-1, UNACTUATED_PERCEPT_NUM_IDS):
+                i = int(i)
+                d = {}
+                posStartIdx = data_index + i*2
+                d['Position'] = data[posStartIdx: posStartIdx + 2].view(np.int16)[0]
+                tlm['UnactuatedPercept'].append(d)
+
+            data_index = data_index + 16
+
+        tlm['FtsnPercept'] = []
+        for i in np.linspace(0, FTSN_PERCEPT_NUM_IDS - 1, FTSN_PERCEPT_NUM_IDS):
+            i = int(i)
+            if percepts_config[i+1]:
+                d = {}
+                d['forceConfig'] = ftsn_config[i]
+
+                if ftsn_config[i]: # new style
+                    force = []
+                    for j in np.linspace(0,13,14):
+                        force.append(data[data_index])
+                        data_index = data_index + 1
+                    d['force'] = force
+
+                    d['acceleration_x'] = data[data_index]
+                    data_index = data_index + 1
+                    d['acceleration_y'] = data[data_index]
+                    data_index = data_index + 1
+                    d['acceleration_z'] = data[data_index]
+                    data_index = data_index + 1
+
+                else: # old style
+                    d['force_pressure'] = data[data_index: data_index + 2].view(np.int16)[0]
+                    data_index = data_index + 2
+                    d['force_shear'] = data[data_index: data_index + 2].view(np.int16)[0]
+                    data_index = data_index + 2
+                    d['force_axial'] = data[data_index: data_index + 2].view(np.int16)[0]
+                    data_index = data_index + 2
+
+                    d['acceleration_x'] = data[data_index]
+                    data_index = data_index + 1
+                    d['acceleration_y'] = data[data_index]
+                    data_index = data_index + 1
+                    d['acceleration_z'] = data[data_index]
+                    data_index = data_index + 1
+
+                tlm['FtsnPercept'].append(d)
+
+        if percepts_config[PERCEPT_ENABLE_CONTACT-1]:
+            contact_data = data[data_index:data_index+12]
+
+            tlm['ContactSensorPercept'] = []
+            d = {}
+
+            d['index_contact_sensor'] = contact_data[0]
+            d['middle_contact_sensor'] = contact_data[1]
+            d['ring_contact_sensor'] = contact_data[2]
+            d['little_contact_sensor'] = contact_data[3]
+
+            d['index_abad_contact_sensor_1'] = contact_data[4]
+            d['index_abad_contact_sensor_2'] = contact_data[5]
+
+            d['little_abad_contact_sensor_1'] = contact_data[6]
+            d['little_abad_contact_sensor_2'] = contact_data[7]
+
+            tlm['ContactSensorPercept'].append(d)
+
+        if b.__len__() > 518:
+            lmc = b[-308:].reshape(44, 7, order='F')
+        else:
+            lmc = []
+
+        tlm['LMC'] = lmc
+
+        return tlm
+
+
 
 if __name__ == "__main__":
     main()

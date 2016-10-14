@@ -48,17 +48,17 @@ def main():
     time.sleep(3)
 
     # test percept decoding
-    f = open(os.path.join(os.path.dirname(__file__), "tests\\heartbeat.bin"), "r")
+    f = open(os.path.join(os.path.dirname(__file__), "tests/heartbeat.bin"), "r")
 
     print('Testing heartbeat uint8 decoding...')
     uint8_heartbeat = np.fromfile(f, dtype=np.uint8)
     h.decode_heartbeat_msg(uint8_heartbeat)
 
     print('Testing heartbeat byte decoding...')
-    bytes_heartbeat = uint8_heartbeat.tobytes()
+    bytes_heartbeat = uint8_heartbeat.tostring()
     h.decode_heartbeat_msg(bytes_heartbeat)
 
-    f = open(os.path.join(os.path.dirname(__file__), "tests\\percepts.bin"), "r")
+    f = open(os.path.join(os.path.dirname(__file__), "tests/percepts.bin"), "r")
     u = np.fromfile(f, dtype=np.uint8)
 
     print('Testing cpch uint8 decoding...')
@@ -66,7 +66,7 @@ def main():
     h.cpch_bytes_to_signal(uint8_cpch)
 
     print('Testing cpch byte decoding...')
-    bytes_cpch = uint8_cpch.tobytes()
+    bytes_cpch = uint8_cpch.tostring()
     h.cpch_bytes_to_signal(bytes_cpch)
 
    #h.decode_percept_msg(uint8_percepts[1366:])

@@ -48,8 +48,11 @@ armTestStart = [0, AA, 0, EL, 0, 0, 0]
 ### Take action as per selected menu-option ###
 if choice == 1:
         print ("Starting ping...")
-        result = ping('192.168.1.111')
-        #result = ping('127.0.0.1')
+
+        result = 0
+        while (not(result)):
+            result = ping('192.168.1.111')
+            #result = ping('127.0.0.1')
         print(result)
 elif choice == 2:
         print ("Starting MPL Wrist...")
@@ -68,7 +71,8 @@ elif choice == 2:
         
 elif choice == 3:
         print ("Starting MPL Grasps...")
-        hSink = UnityUdp()
+        #hSink = UnityUdp()
+        hSink = NfuUdp()
 
         # Read ROC Table
 

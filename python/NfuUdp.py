@@ -133,6 +133,15 @@ class NfuUdp:
     def sendJointAngles(self,values):
         # Transmit joint angle command in radians
 
+        # TODO: currently this is 7pos+7vel+20pos+20vel
+        if len(values) == 27:
+            pass
+        elif len(values) == 7:
+            values = values + 47 * [0.0]
+        else:
+            return
+
+
         logging.info('Joint Command:')
         logging.info(["{0:0.2f}".format(i) for i in values[0:27]])
         

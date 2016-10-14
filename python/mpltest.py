@@ -8,6 +8,7 @@ import time
 import numpy as np
 from builtins import input
 from UnityUdp import UnityUdp 
+from NfuUdp import NfuUdp 
 import RocTableClass
 
 def ping(host):
@@ -47,12 +48,13 @@ armTestStart = [0, AA, 0, EL, 0, 0, 0]
 ### Take action as per selected menu-option ###
 if choice == 1:
         print ("Starting ping...")
-        #result = ping('192.0.0.10')
-        result = ping('127.0.0.1')
+        result = ping('192.168.1.111')
+        #result = ping('127.0.0.1')
         print(result)
 elif choice == 2:
         print ("Starting MPL Wrist...")
-        hSink = UnityUdp()
+        #hSink = UnityUdp()
+        hSink = NfuUdp()
 
         hSink.sendJointAngles([0, AA, 0, EL, -0.7, -0.5, -0.5]);
         time.sleep(1.0)

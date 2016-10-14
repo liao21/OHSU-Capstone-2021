@@ -74,7 +74,7 @@ def main():
     h.decode_percept_msg(uint8_percept)
 
     print('Testing percept byte decoding...')
-    bytes_percept = uint8_percept.tobytes()
+    bytes_percept = uint8_percept.tostring()
     h.decode_percept_msg(uint8_percept)
 
     h.close()

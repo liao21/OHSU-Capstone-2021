@@ -42,12 +42,12 @@ def main():
 
     # goto zero position
     h.sendJointAngles(armPosition+armVelocity+handPosition+handVelocity)
-    time.sleep(3)
+    #time.sleep(3)
 
     # goto elbow bent position
     armPosition[3] = 0.3
     h.sendJointAngles(armPosition+armVelocity+handPosition+handVelocity)
-    time.sleep(3)
+    #time.sleep(3)
 
     # test percept decoding
     f = open(os.path.join(os.path.dirname(__file__), "../../tests/heartbeat.bin"), "r")
@@ -102,7 +102,7 @@ class NfuUdp:
     def __init__(self, Hostname="192.168.1.111", UdpTelemPort=6300, UdpCommandPort=6201):
                 
         self.udp = {'Hostname': Hostname,'TelemPort': UdpTelemPort, 'CommandPort': UdpCommandPort}
-        self.param = {'echoHeartbeat': 1, 'echoPercept': 0, 'echoCpch': 1}
+        self.param = {'echoHeartbeat': 1, 'echoPercepts': 1, 'echoCpch': 0}
         self.__sock = None
         self.__lock = None
         self.__thread = None
@@ -179,7 +179,8 @@ class NfuUdp:
                 with self.__lock:
                     # cpch data bytes
                     self.decode_cpch_msg(data[:1366])
-                    #self.decode_percept_msg(data[1366:])
+                    # percept bytes
+                    self.decode_percept_msg(data[1366:])
             else:
                 pass
                 #logging.warn('Unhandled data received')
@@ -336,7 +337,7 @@ class NfuUdp:
         s[-1, :] = sequenceNumber
 
         if self.param['echoCpch']:
-            print('CPCH data {} {} {} '.format(s[16],s[17],s[18]) )
+            print('CPCH data {} '.format(s[17,0]) )
         
         signalDict = {'s': s, 'sequenceNumber': sequenceNumber}
         return signalDict
@@ -494,6 +495,12 @@ class NfuUdp:
 
         tlm['LMC'] = lmc
 
+
+        if self.param['echoPercepts']:
+            torque = np.array(lmc[20:22,:]).view(dtype=np.int16)
+            pos = np.array(lmc[22:24,:]).view(dtype=np.int16)
+            print('LMC POS = {} LMC TORQUE = {} '.format(pos,torque))
+            #print(lmc)
         return tlm
 
 if __name__ == "__main__":

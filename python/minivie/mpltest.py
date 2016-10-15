@@ -7,9 +7,9 @@
 import time
 import numpy as np
 from builtins import input
-from UnityUdp import UnityUdp 
-from NfuUdp import NfuUdp 
-import RocTableClass
+from MPL.UnityUdp import UnityUdp 
+from MPL.NfuUdp import NfuUdp 
+import MPL.RocTableClass
 
 def ping(host):
     """
@@ -63,6 +63,7 @@ elif choice == 2:
     print ("Starting MPL Wrist...")
     #hSink = UnityUdp()
     hSink = NfuUdp()
+    hSink.connect()
 
     hSink.sendJointAngles([0, AA, 0, EL, -0.7, -0.5, -0.5]);
     time.sleep(1.0)
@@ -78,6 +79,7 @@ elif choice == 3:
     print ("Starting MPL Grasps...")
     #hSink = UnityUdp()
     hSink = NfuUdp()
+    hSink.connect()
 
     # Read ROC Table
 
@@ -109,7 +111,8 @@ elif choice == 3:
     hSink.close()
 elif choice == 4:
     hSink = NfuUdp()
-
+    hSink.connect()
+    time.sleep(5)
     
     hSink.close()
 

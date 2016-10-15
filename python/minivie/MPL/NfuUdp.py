@@ -50,7 +50,7 @@ def main():
     time.sleep(3)
 
     # test percept decoding
-    f = open(os.path.join(os.path.dirname(__file__), "tests/heartbeat.bin"), "r")
+    f = open(os.path.join(os.path.dirname(__file__), "../../tests/heartbeat.bin"), "r")
 
     print('Testing heartbeat uint8 decoding...')
     uint8_heartbeat = np.fromfile(f, dtype=np.uint8)
@@ -60,16 +60,16 @@ def main():
     bytes_heartbeat = uint8_heartbeat.tostring()
     h.decode_heartbeat_msg(bytes_heartbeat)
 
-    f = open(os.path.join(os.path.dirname(__file__), "tests/percepts.bin"), "r")
+    f = open(os.path.join(os.path.dirname(__file__), "../../tests/percepts.bin"), "r")
     u = np.fromfile(f, dtype=np.uint8)
 
     print('Testing cpch uint8 decoding...')
     uint8_cpch = u[0:1366]
-    h.cpch_bytes_to_signal(uint8_cpch)
+    h.decode_cpch_msg(uint8_cpch)
 
     print('Testing cpch byte decoding...')
     bytes_cpch = uint8_cpch.tostring()
-    h.cpch_bytes_to_signal(bytes_cpch)
+    h.decode_cpch_msg(bytes_cpch)
 
     print('Testing percept uint8 decoding...')
     uint8_percept = u[1366:]
@@ -102,22 +102,26 @@ class NfuUdp:
     def __init__(self, Hostname="192.168.1.111", UdpTelemPort=6300, UdpCommandPort=6201):
                 
         self.udp = {'Hostname': Hostname,'TelemPort': UdpTelemPort, 'CommandPort': UdpCommandPort}
-        self.param = {'echoHeartbeat': 0}
-        
+        self.param = {'echoHeartbeat': 1, 'echoPercept': 0, 'echoCpch': 1}
+        self.__sock = None
+        self.__lock = None
+        self.__thread = None
         
     def connect(self):
     
         logging.info('Setting up UDP coms on port {}. Default destination is {}:{}:'.format(\
             self.udp['TelemPort'],self.udp['Hostname'],self.udp['CommandPort']))
-        self.__UdpSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-        self.__UdpSock.bind(("0.0.0.0", self.udp['TelemPort']))
+        self.__sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+        self.__sock.bind(('0.0.0.0', self.udp['TelemPort']))
+
+        # Create a receive thread
+        self.__thread = threading.Thread(target=self.messageHandler)
 
         # Create threadsafe lock
         self.__lock = threading.Lock()
     
-        # Create a thread for processing new data
-        self.__thread = threading.Thread(target=self.messageHandler)
-        self.__thread.start()
+        # wait
+        time.sleep(0.5)
 
         # Enable Streaming
         #type = 5; NFU PERCEPTS
@@ -125,21 +129,31 @@ class NfuUdp:
         self.sendUdpCommand(msg1)
         
         # wait
-        time.sleep(0.1)
+        time.sleep(0.5)
         
         # Set NFU Algorithm State
         # [NfuUdp] Setting NFU parameter NFU_run_algorithm to 0
         self.sendUdpCommand(self.msgUpdateParam('NFU_run_algorithm',0))
 
         # wait
-        time.sleep(0.1)
+        time.sleep(0.5)
         
         # Set NFU output state
         #[NfuUdp] Setting NFU parameter NFU_output_to_MPL to 2
         self.sendUdpCommand(self.msgUpdateParam('NFU_output_to_MPL',2))
         
         # wait
-        time.sleep(0.1)
+        time.sleep(0.5)
+
+        # Create a thread for processing new data
+        self.__thread.start()
+        
+    def close(self):
+        """ Cleanup socket """
+        if self.__sock is not None:
+            logging.info("Closing NfuUdp Socket IP={} Port={}".format(self.udp['Hostname'],self.udp['TelemPort']))
+            self.__sock.close()
+
     def messageHandler(self):
         # Loop forever to recv data
         #
@@ -149,7 +163,7 @@ class NfuUdp:
             # Blocking call until data received
             try:
                 # recv call will error if socket closed on exit
-                data, address = self.__UdpSock.recvfrom(5000)
+                data, address = self.__sock.recvfrom(8192)
                 
                 #logging.debug('New data of length {} received'.format(len(data)))
                 
@@ -161,7 +175,11 @@ class NfuUdp:
             if len(data) == 36: 
                 with self.__lock:
                     self.decode_heartbeat_msg(data)
-
+            elif len(data) == 2190:
+                with self.__lock:
+                    # cpch data bytes
+                    self.decode_cpch_msg(data[:1366])
+                    #self.decode_percept_msg(data[1366:])
             else:
                 pass
                 #logging.warn('Unhandled data received')
@@ -182,11 +200,10 @@ class NfuUdp:
         logging.info('Joint Command:')
         logging.info(["{0:0.2f}".format(i) for i in values[0:27]])
         
-        # TEMP fix to lock middle finger and prevent drift
+        # TODO: TEMP fix to lock middle finger and prevent drift
         values[12] = 0.35
         values[13] = 0.35
-        values[14] = 0.35
-        
+        values[14] = 0.35    
         
         MSG_ID = 1
         
@@ -211,7 +228,10 @@ class NfuUdp:
         # transmit packets (and optinally write to log for DEBUG)
         
         logging.debug('Sending "%s"' % binascii.hexlify(msg))
-        self.__UdpSock.sendto(msg, (self.udp['Hostname'], self.udp['CommandPort']))
+        #logging.info('Setting up UDP coms on port {}. Default destination is {}:{}:'.format(\
+        #    self.udp['TelemPort'],self.udp['Hostname'],self.udp['CommandPort']))
+            
+        self.__sock.sendto(msg, (self.udp['Hostname'], self.udp['CommandPort']))
     
     def msgUpdateParam(self,paramName, paramValue):
         #msgUpdateParam - Create encoded byte array for parameter message to OpenNFU
@@ -245,11 +265,6 @@ class NfuUdp:
                         + bytearray([8, 0, 0, 0]) + bytearray(dimA) + bval[:]
         
         return msg
-    
-    def close(self):
-        """ Cleanup socket """
-        logging.info("Closing NfuUdp Socket IP={} Port={}".format(self.Hostname,self.UdpTelemPort) )
-        self.__UdpSock.close()
 
     def decode_heartbeat_msg(self, b):
         # Log: Translated to Python by COP on 12OCT2016
@@ -291,7 +306,7 @@ class NfuUdp:
 
         return msg
 
-    def cpch_bytes_to_signal(self, b):
+    def decode_cpch_msg(self, b):
         # Log: Translated to Python by COP on 12OCT2016
 
         # Check if b is input as bytes, if so, convert to uint8
@@ -303,12 +318,7 @@ class NfuUdp:
         numPacketHeaderBytes = 6
         numSamplesPerPacket = 20
         numSampleHeaderBytes = 4
-        if b.size == 1366:
-            numChannelsPerPacket = 32
-        elif b.size == 726:
-            numChannelsPerPacket = 16
-        elif b.size == 406:
-            numChannelsPerPacket = 8
+        numChannelsPerPacket = 32
         numBytesPerChannel = 2
         numBytesPerSample = numChannelsPerPacket * numBytesPerChannel + numSampleHeaderBytes
         cpchpacketSize = numPacketHeaderBytes + numBytesPerSample * numSamplesPerPacket
@@ -325,6 +335,9 @@ class NfuUdp:
         sequenceNumber = data[2, :].astype('int16')
         s[-1, :] = sequenceNumber
 
+        if self.param['echoCpch']:
+            print('CPCH data {} {} {} '.format(s[16],s[17],s[18]) )
+        
         signalDict = {'s': s, 'sequenceNumber': sequenceNumber}
         return signalDict
 

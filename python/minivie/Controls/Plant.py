@@ -7,6 +7,18 @@ Allows generating velocity commands that are locally integrated to update positi
 as a funciton of time.  The update() method should be called repeatedly at fixed intervals
 to advance the kinematic state
 
+Usage:
+
+from the python\minivie folder:
+
+from Controls import Plant
+
+Plant.main()
+
+
+
+
+
 Revisions:
 2016JUL26: Reverted changes back to the simple Joint dictionary since ROC table not working
 2016OCT07: Added joint limit from xml file
@@ -18,7 +30,7 @@ Revisions:
 #
 # Created 1/23/2016 Armiger
 import math
-from UserConfigXml import userConfig
+from Utilities.UserConfigXml import userConfig
 import time
 
 VERBOSE = 1;
@@ -138,7 +150,7 @@ class Plant(object):
         return JointId, Direction
 
 def main():    
-    filename = "../user_config.xml"
+    filename = "../../user_config.xml"
     dt = 0.02
     p = Plant(dt,filename)
     

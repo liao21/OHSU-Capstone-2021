@@ -94,7 +94,7 @@ def getRocValues(rocElem, val):
 
 def main():
 
-    filename = "../WrRocDefaults.xml"
+    filename = "../../WrRocDefaults.xml"
     rocTable = readRoc(filename)
     
     for rocKey, rocElem in sorted(rocTable.items()):

@@ -20,7 +20,7 @@ import logging
 import xml.etree.cElementTree as ET
 from datetime import datetime
 import time
-from NfuUdp import NfuUdp
+from MPL.NfuUdp import NfuUdp
 
 def main():
     """ 

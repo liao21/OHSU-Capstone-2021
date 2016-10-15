@@ -7,11 +7,11 @@
 # Usage: python NfuUdp.py
 # Help: python NfuUdp.py -h
 
-
 import argparse
 import sys
 from datetime import datetime
 import time
+import threading
 import socket
 import logging
 import binascii
@@ -20,12 +20,14 @@ import numpy as np
 import os
 import struct
 
-VERBOSE = 2
+# set logging to DEBUG for diagnostics/development
+logging.basicConfig(level=logging.DEBUG)
 
 def main():
     """ 
     Run NFU interface as standalone test function
     """
+    
     # Establish network inferface to MPL at address below
     #h = NfuUdp(Hostname="192.168.1.111")
     h = NfuUdp(Hostname="localhost")
@@ -80,8 +82,6 @@ def main():
     h.close()
     logging.info('Ending NfuUdp')
     logging.info('-----------------------------------------------')
-    
-  
 
 class NfuUdp:
     """ 
@@ -99,13 +99,25 @@ class NfuUdp:
     
     """
 
-    def __init__(self, Hostname="192.168.1.111", UdpTelemPort=9027, UdpCommandPort=6201):
-        self.Hostname = Hostname
-        self.UdpTelemPort = UdpTelemPort
-        self.UdpCommandPort = UdpCommandPort
+    def __init__(self, Hostname="192.168.1.111", UdpTelemPort=6300, UdpCommandPort=6201):
+                
+        self.udp = {'Hostname': Hostname,'TelemPort': UdpTelemPort, 'CommandPort': UdpCommandPort}
+        self.param = {'echoHeartbeat': 0}
         
+        
+    def connect(self):
+    
+        logging.info('Setting up UDP coms on port {}. Default destination is {}:{}:'.format(\
+            self.udp['TelemPort'],self.udp['Hostname'],self.udp['CommandPort']))
         self.__UdpSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-        #self.__UdpSock.bind((Hostname, UdpTelemPort))
+        self.__UdpSock.bind(("0.0.0.0", self.udp['TelemPort']))
+
+        # Create threadsafe lock
+        self.__lock = threading.Lock()
+    
+        # Create a thread for processing new data
+        self.__thread = threading.Thread(target=self.messageHandler)
+        self.__thread.start()
 
         # Enable Streaming
         #type = 5; NFU PERCEPTS
@@ -128,6 +140,31 @@ class NfuUdp:
         
         # wait
         time.sleep(0.1)
+    def messageHandler(self):
+        # Loop forever to recv data
+        #
+        # This is a thread to receive data as soon as it arrives.  
+        # Note that the recvfrom() function is blocking 
+        while True:
+            # Blocking call until data received
+            try:
+                # recv call will error if socket closed on exit
+                data, address = self.__UdpSock.recvfrom(5000)
+                
+                #logging.debug('New data of length {} received'.format(len(data)))
+                
+            except socket.error as e:
+                logging.warn("Socket read error. Socket Closed?")
+                logging.warn(e)
+                return
+                
+            if len(data) == 36: 
+                with self.__lock:
+                    self.decode_heartbeat_msg(data)
+
+            else:
+                pass
+                #logging.warn('Unhandled data received')
         
 
     def sendJointAngles(self,values):
@@ -144,6 +181,12 @@ class NfuUdp:
 
         logging.info('Joint Command:')
         logging.info(["{0:0.2f}".format(i) for i in values[0:27]])
+        
+        # TEMP fix to lock middle finger and prevent drift
+        values[12] = 0.35
+        values[13] = 0.35
+        values[14] = 0.35
+        
         
         MSG_ID = 1
         
@@ -168,7 +211,7 @@ class NfuUdp:
         # transmit packets (and optinally write to log for DEBUG)
         
         logging.debug('Sending "%s"' % binascii.hexlify(msg))
-        self.__UdpSock.sendto(msg, (self.Hostname, self.UdpCommandPort))
+        self.__UdpSock.sendto(msg, (self.udp['Hostname'], self.udp['CommandPort']))
     
     def msgUpdateParam(self,paramName, paramValue):
         #msgUpdateParam - Create encoded byte array for parameter message to OpenNFU
@@ -241,8 +284,10 @@ class NfuUdp:
         msg['cpchStreaming'] = b[24:32].view(np.uint64)[0]
         msg['busVoltageCounts'] = b[32:34].view(np.uint16)[0]
         msg['busVoltage'] = msg['busVoltageCounts'].astype(float)/148.95
-
-        print("NFU: V = ", msg['busVoltage'], ", State = ", msg['strState'], ", CPC msgs = ", msg['numMsgs'],  ", Streaming NFU = ", msg['nfuStreaming'], ", LC = ", msg['lcStreaming'], ", CPCH = ", msg['cpchStreaming'])
+        
+        
+        if self.param['echoHeartbeat']:
+            print("NFU: V = ", msg['busVoltage'], ", State = ", msg['strState'], ", CPC msgs = ", msg['numMsgs'],  ", Streaming NFU = ", msg['nfuStreaming'], ", LC = ", msg['lcStreaming'], ", CPCH = ", msg['cpchStreaming'])
 
         return msg
 
@@ -437,8 +482,6 @@ class NfuUdp:
         tlm['LMC'] = lmc
 
         return tlm
-
-
 
 if __name__ == "__main__":
     main()

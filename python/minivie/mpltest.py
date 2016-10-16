@@ -36,7 +36,6 @@ print ("0. Exit")
 print (30 * '-')
  
 ## Get input ###
-#choice = raw_input('Enter your choice [1-3] : ')
 choice = input('Enter selection : ')
 assert isinstance(choice, str)    # native str on Py2 and Py3
  

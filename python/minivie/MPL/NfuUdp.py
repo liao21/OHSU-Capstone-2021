@@ -101,7 +101,7 @@ class NfuUdp:
     def __init__(self, Hostname="192.168.1.111", UdpTelemPort=6300, UdpCommandPort=6201):
                 
         self.udp = {'Hostname': Hostname,'TelemPort': UdpTelemPort, 'CommandPort': UdpCommandPort}
-        self.param = {'echoHeartbeat': 1, 'echoPercepts': 0, 'echoCpch': 0}
+        self.param = {'echoHeartbeat': 1, 'echoPercepts': 1, 'echoCpch': 0}
         self.__sock = None
         self.__lock = None
         self.__thread = None
@@ -308,7 +308,7 @@ class NfuUdp:
         
         
         if self.param['echoHeartbeat']:
-            print('NFU: V = {:6.2f} State= {} Msgs: CPC={:4d} Stream: NFU={} LC={} CPC={}'.format(\
+            logging.debug('NFU: V = {:6.2f} State= {} Msgs: CPC={:4d} Stream: NFU={} LC={} CPC={}'.format(\
             msg['busVoltage'],msg['strState'],msg['numMsgs'],msg['nfuStreaming'],msg['lcStreaming'],msg['cpchStreaming']))
 
         return msg
@@ -343,7 +343,7 @@ class NfuUdp:
         s[-1, :] = sequenceNumber
 
         if self.param['echoCpch']:
-            print('CPCH data {} '.format(s[17,0]) )
+            logging.debug('CPCH data {} '.format(s[17,0]) )
         
         signalDict = {'s': s, 'sequenceNumber': sequenceNumber}
         return signalDict
@@ -505,8 +505,7 @@ class NfuUdp:
         if self.param['echoPercepts']:
             torque = np.array(lmc[20:22,:]).view(dtype=np.int16)
             pos = np.array(lmc[22:24,:]).view(dtype=np.int16)
-            print('LMC POS = {} LMC TORQUE = {} '.format(pos,torque))
-            #print(lmc)
+            logging.debug('LMC POS = {} LMC TORQUE = {} '.format(pos,torque))
         return tlm
 
 if __name__ == "__main__":

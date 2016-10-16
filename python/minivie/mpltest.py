@@ -83,8 +83,8 @@ elif choice == 3:
 
     # Read ROC Table
 
-    filename = "../WrRocDefaults.xml"
-    rocTable = RocTableClass.readRoc(filename)
+    filename = "../../WrRocDefaults.xml"
+    rocTable = MPL.RocTableClass.readRoc(filename)
 
     for iRoc in [2, 4, 5, 7, 15]:
         numOpenSteps = 50;
@@ -95,14 +95,14 @@ elif choice == 3:
         mplAngles[1] = -0.3;
         mplAngles[3] = EL+0.05;
         
-        rocElem = RocTableClass.getRocId(rocTable, iRoc)
+        rocElem = MPL.RocTableClass.getRocId(rocTable, iRoc)
         
         graspVal = np.concatenate((np.linspace(0,1,numOpenSteps),np.ones(numWaitSteps),np.linspace(1,0,numCloseSteps)));
         for iVal in graspVal:
             print('Entry #{}, RocId={}, {} {:6.1f} Pct'.format(iRoc,rocElem.id,rocElem.name,iVal*100))
             
             
-            newVals = RocTableClass.getRocValues(rocElem, iVal)
+            newVals = MPL.RocTableClass.getRocValues(rocElem, iVal)
             
             mplAngles[rocElem.joints] = newVals
             

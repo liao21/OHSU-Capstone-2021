@@ -31,22 +31,21 @@ def main():
     # Establish network inferface to MPL at address below
     #h = NfuUdp(Hostname="192.168.1.111")
     h = NfuUdp(Hostname="localhost")
+    h.connect()
     
     # Run a quick motion test to verify joints are working
     NUM_ARM_JOINTS = 7;
     NUM_HAND_JOINTS = 20;
     armPosition = [0.0]*NUM_ARM_JOINTS
-    armVelocity = [0.0]*NUM_ARM_JOINTS
     handPosition = [0.0]*NUM_HAND_JOINTS
-    handVelocity = [0.0]*NUM_HAND_JOINTS
 
     # goto zero position
-    h.sendJointAngles(armPosition+armVelocity+handPosition+handVelocity)
+    h.sendJointAngles(armPosition+handPosition)
     #time.sleep(3)
 
     # goto elbow bent position
     armPosition[3] = 0.3
-    h.sendJointAngles(armPosition+armVelocity+handPosition+handVelocity)
+    h.sendJointAngles(armPosition+handPosition)
     #time.sleep(3)
 
     # test percept decoding
@@ -102,7 +101,7 @@ class NfuUdp:
     def __init__(self, Hostname="192.168.1.111", UdpTelemPort=6300, UdpCommandPort=6201):
                 
         self.udp = {'Hostname': Hostname,'TelemPort': UdpTelemPort, 'CommandPort': UdpCommandPort}
-        self.param = {'echoHeartbeat': 1, 'echoPercepts': 1, 'echoCpch': 0}
+        self.param = {'echoHeartbeat': 1, 'echoPercepts': 0, 'echoCpch': 0}
         self.__sock = None
         self.__lock = None
         self.__thread = None
@@ -188,15 +187,19 @@ class NfuUdp:
 
     def sendJointAngles(self,values):
         # Transmit joint angle command in radians
-
+        #
+        # Inputs:
+        #
+        # values -
+        #    joint angles in radians of size 7 for arm joints
+        #    joint angles in radians of size 27 for all arm joints
+        
         # TODO: currently this is 7pos+7vel+20pos+20vel
-        if len(values) == 27:
-            pass
-        elif len(values) == 7:
-            values = values + 47 * [0.0]
-        else:
-            return
 
+        if len(values) == 7:
+            # append hand angles
+            # TODO: consider keeping hand in current position
+            values = np.append(values,20 * [0.0])
 
         logging.info('Joint Command:')
         logging.info(["{0:0.2f}".format(i) for i in values[0:27]])
@@ -207,7 +210,9 @@ class NfuUdp:
         values[14] = 0.35    
         
         MSG_ID = 1
-        
+
+        payload = np.append(values,27 * [0.0])
+
         # Send data
         # size is 7 + 20 + 7 + 20
         # packing is one uint8 by 54 singles
@@ -215,7 +220,7 @@ class NfuUdp:
         # (61) NFU ID + uint16 MSG_LENGTH + uint8 MSG_TYPE + 1 MSG_ID + Payload + Checksum
         packer = struct.Struct('54f')
         msg = bytearray([219, 0, 5, 1])
-        msg.extend(packer.pack(*values))
+        msg.extend(packer.pack(*payload))
         chksum = bytearray([sum(msg) % 256])
 
         # add on the NFU routing code '61' and checksum
@@ -303,7 +308,8 @@ class NfuUdp:
         
         
         if self.param['echoHeartbeat']:
-            print("NFU: V = ", msg['busVoltage'], ", State = ", msg['strState'], ", CPC msgs = ", msg['numMsgs'],  ", Streaming NFU = ", msg['nfuStreaming'], ", LC = ", msg['lcStreaming'], ", CPCH = ", msg['cpchStreaming'])
+            print('NFU: V = {:6.2f} State= {} Msgs: CPC={:4d} Stream: NFU={} LC={} CPC={}'.format(\
+            msg['busVoltage'],msg['strState'],msg['numMsgs'],msg['nfuStreaming'],msg['lcStreaming'],msg['cpchStreaming']))
 
         return msg
 

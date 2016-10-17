@@ -13,21 +13,27 @@ os.chdir('../minivie')  # change directory so xml files can be found as expected
 from Controls import Plant
 Plant.main()
 
-from MPL import RocTableClass
-RocTableClass.main()
+if 0:
 
-from Utilities import UserConfigXml
-UserConfigXml.main()
 
-from MPL import NfuUdp
-NfuUdp.main()
-# generates warning for too long parameter name
-nfu = NfuUdp.NfuUdp()
-nfu.msgUpdateParam('-' *160, 0.0)
+    from MPL import RocTableClass
+    RocTableClass.main()
 
-from Scenarios import OpenNfuMain
-OpenNfuMain.main()
+    from Utilities import UserConfigXml
+    UserConfigXml.main()
 
-#import sample_main
-#sample_main.main()
+    from MPL import NfuUdp
+    NfuUdp.main()
+    # generates warning for too long parameter name
+    nfu = NfuUdp.NfuUdp()
+    nfu.msgUpdateParam('-' *160, 0.0)
 
+    from Scenarios import OpenNfuMain
+    OpenNfuMain.main()
+
+    #import sample_main
+    #sample_main.main()
+
+print('-' * 30)
+print('All Tests Completed Successfully')
+print('-' * 30)

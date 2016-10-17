@@ -20,7 +20,7 @@ import logging
 import xml.etree.cElementTree as ET
 from datetime import datetime
 import time
-from NfuUdp import NfuUdp
+from MPL.NfuUdp import NfuUdp
 
 def main():
     """ 
@@ -95,7 +95,7 @@ def setupLimbConnection():
     # Establish network inferface to MPL at address below
     #h = NfuUdp(Hostname="192.168.1.111")
     h = NfuUdp(Hostname="localhost")
-	
+    h.connect()
     return h
 	
 def setupSignalSource():
@@ -112,17 +112,15 @@ def testLimbConnection(h):
     NUM_ARM_JOINTS = 7;
     NUM_HAND_JOINTS = 20;
     armPosition = [0.0]*NUM_ARM_JOINTS
-    armVelocity = [0.0]*NUM_ARM_JOINTS
     handPosition = [0.0]*NUM_HAND_JOINTS
-    handVelocity = [0.0]*NUM_HAND_JOINTS
 
     # goto zero position
-    h.sendJointAngles(armPosition+armVelocity+handPosition+handVelocity)
+    h.sendJointAngles(armPosition+handPosition)
     time.sleep(3)
 
     # goto elbow bent position
     armPosition[3] = 0.3
-    h.sendJointAngles(armPosition+armVelocity+handPosition+handVelocity)
+    h.sendJointAngles(armPosition+handPosition)
     time.sleep(3)
 	
 def runAlgorithm():

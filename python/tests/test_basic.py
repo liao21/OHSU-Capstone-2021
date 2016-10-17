@@ -7,27 +7,33 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
-os.chdir('..')  # change directory so xml files can be found as expected
+sys.path.insert(0, os.path.abspath('../minivie'))
+os.chdir('../minivie')  # change directory so xml files can be found as expected
 
-import RocTableClass
-RocTableClass.main()
+from Controls import Plant
+Plant.main()
 
-import UserConfigXml
-UserConfigXml.main()
+if 0:
 
-import NfuUdp
-NfuUdp.main()
-# generates warning for too long parameter name
-nfu = NfuUdp.NfuUdp()
-nfu.msgUpdateParam('-' *160, 0.0)
 
-import OpenNfuMain
-OpenNfuMain.main()
+    from MPL import RocTableClass
+    RocTableClass.main()
 
-#import Plant
-#Plant.main()
+    from Utilities import UserConfigXml
+    UserConfigXml.main()
 
-#import sample_main
-#sample_main.main()
+    from MPL import NfuUdp
+    NfuUdp.main()
+    # generates warning for too long parameter name
+    nfu = NfuUdp.NfuUdp()
+    nfu.msgUpdateParam('-' *160, 0.0)
 
+    from Scenarios import OpenNfuMain
+    OpenNfuMain.main()
+
+    #import sample_main
+    #sample_main.main()
+
+print('-' * 30)
+print('All Tests Completed Successfully')
+print('-' * 30)

@@ -41,6 +41,9 @@ class UnityUdp(object):
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
         
+    def connect(self):
+        pass
+        
     def sendJointAngles(self,values):
         
         if len(values) == 27:

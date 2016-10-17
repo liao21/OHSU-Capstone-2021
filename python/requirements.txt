@@ -13,5 +13,6 @@ numpy
 scipy
 scikit-learn
 bluepy
+enum34
 #serial
 #pygame

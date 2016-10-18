@@ -25,15 +25,49 @@ from __future__ import with_statement # 2.5 only
 import threading
 import socket
 import struct
-import numpy
-from transformations import euler_from_matrix
-from transformations import quaternion_matrix
+import numpy as np
+from Utilities.transformations import euler_from_matrix
+from Utilities.transformations import quaternion_matrix
 import sys
 import time
 import binascii
 
 __version__ = "0.1.d"
-print (sys.argv[0]  + " Version: " + __version__)
+print (sys.argv[0]  + " MyoUdp.py Version: " + __version__)
+
+def EmulateMyoUdpExe():
+    """
+    Emulate MyoUdp.exe outputs for testing
+
+    Example Usage:
+        import os
+        os.chdir(r"C:\git\minivie\python\minivie")
+        import Inputs.MyoUdp
+        Inputs.MyoUdp.EmulateMyoUdpExe() # CTRL+C to END
+        
+    MyoUdp.exe Data packet information:
+    Data packet size is 48 bytes.
+         uchar values encoding:
+         Bytes 0-7: int8 [8] emgSamples
+         Bytes 8-23: float [4]  quaternion (rotation)
+         Bytes 24-35: float [3] accelerometer data, in units of g
+         Bytes 36-47: float [3] gyroscope data, in units of deg / s
+    """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
+    
+    print('Running MyoUdp.exe Emulator')
+    try:
+        while (1):
+            vals = np.random.randint(255, size=48, dtype='uint8')
+            #print(vals)
+            sock.sendto(vals.tostring(), ('127.0.0.1', 10001))
+            time.sleep(0.005)
+    except:
+        pass
+    print('Closing MyoUdp.exe Emulator')
+    sock.close()
+
+
 
 class MyoUdp(object):
     """ Class for receiving Myo Armband data via UDP"""
@@ -46,7 +80,7 @@ class MyoUdp(object):
 
         # Default data buffer [nSamples by nChannels]
         # Treat as private.  use getData to access since it is thread-safe
-        self.dataEMG = numpy.zeros((numSamples, 8))
+        self.dataEMG = np.zeros((numSamples, 8))
 
         # UDP Port setup
         self.UDP_IP = UDP_IP
@@ -86,7 +120,7 @@ class MyoUdp(object):
                     output = struct.unpack("8b4f3f3f", data)
 
                     #Populate EMG Data Buffer (newest on top)
-                    self.dataEMG = numpy.roll(self.dataEMG, 1, axis=0)
+                    self.dataEMG = np.roll(self.dataEMG, 1, axis=0)
                     self.dataEMG[:1, :] = output[:8] #insert in first buffer entry
 
                     #IMU Data Update
@@ -113,9 +147,9 @@ class MyoUdp(object):
             elif len(data) == 16: # EMG data only
                 output = struct.unpack("16b", data)
                 #Populate EMG Data Buffer (newest on top)
-                self.dataEMG = numpy.roll(self.dataEMG, 1, axis=0)
+                self.dataEMG = np.roll(self.dataEMG, 1, axis=0)
                 self.dataEMG[:1, :] = output[:8] #insert in first buffer entry
-                self.dataEMG = numpy.roll(self.dataEMG, 1, axis=0)
+                self.dataEMG = np.roll(self.dataEMG, 1, axis=0)
                 self.dataEMG[:1, :] = output[8:16] #insert in first buffer entry
 
             else:

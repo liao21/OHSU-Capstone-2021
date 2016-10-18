@@ -23,25 +23,30 @@ WIP add UDP communication to/from unity for training cues and other functionalit
 
 
 #perhaps import only into necessary scripts, rather than importing all at the beginning
+import os
 import sys
 import time
 import math
 import numpy as np
-from MyoUdp import MyoUdp
-from Plant import Plant
-from UnityUdp import UnityUdp
-#from TrainingUdp import TrainingUdp
-from feature_extract import feature_extract
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
-import os
+from sklearn.externals import joblib
 from os.path import isfile
 import argparse
-from sklearn.externals import joblib
 import socket
 import errno
 import random
 import traceback
+
+if __name__ == "__main__":
+    print(os.getcwd())
+    sys.path.insert(0, os.path.abspath('.'))
+from Controls.Plant import Plant
+from Inputs.MyoUdp import MyoUdp
+from MPL.UnityUdp import UnityUdp
+#from TrainingUdp import TrainingUdp
+from PatternRecognition.feature_extract import feature_extract
+
 
 
 def UnityTrainer(args):
@@ -122,10 +127,10 @@ def UnityTrainer(args):
     # Python -> '<Acknowledgement>' -> Unity
     # sometimes the acknowledgement is omitted
     
-    # Set arm to demonstration position
-    trainer.hPlant.position[0] = 1
-    trainer.hPlant.position[3] = 1.3
-    trainer.hSink.sendJointAngles(trainer.hPlant.position)
+    # Set arm to demonstration JointPosition
+    trainer.hPlant.JointPosition[0] = 1
+    trainer.hPlant.JointPosition[3] = 1.3
+    trainer.hSink.sendJointAngles(trainer.hPlant.JointPosition)
     
     print('Waiting for Unity to send "Begin Training" cue.')
     while state == STATES.waitingStart:
@@ -148,10 +153,10 @@ def UnityTrainer(args):
     
     for trainCycle in list(range(trainer.tcycles)):     #repeat training process a specified number of times
         for pose in trainer.TrainingName:               #run training process for each pose
-            # Set arm to demonstration position
-            trainer.hPlant.position[0] = 1
-            trainer.hPlant.position[3] = 1.3
-            trainer.hSink.sendJointAngles(trainer.hPlant.position)
+            # Set arm to demonstration JointPosition
+            trainer.hPlant.JointPosition[0] = 1
+            trainer.hPlant.JointPosition[3] = 1.3
+            trainer.hSink.sendJointAngles(trainer.hPlant.JointPosition)
             
             #train each pose while communicating with unity UI
             #tell unity pose name to be trained
@@ -190,11 +195,11 @@ def UnityTrainer(args):
             trainer.send('d')
             
             #zero out hand joints
-            for i in list(range(len(trainer.hPlant.position))):
-                trainer.hPlant.position[i] = 0
-            trainer.hPlant.position[0] = 1
-            trainer.hPlant.position[3] = 1.3
-            trainer.hSink.sendJointAngles(trainer.hPlant.position)
+            for i in list(range(len(trainer.hPlant.JointPosition))):
+                trainer.hPlant.JointPosition[i] = 0
+            trainer.hPlant.JointPosition[0] = 1
+            trainer.hPlant.JointPosition[3] = 1.3
+            trainer.hSink.sendJointAngles(trainer.hPlant.JointPosition)
             
             state = STATES.cooldown    #python will immediately enter the setupRecord state while Unity will remain in cooldown until the cooldown timer completes
     
@@ -573,8 +578,9 @@ class MyoUDPTrainer:
         self.verb = args.VERBOSE                    # how much information output to the console
         self.pcycles = args.PREDICT                 # how many cycles to predict for. setting to -1 means infinite cycles
         self.hMyo = MyoUdp()                        # Signal Source get external bio-signal data
-        self.ROCFile = open(os.path.join(self.path,'..','WrRocDefaults.xml'), 'r')  # ROC file for possible motion classes
-        self.hPlant = Plant(self.dt, self.ROCFile)  # Plant maintains current limb state (positions) during velocity control
+        self.ROCFile = '../../WrRocDefaults.xml'    # ROC file for possible motion classes
+        self.CfgFile = '../../user_config.xml'      # user config parameter
+        self.hPlant = Plant(self.dt, self.CfgFile, self.ROCFile)  # Plant maintains current limb state (positions) during velocity control
         self.hSink = UnityUdp()                     #("192.168.1.24")   # Sink is output to ouside world (in this case to VIE)
         self.clf = None                             # Fit training data model
         
@@ -773,25 +779,28 @@ class MyoUDPTrainer:
         # Move joints using classifier
         #try:
         gain = 2.0
-        jointId, jointDir = self.hPlant.class_map(classDecision)
+        
+        classInfo = self.hPlant.classMap(classDecision)
 
         # Set joint velocities
-        self.hPlant.velocity[:self.hPlant.JOINT['NUM_JOINTS']] = [0.0] * self.hPlant.JOINT['NUM_JOINTS']
-        if type(jointId) is list:
-            for i in jointId:
-                self.hPlant.velocity[i] = jointDir * gain
-        if type(jointId) is int:
-            self.hPlant.velocity[jointId] = jointDir * gain
-                
+        self.hPlant.newStep()
+        # set the mapped class
+        if classInfo['IsGrasp']:
+            if classInfo['GraspId'] is not None :
+                self.hPlant.GraspId = classInfo['GraspId']
+            self.hPlant.setGraspVelocity(classInfo['Direction'] * gain)
+        else:
+            self.hPlant.setJointVelocity(classInfo['JointId'],classInfo['Direction'] * gain)
+        
         self.hPlant.update()
 
         if upperAngles:
             # perform joint motion update
             vals = self.hMyo.getAngles()
-            self.hPlant.position[3] = vals[1] + math.pi/2
+            self.hPlant.JointPosition[3] = vals[1] + math.pi/2
 
         # transmit output
-        self.hSink.sendJointAngles(self.hPlant.position)
+        self.hSink.sendJointAngles(self.hPlant.JointPosition)
     
         #except:
         #    print('Class "' + classDecision + '" not available from ROC table.')
@@ -1121,6 +1130,8 @@ class MyoUDPTrainer:
 
 if __name__ == "__main__":
     """Select a method to execute as main if specified in command line arguments."""
+    
+    
     
     args = parse()
     switch = args.EXECUTE

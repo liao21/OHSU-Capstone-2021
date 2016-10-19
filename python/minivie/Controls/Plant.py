@@ -25,13 +25,14 @@ Revisions:
 # Initial pass and simulating MiniVIE processing using python so that this runs on an embedded device
 #
 # Created 1/23/2016 Armiger
+import os
 import math
 import time
 import logging
 import numpy as np
 from enum import IntEnum
 import MPL.RocTableClass as ROC
-from Utilities.UserConfigXml import userConfig
+from Utilities import UserConfig as UC
 
 # for demo
 from MPL.UnityUdp import UnityUdp as hSink
@@ -86,14 +87,13 @@ class Plant(object):
         automatically so that position commands can be send to output devices
         Additionally limits are handled here as well as roc table lookup
     '''
-    def __init__(self,dt,filename,rocFilename):
+    def __init__(self,dt,rocFilename):
 
         mpl = MplJointEnum
         self.JointPosition = np.zeros(mpl.NUM_JOINTS)
         self.JointVelocity = np.zeros(mpl.NUM_JOINTS)
 
         # Load limits from xml config file
-        UC = userConfig(filename)
         self.lowerLimit = [0.0] * mpl.NUM_JOINTS
         self.upperLimit = [30.0] * mpl.NUM_JOINTS
         
@@ -204,12 +204,16 @@ class Plant(object):
         # Apply limits
         self.JointPosition = np.clip(self.JointPosition,self.lowerLimit,self.upperLimit)
 
-def main():    
-    filename = "../../user_config.xml"
+def main():
+
+    # get default roc file.  This should be run from python\minivie as home, but 
+    # also support calling from module directory (Utilities)
     rocFilename = "../../WrRocDefaults.xml"
+    if os.path.split(os.getcwd())[1] == 'Controls':
+        rocFilename = '../' + rocFilename
       
     dt = 0.02
-    p = Plant(dt,filename, rocFilename)
+    p = Plant(dt, rocFilename)
     
     sink = hSink()
     sink.connect()

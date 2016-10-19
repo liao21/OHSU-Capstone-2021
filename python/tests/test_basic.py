@@ -20,8 +20,8 @@ Plant.main()
 from MPL import RocTableClass
 RocTableClass.main()
 
-from Utilities import UserConfigXml
-UserConfigXml.main()
+from Utilities import UserConfig
+UserConfig.main()
 
 from MPL import NfuUdp
 NfuUdp.main()
@@ -32,8 +32,8 @@ nfu.msgUpdateParam('-' *160, 0.0)
 from Scenarios import OpenNfuMain
 OpenNfuMain.main()
 
-#import sample_main
-#sample_main.main()
+from Scenarios import sample_main
+sample_main.main()
 
 print('-' * 30)
 print('All Tests Completed Successfully')

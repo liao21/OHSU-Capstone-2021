@@ -39,8 +39,12 @@ import random
 import traceback
 
 if __name__ == "__main__":
-    print(os.getcwd())
-    sys.path.insert(0, os.path.abspath('.'))
+    print(os.path.split(os.getcwd())[1])
+    if os.path.split(os.getcwd())[1] == 'Scenarios':
+        print('Changing to python-minivie home directory')
+        os.chdir('..')
+        sys.path.insert(0, os.path.abspath('.'))
+        print(os.getcwd())
 from Controls.Plant import Plant
 from Inputs.MyoUdp import MyoUdp
 from MPL.UnityUdp import UnityUdp
@@ -579,8 +583,7 @@ class MyoUDPTrainer:
         self.pcycles = args.PREDICT                 # how many cycles to predict for. setting to -1 means infinite cycles
         self.hMyo = MyoUdp()                        # Signal Source get external bio-signal data
         self.ROCFile = '../../WrRocDefaults.xml'    # ROC file for possible motion classes
-        self.CfgFile = '../../user_config.xml'      # user config parameter
-        self.hPlant = Plant(self.dt, self.CfgFile, self.ROCFile)  # Plant maintains current limb state (positions) during velocity control
+        self.hPlant = Plant(self.dt, self.ROCFile)  # Plant maintains current limb state (positions) during velocity control
         self.hSink = UnityUdp()                     #("192.168.1.24")   # Sink is output to ouside world (in this case to VIE)
         self.clf = None                             # Fit training data model
         

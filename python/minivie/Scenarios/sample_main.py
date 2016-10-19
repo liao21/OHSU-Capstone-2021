@@ -7,15 +7,26 @@ Initial pass at simulating MiniVIE processing using python so that this runs on 
 @author: R. Armiger
 """
 
+import os
 import sys
 import math
 import time
 import numpy as np
-from MyoUdp import MyoUdp
-from Plant import Plant
-from UnityUdp import UnityUdp
-from TrainingUdp import TrainingUdp
-from feature_extract import feature_extract
+
+# set home directory
+if __name__ == "__main__":
+    print(os.path.split(os.getcwd())[1])
+    if os.path.split(os.getcwd())[1] == 'Scenarios':
+        print('Changing to python-minivie home directory')
+        os.chdir('..')
+        sys.path.insert(0, os.path.abspath('.'))
+        print(os.getcwd())
+
+from Inputs.MyoUdp import MyoUdp
+from Controls.Plant import Plant
+from MPL.UnityUdp import UnityUdp
+from PatternRecognition.TrainingUdp import TrainingUdp
+from PatternRecognition.feature_extract import feature_extract
 
 VERBOSE = 0
 dt = 0.02  # seconds per loop.  50Hz update
@@ -29,11 +40,8 @@ def setup():
         Plant - Perform forward integration and apply joint limits
         DataSink - output destination of command signals (e.g. real or virtual arm)
     '''
-    
-    
-    # TODO [Lydia1]: need to include xml file with ROC tables
-    #filename = "../WrRocDefaults.xml"
-    filename = "../user_config.xml"
+        
+    filename = "../../WrRocDefaults.xml"
     # Create data objects
 
     # Signal Source get external bio-signal data
@@ -45,7 +53,7 @@ def setup():
     hTrain = TrainingUdp()
 
     # Plant maintains current limb state (positions) during velocity control
-    #TODO[Lydia2] This can fail if file does not exist, then the UDP objects aren;t cleaned up properly
+    #TODO[Lydia2] This can fail if file does not exist, then the UDP objects aren't cleaned up properly
     hPlant = Plant(dt,filename)
 
     # Sink is output to outside world (in this case to VIE)
@@ -53,19 +61,20 @@ def setup():
     hSink = UnityUdp() #("192.168.1.24")
 
     # Classifier parameters
+    trainFolder = os.path.join(os.getcwd(),'Scenarios/training_data')
     # TODO: generate defaults if these files don't exist, or are corrupt
     # TODO: Perform error checking to ensure number of Classes match matrix sizes
-    W = np.genfromtxt("weights.txt", dtype=None)
-    C = np.genfromtxt("centers.txt", dtype=None)
+    W = np.genfromtxt(os.path.join(trainFolder,"weights.txt"), dtype=None)
+    C = np.genfromtxt(os.path.join(trainFolder,"centers.txt"), dtype=None)
     # Classifier class names 
-    with open("classes.txt") as f:
+    with open(os.path.join(trainFolder,"classes.txt")) as f:
         classNames = f.read().splitlines()
 
     hClassifier = (W,C,classNames)
 
     #create filefor dumping training data
     #TODO[Lydia2]: store training data more efficiently and explicitly
-    file=open('tmp.dat','w')
+    file=open(os.path.join(trainFolder,'tmp.dat'),'w')
     
     return {'SignalSource':hMyo, 'SignalClassifier':hClassifier, 'DataSink':hSink, 'Plant':hPlant, 'Trainer':hTrain, 'TmpFile':file }  
 
@@ -87,23 +96,33 @@ def model(SignalSource,SignalClassifier,Plant,DataSink,Trainer):
     v = np.dot(f, W) + C
     classNum = v.argmax()
 
+    classDecision = classNames[classNum]
+    
     # Move joints using classifier
-    jointId, jointDir = Plant.class_map(classNames[classNum])
+    gain = 2.0
+    
+    classInfo = Plant.classMap(classDecision)
 
     # Set joint velocities
     Plant.newStep()
-    Plant.setVelocity(jointId,jointDir)    
-    # TODO [Lydia1]: Needs ROC implementation
+    # set the mapped class
+    if classInfo['IsGrasp']:
+        if classInfo['GraspId'] is not None :
+            Plant.GraspId = classInfo['GraspId']
+        Plant.setGraspVelocity(classInfo['Direction'] * gain)
+    else:
+        Plant.setJointVelocity(classInfo['JointId'],classInfo['Direction'] * gain)
+    
     Plant.update()
 
     # Non-EMG Motion based inputs [Optional]
     # perform joint motion update
     vals = SignalSource.getAngles()
     # Temp: Overwrite Elbow angle based on Myo orientation
-    Plant.position[3] = vals[1] + math.pi/2
+    Plant.JointPosition[3] = vals[1] + math.pi/2
 
     # transmit output
-    DataSink.sendJointAngles(Plant.position)
+    DataSink.sendJointAngles(Plant.JointPosition)
 
     # TODO[Lydia2]: Update training 
     # Training Process begin logging
@@ -132,13 +151,16 @@ def main():
     ''' Main function that involves setting up devices, 
         looping at a fixed time interval, and performing cleanup
     '''
+
     h = setup()
-    
+
     # Iteration counter
     cycleMax = 140  # Max iterations (0 for infinite)
     cycleCnt = 0  # Internal Counter
     timeElapsed = -1
+
     try:
+    
         # setup main loop control
         print("")
         print("Running...")

@@ -95,7 +95,7 @@ def setupLimbConnection():
     # Establish network inferface to MPL at address below
     #h = NfuUdp(Hostname="192.168.1.111")
     h = NfuUdp(Hostname="localhost")
-	
+    h.connect()
     return h
 	
 def setupSignalSource():

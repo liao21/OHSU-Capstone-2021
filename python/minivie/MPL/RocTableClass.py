@@ -19,13 +19,12 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 class rocElem:
-   def __init__(self, name):
-       self.name = name # grasp name
-       self.id = 0 # grasp ID number
-       self.joints = [] # array of joints involved
-       self.waypoints = [] # array of waypoints
-       self.angles = {} # dictionary of angles for each waypoint
-       self.impedance = {} # dictionary of impedances for each waypoint
+   name = '' # grasp name
+   id = 0 # grasp ID number
+   joints = [] # array of joints involved
+   waypoints = [] # array of waypoints
+   angles = {} # dictionary of angles for each waypoint
+   impedance = {} # dictionary of impedances for each waypoint
 
 # function to read in ROC xml file and store as dictionary       
 def readRoc(file): 
@@ -38,7 +37,8 @@ def readRoc(file):
         # child is an element, has tag and attributes
         name = table.find('name').text
         # create a rocElem object for that grasp
-        elem = rocElem(name)
+        elem = rocElem()
+        elem.name = name
         elem.id = int(table.find('id').text)
         
         # Note the joint ids here are (-1) so that indices are 0-based for python
@@ -66,11 +66,11 @@ def printRoc(rocElem):
     if rocElem is None: return
 
     # print an element in the ROC tables
-    print("ROC NAME = '" + rocElem.name + "'")
-    print("ROC ID = " + str(rocElem.id))
-    print("ROC JOINTS = [" + ' '.join(str(e) for e in rocElem.joints) + "]")
-    print("ROC WAYPOINTS = [" + ' '.join(str(e) for e in rocElem.waypoints) + "]")
-    print("ROC ANGLES " + str(rocElem.angles.shape) + " = ")
+    print("ROC NAME: '{}'".format(rocElem.name))
+    print("ROC ID: " + str(rocElem.id))
+    print("ROC JOINTS: [" + ' '.join(str(e) for e in rocElem.joints) + "]")
+    print("ROC WAYPOINTS: [" + ' '.join(str(e) for e in rocElem.waypoints) + "]")
+    print("ROC ANGLES " + str(rocElem.angles.shape) + " :")
     for row in rocElem.angles:
         print(['{:6.3f}'.format(i) for i in row])
     print('\n')
@@ -100,14 +100,14 @@ def main():
     for rocKey, rocElem in sorted(rocTable.items()):
         printRoc(rocElem)
 
-    print("\n\nGet ROC By ID:" )   
+    print("\n\nDEMO Get ROC By ID:" )   
     printRoc(getRocId(rocTable, 1))
     
     # Get out of range ROC ID
-    print("\n\nGet ROC By ID:" )   
+    print("\n\nDEMO Get ROC By [INVALID] ID:" )   
     printRoc(getRocId(rocTable, 99))
 
-    print("\n\nGet ROC Vals:" )  
+    print("\n\nDEMO Get ROC Vals:" )  
     newVals = getRocValues(getRocId(rocTable, 1), 0.1)
     print(['{:6.3f}'.format(i) for i in newVals])
     

@@ -27,7 +27,6 @@ def main():
     Run OpenNFU interface
     """
 
-    setupLogging()
     h = setupLimbConnection()
     setupSignalSource()
 
@@ -37,6 +36,7 @@ def main():
 
     runAlgorithm()
     close(h)
+    
 def setupLogging():
     UserConfig.setupFileLogging('OpenNFU_')
     
@@ -82,7 +82,7 @@ def close(h):
     logging.info('-----------------------------------------------')
     # Add short delay to view any final messages at console
     time.sleep(1.0)
-
 	
 if __name__ == "__main__":
+    setupLogging()
     main()

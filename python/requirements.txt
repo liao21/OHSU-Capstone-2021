@@ -14,5 +14,7 @@ scipy
 scikit-learn
 bluepy
 enum34
+h5py
+six
 #serial
 #pygame

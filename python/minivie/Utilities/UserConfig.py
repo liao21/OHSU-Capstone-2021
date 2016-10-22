@@ -91,7 +91,7 @@ def setupFileLogging(prefix='MiniVIE_', loglevel=logging.INFO ):
     #logging.basicConfig(filename='OpenNFU.log',format='%(asctime)s:%(levelname)s:%(message)s', \
     #                    level=numeric_level, datefmt='%m/%d/%Y %I:%M:%S %p')
     logging.info('-----------------------------------------------')
-    logging.info('Starting Log with level: {}'.format(loglevel))
+    logging.info('Starting Log File "{}" with level: {}'.format(fileName, logging.getLevelName(loglevel)))
     logging.info('-----------------------------------------------')
 
     '''
@@ -111,16 +111,16 @@ def setupFileLogging(prefix='MiniVIE_', loglevel=logging.INFO ):
     args = parser.parse_args()
     '''
     
-    
-    
 def main():
 
     #logging.basicConfig(level=logging.DEBUG)
-    setupFileLogging('UserConfig_TEST_')
-    logging.debug('Running UserConfig Demo Script')
 
-    # get default config file.  This should be run from python\minivie as home, but 
-    # also support calling from module directory (Utilities)
+    # Check reading parameter from default roc file
+    # (must be done before call to readUserConfig(filename)
+    getUserConfigVar('rocTable','')
+    
+    # get default config file.  This script should be run from python\minivie, 
+    # but also support calling from module directory (Utilities)
     filename = "../../user_config.xml"
     if os.path.split(os.getcwd())[1] == 'Utilities':
         filename = '../' + filename
@@ -132,16 +132,18 @@ def main():
     getUserConfigVar('mplVulcanXCommandPort',9000)
 
     # check invalid types
-    getUserConfigVar('_rocTable','')
-    getUserConfigVar('_FeatureExtract.zcThreshold',0.0)
-    getUserConfigVar('_mplVulcanXCommandPort',9000)
+    getUserConfigVar('TEST_INVALID_rocTable','')
+    getUserConfigVar('TEST_INVALID_FeatureExtract.zcThreshold',0.0)
+    getUserConfigVar('TEST_INVALID_mplVulcanXCommandPort',9000)
     getUserConfigVar('rocTable',None)
     
     elbowLim = getUserConfigVar('ELBOW_LIMITS',(0.0, 140.0))
-    elbowLim = getUserConfigVar('_ELBOW_LIMITS',(0.0, 140.0))
+    elbowLim = getUserConfigVar('TEST_INVALID_ELBOW_LIMITS',(0.0, 140.0))
 
     logging.debug('End UserConfig Demo Script')
     
 # Main Function (for demo)
 if __name__ == "__main__":
+    setupFileLogging('UserConfig_TEST_')
+    logging.debug('Running UserConfig Demo Script')
     main()

@@ -22,7 +22,7 @@ if __name__ == "__main__":
         sys.path.insert(0, os.path.abspath('.'))
         print(os.getcwd())
 
-from Inputs.MyoUdp import MyoUdp
+from Inputs.Myo import MyoUdp
 from Controls.Plant import Plant
 from MPL.UnityUdp import UnityUdp
 from PatternRecognition.TrainingUdp import TrainingUdp
@@ -47,7 +47,7 @@ def setup():
     # Signal Source get external bio-signal data
     # For MPL, this might be CPC Headstage, External Signal Acquisition, MyoBand, etc.
     #hMyo = MyoUdp()#("192.168.1.3")
-    hMyo = MyoUdp(UDP_IP='127.0.0.1',UDP_PORT=10001,numSamples=20)#("192.168.1.3")
+    hMyo = MyoUdp(source='//127.0.0.1:15001',numSamples=20)#("192.168.1.3")
 
     # Training Data holds data labels 
     hTrain = TrainingUdp()

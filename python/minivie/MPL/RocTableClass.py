@@ -81,7 +81,7 @@ def getRocId(rocTable, id):
     for rocKey, rocElem in rocTable.items():
         if (rocElem.id == id):
             return rocElem
-    logging.warning('Invlaid ROC ID : {}'.format(id))
+    logging.warning('Invalid ROC ID : {}'.format(id))
     return None    
 
 def getRocValues(rocElem, val):
@@ -100,18 +100,17 @@ def main():
     for rocKey, rocElem in sorted(rocTable.items()):
         printRoc(rocElem)
 
-    print("\n\nDEMO Get ROC By ID:" )   
+    print("\n\nDEMO Get ROC By ID:")
     printRoc(getRocId(rocTable, 1))
     
     # Get out of range ROC ID
     print("\n\nDEMO Get ROC By [INVALID] ID:" )   
     printRoc(getRocId(rocTable, 99))
 
-    print("\n\nDEMO Get ROC Vals:" )  
+    print("\n\nDEMO Get ROC Vals:")
     newVals = getRocValues(getRocId(rocTable, 1), 0.1)
     print(['{:6.3f}'.format(i) for i in newVals])
     
 # Main Function (for demo)
 if __name__ == "__main__":
     main()
-

@@ -36,8 +36,8 @@ class UnityUdp(object):
         self.UDP_IP = UDP_IP
         self.UDP_PORT = UDP_PORT
         
-        logging.info("UnityUdp target IP:", self.UDP_IP)
-        logging.info("UnityUdp target port:", self.UDP_PORT)
+        logging.info("UnityUdp target IP: {}".format(self.UDP_IP))
+        logging.info("UnityUdp target port: {}".format(self.UDP_PORT))
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
         

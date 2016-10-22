@@ -8,8 +8,17 @@
 import os
 import sys
 import time
+import logging
 sys.path.insert(0, os.path.abspath('../minivie'))
 os.chdir('../minivie')  # change directory so xml files can be found as expected
+
+from Utilities import UserConfig
+UserConfig.setupFileLogging('MINIVIE_TEST_')
+logging.debug('Running MINIVIE_TEST Script')
+UserConfig.main()
+
+from Inputs import Myo
+Myo.main()
 
 from Scenarios import MyoUDPTrainer
 MyoUDPTrainer
@@ -20,14 +29,11 @@ Plant.main()
 from MPL import RocTableClass
 RocTableClass.main()
 
-from Utilities import UserConfig
-UserConfig.main()
-
 from MPL import NfuUdp
 NfuUdp.main()
 # generates warning for too long parameter name
 nfu = NfuUdp.NfuUdp()
-nfu.msgUpdateParam('-' *160, 0.0)
+nfu.msgUpdateParam('LONG_PARAM' + '*' * 160 + '|', 0.0)
 
 from Scenarios import OpenNfuMain
 OpenNfuMain.main()

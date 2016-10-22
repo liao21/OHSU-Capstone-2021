@@ -23,64 +23,6 @@ import struct
 # set logging to DEBUG for diagnostics/development
 logging.basicConfig(level=logging.DEBUG)
 
-def main():
-    """ 
-    Run NFU interface as standalone test function
-    """
-    
-    # Establish network inferface to MPL at address below
-    #h = NfuUdp(Hostname="192.168.1.111")
-    h = NfuUdp(Hostname="localhost")
-    h.connect()
-    
-    # Run a quick motion test to verify joints are working
-    NUM_ARM_JOINTS = 7;
-    NUM_HAND_JOINTS = 20;
-    armPosition = [0.0]*NUM_ARM_JOINTS
-    handPosition = [0.0]*NUM_HAND_JOINTS
-
-    # goto zero position
-    h.sendJointAngles(armPosition+handPosition)
-    #time.sleep(3)
-
-    # goto elbow bent position
-    armPosition[3] = 0.3
-    h.sendJointAngles(armPosition+handPosition)
-    #time.sleep(3)
-
-    # test percept decoding
-    f = open(os.path.join(os.path.dirname(__file__), "../../tests/heartbeat.bin"), "r")
-
-    print('Testing heartbeat uint8 decoding...')
-    uint8_heartbeat = np.fromfile(f, dtype=np.uint8)
-    h.decode_heartbeat_msg(uint8_heartbeat)
-
-    print('Testing heartbeat byte decoding...')
-    bytes_heartbeat = uint8_heartbeat.tostring()
-    h.decode_heartbeat_msg(bytes_heartbeat)
-
-    f = open(os.path.join(os.path.dirname(__file__), "../../tests/percepts.bin"), "r")
-    u = np.fromfile(f, dtype=np.uint8)
-
-    print('Testing cpch uint8 decoding...')
-    uint8_cpch = u[0:1366]
-    h.decode_cpch_msg(uint8_cpch)
-
-    print('Testing cpch byte decoding...')
-    bytes_cpch = uint8_cpch.tostring()
-    h.decode_cpch_msg(bytes_cpch)
-
-    print('Testing percept uint8 decoding...')
-    uint8_percept = u[1366:]
-    h.decode_percept_msg(uint8_percept)
-
-    print('Testing percept byte decoding...')
-    bytes_percept = uint8_percept.tostring()
-    h.decode_percept_msg(uint8_percept)
-
-    h.close()
-    logging.info('Ending NfuUdp')
-    logging.info('-----------------------------------------------')
 
 class NfuUdp:
     """ 
@@ -115,6 +57,7 @@ class NfuUdp:
 
         # Create a receive thread
         self.__thread = threading.Thread(target=self.messageHandler)
+        self.__thread.name = 'NfuUdpRcv'
 
         # Create threadsafe lock
         self.__lock = threading.Lock()
@@ -152,6 +95,7 @@ class NfuUdp:
         if self.__sock is not None:
             logging.info("Closing NfuUdp Socket IP={} Port={}".format(self.udp['Hostname'],self.udp['TelemPort']))
             self.__sock.close()
+        self.__thread.join()
 
     def messageHandler(self):
         # Loop forever to recv data
@@ -185,7 +129,7 @@ class NfuUdp:
                 #logging.warn('Unhandled data received')
         
 
-    def sendJointAngles(self,values):
+    def sendJointAngles(self, values: object) -> object:
         # Transmit joint angle command in radians
         #
         # Inputs:
@@ -234,7 +178,7 @@ class NfuUdp:
         # transmit packets (and optinally write to log for DEBUG)
         
         logging.debug('Sending "%s"' % binascii.hexlify(msg))
-        #logging.info('Setting up UDP coms on port {}. Default destination is {}:{}:'.format(\
+        #logging.info('Setting up UDP comms on port {}. Default destination is {}:{}:'.format(\
         #    self.udp['TelemPort'],self.udp['Hostname'],self.udp['CommandPort']))
             
         self.__sock.sendto(msg, (self.udp['Hostname'], self.udp['CommandPort']))
@@ -251,7 +195,7 @@ class NfuUdp:
         
         logging.info('Setting parameter %s, %f', paramName, paramValue)
 
-        if len( paramName ) > 127 :
+        if len(paramName) > 127:
             logging.warn('msgUpdateParam:Trimming Name to max 127 characters')
             paramName = paramName[:127]
         
@@ -507,6 +451,64 @@ class NfuUdp:
             pos = np.array(lmc[22:24,:]).view(dtype=np.int16)
             logging.debug('LMC POS = {} LMC TORQUE = {} '.format(pos,torque))
         return tlm
+def main():
+    """ 
+    Run NFU interface as standalone test function
+    """
+    
+    # Establish network inferface to MPL at address below
+    #h = NfuUdp(Hostname="192.168.1.111")
+    h = NfuUdp(Hostname="localhost")
+    h.connect()
+    
+    # Run a quick motion test to verify joints are working
+    NUM_ARM_JOINTS = 7;
+    NUM_HAND_JOINTS = 20;
+    armPosition = [0.0]*NUM_ARM_JOINTS
+    handPosition = [0.0]*NUM_HAND_JOINTS
+
+    # goto zero position
+    h.sendJointAngles(armPosition+handPosition)
+    #time.sleep(3)
+
+    # goto elbow bent position
+    armPosition[3] = 0.3
+    h.sendJointAngles(armPosition+handPosition)
+    #time.sleep(3)
+
+    # test percept decoding
+    f = open(os.path.join(os.path.dirname(__file__), "../../tests/heartbeat.bin"), "r")
+
+    print('Testing heartbeat uint8 decoding...')
+    uint8_heartbeat = np.fromfile(f, dtype=np.uint8)
+    h.decode_heartbeat_msg(uint8_heartbeat)
+
+    print('Testing heartbeat byte decoding...')
+    bytes_heartbeat = uint8_heartbeat.tostring()
+    h.decode_heartbeat_msg(bytes_heartbeat)
+
+    f = open(os.path.join(os.path.dirname(__file__), "../../tests/percepts.bin"), "r")
+    u = np.fromfile(f, dtype=np.uint8)
+
+    print('Testing cpch uint8 decoding...')
+    uint8_cpch = u[0:1366]
+    h.decode_cpch_msg(uint8_cpch)
+
+    print('Testing cpch byte decoding...')
+    bytes_cpch = uint8_cpch.tostring()
+    h.decode_cpch_msg(bytes_cpch)
+
+    print('Testing percept uint8 decoding...')
+    uint8_percept = u[1366:]
+    h.decode_percept_msg(uint8_percept)
+
+    print('Testing percept byte decoding...')
+    bytes_percept = uint8_percept.tostring()
+    h.decode_percept_msg(uint8_percept)
+
+    h.close()
+    logging.info('Ending NfuUdp')
+    logging.info('-----------------------------------------------')
 
 if __name__ == "__main__":
     main()

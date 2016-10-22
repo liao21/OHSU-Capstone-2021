@@ -1,4 +1,3 @@
-
 """
 Created on Tue Jul 19 11:16:36 2016
 
@@ -20,7 +19,6 @@ WIP add UDP communication to/from unity for training cues and other functionalit
 
 @author: D. Samson
 """
-
 
 #perhaps import only into necessary scripts, rather than importing all at the beginning
 import os
@@ -46,7 +44,7 @@ if __name__ == "__main__":
         sys.path.insert(0, os.path.abspath('.'))
         print(os.getcwd())
 from Controls.Plant import Plant
-from Inputs.MyoUdp import MyoUdp
+from Inputs.Myo import MyoUdp
 from MPL.UnityUdp import UnityUdp
 #from TrainingUdp import TrainingUdp
 from PatternRecognition.feature_extract import feature_extract
@@ -519,7 +517,7 @@ def demo(args):
     
     print('')
     print(str(trainer))
-	
+
     print('Running prediction model:')
     trainer.predictMult()
     pass
@@ -534,14 +532,10 @@ def replay(args):
     
     print('')
     print(str(trainer))
-	
+
     print('Running prediction model:')
     trainer.predictMult()
     pass
-   
-    
-
-
 
 
 def enum(**enums):
@@ -587,7 +581,6 @@ class MyoUDPTrainer:
         self.hSink = UnityUdp()                     #("192.168.1.24")   # Sink is output to ouside world (in this case to VIE)
         self.clf = None                             # Fit training data model
         
-        
         self.UDP_IP = args.UDP_IP                   # IP address to communicate with unity through (directed to localhost).
         self.PYTHON_SEND_PORT = args.PYTHON_PORT    # from python send data to unity using this port
         self.UNITY_RECEIVE_PORT = args.UNITY_PORT   # from unity receive data in python using this port
@@ -599,7 +592,7 @@ class MyoUDPTrainer:
         #https://docs.python.org/2/library/socket.html consider settimeout(<small number>) instead of disabling blocking
         print('UDP Program Control IP: ' + str(self.UDP_IP))
         print('Listening to Port: ' + str(self.UNITY_RECEIVE_PORT))
-	
+
         self.PythonSenderSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         #print('PythonUDP UI IP: ' + str(self.UDP_IP))
         print('Sending to Port: ' + str(self.PYTHON_SEND_PORT))
@@ -1148,4 +1141,3 @@ if __name__ == "__main__":
         replay(args)
     else:
         print('Invalid main method requested. No method mapped to "' + switch + '."')
-

@@ -31,15 +31,15 @@ import time
 import logging
 import numpy as np
 from enum import IntEnum
-import MPL.RocTableClass as ROC
-from Utilities import UserConfig as UC
+import MPL.RocTableClass as Roc
+from Utilities import UserConfig as Uc
 
 # for demo
 from MPL.UnityUdp import UnityUdp as hSink
 
 
 class MplJointEnum(IntEnum):
-    '''
+    """
         Allows enumeration reference for joint angles
         
         Example:
@@ -48,7 +48,7 @@ class MplJointEnum(IntEnum):
         'SHOULDER_AB_AD'
                 
         
-    '''
+    """
     SHOULDER_FE       = 0
     SHOULDER_AB_AD    = 1
     HUMERAL_ROT       = 2
@@ -80,14 +80,14 @@ class MplJointEnum(IntEnum):
 
 
 class Plant(object):
-    '''
+    """
         The main state-space integrator for the system.
         Allows setting velocity commands and then as long as they execute
         the arm will move in that direction.  position parameters will be updated
         automatically so that position commands can be send to output devices
         Additionally limits are handled here as well as roc table lookup
-    '''
-    def __init__(self,dt,rocFilename):
+    """
+    def __init__(self, dt, rocFilename):
 
         mpl = MplJointEnum
         self.JointPosition = np.zeros(mpl.NUM_JOINTS)
@@ -98,13 +98,13 @@ class Plant(object):
         self.upperLimit = [30.0] * mpl.NUM_JOINTS
         
         for i in range(mpl.NUM_JOINTS):
-            limit = UC.getUserConfigVar(mpl(i).name +'_LIMITS',(0.0, 30.0))
+            limit = Uc.getUserConfigVar(mpl(i).name + '_LIMITS', (0.0, 30.0))
             self.lowerLimit[i] = limit[0] * math.pi / 180
             self.upperLimit[i] = limit[1] * math.pi / 180
 
         self.dt = dt
 
-        self.rocTable = ROC.readRoc(rocFilename)
+        self.rocTable = Roc.readRoc(rocFilename)
 
         # currently selected ROC for arm motion
         self.RocId = ''
@@ -116,18 +116,18 @@ class Plant(object):
         self.GraspPosition = 0.0
         self.GraspVelocity = 0.0
         
-    def classMap(self, class_name):
+    def classMap(self, classname):
         # Map a pattern recognition class name to a joint command
         #
-        # The objective of this funciton is to decide how to interpret a class decision 
+        # The objective of this function is to decide how to interpret a class decision
         # as a movement action.
         #
         # return JointId, Direction, IsGrasp, Grasp
         #
         #   'No Movement' is not necessary in dict_Joint with '.get default return
-        #JointId, Direction = self.Joint.get(class_name,[ [], 0 ])
+        # JointId, Direction = self.Joint.get(class_name,[ [], 0 ])
         
-        classInfo = {'IsGrasp':0, 'JointId':None,'Direction':0,'GraspId':None }
+        classInfo = {'IsGrasp': 0, 'JointId': None, 'Direction': 0, 'GraspId': None}
         mpl = MplJointEnum
         # Map classes to joint id and direction of motion
         # Class Name: IsGrasp, JointId, Direction, GraspId
@@ -150,17 +150,17 @@ class Plant(object):
                     'Spherical Grasp'           : [1, None                ,+1 , 'Spherical']
                     }
        
-        if class_name in cLookup:
-            classInfo['IsGrasp'], classInfo['JointId'], classInfo['Direction'], classInfo['GraspId'] = cLookup[class_name]
+        if classname in cLookup:
+            classInfo['IsGrasp'], classInfo['JointId'], classInfo['Direction'], classInfo['GraspId'] = cLookup[classname]
         else:
-            logging.warn('Unmatched class name {}'.format(class_name))
+            logging.warn('Unmatched class name {}'.format(classname))
  
         return classInfo
         
     def newStep(self):
         # set all velocities to 0 to prepare for a new timestep 
         # Typically followed by a call to setVelocity
-        nJoints = MplJointEnum.NUM_JOINTS
+
         # reset velocity
         self.JointVelocity[:] = 0.0  
         self.RocVelocity = 0.0
@@ -190,19 +190,20 @@ class Plant(object):
         self.GraspPosition = np.clip(self.GraspPosition,0,1)
 
         # integrate joint positions from velocity commands
-        self.JointPosition += self.JointVelocity*self.dt;
+        self.JointPosition += self.JointVelocity*self.dt
 
         # set positions based on roc commands
         # hand positions will always be roc
         if self.RocId in self.rocTable :
-            newVals = ROC.getRocValues( self.rocTable[self.RocId] , self.RocPosition)
+            newVals = Roc.getRocValues( self.rocTable[self.RocId] , self.RocPosition)
             self.JointPosition[self.rocTable[self.RocId].joints] = newVals
         if self.GraspId in self.rocTable :
-            newVals = ROC.getRocValues( self.rocTable[self.GraspId] , self.GraspPosition)
+            newVals = Roc.getRocValues( self.rocTable[self.GraspId] , self.GraspPosition)
             self.JointPosition[self.rocTable[self.GraspId].joints] = newVals
         
         # Apply limits
         self.JointPosition = np.clip(self.JointPosition,self.lowerLimit,self.upperLimit)
+
 
 def main():
 
@@ -237,7 +238,7 @@ def main():
         p.setJointVelocity([MplJointEnum.ELBOW, MplJointEnum.WRIST_AB_AD],2.5)
         
         # set a grasp state        
-        #p.GraspId = 'rest'
+        # p.GraspId = 'rest'
         p.GraspId = 'Spherical'
         p.setGraspVelocity(0.5)
         
@@ -246,7 +247,7 @@ def main():
         sink.sendJointAngles(p.JointPosition)
 
         # Print first 7 joints
-        ang = ''.join('{:6.1f}'.format(k*180/math.pi) for k in p.JointPosition[:7] )
+        ang = ''.join('{:6.1f}'.format(k*180/math.pi) for k in p.JointPosition[:7])
         print('Angles (deg):' + ang + ' | Grasp Value: {:6.3f}'.format(p.GraspPosition))
 
     sink.close()

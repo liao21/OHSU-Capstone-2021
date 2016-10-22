@@ -50,7 +50,8 @@ class NfuUdp:
             self.udp['TelemPort'], self.udp['Hostname'], self.udp['CommandPort']))
         self.__sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.__sock.bind(('0.0.0.0', self.udp['TelemPort']))
-
+        self.__sock.settimeout(3.0)
+        
         # Create a receive thread
         self.__thread = threading.Thread(target=self.message_handler)
         self.__thread.name = 'NfuUdpRcv'

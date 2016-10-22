@@ -101,17 +101,17 @@ def model(SignalSource,SignalClassifier,Plant,DataSink,Trainer):
     # Move joints using classifier
     gain = 2.0
     
-    classInfo = Plant.classMap(classDecision)
+    classInfo = Plant.class_map(classDecision)
 
     # Set joint velocities
-    Plant.newStep()
+    Plant.new_step()
     # set the mapped class
     if classInfo['IsGrasp']:
         if classInfo['GraspId'] is not None :
             Plant.GraspId = classInfo['GraspId']
-        Plant.setGraspVelocity(classInfo['Direction'] * gain)
+        Plant.set_grasp_velocity(classInfo['Direction'] * gain)
     else:
-        Plant.setJointVelocity(classInfo['JointId'],classInfo['Direction'] * gain)
+        Plant.set_joint_velocity(classInfo['JointId'], classInfo['Direction'] * gain)
     
     Plant.update()
 

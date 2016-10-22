@@ -776,17 +776,17 @@ class MyoUDPTrainer:
         #try:
         gain = 2.0
         
-        classInfo = self.hPlant.classMap(classDecision)
+        classInfo = self.hPlant.class_map(classDecision)
 
         # Set joint velocities
-        self.hPlant.newStep()
+        self.hPlant.new_step()
         # set the mapped class
         if classInfo['IsGrasp']:
             if classInfo['GraspId'] is not None :
                 self.hPlant.GraspId = classInfo['GraspId']
-            self.hPlant.setGraspVelocity(classInfo['Direction'] * gain)
+            self.hPlant.set_grasp_velocity(classInfo['Direction'] * gain)
         else:
-            self.hPlant.setJointVelocity(classInfo['JointId'],classInfo['Direction'] * gain)
+            self.hPlant.set_joint_velocity(classInfo['JointId'], classInfo['Direction'] * gain)
         
         self.hPlant.update()
 

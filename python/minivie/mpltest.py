@@ -11,9 +11,10 @@
 import time
 import numpy as np
 from builtins import input
-from MPL.UnityUdp import UnityUdp
-from MPL.NfuUdp import NfuUdp
-import MPL.RocTableClass
+
+from mpl.nfu import NfuUdp
+# from mpl.unity import UnityUdp
+import mpl.roc as roc
 
 
 def ping(host):
@@ -89,7 +90,7 @@ elif choice == 3:
     # Read ROC Table
 
     filename = "../../WrRocDefaults.xml"
-    rocTable = MPL.RocTableClass.readRoc(filename)
+    rocTable = roc.readRoc(filename)
 
     for iRoc in [2, 4, 5, 7, 15]:
         numOpenSteps = 50
@@ -100,13 +101,13 @@ elif choice == 3:
         mplAngles[1] = -0.3
         mplAngles[3] = EL + 0.05
 
-        rocElem = MPL.RocTableClass.getRocId(rocTable, iRoc)
+        rocElem = roc.getRocId(rocTable, iRoc)
 
         graspVal = np.concatenate(
             (np.linspace(0, 1, numOpenSteps), np.ones(numWaitSteps), np.linspace(1, 0, numCloseSteps)))
         for iVal in graspVal:
             print('Entry #{}, RocId={}, {} {:6.1f} Pct'.format(iRoc, rocElem.id, rocElem.name, iVal * 100))
-            mplAngles[rocElem.joints] = MPL.RocTableClass.getRocValues(rocElem, iVal)
+            mplAngles[rocElem.joints] = roc.getRocValues(rocElem, iVal)
             hSink.sendJointAngles(mplAngles)
             time.sleep(0.02)
     hSink.close()

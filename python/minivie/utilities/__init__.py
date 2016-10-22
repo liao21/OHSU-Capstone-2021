@@ -1,6 +1,7 @@
 import six
 
-def getAddress(url):
+
+def get_address(url):
     # convert address url string to get hostname and port as tuple for socket interface
     # error checking is centralized here
     # 
@@ -11,4 +12,4 @@ def getAddress(url):
     
     assert isinstance(a.hostname, six.string_types), "hostname is not a string: %r" % a.hostname
     assert isinstance(a.port, six.integer_types), "port is not an integer: %r" % a.port
-    return (a.hostname, a.port)
+    return a.hostname, a.port

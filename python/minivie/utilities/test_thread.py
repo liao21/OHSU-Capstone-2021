@@ -7,8 +7,8 @@ counter increments and another lock is placed around the read operation.
 @author: R. Armiger
 """
 import threading
-import sys
 import time
+
 
 class BackgroundUpdater(object):
     """ Class for receiving Myo Armband data via UDP"""
@@ -35,23 +35,24 @@ class BackgroundUpdater(object):
             with self.lock:
                 self.__counter1 += 1
                 self.__counter2 += 1
-    def getValues(self):
-        # without a lock here the conters would have different values between reads
-        with h.lock:
-            A = h.__counter1;
+
+    def get_values(self):
+        # without a lock here the counters would have different values between reads
+        with self.lock:
+            a1 = self.__counter1
             time.sleep(0.01)
-            B = h.__counter2;
-            return (A,B)
+            a2 = self.__counter2
+            return a1, a2
 # main
-h = BackgroundUpdater();
+h = BackgroundUpdater()
 
 for i in range(100):
 
-    A,B = h.getValues()
+    A, B = h.get_values()
     
-    print("A={} B={}".format(A,B))
+    print("A={} B={}".format(A, B))
     
-    if A!=B:
+    if A != B:
         print("ERROR")
         h.runThread = False
         break

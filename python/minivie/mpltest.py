@@ -71,14 +71,14 @@ elif choice == 2:
     hSink = NfuUdp()
     hSink.connect()
 
-    hSink.sendJointAngles([0, AA, 0, EL, -0.7, -0.5, -0.5])
+    hSink.send_joint_angles([0, AA, 0, EL, -0.7, -0.5, -0.5])
     time.sleep(1.0)
     AA = -0.25
-    hSink.sendJointAngles([0, AA, 0, EL + 0.05, -0.7, -0.5, -0.5])
+    hSink.send_joint_angles([0, AA, 0, EL + 0.05, -0.7, -0.5, -0.5])
     time.sleep(1.0)
-    hSink.sendJointAngles([0, AA, 0, EL, 0.7, 0.5, 0.5])
+    hSink.send_joint_angles([0, AA, 0, EL, 0.7, 0.5, 0.5])
     time.sleep(1.0)
-    hSink.sendJointAngles(armTestStart)
+    hSink.send_joint_angles(armTestStart)
     hSink.close()
 
 elif choice == 3:
@@ -90,7 +90,7 @@ elif choice == 3:
     # Read ROC Table
 
     filename = "../../WrRocDefaults.xml"
-    rocTable = roc.readRoc(filename)
+    rocTable = roc.read_roc_table(filename)
 
     for iRoc in [2, 4, 5, 7, 15]:
         numOpenSteps = 50
@@ -101,14 +101,14 @@ elif choice == 3:
         mplAngles[1] = -0.3
         mplAngles[3] = EL + 0.05
 
-        rocElem = roc.getRocId(rocTable, iRoc)
+        rocElem = roc.get_roc_id(rocTable, iRoc)
 
         graspVal = np.concatenate(
             (np.linspace(0, 1, numOpenSteps), np.ones(numWaitSteps), np.linspace(1, 0, numCloseSteps)))
         for iVal in graspVal:
             print('Entry #{}, RocId={}, {} {:6.1f} Pct'.format(iRoc, rocElem.id, rocElem.name, iVal * 100))
-            mplAngles[rocElem.joints] = roc.getRocValues(rocElem, iVal)
-            hSink.sendJointAngles(mplAngles)
+            mplAngles[rocElem.joints] = roc.get_roc_values(rocElem, iVal)
+            hSink.send_joint_angles(mplAngles)
             time.sleep(0.02)
     hSink.close()
 elif choice == 4:

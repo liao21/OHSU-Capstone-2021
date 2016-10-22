@@ -13,151 +13,141 @@ import math
 import time
 import numpy as np
 
-# set home directory
-if __name__ == "__main__":
-    print(os.path.split(os.getcwd())[1])
-    if os.path.split(os.getcwd())[1] == 'Scenarios':
-        print('Changing to python-minivie home directory')
-        os.chdir('..')
-        sys.path.insert(0, os.path.abspath('.'))
-        print(os.getcwd())
-
-from Inputs.Myo import MyoUdp
-from Controls.Plant import Plant
-from MPL.UnityUdp import UnityUdp
-from PatternRecognition.TrainingUdp import TrainingUdp
-from PatternRecognition.feature_extract import feature_extract
+from inputs.myo import MyoUdp
+from controls.plant import Plant
+from mpl.unity import UnityUdp
+from pattern_rec import training, feature_extract
 
 VERBOSE = 0
 dt = 0.02  # seconds per loop.  50Hz update
 
+
 def setup():
-    ''' 
+    """ 
     Create the building blocks of the MiniVIE
     
         SignalSource - source of EMG data
         SignalClassifier - algorithm to classify emg into 'intent'
         Plant - Perform forward integration and apply joint limits
         DataSink - output destination of command signals (e.g. real or virtual arm)
-    '''
+    """
         
     filename = "../../WrRocDefaults.xml"
     # Create data objects
 
     # Signal Source get external bio-signal data
     # For MPL, this might be CPC Headstage, External Signal Acquisition, MyoBand, etc.
-    #hMyo = MyoUdp()#("192.168.1.3")
-    hMyo = MyoUdp(source='//127.0.0.1:15001',numSamples=20)#("192.168.1.3")
+    # data_src = MyoUdp()#("192.168.1.3")
+    data_src = MyoUdp(source='//127.0.0.1:15001', num_samples=20)  # ("192.168.1.3")
 
     # Training Data holds data labels 
-    hTrain = TrainingUdp()
+    trainer = training.TrainingUdp()
 
     # Plant maintains current limb state (positions) during velocity control
-    #TODO[Lydia2] This can fail if file does not exist, then the UDP objects aren't cleaned up properly
-    hPlant = Plant(dt,filename)
+    # TODO[Lydia2] This can fail if file does not exist, then the UDP objects aren't cleaned up properly
+    plant = Plant(dt, filename)
 
     # Sink is output to outside world (in this case to VIE)
     # For MPL, this might be: real MPL/NFU, Virtual Arm, etc.
-    hSink = UnityUdp() #("192.168.1.24")
+    data_sink = UnityUdp()  # ("192.168.1.24")
 
     # Classifier parameters
-    trainFolder = os.path.join(os.getcwd(),'Scenarios/training_data')
+    train_folder = os.path.join(os.getcwd(), 'Scenarios/training_data')
     # TODO: generate defaults if these files don't exist, or are corrupt
     # TODO: Perform error checking to ensure number of Classes match matrix sizes
-    W = np.genfromtxt(os.path.join(trainFolder,"weights.txt"), dtype=None)
-    C = np.genfromtxt(os.path.join(trainFolder,"centers.txt"), dtype=None)
+    w = np.genfromtxt(os.path.join(train_folder, "weights.txt"), dtype=None)
+    c = np.genfromtxt(os.path.join(train_folder, "centers.txt"), dtype=None)
     # Classifier class names 
-    with open(os.path.join(trainFolder,"classes.txt")) as f:
-        classNames = f.read().splitlines()
+    with open(os.path.join(train_folder, "classes.txt")) as f:
+        class_names = f.read().splitlines()
 
-    hClassifier = (W,C,classNames)
+    classifier = (w, c, class_names)
 
-    #create filefor dumping training data
-    #TODO[Lydia2]: store training data more efficiently and explicitly
-    file=open(os.path.join(trainFolder,'tmp.dat'),'w')
+    # create file for dumping training data
+    # TODO[Lydia2]: store training data more efficiently and explicitly
+    file = open(os.path.join(train_folder, 'training_dump.dat'), 'w')
     
-    return {'SignalSource':hMyo, 'SignalClassifier':hClassifier, 'DataSink':hSink, 'Plant':hPlant, 'Trainer':hTrain, 'TmpFile':file }  
+    return {'SignalSource': data_src, 'SignalClassifier': classifier, 'DataSink': data_sink,
+            'Plant': plant, 'Trainer': trainer, 'TmpFile': file}
 
-def model(SignalSource,SignalClassifier,Plant,DataSink,Trainer):
+
+def model(signal_source, signal_classifier, plant, data_sink, trainer, file):
 
     # Get data and extract features
-    emgData = SignalSource.getData()*0.01
+    emg_data = signal_source.get_data() * 0.01
     # feature vector should be [1,nChan*nFeat]
     # data ordering is as follows
     # [ch1f1, ch1f2, ch1f3, ch1f4, ch2f1, ch2f2, ch2f3, ch2f4, ... chNf4]
-    f = feature_extract(emgData)
-    print('%8.4f %8.4f %8.4f %8.4f' % (f[0,0], f[0,0], f[0,0], f[0,0]))
+    f = feature_extract.feature_extract(emg_data)
+    print('%8.4f %8.4f %8.4f %8.4f' % (f[0, 0], f[0, 0], f[0, 0], f[0, 0]))
     # Classify
-    W = SignalClassifier[0];
-    C = SignalClassifier[1];
-    classNames = SignalClassifier[2];
+    w = signal_classifier[0]
+    c = signal_classifier[1]
+    class_names = signal_classifier[2]
     
     # features[1,nChan*nFeat] * Wg[nChan*numFeat,nClasses] + Cg[1,nClasses]
-    v = np.dot(f, W) + C
-    classNum = v.argmax()
+    v = np.dot(f, w) + c
+    class_num = v.argmax()
 
-    classDecision = classNames[classNum]
+    class_decision = class_names[class_num]
     
     # Move joints using classifier
     gain = 2.0
     
-    classInfo = Plant.class_map(classDecision)
+    class_info = plant.class_map(class_decision)
 
     # Set joint velocities
-    Plant.new_step()
+    plant.new_step()
     # set the mapped class
-    if classInfo['IsGrasp']:
-        if classInfo['GraspId'] is not None :
-            Plant.GraspId = classInfo['GraspId']
-        Plant.set_grasp_velocity(classInfo['Direction'] * gain)
+    if class_info['IsGrasp']:
+        if class_info['GraspId'] is not None:
+            plant.GraspId = class_info['GraspId']
+        plant.set_grasp_velocity(class_info['Direction'] * gain)
     else:
-        Plant.set_joint_velocity(classInfo['JointId'], classInfo['Direction'] * gain)
+        plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * gain)
     
-    Plant.update()
+    plant.update()
 
     # Non-EMG Motion based inputs [Optional]
     # perform joint motion update
-    vals = SignalSource.getAngles()
+    vals = signal_source.get_angles()
     # Temp: Overwrite Elbow angle based on Myo orientation
-    Plant.JointPosition[3] = vals[1] + math.pi/2
+    plant.JointPosition[3] = vals[1] + math.pi / 2
 
     # transmit output
-    DataSink.sendJointAngles(Plant.JointPosition)
+    data_sink.send_joint_angles(plant.JointPosition)
 
     # TODO[Lydia2]: Update training 
     # Training Process begin logging
     # [Lydia2] Efficient way to organize incoming messages, store labeled data on disk
     # [Lydia3] Implement LDA in python to regen training parameters
-    cName = str(Trainer.class_name)  # Do I have an external command?
-    if cName:
+    class_name = str(trainer.class_name)  # Do I have an external command?
+    if class_name:
         # If external command, write the data and label to disk
-        print(cName)
-        #txt = ','.join(map(str, f.tolist()))
+        print(class_name)
+        # txt = ','.join(map(str, f.tolist()))
         f.tofile(file)
-        #file.write(' %d %s\n'%(Trainer.class_id, cName))
+        # file.write(' %d %s\n'%(Trainer.class_id, class_name))
     
     # Training Process end
 
-
     # DEBUG output display
     if VERBOSE:
-        #print(f[:1,:])
-        print(("%8.4f" % Plant.position[3], \
-        "%8.4f" % Plant.position[4]), \
-        'Class: %s' % classNames[classNum])
-        
-def main():
+        # print(f[:1,:])
+        print(("%8.4f" % plant.position[3], "%8.4f" % plant.position[4]), 'Class: %s' % class_names[class_num])
 
-    ''' Main function that involves setting up devices, 
+
+def main():
+    """ Main function that involves setting up devices,
         looping at a fixed time interval, and performing cleanup
-    '''
+    """
 
     h = setup()
 
     # Iteration counter
-    cycleMax = 140  # Max iterations (0 for infinite)
-    cycleCnt = 0  # Internal Counter
-    timeElapsed = -1
+    cycle_max = 140  # Max iterations (0 for infinite)
+    cycle_cnt = 0  # Internal Counter
+    time_elapsed = -1
 
     try:
     
@@ -167,28 +157,28 @@ def main():
         print("")
         sys.stdout.flush()
 
-        while ( (cycleMax > 0) and (cycleCnt < cycleMax) ): # main loop
+        while (cycle_max > 0) and (cycle_cnt < cycle_max):  # main loop
             # Fixed rate loop.  get start time, run model, get end time; delay for duration 
-            timeBegin = time.time()
+            time_begin = time.time()
             
             # Increment loop counter
-            cycleCnt = cycleCnt + 1
+            cycle_cnt += 1
  
             # Run the actual model
-            model(h['SignalSource'],h['SignalClassifier'],h['Plant'],h['DataSink'],h['Trainer'])
+            model(h['SignalSource'], h['SignalClassifier'], h['Plant'], h['DataSink'], h['Trainer'], h['TmpFile'])
 
-            timeEnd = time.time()
-            timeElapsed = timeEnd - timeBegin
-            if dt > timeElapsed:
-                time.sleep(dt-timeElapsed)
+            time_end = time.time()
+            time_elapsed = time_end - time_begin
+            if dt > time_elapsed:
+                time.sleep(dt-time_elapsed)
             else:
                 print("Timing Overload")
 
     finally:        
         print("")
-        #print("EMG Buffer:")
-        #print(hMyo.getData())
-        print("Last timeElapsed was: ", timeElapsed)
+        # print("EMG Buffer:")
+        # print(hMyo.getData())
+        print("Last time_elapsed was: ", time_elapsed)
         print("")
         print("Cleaning up...")
         print("")
@@ -196,7 +186,7 @@ def main():
         h['SignalSource'].close()
         h['DataSink'].close()
         h['Trainer'].close()
-        h['TmpFile'].close()     #close file  
+        h['TmpFile'].close()    # close file
         # Add short delay to view any final messages
         time.sleep(2.0)
 

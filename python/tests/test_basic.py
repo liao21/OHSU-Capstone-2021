@@ -12,33 +12,33 @@ import logging
 sys.path.insert(0, os.path.abspath('../minivie'))
 os.chdir('../minivie')  # change directory so xml files can be found as expected
 
-from Utilities import UserConfig
-UserConfig.setupFileLogging('MINIVIE_TEST_')
+from utilities import user_config
+user_config.setup_file_logging('MINIVIE_TEST_')
 logging.debug('Running MINIVIE_TEST Script')
-UserConfig.main()
+user_config.main()
 
-from Inputs import Myo
-Myo.main()
+from inputs import myo
+myo.main()
 
-from Scenarios import MyoUDPTrainer
+from scenarios import MyoUDPTrainer
 MyoUDPTrainer
 
-from Controls import Plant
-Plant.main()
+from controls import plant
+plant.main()
 
-from MPL import RocTableClass
-RocTableClass.main()
+from mpl import roc
+roc.main()
 
-from MPL import NfuUdp
-NfuUdp.main()
+from mpl import nfu
+nfu.main()
 # generates warning for too long parameter name
-nfu = NfuUdp.NfuUdp()
-nfu.msgUpdateParam('LONG_PARAM' + '*' * 160 + '|', 0.0)
+nfu = nfu.NfuUdp()
+nfu.msg_update_param('LONG_PARAM' + '*' * 160 + '|', 0.0)
 
-from Scenarios import OpenNfuMain
-OpenNfuMain.main()
+from scenarios import open_nfu
+open_nfu.main()
 
-from Scenarios import sample_main
+from scenarios import sample_main
 sample_main.main()
 
 print('-' * 30)

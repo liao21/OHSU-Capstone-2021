@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Load an xml User Config file
 
@@ -13,51 +12,54 @@ Revisions:
 """
 import os
 from datetime import datetime
-import xml.etree.cElementTree as ET
+import xml.etree.cElementTree as xmlTree
 import logging
 
 xmlRoot = None
-# function to read in ROC xml file and store as dictionary       
-def readUserConfig(file):
+
+
+def read_user_config(file):
+    # function to read in xml file and store as dictionary
     global xmlRoot
-    xmlTree = ET.parse(file) # store ROC table as an ElementTree
-    xmlRoot = xmlTree.getroot()
-    
-def getUserConfigVar(key,defaultValue) :
+    xmlRoot = xmlTree.parse(file).getroot()
+
+
+def get_user_config_var(key, default_value):
     # Look through XML document root for matching key value and retutn entry as a string
     global xmlRoot
     
     if xmlRoot is None:
         logging.info('xmlRoot is unset')
         logging.info('Reading default xml config file: user_config.xml')
-        readUserConfig('../../user_config.xml')
+        read_user_config('../../user_config.xml')
     
     for element in xmlRoot.findall('add'):
         # child is an element, has tag and attributes
-        xmlKey = element.get('key')
+        xml_key = element.get('key')
 
-        if xmlKey == key :
-            strValue = element.get('value')
-            logging.info(key + ' : ' + strValue)
+        if xml_key == key:
+            str_value = element.get('value')
+            logging.info(key + ' : ' + str_value)
             
-            if type(defaultValue) is str:
-                return strValue
-            elif type(defaultValue) is int:
-                return int(strValue)
-            elif type(defaultValue) is float:
-                return float(strValue)
-            elif type(defaultValue) is tuple:
-                return tuple( float(i) for i in strValue.split(','))
+            if type(default_value) is str:
+                return str_value
+            elif type(default_value) is int:
+                return int(str_value)
+            elif type(default_value) is float:
+                return float(str_value)
+            elif type(default_value) is tuple:
+                return tuple(float(i) for i in str_value.split(','))
             else:
-                logging.warning('Unhandled type [{}] for default value for key = {}'.format(type(defaultValue), key))
+                logging.warning('Unhandled type [{}] for default value for key = {}'.format(type(default_value), key))
     
     # Unmatched isn't a problem, parameter just happens to not be in xml, so use default
-    #logging.warning(key + ' : UNMATCHED')
+    # logging.warning(key + ' : UNMATCHED')
     
-    logging.info(key + ' : ' + str(defaultValue) + ' (default)')
-    return defaultValue
+    logging.info(key + ' : ' + str(default_value) + ' (default)')
+    return default_value
 
-def setupFileLogging(prefix='MiniVIE_', loglevel=logging.INFO ):
+
+def setup_file_logging(prefix='MiniVIE_', loglevel=logging.INFO):
     ######################
     # setup logging
     ######################
@@ -67,31 +69,31 @@ def setupFileLogging(prefix='MiniVIE_', loglevel=logging.INFO ):
     # ------    ---------------
     # DEBUG 	Detailed information, typically of interest only when diagnosing problems.
     # INFO 	Confirmation that things are working as expected.
-    # WARNING 	An indication that something unexpected happened, or indicative of some problem in the near future (e.g. 'disk space low'). The software is still working as expected.
+    # WARNING 	An indication that something unexpected happened, or indicative of some problem in the near future
     # ERROR 	Due to a more serious problem, the software has not been able to perform some function.
     # CRITICAL 	A serious error, indicating that the program itself may be unable to continue running.
     
     # start message log
-    fileName = prefix + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
-    logPath = '.'
+    file_name = prefix + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
+    log_path = '.'
         
-    logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
-    #logFormatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
-    rootLogger = logging.getLogger()
-    rootLogger.setLevel(loglevel)
+    log_formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+    # log_formatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
+    root_logger = logging.getLogger()
+    root_logger.setLevel(loglevel)
 
-    fileHandler = logging.FileHandler("{0}/{1}".format(logPath, fileName))
-    fileHandler.setFormatter(logFormatter)
-    rootLogger.addHandler(fileHandler)
+    file_handler = logging.FileHandler("{0}/{1}".format(log_path, file_name))
+    file_handler.setFormatter(log_formatter)
+    root_logger.addHandler(file_handler)
 
-    consoleHandler = logging.StreamHandler()
-    consoleHandler.setFormatter(logFormatter)
-    rootLogger.addHandler(consoleHandler)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_formatter)
+    root_logger.addHandler(console_handler)
 
-    #logging.basicConfig(filename='OpenNFU.log',format='%(asctime)s:%(levelname)s:%(message)s', \
+    # logging.basicConfig(filename='OpenNFU.log',format='%(asctime)s:%(levelname)s:%(message)s', \
     #                    level=numeric_level, datefmt='%m/%d/%Y %I:%M:%S %p')
     logging.info('-----------------------------------------------')
-    logging.info('Starting Log File "{}" with level: {}'.format(fileName, logging.getLevelName(loglevel)))
+    logging.info('Starting Log File "{}" with level: {}'.format(file_name, logging.getLevelName(loglevel)))
     logging.info('-----------------------------------------------')
 
     '''
@@ -110,40 +112,41 @@ def setupFileLogging(prefix='MiniVIE_', loglevel=logging.INFO ):
                         help='Set loglevel as DEBUG INFO WARNING ERROR CRITICAL (default is INFO)')
     args = parser.parse_args()
     '''
-    
+
+
 def main():
 
-    #logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
 
     # Check reading parameter from default roc file
     # (must be done before call to readUserConfig(filename)
-    getUserConfigVar('rocTable','')
+    get_user_config_var('rocTable', '')
     
     # get default config file.  This script should be run from python\minivie, 
     # but also support calling from module directory (Utilities)
     filename = "../../user_config.xml"
     if os.path.split(os.getcwd())[1] == 'Utilities':
         filename = '../' + filename
-    readUserConfig(filename)
+    read_user_config(filename)
     
     # check known types
-    getUserConfigVar('rocTable','')
-    getUserConfigVar('FeatureExtract.zcThreshold',0.0)
-    getUserConfigVar('mplVulcanXCommandPort',9000)
+    get_user_config_var('rocTable', '')
+    get_user_config_var('FeatureExtract.zcThreshold', 0.0)
+    get_user_config_var('mplVulcanXCommandPort', 9000)
 
     # check invalid types
-    getUserConfigVar('TEST_INVALID_rocTable','')
-    getUserConfigVar('TEST_INVALID_FeatureExtract.zcThreshold',0.0)
-    getUserConfigVar('TEST_INVALID_mplVulcanXCommandPort',9000)
-    getUserConfigVar('rocTable',None)
+    get_user_config_var('TEST_INVALID_rocTable', '')
+    get_user_config_var('TEST_INVALID_FeatureExtract.zcThreshold', 0.0)
+    get_user_config_var('TEST_INVALID_mplVulcanXCommandPort', 9000)
+    get_user_config_var('rocTable', None)
     
-    elbowLim = getUserConfigVar('ELBOW_LIMITS',(0.0, 140.0))
-    elbowLim = getUserConfigVar('TEST_INVALID_ELBOW_LIMITS',(0.0, 140.0))
+    get_user_config_var('ELBOW_LIMITS', (0.0, 140.0))
+    get_user_config_var('TEST_INVALID_ELBOW_LIMITS', (0.0, 140.0))
 
     logging.debug('End UserConfig Demo Script')
     
 # Main Function (for demo)
 if __name__ == "__main__":
-    setupFileLogging('UserConfig_TEST_')
+    setup_file_logging('UserConfig_TEST_')
     logging.debug('Running UserConfig Demo Script')
     main()

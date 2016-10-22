@@ -96,13 +96,13 @@ class Plant(object):
         self.upperLimit = [30.0] * mpl.NUM_JOINTS
 
         for i in range(mpl.NUM_JOINTS):
-            limit = user_config.getUserConfigVar(mpl(i).name + '_LIMITS', (0.0, 30.0))
+            limit = user_config.get_user_config_var(mpl(i).name + '_LIMITS', (0.0, 30.0))
             self.lowerLimit[i] = limit[0] * math.pi / 180
             self.upperLimit[i] = limit[1] * math.pi / 180
 
         self.dt = dt
 
-        self.rocTable = roc.readRoc(roc_filename)
+        self.rocTable = roc.read_roc_table(roc_filename)
 
         # currently selected ROC for arm motion
         self.RocId = ''
@@ -195,10 +195,10 @@ class Plant(object):
         # set positions based on roc commands
         # hand positions will always be roc
         if self.RocId in self.rocTable:
-            new_vals = roc.getRocValues(self.rocTable[self.RocId], self.RocPosition)
+            new_vals = roc.get_roc_values(self.rocTable[self.RocId], self.RocPosition)
             self.JointPosition[self.rocTable[self.RocId].joints] = new_vals
         if self.GraspId in self.rocTable:
-            new_vals = roc.getRocValues(self.rocTable[self.GraspId], self.GraspPosition)
+            new_vals = roc.get_roc_values(self.rocTable[self.GraspId], self.GraspPosition)
             self.JointPosition[self.rocTable[self.GraspId].joints] = new_vals
 
         # Apply limits
@@ -246,7 +246,7 @@ def main():
 
         p.update()
 
-        sink.sendJointAngles(p.JointPosition)
+        sink.send_joint_angles(p.JointPosition)
 
         # Print first 7 joints
         ang = ''.join('{:6.1f}'.format(k * 180 / math.pi) for k in p.JointPosition[:7])

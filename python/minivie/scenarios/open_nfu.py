@@ -1,4 +1,4 @@
-## OpenNfuMain.py
+# OpenNfuMain.py
 # Designed to be the main startup target for a prosthetic system
 #
 # Usage: 
@@ -14,65 +14,70 @@
 #   sklearn
 #   
 
-import argparse
-import sys
 import logging
-import xml.etree.cElementTree as ET
 import time
-from MPL.NfuUdp import NfuUdp
-from Utilities import UserConfig
+from mpl.nfu import NfuUdp
+from utilities import user_config
+
 
 def main():
     """ 
     Run OpenNFU interface
     """
 
-    h = setupLimbConnection()
-    setupSignalSource()
+    h = setup_limb_connection()
+    setup_signal_source()
 
-    waitForLimbConnection()
-    waitForSignals()
-    testLimbConnection(h)
+    wait_for_limb_connection()
+    wait_for_signals()
+    test_limb_connection(h)
 
-    runAlgorithm()
+    run_algorithm()
     close(h)
-    
-def setupLogging():
-    UserConfig.setupFileLogging('OpenNFU_')
-    
-def setupLimbConnection():
+
+
+def setup_logging():
+    user_config.setup_file_logging('OpenNFU_')
+
+
+def setup_limb_connection():
     # Establish network inferface to MPL at address below
-    #h = NfuUdp(Hostname="192.168.1.111")
-    h = NfuUdp(Hostname="localhost")
+    # h = NfuUdp(Hostname="192.168.1.111")
+    h = NfuUdp(hostname="localhost")
     h.connect()
     return h
-	
-def setupSignalSource():
+
+
+def setup_signal_source():
     pass
 
-def waitForLimbConnection():
+
+def wait_for_limb_connection():
     pass
-def waitForSignals():
+
+
+def wait_for_signals():
     pass
-	
-def testLimbConnection(h):
-    
+
+
+def test_limb_connection(h):
     # Run a quick motion test to verify joints are working
-    NUM_ARM_JOINTS = 7;
-    NUM_HAND_JOINTS = 20;
-    armPosition = [0.0]*NUM_ARM_JOINTS
-    handPosition = [0.0]*NUM_HAND_JOINTS
+    num_arm_joints = 7
+    num_hand_joints = 20
+    arm_position = [0.0] * num_arm_joints
+    hand_position = [0.0] * num_hand_joints
 
     # goto zero position
-    h.sendJointAngles(armPosition+handPosition)
+    h.send_joint_angles(arm_position + hand_position)
     time.sleep(3)
 
     # goto elbow bent position
-    armPosition[3] = 0.3
-    h.sendJointAngles(armPosition+handPosition)
+    arm_position[3] = 0.3
+    h.send_joint_angles(arm_position + hand_position)
     time.sleep(3)
-	
-def runAlgorithm():
+
+
+def run_algorithm():
     pass
 
 
@@ -82,7 +87,8 @@ def close(h):
     logging.info('-----------------------------------------------')
     # Add short delay to view any final messages at console
     time.sleep(1.0)
-	
+
+
 if __name__ == "__main__":
-    setupLogging()
+    setup_logging()
     main()

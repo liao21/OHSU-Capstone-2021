@@ -154,6 +154,7 @@ class MyoUdp(object):
         logging.info("Setting up MyoUdp socket {}".format(self.addr))
         self.__sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Internet, UDP
         self.__sock.bind(self.addr)
+        self.__sock.settimeout(3.0)
 
         # Create threadsafe lock so that user based reading of values and thread-based
         # writing of values dont conflict

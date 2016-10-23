@@ -52,7 +52,7 @@ def setup():
     data_sink = UnityUdp()  # ("192.168.1.24")
 
     # Classifier parameters
-    train_folder = os.path.join(os.getcwd(), 'Scenarios/training_data')
+    train_folder = os.path.join(os.getcwd(), 'scenarios/training_data')
     # TODO: generate defaults if these files don't exist, or are corrupt
     # TODO: Perform error checking to ensure number of Classes match matrix sizes
     w = np.genfromtxt(os.path.join(train_folder, "weights.txt"), dtype=None)

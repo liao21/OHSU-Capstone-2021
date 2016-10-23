@@ -30,6 +30,7 @@ class TrainingUdp(object):
         self.sock = socket.socket(socket.AF_INET,       # Internet
                                   socket.SOCK_DGRAM)    # UDP
         self.sock.bind((ip, port))
+        self.sock.settimeout(3.0)
 
         self.lock = threading.Lock()
         

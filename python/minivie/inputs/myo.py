@@ -77,7 +77,10 @@ def emulate_myo_udp_exe(destination='//127.0.0.1:10001'):
         while True:
             # generate random bytes matching the size of MyoUdp.exe streaming
             # Future: generate orientation data in valid range
-            data = np.random.randint(255, size=48, dtype='uint8')
+            #data = np.random.randint(255, size=48, dtype='uint8')
+            data = np.zeros(48, dtype='u1')
+            for idx, val in enumerate(data):
+                data[idx] = np.random.randint(255)
             # print(data)
             sock.sendto(data.tostring(), utilities.get_address(destination))
             time.sleep(0.005)  # 200Hz

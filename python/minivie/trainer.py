@@ -146,6 +146,9 @@ try:
 except OSError:
     print('File Not Found')
     pass
+except IOError:
+    print('File Not Found')
+    pass
 
 data.num_channels = 16
 

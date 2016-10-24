@@ -472,7 +472,7 @@ def demo(args):
     trainer = MyoUDPTrainer(args)
     print('')
 
-    if args.DELETE == True:
+    if args.DELETE:
         trainer.delete()
     # trainer.create()
 

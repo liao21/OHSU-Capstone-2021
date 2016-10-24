@@ -28,7 +28,7 @@ def feature_extract(y, zc_thresh=0.15, ssc_thresh=0.15):
     # Number of Samples
     n = y.shape[0]
 
-    # Normalize features so they are independant of the window size    
+    # Normalize features so they are independent of the window size
     fs = 300
 
     # Value to compute 'zero-crossing' around

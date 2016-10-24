@@ -1,1 +1,1 @@
-python Myo.py --SIMUNIX
+python myo.py --SIM_UNIX --ADDRESS //127.0.0.1:15001

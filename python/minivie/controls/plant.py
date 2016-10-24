@@ -146,7 +146,9 @@ class Plant(object):
             'Wrist Flex In': [0, mpl.WRIST_FE, +1, None],
             'Wrist Extend Out': [0, mpl.WRIST_FE, -1, None],
             'Hand Open': [1, None, -1, None],
-            'Spherical Grasp': [1, None, +1, 'Spherical']
+            'Spherical Grasp': [1, None, +1, 'Spherical'],
+            'Tip Grasp': [1, None, +1, 'ThreeFingerPinch'],
+            'Point Grasp': [1, None, +1, 'Trigger(Drill)'],
         }
 
         if class_name in class_lookup:

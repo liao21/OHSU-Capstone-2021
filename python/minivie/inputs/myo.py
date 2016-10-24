@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 0.0 Created on Sat Jan 23 20:39:30 2016
 0.1 Edited on Sun Apr 24 2016 - improved data byte processing, created __main__
@@ -24,16 +23,22 @@ contributor: W. Haris
 """
 
 from __future__ import with_statement  # 2.5 only
+import os
+import sys
 import threading
 import socket
 import struct
 import time
 import logging
 import numpy as np
+from transforms3d.euler import quat2euler
 from types import *
 
+if os.path.split(os.getcwd())[1] == 'inputs':
+    sys.path.insert(0, os.path.abspath('..'))
+import inputs
 import utilities
-from utilities.transformations import euler_from_matrix, quaternion_matrix
+# from utilities.transformations import euler_from_matrix, quaternion_matrix
 
 __version__ = "1.0.0"
 
@@ -93,7 +98,7 @@ def emulate_myo_unix(destination='//127.0.0.1:15001'):
         Inputs.MyoUdp.EmulateMyoUnix() # CTRL+C to END
 
     Example Usage from command prompt:
-        python Myo.py -SIMUNIX
+        python Myo.py -SIM_UNIX
         
     """
 
@@ -140,6 +145,13 @@ class MyoUdp(object):
 
     def __init__(self, source='//127.0.0.1:10001', num_samples=50):
 
+        # logging
+        self.log_handlers = None
+
+
+        # 8 channel max for myo armband
+        self.__num_channels = 8
+
         # Default kinematic values
         self.__quat = (1.0, 0.0, 0.0, 0.0)
         self.__accel = (0.0, 0.0, 0.0)
@@ -151,13 +163,16 @@ class MyoUdp(object):
 
         # UDP Port setup
         self.addr = utilities.get_address(source)
+
+    def connect(self):
+
         logging.info("Setting up MyoUdp socket {}".format(self.addr))
         self.__sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Internet, UDP
         self.__sock.bind(self.addr)
         self.__sock.settimeout(3.0)
 
         # Create threadsafe lock so that user based reading of values and thread-based
-        # writing of values dont conflict
+        # writing of values do not conflict
         self.__lock = threading.Lock()
 
         # Create a thread for processing new incoming data
@@ -168,7 +183,7 @@ class MyoUdp(object):
     def read_packet(self):
         """ Convert incoming bytes to emg, quaternion, accel, and ang rate """
 
-        # Loop forever to recv data
+        # Loop forever to receive data
         while True:
             # Blocking call until data received
             try:
@@ -187,6 +202,9 @@ class MyoUdp(object):
                     # unpack formatted data bytes
                     # Note: these have been scaled in MyoUdp from the raw hardware values
                     output = struct.unpack("8b4f3f3f", data)
+
+                    if self.log_handlers is not None:
+                        self.log_handlers(output[0:8])
 
                     # Populate EMG Data Buffer (newest on top)
                     self.__dataEMG = np.roll(self.__dataEMG, 1, axis=0)
@@ -236,7 +254,7 @@ class MyoUdp(object):
                     self.__accel = np.array(unscaled[4:7], np.float) / MYOHW_ACCELEROMETER_SCALE
                     self.__gyro = np.array(unscaled[7:10], np.float) / MYOHW_GYROSCOPE_SCALE
 
-                    print(self.__quat)
+                    #print(self.__quat)
 
             else:
                 # incoming data is not of length = 8, 20, 40, or 48
@@ -251,7 +269,7 @@ class MyoUdp(object):
         """ Return Euler angles computed from Myo quaternion """
         # convert the stored quaternions to angles
         with self.__lock:
-            return euler_from_matrix(quaternion_matrix(self.__quat))
+            return quat2euler(self.__quat)
 
     def close(self):
         """ Cleanup socket """
@@ -339,11 +357,14 @@ def main():
     print(sys.argv[0] + " Version: " + __version__)
 
     if args.SIM_EXE:
-        emulate_myo_udp_exe(args.ADDR)
+        emulate_myo_udp_exe(args.ADDRESS)
     elif args.SIM_UNIX:
-        emulate_myo_unix(args.ADDR)
+        emulate_myo_unix(args.ADDRESS)
     elif args.RX_MODE:
-        MyoUdp(args.ADDR)
+        h = MyoUdp(args.ADDRESS)
+        l = inputs.DataLogger()
+        h.log_handlers = l.add_sample
+        h.connect()
 
 
 if __name__ == '__main__':

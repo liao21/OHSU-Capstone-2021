@@ -16,5 +16,6 @@ bluepy
 enum34
 h5py
 six
+transforms3d
 #serial
 #pygame

@@ -17,7 +17,9 @@ import numpy as np
 from inputs import myo
 from pattern_rec.feature_extract import feature_extract
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-
+from controls.plant import Plant
+from mpl.nfu import NfuUdp
+from mpl.unity import UnityUdp
 
 class Classifier:
     def __init__(self, training_data=None):
@@ -136,8 +138,14 @@ class TrainingData:
         except FileNotFoundError:
             print('No file exists to backup')
 
+# Setup devices and modules
 
-src = (myo.MyoUdp(source='//127.0.0.1:10001'), myo.MyoUdp(source='//127.0.0.1:15001'))
+# plant aka state machine
+filename = "../../WrRocDefaults.xml"
+plant = Plant(0.05, filename)
+
+# input (emg) device
+src = (myo.MyoUdp(source='//127.0.0.1:15001'), myo.MyoUdp(source='//127.0.0.1:15002'))
 for s in src:
     s.connect()
 data = TrainingData()
@@ -155,6 +163,10 @@ data.num_channels = 16
 c = Classifier(data)
 c.fit()
 
+# output destination
+data_sink = NfuUdp()
+# data_sink = UnityUdp() # (ip="192.168.137.1")
+data_sink.connect()
 
 while True:
 
@@ -199,23 +211,45 @@ while True:
         data.reset()
         c.fit()
 
-    elif choice == 'R':
+    elif choice.upper() == 'R':
         # run classifier:
 
         if c.classifier is None:
             continue
 
         for i in range(100):
-            time.sleep(0.02)
+            time.sleep(0.02)  # 50Hz
+
+            # Get features from emg data
             f = np.array([])
             for s in src:
                 f = np.append(f, feature_extract(s.get_data() * 0.01))
+            # format the data in a way that sklearn wants it
             f = np.squeeze(f)
             f = f.reshape(1, -1)
             out = c.classifier.predict(f)
             # print(out)
-            d = data.motion_names[out]
-            print(d)
+            class_decision = data.motion_names[out]
+            print(class_decision)
+
+            class_info = plant.class_map(class_decision)
+
+            gain = 0.2
+
+            # Set joint velocities
+            plant.new_step()
+            # set the mapped class
+            if class_info['IsGrasp']:
+                if class_info['GraspId'] is not None:
+                    plant.GraspId = class_info['GraspId']
+                plant.set_grasp_velocity(class_info['Direction'] * gain)
+            else:
+                plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * gain)
+
+            plant.update()
+
+            # transmit output
+            data_sink.send_joint_angles(plant.JointPosition)
 
     else:
         # print('Invalid Selection')

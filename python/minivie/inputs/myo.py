@@ -166,16 +166,18 @@ def connect(mac_addr, stream_addr, hci_interface):
             raise
 
 
-def manage_connection(mac_addr='C3:0A:EA:14:14:D9', stream_addr=('127.0.0.1', 15001), hci_interface='hci0'):
+def manage_connection(mac_addr='C3:0A:EA:14:14:D9', stream_addr=('127.0.0.1', 15001), hci_interface=0):
 
     while True:
 
         logging.debug('Running subprocess command: hcitool dev')
-        if hci_interface in subprocess.check_output(["hcitool", "dev"]):
-            logging.info('Found device: ' + hci_interface)
+        hci = 'hci' + str(hci_interface)
+        
+        if hci in subprocess.check_output(["hcitool", "dev"]):
+            logging.info('Found device: ' + hci)
             device_ok = True
         else:
-            logging.info('Device not found: ' + hci_interface)
+            logging.info('Device not found: ' + hci)
             device_ok = False
 
         while device_ok:
@@ -531,7 +533,8 @@ def main():
         h.log_handlers = l.add_sample
         h.connect()
     elif args.TX_MODE:
-        logging.basicConfig(file=args.IFACE + '_myo.log', level=logging.DEBUG)
+        f = 'hci'+ str(args.IFACE) + '_myo.log'
+        logging.basicConfig(filename=f, level=logging.DEBUG, format='%(asctime)s %(message)s')
         manage_connection(args.MAC, utilities.get_address(args.ADDRESS), args.IFACE)
 
     logging.info(sys.argv[0] + " Version: " + __version__)

@@ -8,20 +8,20 @@
 # 2016OCT05 Armiger: Created
 
 # Python 2 and 3:
+import logging
+from utilities import user_config
+user_config.setup_file_logging(prefix='MPL_')
 import time
 from six.moves import input
 import numpy as np
-import logging
 
 from inputs import myo
 import pattern_rec as pr
-from utilities import user_config
 from controls.plant import Plant, class_map
 from mpl.nfu import NfuUdp as Sink
 # from mpl.unity import UnityUdp as Sink
 
 # Setup devices and modules
-user_config.setup_file_logging(prefix='MPL_', log_level=logging.WARNING)
 
 # plant aka state machine
 filename = "../../WrRocDefaults.xml"

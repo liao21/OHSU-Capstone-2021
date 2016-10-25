@@ -17,7 +17,8 @@ import struct
 import numpy as np
 
 # set logging to DEBUG for diagnostics/development
-logging.basicConfig(level=logging.DEBUG)
+# Note this will override planned logging setting on import!!!
+# logging.basicConfig(level=logging.DEBUG)
 
 
 class NfuUdp:

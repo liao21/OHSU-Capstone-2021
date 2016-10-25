@@ -72,24 +72,28 @@ def setup_file_logging(prefix='MiniVIE_', log_level=logging.INFO):
     # WARNING 	An indication that something unexpected happened, or indicative of some problem in the near future
     # ERROR 	Due to a more serious problem, the software has not been able to perform some function.
     # CRITICAL 	A serious error, indicating that the program itself may be unable to continue running.
-    
+
+    # Notes:  The logging level specified as inputs maps to the verbosity of the log file.  The log level of the console
+    # is set to WARNING
+    # TODO: It's unclear why the setLevel for the file handler appear to have no effect
+
     # start message log
+    logger = logging.getLogger('')
+    logger.setLevel(log_level)
 
     # create file handler which logs debug messages
     file_path = '.'
     file_name = prefix + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
     fh = logging.FileHandler(os.path.join(file_path, file_name))
-    fh.setLevel(logging.INFO)
+    fh.setLevel(logging.DEBUG)
 
     # create console handler with a higher log level
     ch = logging.StreamHandler()
     ch.setLevel(logging.WARNING)
 
     # Set formatting
-    formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
-    # formatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
+    fh.setFormatter(logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s"))
+    ch.setFormatter(logging.Formatter("[%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s"))
 
     # add the handlers to logger
     logging.getLogger('').addHandler(fh)
@@ -97,9 +101,9 @@ def setup_file_logging(prefix='MiniVIE_', log_level=logging.INFO):
 
     # logging.basicConfig(filename='OpenNFU.log',format='%(asctime)s:%(levelname)s:%(message)s', \
     #                    level=numeric_level, datefmt='%m/%d/%Y %I:%M:%S %p')
-    logging.info('-----------------------------------------------')
-    logging.info('Starting Log File "{}" with level: {}'.format(file_name, logging.getLevelName(log_level)))
-    logging.info('-----------------------------------------------')
+    logging.critical('-----------------------------------------------')
+    logging.critical('Starting Log File "{}" with level: {}'.format(file_name, logging.getLevelName(log_level)))
+    logging.critical('-----------------------------------------------')
     logging.debug('DEBUG')
     logging.info('INFO')
     logging.warning('WARNING')

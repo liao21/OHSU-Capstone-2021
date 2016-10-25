@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 """
-Handle UDP communucations to Unity vMPL Environment
+Handle UDP communications to Unity vMPL Environment
 
 On construction, this class creates a communication port with the following
 optional input arguments:
@@ -20,9 +19,7 @@ Created on Sat Jan 23 20:36:50 2016
 
 @author: R. Armiger
 """
-# Initial pass and simulating MiniVIE processing using python so that this runs on an embedded device
-#
-# Created 1/23/2016 Armiger
+#TODO: Presently this is only one-way communication.  Receive sensor data
 
 import socket
 import binascii
@@ -52,12 +49,14 @@ class UnityUdp(object):
         elif len(values) == 7:
             values = values + 20 * [0.0]
         else:
+            logging.info('Invalid command size for send_joint_angles(): len=' + str(len(values)))
             return
 
         # Send data
+        logging.debug('Joint Command:')
+        logging.debug(["{0:0.2f}".format(i) for i in values[0:27]])
         packer = struct.Struct('27f')
         packed_data = packer.pack(*values)
-        logging.debug('Sending "%s"' % binascii.hexlify(packed_data), values)
         self.sock.sendto(packed_data, (self.UDP_IP, self.UDP_PORT))
 
     def close(self):

@@ -108,8 +108,9 @@ class NfuUdp:
                 # logging.debug('New data of length {} received'.format(len(data)))
 
             except socket.error as e:
-                logging.warning("Socket read error. Socket Closed?")
-                logging.warning(e)
+                msg = "NfuUdp Socket Error during recvfrom() on IP={} Port={}. Error: {}".format(
+                    self.udp['Hostname'], self.udp['TelemPort'], e)
+                logging.warning(msg)
                 return
 
             if len(data) == 36:

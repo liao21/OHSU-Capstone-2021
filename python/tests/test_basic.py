@@ -26,6 +26,9 @@ MyoUDPTrainer
 from controls import plant
 plant.main()
 
+import pattern_rec
+pattern_rec.test_feature_extract
+
 from mpl import roc
 roc.main()
 

@@ -13,7 +13,7 @@ import time
 import numpy as np
 
 from inputs.myo import MyoUdp
-from controls.plant import Plant
+from controls.plant import Plant, class_map
 from mpl.unity import UnityUdp
 from pattern_rec import training, feature_extract
 
@@ -38,6 +38,7 @@ def setup():
     # For MPL, this might be CPC Headstage, External Signal Acquisition, MyoBand, etc.
     # data_src = MyoUdp()#("192.168.1.3")
     data_src = MyoUdp(source='//127.0.0.1:15001', num_samples=20)  # ("192.168.1.3")
+    data_src.connect()
 
     # Training Data holds data labels 
     trainer = training.TrainingUdp()
@@ -77,7 +78,7 @@ def model(signal_source, signal_classifier, plant, data_sink, trainer, file):
     # feature vector should be [1,nChan*nFeat]
     # data ordering is as follows
     # [ch1f1, ch1f2, ch1f3, ch1f4, ch2f1, ch2f2, ch2f3, ch2f4, ... chNf4]
-    f = feature_extract.feature_extract(emg_data)
+    f = feature_extract(emg_data)
     print('%8.4f %8.4f %8.4f %8.4f' % (f[0, 0], f[0, 0], f[0, 0], f[0, 0]))
     # Classify
     w = signal_classifier[0]
@@ -93,7 +94,7 @@ def model(signal_source, signal_classifier, plant, data_sink, trainer, file):
     # Move joints using classifier
     gain = 2.0
     
-    class_info = plant.class_map(class_decision)
+    class_info = class_map(class_decision)
 
     # Set joint velocities
     plant.new_step()

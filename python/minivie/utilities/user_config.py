@@ -76,13 +76,13 @@ def setup_file_logging(prefix='MiniVIE_', loglevel=logging.INFO):
     # start message log
     file_name = prefix + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
     log_path = '.'
-        
+
     log_formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
     # log_formatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
     root_logger = logging.getLogger()
     root_logger.setLevel(loglevel)
 
-    file_handler = logging.FileHandler("{0}/{1}".format(log_path, file_name))
+    file_handler = logging.FileHandler(os.path.join(log_path, file_name))
     file_handler.setFormatter(log_formatter)
     root_logger.addHandler(file_handler)
 

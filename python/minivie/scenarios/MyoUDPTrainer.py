@@ -36,11 +36,11 @@ import errno
 import random
 import traceback
 
-from controls.plant import Plant
+from controls.plant import Plant, class_map
 from inputs.myo import MyoUdp
 from mpl.unity import UnityUdp
 # from TrainingUdp import TrainingUdp
-from pattern_rec.feature_extract import feature_extract
+from pattern_rec import feature_extract
 
 
 def unity_trainer(args):
@@ -559,6 +559,7 @@ class MyoUDPTrainer:
         self.verb = args.VERBOSE  # how much information output to the console
         self.pcycles = args.PREDICT  # how many cycles to predict for. setting to -1 means infinite cycles
         self.hMyo = MyoUdp()  # Signal Source get external bio-signal data
+        self.hMyo.connect()
         self.ROCFile = '../../WrRocDefaults.xml'  # ROC file for possible motion classes
         self.hPlant = Plant(self.dt,
                             self.ROCFile)  # Plant maintains current limb state (positions) during velocity control
@@ -755,7 +756,7 @@ class MyoUDPTrainer:
         # try:
         gain = 2.0
 
-        classInfo = self.hPlant.class_map(classDecision)
+        classInfo = class_map(classDecision)
 
         # Set joint velocities
         self.hPlant.new_step()

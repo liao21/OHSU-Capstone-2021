@@ -36,6 +36,52 @@ import mpl.roc as roc
 from utilities import user_config
 
 
+def class_map(class_name):
+    """ Map a pattern recognition class name to a joint command
+
+     The objective of this function is to decide how to interpret a class decision
+     as a movement action.
+
+     return JointId, Direction, IsGrasp, Grasp
+
+       'No Movement' is not necessary in dict_Joint with '.get default return
+     JointId, Direction = self.Joint.get(class_name,[ [], 0 ])
+    """
+    class_info = {'IsGrasp': 0, 'JointId': None, 'Direction': 0, 'GraspId': None}
+    mpl = MplJointEnum
+    # Map classes to joint id and direction of motion
+    # Class Name: IsGrasp, JointId, Direction, GraspId
+    class_lookup = {
+        'No Movement': [False, None, 0, None],
+        'Shoulder Flexion': [False, mpl.SHOULDER_FE, +1, None],
+        'Shoulder Extension': [False, mpl.SHOULDER_FE, -1, None],
+        'Shoulder Adduction': [False, mpl.SHOULDER_AB_AD, +1, None],
+        'Shoulder Abduction': [False, mpl.SHOULDER_AB_AD, -1, None],
+        'Humeral Internal Rotation': [False, mpl.HUMERAL_ROT, +1, None],
+        'Humeral External Rotation': [False, mpl.HUMERAL_ROT, -1, None],
+        'Elbow Flexion': [False, mpl.ELBOW, +1, None],
+        'Elbow Extension': [False, mpl.ELBOW, -1, None],
+        'Wrist Rotate In': [False, mpl.WRIST_ROT, +1, None],
+        'Wrist Rotate Out': [False, mpl.WRIST_ROT, -1, None],
+        'Wrist Adduction': [False, mpl.WRIST_AB_AD, +1, None],
+        'Wrist Abduction': [False, mpl.WRIST_AB_AD, -1, None],
+        'Wrist Flex In': [False, mpl.WRIST_FE, +1, None],
+        'Wrist Extend Out': [False, mpl.WRIST_FE, -1, None],
+        'Hand Open': [True, None, -1, None],
+        'Spherical Grasp': [True, None, +1, 'Spherical'],
+        'Tip Grasp': [True, None, +1, 'ThreeFingerPinch'],
+        'Point Grasp': [True, None, +1, 'Trigger(Drill)'],
+    }
+
+    if class_name in class_lookup:
+        class_info['IsGrasp'], class_info['JointId'], class_info['Direction'], class_info['GraspId'] = class_lookup[
+            class_name]
+    else:
+        logging.warning('Unmatched class name {}'.format(class_name))
+
+    return class_info
+
+
 class MplJointEnum(IntEnum):
     """
         Allows enumeration reference for joint angles
@@ -114,51 +160,6 @@ class Plant(object):
         self.GraspPosition = 0.0
         self.GraspVelocity = 0.0
 
-    def class_map(self, class_name):
-        # Map a pattern recognition class name to a joint command
-        #
-        # The objective of this function is to decide how to interpret a class decision
-        # as a movement action.
-        #
-        # return JointId, Direction, IsGrasp, Grasp
-        #
-        #   'No Movement' is not necessary in dict_Joint with '.get default return
-        # JointId, Direction = self.Joint.get(class_name,[ [], 0 ])
-
-        class_info = {'IsGrasp': 0, 'JointId': None, 'Direction': 0, 'GraspId': None}
-        mpl = MplJointEnum
-        # Map classes to joint id and direction of motion
-        # Class Name: IsGrasp, JointId, Direction, GraspId
-        class_lookup = {
-            'No Movement': [0, None, 0, None],
-            'Shoulder Flexion': [0, mpl.SHOULDER_FE, +1, None],
-            'Shoulder Extension': [0, mpl.SHOULDER_FE, -1, None],
-            'Shoulder Adduction': [0, mpl.SHOULDER_AB_AD, +1, None],
-            'Shoulder Abduction': [0, mpl.SHOULDER_AB_AD, -1, None],
-            'Humeral Internal Rotation': [0, mpl.HUMERAL_ROT, +1, None],
-            'Humeral External Rotation': [0, mpl.HUMERAL_ROT, -1, None],
-            'Elbow Flexion': [0, mpl.ELBOW, +1, None],
-            'Elbow Extension': [0, mpl.ELBOW, -1, None],
-            'Wrist Rotate In': [0, mpl.WRIST_ROT, +1, None],
-            'Wrist Rotate Out': [0, mpl.WRIST_ROT, -1, None],
-            'Wrist Adduction': [0, mpl.WRIST_AB_AD, +1, None],
-            'Wrist Abduction': [0, mpl.WRIST_AB_AD, -1, None],
-            'Wrist Flex In': [0, mpl.WRIST_FE, +1, None],
-            'Wrist Extend Out': [0, mpl.WRIST_FE, -1, None],
-            'Hand Open': [1, None, -1, None],
-            'Spherical Grasp': [1, None, +1, 'Spherical'],
-            'Tip Grasp': [1, None, +1, 'ThreeFingerPinch'],
-            'Point Grasp': [1, None, +1, 'Trigger(Drill)'],
-        }
-
-        if class_name in class_lookup:
-            class_info['IsGrasp'], class_info['JointId'], class_info['Direction'], class_info['GraspId'] = class_lookup[
-                class_name]
-        else:
-            logging.warning('Unmatched class name {}'.format(class_name))
-
-        return class_info
-
     def new_step(self):
         # set all velocities to 0 to prepare for a new timestep 
         # Typically followed by a call to setVelocity
@@ -232,7 +233,7 @@ def main():
     while time.time() < (time_begin + 1.5):  # main loop
         time.sleep(dt)
         class_name = 'Shoulder Flexion'
-        class_info = p.class_map(class_name)
+        class_info = class_map(class_name)
 
         # Set joint velocities
         p.new_step()
@@ -253,6 +254,8 @@ def main():
         # Print first 7 joints
         ang = ''.join('{:6.1f}'.format(k * 180 / math.pi) for k in p.JointPosition[:7])
         print('Angles (deg):' + ang + ' | Grasp Value: {:6.3f}'.format(p.GraspPosition))
+
+    class_map('Unmatched')
 
     sink.close()
 

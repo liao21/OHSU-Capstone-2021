@@ -68,6 +68,11 @@ def emulate_myo_udp_exe(destination='//127.0.0.1:10001'):
          Bytes 8-23: float [4]  quaternion (rotation)
          Bytes 24-35: float [3] accelerometer data, in units of g
          Bytes 36-47: float [3] gyroscope data, in units of deg / s
+
+    Revisions:
+        2016OCT23 Armiger: Created
+        2016OCT24 Armiger: changed randint behavior for python 27 compatibility
+
     """
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
@@ -77,11 +82,12 @@ def emulate_myo_udp_exe(destination='//127.0.0.1:10001'):
         while True:
             # generate random bytes matching the size of MyoUdp.exe streaming
             # Future: generate orientation data in valid range
-            #data = np.random.randint(255, size=48, dtype='uint8')
-            data = np.zeros(48, dtype='u1')
-            for idx, val in enumerate(data):
-                data[idx] = np.random.randint(255)
-            # print(data)
+
+            # dtyp of randint is invalid in numpt 1.8, python 2.7:
+            # data = np.random.randint(255, size=48, dtype='i1')
+            # TypeError: randint() got an unexpected keyword argument 'dtype'
+
+            data = np.random.randint(255, size=48).astype('int8')
             sock.sendto(data.tostring(), utilities.get_address(destination))
             time.sleep(0.005)  # 200Hz
     except KeyError:
@@ -103,6 +109,10 @@ def emulate_myo_unix(destination='//127.0.0.1:15001'):
     Example Usage from command prompt:
         python Myo.py -SIM_UNIX
         
+    Revisions:
+        2016OCT23 Armiger: Created
+        2016OCT24 Armiger: changed randint behavior for python 27 compatibility
+
     """
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
@@ -112,10 +122,10 @@ def emulate_myo_unix(destination='//127.0.0.1:15001'):
         while True:
             # generate random bytes matching the size of MyoUdp.exe streaming
             # Future: generate orientation data in valid range
-            vals = np.random.randint(255, size=16, dtype='uint8')
+            vals = np.random.randint(255, size=16).astype('uint8')
             sock.sendto(vals.tostring(), utilities.get_address(destination))
             time.sleep(0.005)  # 200Hz
-            vals = np.random.randint(255, size=16, dtype='uint8')
+            vals = np.random.randint(255, size=16).astype('uint8')
             sock.sendto(vals.tostring(), utilities.get_address(destination))
 
             # create synthetic orientation data
@@ -125,7 +135,7 @@ def emulate_myo_unix(destination='//127.0.0.1:15001'):
 
             # np.array(q, dtype=int16).tostring
 
-            vals = np.random.randint(255, size=20, dtype='uint8')
+            vals = np.random.randint(255, size=20).astype('uint8')
             sock.sendto(vals.tostring(), utilities.get_address(destination))
             time.sleep(0.005)  # 200Hz
 
@@ -151,7 +161,6 @@ class MyoUdp(object):
         # logging
         self.log_handlers = None
 
-
         # 8 channel max for myo armband
         self.__num_channels = 8
 
@@ -166,6 +175,11 @@ class MyoUdp(object):
 
         # UDP Port setup
         self.addr = utilities.get_address(source)
+
+        # Initialize connection parameters
+        self.__sock = None
+        self.__lock = None
+        self.__thread = None
 
     def connect(self):
 
@@ -193,8 +207,9 @@ class MyoUdp(object):
                 # recv call will error if socket closed on exit
                 data, address = self.__sock.recvfrom(1024)
             except socket.error as e:
-                print("Socket read error. Socket Closed?")
-                print(e)
+                msg = "MyoUdp Socket Error during recvfrom() on IP={} Port={}. Error: {}".format(
+                    self.addr[0], self.addr[1], e)
+                logging.warning(msg)
                 return
 
             if len(data) == 48:  # NOTE: This is the packet size for MyoUdp.exe
@@ -277,8 +292,10 @@ class MyoUdp(object):
     def close(self):
         """ Cleanup socket """
         logging.info("\n\nClosing MyoUdp Socket @ {}".format(self.addr))
-        self.__sock.close()
-        self.__thread.join()
+        if self.__sock is not None:
+            self.__sock.close()
+        if self.__thread is not None:
+            self.__thread.join()
 
 
 def interactive_startup():

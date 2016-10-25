@@ -1,3 +1,4 @@
+#!/usr/bin/python
 """
 0.0 Created on Sat Jan 23 20:39:30 2016
 0.1 Edited on Sun Apr 24 2016 - improved data byte processing, created __main__
@@ -23,6 +24,8 @@ contributor: W. Haris
 """
 
 from __future__ import with_statement  # 2.5 only
+import subprocess
+import argparse
 import os
 import sys
 import threading
@@ -31,6 +34,10 @@ import struct
 import time
 import logging
 import numpy as np
+import subprocess
+import logging
+import time
+from bluepy import btle
 from transforms3d.euler import quat2euler
 from types import *
 
@@ -38,14 +45,155 @@ if os.path.split(os.getcwd())[1] == 'inputs':
     sys.path.insert(0, os.path.abspath('..'))
 import inputs
 import utilities
-# from utilities.transformations import euler_from_matrix, quaternion_matrix
 
-__version__ = "1.0.0"
+
+__version__ = "2.0.0"
 
 # Scaling constants for MYO IMU Data
 MYOHW_ORIENTATION_SCALE = 16384.0
 MYOHW_ACCELEROMETER_SCALE = 2048.0
 MYOHW_GYROSCOPE_SCALE = 16.0
+
+
+class MyoDelegate(btle.DefaultDelegate):
+	def __init__(self, myo, sock, addr):
+		self.myo = myo
+		self.sock = sock
+		self.addr = addr
+		self.pCount = 0;
+		self.imuCount = 0;
+		self.battCount = 0;
+
+	def handleNotification(self, cHandle, data):
+		if cHandle == 0x2b: # EmgData0Characteristic
+			self.sock.sendto(data,self.addr)
+			#print('EMG: ' + data)
+			self.pCount += 2
+		elif cHandle == 0x2e: # EmgData1Characteristic
+			self.sock.sendto(data,self.addr)
+			self.pCount += 2
+		elif cHandle == 0x31: # EmgData2Characteristic
+			self.sock.sendto(data,self.addr)
+			self.pCount += 2
+		elif cHandle == 0x34: # EmgData3Characteristic
+			self.sock.sendto(data,self.addr)
+			self.pCount += 2
+		elif cHandle == 0x1c: # IMUCharacteristic
+			self.sock.sendto(data,self.addr)
+			#print('IMU: ' + data)
+			self.imuCount += 1
+		elif cHandle == 0x11: # BatteryCharacteristic
+			self.sock.sendto(data,self.addr)
+			print('Battery Level: {}'.format(ord(data)))
+			self.battCount += 1
+		else:
+			print('Got Unknown Notification: %d' % cHandle)
+            
+		return
+
+def setParameters( p ):
+	"function parameters"
+	#Notifications are unacknowledged, while indications are acknowledged. Notifications are therefore faster, but less reliable.
+	# Indication = 0x02; Notification = 0x01
+
+	# Setup main streaming:
+	p.writeCharacteristic(0x12, struct.pack('<bb', 1, 0), 1) # Un/subscribe from battery_level notifications
+	p.writeCharacteristic(0x24, struct.pack('<bb', 0, 0), 1) # Un/subscribe from classifier indications
+	p.writeCharacteristic(0x1d, struct.pack('<bb', 1, 0), 1) # Subscribe from imu notifications
+	p.writeCharacteristic(0x2c, struct.pack('<bb', 1, 0), 1) # Subscribe to emg data0 notifications
+	p.writeCharacteristic(0x2f, struct.pack('<bb', 1, 0), 1) # Subscribe to emg data1 notifications
+	p.writeCharacteristic(0x32, struct.pack('<bb', 1, 0), 1) # Subscribe to emg data2 notifications
+	p.writeCharacteristic(0x35, struct.pack('<bb', 1, 0), 1) # Subscribe to emg data3 notifications
+
+	## note: Default values indicated by [] below:
+	#[1]Should be for Classifer modes (00,01)
+	#[1]Should be for IMU modes (00,01,02,03,04,05)
+	#[1]Should be for EMG modes (00,02,03) **?can use value=1,4,5?
+	#[2]Should be for payload size 03
+	#[1]Should be for command 01
+	# 200Hz (default) streaming
+	p.writeCharacteristic(0x19, struct.pack('<bbbbb',1,3,3,1,0), 1) # Tell the myo we want EMG, IMU
+
+	# Custom Streaming
+	#p.writeCharacteristic(0x19, struct.pack('<bbbbbhbbhb',2,0xa,3,1,0,0x12c,0,0,0x32,0x62), 1) # Tell the myo we want EMG@300Hz, IMU@50Hz
+
+	# turn off sleep
+	p.writeCharacteristic(0x19, struct.pack('<bbb',9,1,1), 1)
+
+	return
+
+def connect(macAddr, streamAddr, hciInterface):
+
+    print("Connecting to: " + macAddr)
+    p = btle.Peripheral(macAddr, addrType=btle.ADDR_TYPE_PUBLIC , iface=hciInterface)
+    print("Done")
+
+    print("Setting Update Rate")
+    cmd = "sudo hcitool -i hci%d cmd 0x08 0x0013 40 00 06 00 06 00 00 00 90 01 00 00 07 00" % (hciInterface)
+    print(cmd)
+    subprocess.Popen(cmd, shell=True).wait()
+    print("Done")
+
+    setParameters(p)
+
+    # Setup Socket
+    s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    # Assign event handler
+    hDelegate = MyoDelegate(p,s,streamAddr)
+    p.withDelegate( hDelegate )
+
+    tStart = time.time()
+
+    tElapsed = 0.0;
+    while (1):
+        try:
+	        tNow = time.time()
+	        tElapsed = tNow - tStart
+	        p.waitForNotifications(1.0)
+	        if (tElapsed > 2.0):
+		        rate1 = hDelegate.pCount / tElapsed
+		        rate2 = hDelegate.imuCount / tElapsed
+		        print("Port: %d EMG: %4.1f Hz IMU: %4.1f Hz BattEvts: %d" % (streamAddr[1], rate1, rate2, hDelegate.battCount))
+		        tStart = tNow
+		        hDelegate.pCount = 0
+		        hDelegate.imuCount = 0
+        except:
+            print('Caught error. Closing UDP Connection')
+            s.close()
+            raise
+
+def manage_connection(macAddr='C3:0A:EA:14:14:D9', streamAddr=('127.0.0.1', 15001), hciInterface='hci0'):
+    logging.basicConfig(level=logging.DEBUG)
+
+
+    while True:
+
+        logging.debug('Running subprocess command: hcitool dev')
+        dev = subprocess.check_output(["hcitool", "dev"])
+
+        if "hci0" in dev:
+            logging.info('Found device: hci0')
+            device_ok = True
+        else:
+            logging.info('Device not found: hci0')
+            device_ok = False
+        
+        while device_ok:
+            try:
+                logging.info('Run connection here')
+                connect(macAddr,streamAddr,hciInterface)
+                
+            except KeyboardInterrupt:
+                logging.info('Got Keyboard Interrupt')
+                break
+            except btle.BTLEException:
+                logging.info('Device Disconnected')
+                break
+
+        time.sleep(1.0)
+
+    logging.info('Done')
 
 
 def emulate_myo_udp_exe(destination='//127.0.0.1:10001'):
@@ -368,7 +516,7 @@ def main():
     parser.add_argument('-u', '--SIM_UNIX', help='Run UNIX EMG Simulator', action='store_true')
     parser.add_argument('-rx', '--RX_MODE', help='set Myo to receive mode', action='store_true')
     parser.add_argument('-tx', '--TX_MODE', help='set Myo to transmit mode', action='store_true')
-    parser.add_argument('-m', '--MAC', help='Myo MAC address', default='D4:5F:B3:52:6C:25', )
+    parser.add_argument('-m', '--MAC', help='Myo MAC address', default='C3:0A:EA:14:14:D9', )
     parser.add_argument('-a', '--ADDRESS', help=r'Destination Address (e.g. //127.0.0.1:15001)',
                         default='//127.0.0.1:15001')
     parser.add_argument('-i', '--IFACE', help='hciX interface', default=0, type=int)
@@ -385,7 +533,11 @@ def main():
         l = inputs.DataLogger()
         h.log_handlers = l.add_sample
         h.connect()
+    elif args.TX_MODE:
+        manage_connection(args.MAC, utilities.get_address(args.ADDRESS), args.IFACE)
 
+        
 
 if __name__ == '__main__':
     main()
+

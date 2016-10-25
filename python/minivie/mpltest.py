@@ -30,7 +30,6 @@ def ping(host):
     # Ping
     return os.system("ping " + ping_str + " " + host) == 0
 
-
 # Show menu
 print(30 * '-')
 print("   M P L - T E S T ")

@@ -21,7 +21,7 @@ from mpl.nfu import NfuUdp as Sink
 # from mpl.unity import UnityUdp as Sink
 
 # Setup devices and modules
-user_config.setup_file_logging(prefix='MPL_', loglevel=logging.WARNING)
+user_config.setup_file_logging(prefix='MPL_', log_level=logging.WARNING)
 
 # plant aka state machine
 filename = "../../WrRocDefaults.xml"

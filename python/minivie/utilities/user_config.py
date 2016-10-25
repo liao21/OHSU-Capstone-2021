@@ -59,7 +59,7 @@ def get_user_config_var(key, default_value):
     return default_value
 
 
-def setup_file_logging(prefix='MiniVIE_', loglevel=logging.INFO):
+def setup_file_logging(prefix='MiniVIE_', log_level=logging.INFO):
     ######################
     # setup logging
     ######################
@@ -74,30 +74,40 @@ def setup_file_logging(prefix='MiniVIE_', loglevel=logging.INFO):
     # CRITICAL 	A serious error, indicating that the program itself may be unable to continue running.
     
     # start message log
+
+    # create file handler which logs debug messages
+    file_path = '.'
     file_name = prefix + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
-    log_path = '.'
+    fh = logging.FileHandler(os.path.join(file_path, file_name))
+    fh.setLevel(logging.INFO)
 
-    log_formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
-    # log_formatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
-    root_logger = logging.getLogger()
-    root_logger.setLevel(loglevel)
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.WARNING)
 
-    file_handler = logging.FileHandler(os.path.join(log_path, file_name))
-    file_handler.setFormatter(log_formatter)
-    root_logger.addHandler(file_handler)
+    # Set formatting
+    formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+    # formatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
 
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(log_formatter)
-    root_logger.addHandler(console_handler)
+    # add the handlers to logger
+    logging.getLogger('').addHandler(fh)
+    logging.getLogger('').addHandler(ch)
 
     # logging.basicConfig(filename='OpenNFU.log',format='%(asctime)s:%(levelname)s:%(message)s', \
     #                    level=numeric_level, datefmt='%m/%d/%Y %I:%M:%S %p')
     logging.info('-----------------------------------------------')
-    logging.info('Starting Log File "{}" with level: {}'.format(file_name, logging.getLevelName(loglevel)))
+    logging.info('Starting Log File "{}" with level: {}'.format(file_name, logging.getLevelName(log_level)))
+    logging.info('-----------------------------------------------')
+    logging.debug('DEBUG')
+    logging.info('INFO')
+    logging.warning('WARNING')
+    logging.error('ERROR')
+    logging.critical('CRITICAL')
     logging.info('-----------------------------------------------')
 
     '''
-    
     Code snip for parsing command line
 
     numeric_level = getattr(logging, loglevel.upper(), None)

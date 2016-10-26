@@ -1,4 +1,4 @@
 @echo off
-coverage run test_basic.py > test_output.txt
+coverage run test_basic.py
 coverage html
 pause

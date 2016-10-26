@@ -219,9 +219,15 @@ class MyoUdp(object):
             try:
                 # recv call will error if socket closed on exit
                 data, address = self.__sock.recvfrom(1024)
-            except socket.error as e:
+            except socket.timeout:
+                # the data stream has stopped.  don't break the thread, just continue to wait
+                msg = "MyoUdp timed out during recvfrom() on IP={} Port={}. Error: {}".format(
+                    self.addr[0], self.addr[1], socket.timeout)
+                logging.warning(msg)
+                continue
+            except socket.error:
                 msg = "MyoUdp Socket Error during recvfrom() on IP={} Port={}. Error: {}".format(
-                    self.addr[0], self.addr[1], e)
+                    self.addr[0], self.addr[1], socket.error)
                 logging.warning(msg)
                 return
 

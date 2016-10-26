@@ -81,10 +81,20 @@ while True:
         print("Exiting...")
         break
     if choice.upper() == 'P':
-        for idx, s in enumerate(src):
-            print('Source ' + str(idx))
-            print(s.get_data())
-            print('\n')
+        while True:
+            try:
+                time.sleep(0.02)  # 50Hz
+                f = np.array([])
+                for s in src:
+                    new_data = s.get_data()*0.01
+                    features = pr.feature_extract(new_data, zc_thresh, ssc_thresh, sample_rate)
+                    f = np.append(f, features)
+                f = f.tolist()
+                print(''.join(format(x, "6.2f") for x in f[0::4]))
+
+            except KeyboardInterrupt:
+                print('Stopping')
+                break
 
     elif choice.upper() == 'S':
         data.save()

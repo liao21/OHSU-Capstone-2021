@@ -16,6 +16,8 @@ import os
 import struct
 import numpy as np
 
+import mpl
+
 # set logging to DEBUG for diagnostics/development
 # Note this will override planned logging setting on import!!!
 # logging.basicConfig(level=logging.DEBUG)
@@ -105,8 +107,13 @@ class NfuUdp:
             try:
                 # recv call will error if socket closed on exit
                 data, address = self.__sock.recvfrom(8192)
-
                 # logging.debug('New data of length {} received'.format(len(data)))
+            except socket.timeout as e:
+                # the data stream has stopped.  don't break the thread, just continue to wait
+                msg = "NfuUdp timed out during recvfrom() on IP={} Port={}. Error: {}".format(
+                    self.udp['Hostname'], self.udp['TelemPort'], e)
+                logging.warning(msg)
+                continue
 
             except socket.error as e:
                 msg = "NfuUdp Socket Error during recvfrom() on IP={} Port={}. Error: {}".format(
@@ -144,10 +151,10 @@ class NfuUdp:
         logging.info('Joint Command:')
         logging.info(["{0:0.2f}".format(i) for i in values[0:27]])
 
-        # TODO: TEMP fix to lock middle finger and prevent drift
-        values[12] = 0.35
-        values[13] = 0.35
-        values[14] = 0.35
+        # TEMP fix to lock middle finger and prevent drift
+        # values[mpl.JointEnum.MIDDLE_MCP] = 0.35
+        # values[mpl.JointEnum.MIDDLE_PIP] = 0.35
+        # values[mpl.JointEnum.MIDDLE_DIP] = 0.35
 
         # msg_id = 1
 
@@ -183,8 +190,8 @@ class NfuUdp:
         # msgUpdateParam - Create encoded byte array for parameter message to OpenNFU
         #
         # Function supports a parameter name up to 127 characters and a matrix variable
-        #   as a single precision floating point variable.  Matrix dimentions are calculated
-        #   internally and transmited as part of message
+        #   as a single precision floating point variable.  Matrix dimensions are calculated
+        #   internally and transmitted as part of message
         #
         # Translated from MATLAB to Python by David Samson on 9/23/16
         # Armiger simplified and tested 9/27/16

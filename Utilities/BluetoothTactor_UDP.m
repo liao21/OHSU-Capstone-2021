@@ -13,7 +13,7 @@ classdef BluetoothTactor_UDP < handle
         tactorVals = [0 0 0 0 0];
     end
     methods
-        function obj = BluetoothTactor_UDP(udpIPAndPort, maxAngleInput)
+        function obj = BluetoothTactor_UDP(udpIPAndPort)
             % Constructor.  Provide a string based name for the com port
             % (e.g. COM5)
             if nargin > 0
@@ -24,10 +24,6 @@ classdef BluetoothTactor_UDP < handle
                 catch
                     warning('invalid IP and port, using localhost:12001');
                 end
-            end
-            
-            if nargin > 1
-                obj.maxAngle = maxAngleInput;
             end
             
         end

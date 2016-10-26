@@ -2,8 +2,8 @@
 % 192.168.1.1:12001 - ServoUDP
 % 192.168.1.1:8089
 % VibroUDP or TactorUDP
-TactorPort = '169.254.173.160:12001'; 
-TactorType = 'VibroUDP';
+TactorPort = '192.168.1.1:12001'; 
+TactorType = 'ServoUDP';
 
 switch TactorType
     case 'ServoUDP'
@@ -24,11 +24,11 @@ hTactors.transmit
 obj = WirelessFingerTPS.getInstance;
 
 % get input linearization ranges
-minMaxSensor.thumb = [300 500];
-minMaxSensor.index = [300 500];
-minMaxSensor.middle = [300 500];
-minMaxSensor.ring = [300 500];
-minMaxSensor.little = [300 500];
+minMaxSensor.thumb = [200 10000];
+minMaxSensor.index = [200 10000];
+minMaxSensor.middle = [200 10000];
+minMaxSensor.ring = [200 10000];
+minMaxSensor.little = [200 10000];
 
 % this is the output range
 minMaxTactor = [0 255];
@@ -44,33 +44,27 @@ littleSensor = 5;
 
 
 StartStopForm([])
-keepIndices = 1:6;
-collectedMinMax = [inf(1, length(keepIndices)); zeros(1, length(keepIndices))];
 
 while StartStopForm
     drawnow
     
     sensorData = obj.getdata(); % returns 12x1
     % do some mapping
-    outputData = sensorData(keepIndices);
-    disp(outputData');
-    
-    collectedMinMax(1, :) = min([outputData'; collectedMinMax(1, :)], [], 1);
-    collectedMinMax(2, :) = max([outputData'; collectedMinMax(2, :)], [], 1);
+    outputData = sensorData(1:5);
     
     % bound the input vals from 0 to 1
-    outputData(thumbSensor) = (outputData(thumbSensor) - minMaxSensor.thumb(1)) ./ diff(minMaxSensor.thumb);
-    outputData(indexSensor) = (outputData(indexSensor) - minMaxSensor.index(1)) ./ diff(minMaxSensor.index);
-    outputData(middleSensor) = (outputData(middleSensor) - minMaxSensor.middle(1)) ./ diff(minMaxSensor.middle);
-    outputData(ringSensor) = (outputData(ringSensor) - minMaxSensor.ring(1)) ./ diff(minMaxSensor.ring);
-    outputData(littleSensor) = (outputData(littleSensor) - minMaxSensor.little(1)) ./ diff(minMaxSensor.little);
+    outputData(thumbSensor) = (outputData(thumbSensor) - minMax.thumb(1)) ./ diff(minMax.thumb);
+    outputData(indexSensor) = (outputData(indexSensor) - minMax.index(1)) ./ diff(minMax.index);
+    outputData(middleSensor) = (outputData(middleSensor) - minMax.middle(1)) ./ diff(minMax.middle);
+    outputData(ringSensor) = (outputData(ringSensor) - minMax.ring(1)) ./ diff(minMax.ring);
+    outputData(littleSensor) = (outputData(littleSensor) - minMax.little(1)) ./ diff(minMax.little);
     
     % now bound everything to minMaxTactor bounds
-    outputData = max(min(outputData, 1), 0) * diff(minMaxTactor) + minMaxTactor(1);
-%     disp(outputData');
+    outputData = max(min(outputData, 1), 0) * diff(minMaxTactor) + minMaxTactor(0);
+    disp(outputData');
    
     % do some range checking
-    hTactors.tactorVals = outputData([littleSensor, ringSensor, middleSensor, indexSensor, thumbSensor]);
+    hTactors.tactorVals = outputData([thumbSensor, indexSensor, middleSensor, ringSensor, littleSensor]);
     hTactors.transmit();
     
     pause(0.02)
@@ -78,12 +72,4 @@ while StartStopForm
 end
 
 %% hTactors
-try
 hTactors.close
-end
-try
-obj.close
-end
-save('collectedMinMax', 'collectedMinMax');
-unloadlibrary('PPSDaq');
-run('cleanup.m');

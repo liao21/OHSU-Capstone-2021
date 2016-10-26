@@ -32,8 +32,7 @@ classdef WirelessFingerTPS < handle
         libWarnings = '';        
     end
     properties (Constant = true)
-        % CHANGE BY LMC: 'PPSDaq' to 'PPSDaq.dll'
-        libName = 'PPSDaq'; %'PPSDaq';
+        libName = 'PPSDaq';
         configfile = 'fingertps-05bc.cfg';
         
         % Index of each sensor value from TPS
@@ -232,7 +231,6 @@ classdef WirelessFingerTPS < handle
         function close(obj)
             calllib(obj.libName,'ppsStop');
             obj.WirelesstpsState = 0;
-%             unloadlibrary('PPSDaq');
         end
     end
 end

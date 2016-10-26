@@ -1,11 +1,12 @@
-from setuptools import setup
+from distutils.core import setup
 
 setup(
-   name='MiniVIE',
-   version='0.1',
-   description='Python based Mini Virtual Integration Environment',
-   author='Robert Armiger',
-   author_email='robert.armiger@jjuapl.edu',
-   packages=['minivie'],  #same as name
-   install_requires=['bluepy', 'numpy'], #external packages as dependencies
+    name='MiniVIE',
+    version='1.0.0',
+    description='Python-based Mini Virtual Integration Environment',
+    packages=['', 'mpl', 'inputs', 'controls', 'scenarios', 'utilities', 'pattern_rec'],
+    url='http://www.bitbucket.org/rarmiger/minivie',
+    author='Robert Armiger',
+    author_email='robert[dot]armiger[a]jhuapl_edu',
+    install_requires=['bluepy', 'numpy'], #external packages as dependencies
 )

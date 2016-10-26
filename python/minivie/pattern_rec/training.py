@@ -14,11 +14,12 @@ import threading
 import socket
 VERBOSE = 0
 
+
 class TrainingUdp(object):
     """ Class for receiving Training Commands data via UDP"""
-    def __init__(self, UDP_IP="127.0.0.1", UDP_PORT=3003):
-        self.UDP_IP = UDP_IP
-        self.UDP_PORT = UDP_PORT
+    def __init__(self, ip="127.0.0.1", port=3003):
+        self.UDP_IP = ip
+        self.UDP_PORT = port
         print("TrainingUdp target IP:", self.UDP_IP)
         print("TrainingUdp target port:", self.UDP_PORT)
 
@@ -26,9 +27,10 @@ class TrainingUdp(object):
         self.class_id = -1
         self.class_name = ""
 
-        self.sock = socket.socket(socket.AF_INET, # Internet
-                                  socket.SOCK_DGRAM)   # UDP
-        self.sock.bind((UDP_IP, UDP_PORT))
+        self.sock = socket.socket(socket.AF_INET,       # Internet
+                                  socket.SOCK_DGRAM)    # UDP
+        self.sock.bind((ip, port))
+        self.sock.settimeout(3.0)
 
         self.lock = threading.Lock()
         
@@ -63,6 +65,6 @@ class TrainingUdp(object):
                 
     def close(self):
         """ Cleanup socket """
-        print("Closing TrainingUdp Socket IP={} Port={}".format(self.UDP_IP,self.UDP_PORT) )
+        print("Closing TrainingUdp Socket IP={} Port={}".format(self.UDP_IP, self.UDP_PORT))
         self.sock.close()
         self.thread.join()

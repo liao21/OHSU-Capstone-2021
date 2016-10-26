@@ -8,5 +8,5 @@ file = "OpenNfuMain.py"
 with open(file) as fp:
     for i, line in enumerate(fp):
         if "\xe2" in line:
-            print i, repr(line)
+            print(i, repr(line))
 

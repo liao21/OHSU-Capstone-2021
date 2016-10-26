@@ -15,12 +15,6 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
         TactorType = '';
         hTactors = [];
         
-        DemoMyoElbow = 0;
-        DemoMyoShoulder = 0;
-        DemoMyoShoulderLeft = 0;
-        
-        Fref = eye(4);
-        
     end
     methods
         function obj = MplVulcanX
@@ -37,21 +31,24 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             
             % tactor initialization ************************************
             obj.TactorPort = UserConfig.getUserConfigVar('TactorComPort','');
-            obj.TactorType = UserConfig.getUserConfigVar('TactorType','');
+            obj.TactorType = UserConfig.getUserConfigVar('TactorType', '');
             
-            switch obj.TactorType
-                case 'ServoUDP'
-                    obj.hTactors = BluetoothTactor_UDP(obj.TactorPort);
-                case 'VibroUDP'
-                    obj.hTactors = TactorUdp(obj.TactorPort);
-                case 'VibroBluetooth'
-                    obj.hTactors = BluetoothTactor(obj.TactorPort);
+%             if any(obj.TactorPort == ':') % this is a IP:port
+%                 obj.hTactors = BluetoothTactor_UDP(obj.TactorPort);
+%             else
+%                 obj.hTactors = BluetoothTactor(obj.TactorPort);
+%             end
+            
+            % either send servo info to servo vibro (bottom)
+            if ~any(obj.TactorPort == ':') % this is a COM port
+                obj.hTactors = BluetoothTactor(obj.TactorPort);
+            elseif isequal(lower(obj.TactorType), 'vibroudp')
+                obj.hTactors = TactorUdp(obj.TactorPort);
+            else
+                obj.hTactors = BluetoothTactor_UDP(obj.TactorPort);
             end
-            obj.hTactors.initialize();
             
-            obj.DemoMyoElbow = str2double(UserConfig.getUserConfigVar('myoElbowEnable','0'));
-            obj.DemoMyoShoulder = str2double(UserConfig.getUserConfigVar('myoElbowShoulder','0'));
-            obj.DemoMyoShoulderLeft = str2double(UserConfig.getUserConfigVar('myoElbowShoulderLeft','0'));
+            obj.hTactors.initialize();
             
         end
         function close(obj)
@@ -64,9 +61,6 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 obj.hSink.close();
             end
             
-            try
-                obj.ArmStateModel.saveTempState()
-            end
         end
         
         function update(obj)
@@ -98,41 +92,35 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             %       - if it's a whole arm roc, it should overwrite the
             %       upper arm joint values
             
-            mplAngles = obj.getArmAngles();
+            m = obj.ArmStateModel;
+            rocValue = m.structState(m.RocStateId).Value;
+            rocId = m.structState(m.RocStateId).State;
+            if isa(rocId,'Controls.GraspTypes')
+                % convert char grasp class name (e.g. 'Spherical') to numerical mpl
+                % grasp value (e.g. 7)
+                rocId = MPL.GraspConverter.graspLookup(rocId);
+            end
             
-            if obj.DemoMyoElbow
-                % Demo for using myo band for elbow angle
-                try
-                    ang = obj.SignalSource.getEulerAngles;
-                    EL = ang(2) + 90;
-                    EL = EL * pi/180;
-                    mplAngles(4) = EL;
-                end
+            mplAngles = zeros(1,27);
+            mplAngles(1:7) = [m.structState(1:7).Value];
+            
+            % Generate vulcanX message.  If local roc table exists, use it
+            
+            % check bounds
+            rocValue = max(min(rocValue,1),0);
+            % lookup the Roc id and find the right table
+            iEntry = (rocId == [obj.RocTable(:).id]);
+            if sum(iEntry) < 1
+                error('Roc Id %d not found',rocId);
+            elseif sum(iEntry) > 1
+                warning('More than 1 Roc Tables share the id # %d',rocId);
+                roc = obj.RocTable(find(iEntry,1,'first'));
+            else
+                roc = obj.RocTable(iEntry);
             end
-            if obj.DemoMyoShoulder
-                
-                R = obj.SignalSource.getRotationMatrix();
-                F = [R [0; 0; 0]; 0 0 0 1];
-                
-                if isequal(obj.Fref, eye(4))
-                    % set offset the first time
-                    obj.Fref = F;
-                end
-                
-                newXYZ = LinAlg.decompose_R(pinv(obj.Fref)*F);
-                
-                if obj.DemoMyoShoulderLeft
-                    % left side angle decomposition
-                    mplAngles(1) = -newXYZ(3) * pi / 180;
-                    mplAngles(2) = -newXYZ(2) * pi / 180;
-                    mplAngles(3) = -newXYZ(1) * pi / 180;
-                else
-                    % right side angle decomposition
-                    mplAngles(1) = newXYZ(3) * pi / 180;
-                    mplAngles(2) = -newXYZ(2) * pi / 180;
-                    mplAngles(3) = newXYZ(1) * pi / 180;
-                end
-            end
+            
+            % perform local interpolation
+            mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
             
             obj.hSink.putData(mplAngles);
             
@@ -144,12 +132,10 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 % percepts will be sent to the local port
                 percepts = obj.hSink.getPercepts; %gets latest packets
             catch ME
-                warning('MplVulcanXSink:badPercepts','MplVulcanXSink.getPercepts FAILED: %s',...
-                    ME.message);
-                return
+                warning('MplVulcanX:NoPercepts',ME.message);
             end
             
-            if ~isempty(obj.TactorPort) && ~isempty(percepts)
+            if ~isempty(obj.TactorPort)
                 % parse the percept packet
                 
                 % this function does two things: transfer function of
@@ -169,8 +155,8 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 % function
                 
                 if obj.Verbose
-                    fprintf('MPL Percepts: LittleMCP=%6.3f | RingMCP=%6.3f | MiddleMCP=%6.3f | IndexMCP=%6.3f | ThumbMCP=%6.3f\n',...
-                        littleSensorVal,ringSensorVal,middleSensorVal,indexSensorVal,thumbSensorVal);
+                fprintf('MPL Percepts: LittleMCP=%6.3f | RingMCP=%6.3f | MiddleMCP=%6.3f | IndexMCP=%6.3f | ThumbMCP=%6.3f\n',...
+                    littleSensorVal,ringSensorVal,middleSensorVal,indexSensorVal,thumbSensorVal);
                 end
                 % start sensor to tactor command map
                 thumbSensorLowHigh = [0.1 0.2];
@@ -202,11 +188,11 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 
                 % send tactor commands to device
                 obj.hTactors.tactorVals = double(round(tactorVals));
+%                 disp(tactorVals)
                 
-                if strcmp(obj.TactorType,'VibroUDP')
-                    obj.hTactors.transmit()
+                if isequal(lower(obj.TactorType), 'vibroudp')
+                    obj.hTactors.transmit;
                 end
-                
             end
         end
     end

@@ -77,8 +77,6 @@ classdef MplVulcanXSink < MPL.MplSink
                 error('mplAngles out of range.  Expected all values to be from -pi to pi')
             end
             
-            mplAngles = obj.enforceLimits(mplAngles);
-            
             % generate MUD message using joint angles
             %             % 0 to 256 for upper arm (256 is off)
             %             % upper arm around 40
@@ -93,12 +91,7 @@ classdef MplVulcanXSink < MPL.MplSink
             %
             %             % 15.5
             %             % 15.
-
-            imp = [40*ones(1,4) 40*ones(1,3) 0.5*ones(1,20)];
-            
-            % Impedance Command
-            msg = obj.hMud.AllJointsPosVelImpCmd(mplAngles(1:7),zeros(1,7),mplAngles(8:27),zeros(1,20),imp);
-            
+            %             msg = obj.hMud.AllJointsPosVelImpCmd(mplAngles(1:7),zeros(1,7),mplAngles(8:27),zeros(1,20),imp);
             
             % Non - impendance command
             msg = obj.hMud.AllJointsPosVelCmd(mplAngles(1:7),zeros(1,7),mplAngles(8:27),zeros(1,20));
@@ -146,22 +139,10 @@ classdef MplVulcanXSink < MPL.MplSink
                 end
             end
             
-            if isempty(packets)
-                warning('Unable to get percept data on port %d. Check VulcanX. Check Firewall.',...
-                    obj.MplLocalPort);
-                data = [];
-                return
-            end
+            assert(~isempty(packets),'Unable to get percept data on port %d. Check VulcanX. Check Firewall.',obj.MplLocalPort);
             
             % convert packets to percept struct
             data = extract_mpl_percepts_v2(packets);
-            
-            if isempty(data)
-                warning('Unable to convert percept packet data.');
-                data = [];
-                return
-            end
-            
             armDegrees = round(data.jointPercepts.position(1:7) * 180 / pi);
             if obj.Verbose
                 fprintf(['[%s] Arm Angles: SHFE=%6.1f | SHAA=%6.1f | HUM=%6.1f'...

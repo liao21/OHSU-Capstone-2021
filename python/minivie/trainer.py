@@ -38,8 +38,8 @@ while True:
     print(" S. Save File")
     print(" X. Reset File")
     print(30 * '-')
-    for idx, val in enumerate(data.motion_names):
-        print("{:2d}. {} [{}]".format(idx+1, val, data.get_totals(idx)))
+    for idx, val in enumerate(vie.TrainingData.motion_names):
+        print("{:2d}. {} [{}]".format(idx+1, val, vie.TrainingData.get_totals(idx)))
     print(30 * '-')
     print(" 0. Exit")
     print(30 * '-')

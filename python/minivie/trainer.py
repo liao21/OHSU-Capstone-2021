@@ -132,7 +132,7 @@ while True:
                 try:
                     out = int(c.classifier.predict(f))
                 except ValueError as e:
-                    logging.warning('Unable to classify. Error was: ' + e)
+                    logging.warning('Unable to classify. Error was: ' + str(e))
                     break
 
                 class_decision = data.motion_names[out]
@@ -189,7 +189,8 @@ while True:
         c.fit()
         pass
 
+# cleanup
 for s in src:
     s.close()
-
+data_sink.close()
 print("Done")

@@ -108,20 +108,21 @@ def model(vie):
 
     class_info = class_map(class_decision)
 
-    grasp_gain = 2.0
-    joint_gain = 2.0
+    grasp_gain = 1.4
+    joint_gain = 1.4
 
     # Set joint velocities
     vie.Plant.new_step()
+
     # set the mapped class
     if class_info['IsGrasp']:
         if class_info['GraspId'] is not None:
             vie.Plant.GraspId = class_info['GraspId']
-            vie.Plant.set_grasp_velocity(class_info['Direction'] * grasp_gain)
+        vie.Plant.set_grasp_velocity(class_info['Direction'] * grasp_gain)
     else:
         vie.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * joint_gain)
 
-        vie.Plant.update()
+    vie.Plant.update()
 
     # transmit output
     vie.DataSink.send_joint_angles(vie.Plant.JointPosition)

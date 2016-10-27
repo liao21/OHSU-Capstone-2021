@@ -106,7 +106,8 @@ while True:
                 if dt > time_elapsed:
                     time.sleep(dt - time_elapsed)
                 else:
-                    print("Timing Overload")
+                    #print("Timing Overload: {}".format(time_elapsed))
+                    pass
 
             except KeyboardInterrupt:
                 print('Stopping')

@@ -140,8 +140,8 @@ while True:
 
                 class_info = class_map(class_decision)
 
-                graspGain = 1.2
-                jointGain = 2.2
+                graspGain = 1.9
+                jointGain = 1.9
 
                 # Set joint velocities
                 plant.new_step()

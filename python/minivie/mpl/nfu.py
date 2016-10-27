@@ -264,7 +264,7 @@ class NfuUdp:
         msg['busVoltage'] = msg['busVoltageCounts'].astype(float) / 148.95
 
         if self.param['echoHeartbeat']:
-            logging.debug('NFU: V = {:6.2f} State= {} Msgs: CPC={:4d} Stream: NFU={} LC={} CPC={}'.format(
+            logging.info('NFU: V = {:6.2f} State= {} Msgs: CPC={:4d} Stream: NFU={} LC={} CPC={}'.format(
                 msg['busVoltage'], msg['strState'], msg['numMsgs'], msg['nfuStreaming'], msg['lcStreaming'],
                 msg['cpchStreaming']))
 

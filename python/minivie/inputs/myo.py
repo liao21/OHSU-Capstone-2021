@@ -293,6 +293,11 @@ class MyoUdp(object):
 
                     # print(self.__quat)
 
+            elif len(data) == 1:  # BATT Value
+                with self.__lock:
+                    msg = 'Battery Level: {}'.format(ord(data))
+                    logging.info(msg)
+
             else:
                 # incoming data is not of length = 8, 20, 40, or 48
                 logging.warning('MyoUdp: Unexpected packet size. len=({})'.format(len(data)))

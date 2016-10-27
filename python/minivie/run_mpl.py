@@ -3,102 +3,42 @@
 from __future__ import with_statement  # 2.5 only
 import logging
 import time
-import numpy as np
 import utilities
+from scenarios import mpl_nfu
 
 __version__ = "1.0.0"
 
 
 def run():
-
-    from inputs import myo
-    import pattern_rec as pr
-    from controls.plant import Plant, class_map
-    from mpl.nfu import NfuUdp as Sink
-
     # Setup devices and modules
+    vie = mpl_nfu.setup()
 
-    # plant aka state machine
-    filename = "../../WrRocDefaults.xml"
-    plant = Plant(0.02, filename)
-
-    # input (emg) device
-    # select either 1 or 2 myo bands
-    src = (myo.MyoUdp(source='//127.0.0.1:15001'), myo.MyoUdp(source='//127.0.0.1:15002'))
-    # src = [myo.MyoUdp(source='//127.0.0.1:15001')]
-    num_channels = 0
-    for s in src:
-        s.connect()
-        num_channels += 8
-
-    # training data manager
-    data = pr.TrainingData()
-    data.load()
-
-    data.num_channels = num_channels
-
-    c = pr.Classifier(data)
-    c.fit()
-
-    zc_thresh = 0.0
-    ssc_thresh = 0.0
-    sample_rate = 200
-
-    # output destination
-    data_sink = Sink()
-    data_sink.connect()
+    dt = 0.02
 
     # ##########################
     # Run the control loop
     # ##########################
     while True:
         try:
-            time.sleep(0.02)  # 50Hz
+            # Fixed rate loop.  get start time, run model, get end time; delay for duration
+            time_begin = time.time()
 
-            # Get features from emg data
-            f = np.array([])
-            for s in src:
-                new_data = s.get_data() * 0.01
-                features = pr.feature_extract(new_data, zc_thresh, ssc_thresh, sample_rate)
-                f = np.append(f, features)
-            # format the data in a way that sklearn wants it
-            f = np.squeeze(f)
-            f = f.reshape(1, -1)
-            try:
-                out = int(c.classifier.predict(f))
-            except ValueError as e:
-                logging.warning('Unable to classify. Error was: ' + str(e))
-                break
+            # Run the actual model
+            mpl_nfu.model(vie)
 
-            class_decision = data.motion_names[out]
-            logging.info(class_decision)
-
-            class_info = class_map(class_decision)
-
-            grasp_gain = 1.2
-            joint_gain = 2.2
-
-            # Set joint velocities
-            plant.new_step()
-            # set the mapped class
-            if class_info['IsGrasp']:
-                if class_info['GraspId'] is not None:
-                    plant.GraspId = class_info['GraspId']
-                plant.set_grasp_velocity(class_info['Direction'] * grasp_gain)
+            time_end = time.time()
+            time_elapsed = time_end - time_begin
+            if dt > time_elapsed:
+                time.sleep(dt - time_elapsed)
             else:
-                plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * joint_gain)
-
-            plant.update()
-
-            # transmit output
-            data_sink.send_joint_angles(plant.JointPosition)
+                print("Timing Overload: {}".format(time_elapsed))
 
         except BaseException as e:
             logging.warning('Stopping mpl execution with error: ' + str(e))
             # cleanup
-            for s in src:
+            for s in vie.SignalSource:
                 s.close()
-            data_sink.close()
+            vie.DataSink.close()
             logging.warning("Finished exception cleanup")
 
             raise

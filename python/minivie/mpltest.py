@@ -18,7 +18,6 @@ from mpl.nfu import NfuUdp
 import mpl.roc as roc
 
 
-
 # Show menu
 print(30 * '-')
 print("   M P L - T E S T ")

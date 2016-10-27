@@ -72,8 +72,8 @@ def setup():
     vie.TrainingData.num_channels = num_channels
 
     # Classifier parameters
-    classifier = pr.Classifier(vie.TrainingData)
-    classifier.fit()
+    vie.SignalClassifier = pr.Classifier(vie.TrainingData)
+    vie.SignalClassifier.fit()
 
     # Plant maintains current limb state (positions) during velocity control
     vie.Plant = Plant(dt, filename)

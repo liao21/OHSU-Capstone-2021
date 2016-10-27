@@ -12,23 +12,12 @@ import time
 import numpy as np
 from builtins import input
 
+import utilities
 from mpl.nfu import NfuUdp
 # from mpl.unity import UnityUdp
 import mpl.roc as roc
 
 
-def ping(host):
-    """
-    Returns True if host responds to a ping request
-    """
-    import os
-    import platform
-
-    # Ping parameters as function of OS
-    ping_str = "-n 1" if platform.system().lower() == "windows" else "-c 1"
-
-    # Ping
-    return os.system("ping " + ping_str + " " + host) == 0
 
 # Show menu
 print(30 * '-')
@@ -61,8 +50,8 @@ if choice == 1:
 
     result = 0
     while not result:
-        result = ping('192.168.1.111')
-        # result = ping('127.0.0.1')
+
+        result = utilities.ping('192.168.1.111')
     print(result)
 elif choice == 2:
     print("Starting MPL Wrist...")

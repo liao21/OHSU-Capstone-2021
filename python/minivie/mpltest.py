@@ -11,6 +11,7 @@
 import time
 import numpy as np
 from builtins import input
+import logging
 
 import utilities
 from mpl.nfu import NfuUdp
@@ -99,6 +100,7 @@ elif choice == 3:
             time.sleep(0.02)
     hSink.close()
 elif choice == 4:
+    logging.basicConfig(level=logging.INFO)
     hSink = NfuUdp()
     hSink.connect()
     time.sleep(5)

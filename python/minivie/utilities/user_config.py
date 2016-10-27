@@ -85,7 +85,8 @@ def setup_file_logging(prefix='MiniVIE_', log_level=logging.INFO):
     file_path = '.'
     file_name = prefix + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
     fh = logging.FileHandler(os.path.join(file_path, file_name))
-    fh.setLevel(logging.DEBUG)
+    #fh.setLevel(logging.DEBUG)
+    fh.setLevel(logging.INFO)
 
     # create console handler with a higher log level
     ch = logging.StreamHandler()

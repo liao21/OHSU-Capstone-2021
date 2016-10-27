@@ -25,7 +25,8 @@ from mpl.nfu import NfuUdp as Sink
 
 # plant aka state machine
 filename = "../../WrRocDefaults.xml"
-plant = Plant(0.02, filename)
+dt = 0.02
+plant = Plant(dt, filename)
 
 # input (emg) device
 # select either 1 or 2 myo bands
@@ -118,7 +119,7 @@ while True:
         # ##########################
         while True:
             try:
-                time.sleep(0.02)  # 50Hz
+                time_begin = time.time()
 
                 # Get features from emg data
                 f = np.array([])
@@ -157,6 +158,13 @@ while True:
 
                 # transmit output
                 data_sink.send_joint_angles(plant.JointPosition)
+
+                time_end = time.time()
+                time_elapsed = time_end - time_begin
+                if dt > time_elapsed:
+                    time.sleep(dt-time_elapsed)
+                else:
+                    print("Timing Overload: {}".format(time_elapsed))
 
             except KeyboardInterrupt:
                 print('Stopping')

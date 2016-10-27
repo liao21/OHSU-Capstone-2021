@@ -62,6 +62,8 @@ class NfuUdp:
         # Create threadsafe lock
         self.__lock = threading.Lock()
 
+        self.timeout_count = 0
+
         # wait
         time.sleep(0.5)
 
@@ -113,6 +115,10 @@ class NfuUdp:
                 msg = "NfuUdp timed out during recvfrom() on IP={} Port={}. Error: {}".format(
                     self.udp['Hostname'], self.udp['TelemPort'], e)
                 logging.warning(msg)
+                self.timeout_count += 1
+                if self.timeout_count > 1:
+                    raise Exception('MPL Connection Lost')
+
                 continue
 
             except socket.error as e:
@@ -120,6 +126,8 @@ class NfuUdp:
                     self.udp['Hostname'], self.udp['TelemPort'], e)
                 logging.warning(msg)
                 return
+
+            self.timeout_count = 0
 
             if len(data) == 36:
                 with self.__lock:

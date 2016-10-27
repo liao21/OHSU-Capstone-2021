@@ -103,7 +103,11 @@ elif choice == 4:
     logging.basicConfig(level=logging.INFO)
     hSink = NfuUdp()
     hSink.connect()
-    time.sleep(5)
+    while True:
+        try:
+            time.sleep(2)
+        except KeyboardInterrupt:
+            break
 
     hSink.close()
 

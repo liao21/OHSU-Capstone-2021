@@ -42,7 +42,7 @@ class NfuUdp:
     def __init__(self, hostname="192.168.1.111", udp_telem_port=6300, udp_command_port=6201):
 
         self.udp = {'Hostname': hostname, 'TelemPort': udp_telem_port, 'CommandPort': udp_command_port}
-        self.param = {'echoHeartbeat': 1, 'echoPercepts': 1, 'echoCpch': 0}
+        self.param = {'echoHeartbeat': 1, 'echoPercepts': 1, 'echoCpch': 1}
         self.__sock = None
         self.__lock = None
         self.__thread = None
@@ -301,8 +301,8 @@ class NfuUdp:
         sequence_number = data[2, :].astype('int16')
         s[-1, :] = sequence_number
 
-        if self.param['echoCpch']:
-            logging.debug('CPCH data {} '.format(s[17, 0]))
+        # if self.param['echoCpch']:
+        logging.info('CPCH data {} '.format(s[17, 0]))
 
         signal_dict = {'s': s, 'sequence_number': sequence_number}
         return signal_dict
@@ -454,7 +454,7 @@ class NfuUdp:
         if self.param['echoPercepts']:
             torque = np.array(lmc[20:22, :]).view(dtype=np.int16)
             pos = np.array(lmc[22:24, :]).view(dtype=np.int16)
-            logging.debug('LMC POS = {} LMC TORQUE = {} '.format(pos, torque))
+            logging.info('LMC POS = {} LMC TORQUE = {} '.format(pos, torque))
         return tlm
 
 

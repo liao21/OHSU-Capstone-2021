@@ -18,7 +18,7 @@ brew = Spacebrew("MPL Trainer", description="MPL Training Interface", server="sa
 user_config.setup_file_logging(prefix='MPL_')
 
 brew.addSubscriber("Preview", "boolean")
-brew.addSubscriber("webCommand", "boolean")
+brew.addSubscriber("webCommand", "string")
 
 # Setup devices and modules
 vie = mpl_nfu.setup()
@@ -39,8 +39,9 @@ zc_thresh = 0.0
 ssc_thresh = 0.0
 sample_rate = 200
 
-add_data = True
+add_data = False
 current_motion = 'No Movement'
+motion_id = 10
 
 
 def handlePreviewBoolean(value):
@@ -51,28 +52,36 @@ def handlePreviewBoolean(value):
 
 
 def handle_string(value):
-    global current_motion, add_data
+    global current_motion, add_data, motion_id
     print(value)
     if value == 'A1':
         current_motion = 'Elbow Flexion'
+        motion_id = 0
     elif value == 'A2':
         current_motion = 'Elbow Extension'
+        motion_id = 1
     elif value == 'A9':
         current_motion = 'No Movement'
+        motion_id = 10
     elif value == 'F1':
         add_data = True
     elif value == 'F2':
         add_data = False
+        vie.SignalClassifier.fit()
     elif value == 'F3':
         # clear
         vie.TrainingData.reset()
         vie.SignalClassifier.fit()
     elif value == 'F4':
         vie.SignalClassifier.fit()
+    elif value == 'F5':
+        vie.TrainingData.save()
+    elif value == 'F6':
+        vie.TrainingData.copy()
 
 
 def main_loop():
-    global add_data, current_motion
+    global add_data, current_motion, motion_id
 
     # ##########################
     # Run the control loop
@@ -86,7 +95,7 @@ def main_loop():
             f = mpl_nfu.model(vie)
             #
             if add_data:
-                vie.TrainingData.add_data(f, 0, current_motion)
+                vie.TrainingData.add_data(f, motion_id, current_motion)
                 print(current_motion)
                 # print(current_motion + )
 
@@ -103,7 +112,7 @@ def main_loop():
             break
 
 
-brew.subscribe("Preview", handlePreviewBoolean)
+# brew.subscribe("Preview", handlePreviewBoolean)
 brew.subscribe("webCommand", handle_string)
 
 brew.start()

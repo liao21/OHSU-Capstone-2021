@@ -94,15 +94,22 @@ def model(vie):
         new_data = s.get_data() * 0.01
         features = pr.feature_extract(new_data, zc_thresh, ssc_thresh, sample_rate)
         f = np.append(f, features)
+    f_out = f.tolist()
+
     # format the data in a way that sklearn wants it
     f = np.squeeze(f)
     f = f.reshape(1, -1)
+
+
+    if vie.SignalClassifier.classifier is None:
+        print('Untrained')
+        return f_out
 
     try:
         out = int(vie.SignalClassifier.classifier.predict(f))
     except ValueError as e:
         logging.warning('Unable to classify. Error was: ' + str(e))
-        return f
+        return f_out
 
     class_decision = vie.TrainingData.motion_names[out]
     print(class_decision)
@@ -128,7 +135,7 @@ def model(vie):
     # transmit output
     vie.DataSink.send_joint_angles(vie.Plant.JointPosition)
 
-    return f
+    return f_out
 
 def main():
     """ Main function that involves setting up devices,

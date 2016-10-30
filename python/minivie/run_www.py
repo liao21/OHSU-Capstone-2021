@@ -13,7 +13,7 @@ from utilities import user_config
 import time
 from pySpacebrew.spacebrew import Spacebrew
 
-brew = Spacebrew("MPL Trainer", description="MPL Training Interface", server="sandbox.spacebrew.cc", port=9000)
+brew = Spacebrew("MPL Trainer", description="MPL Training Interface", server="192.168.1.1", port=9000)
 
 user_config.setup_file_logging(prefix='MPL_')
 
@@ -40,11 +40,11 @@ ssc_thresh = 0.0
 sample_rate = 200
 
 add_data = False
-current_motion = 'No Movement'
-motion_id = 10
+current_motion = 'Elbow Flexion'
+motion_id = 0
 
 
-def handlePreviewBoolean(value):
+def handle_preview_boolean(value):
     if value == 'true':
         print('Start')
     else:
@@ -60,9 +60,29 @@ def handle_string(value):
     elif value == 'A2':
         current_motion = 'Elbow Extension'
         motion_id = 1
+    elif value == 'A3':
+        current_motion = 'Wrist Rotate In'
+        motion_id = 2
+    elif value == 'A4':
+        current_motion = 'Wrist Rotate Out'
+        motion_id = 3
+    elif value == 'A5':
+        current_motion = 'Wrist Flex In'
+        motion_id = 4
+    elif value == 'A6':
+        current_motion = 'Wrist Extend Out'
+        motion_id = 5
+    elif value == 'A7':
+        current_motion = 'Hand Open'
+        motion_id = 6
+    elif value == 'A8':
+        current_motion = 'Spherical Grasp'
+        motion_id = 7
+
     elif value == 'A9':
         current_motion = 'No Movement'
         motion_id = 10
+
     elif value == 'F1':
         add_data = True
     elif value == 'F2':
@@ -112,7 +132,7 @@ def main_loop():
             break
 
 
-# brew.subscribe("Preview", handlePreviewBoolean)
+# brew.subscribe("Preview", handle_preview_boolean)
 brew.subscribe("webCommand", handle_string)
 
 brew.start()

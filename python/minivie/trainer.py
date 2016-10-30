@@ -14,14 +14,9 @@ import time
 from six.moves import input
 import numpy as np
 import pattern_rec as pr
-from pySpacebrew.spacebrew import Spacebrew
 
-brew = Spacebrew("MPL Trainer", description="MPL Training Interface", server="192.168.1.1", port=9000)
 
 user_config.setup_file_logging(prefix='MPL_')
-
-brew.addSubscriber("Preview", "boolean")
-
 
 # Setup devices and modules
 vie = mpl_nfu.setup()
@@ -30,18 +25,6 @@ dt = 0.02
 zc_thresh = 0.0
 ssc_thresh = 0.0
 sample_rate = 200
-
-
-def handlePreviewBoolean(value):
-    
-    if value == 'true':
-        print('Start')
-    else:
-        print('Stop')
-
-brew.subscribe("Preview", handlePreviewBoolean)
-
-brew.start()
 
 while True:
 

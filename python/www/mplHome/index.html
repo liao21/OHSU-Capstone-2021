@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>MPL UI Test</title>
+
+    <meta name="viewport" content="width=devce-width, initial-scale=1">
+
+    <link rel="stylesheet" href="js/jquery.mobile-1.4.3/jquery.mobile-1.4.3.min.css" />
+    <link rel="stylesheet" href="css/blueimp-gallery.css">
+    <style type='text/css'>
+        html {
+            background-color: #333;
+        }
+        @media only screen and (min-width: 600px) {
+            .ui-page {
+                width: 480px !important;
+                margin: 0 auto !important;
+                position: relative !important;
+                border-right: 5px #666 outset !important;
+                border-left: 5px #666 outset !important;
+            }
+        }
+    </style>
+
+    
+    <script src="js/jquery-1.11.1.min.js"></script>
+    <script src="js/jquery.mobile-1.4.3/jquery.mobile-1.4.3.min.js"></script>
+    <script src="js/sb-1.3.0.js"></script>
+
+    <script>
+        // Spacebrew Object
+        var sb, app_name = "MPL Control",
+            values = {};
+
+        // when page loads call spacebrew setup function 
+        $(window).on("load", cbPowerSwitch);
+
+        // when page loads call spacebrew setup function 
+        $(window).on("load", setupSpacebrew);
+
+        // when the jquery mobile is ready to initialize the UI call the setUI function 
+        $(document).bind("pageinit", setupUI);
+
+        function cbPowerSwitch() {
+            console.log("Power Switch Callback Defined");
+
+            // Create listener:
+            $('#powerSwitch').change(function() {
+                if (this.checked) {
+                    console.log("[powerOn]");
+                    sb.send("slidePower", "boolean", "true");
+                } else {
+                    console.log("[powerOff]");
+                    sb.send("slidePower", "boolean", "false");
+                }
+            });
+
+        };
+
+        /**
+         * setupSpacebrew Function that creates and configures the connection to the Spacebrew server.
+         * 				  It is called when the page loads.
+         */
+
+        function setupSpacebrew() {
+            var random_id = "0000" + Math.floor(Math.random() * 10000);
+
+            app_name = app_name + ' ' + random_id.substring(random_id.length - 4);
+
+            console.log("Setting up spacebrew connection");
+            sb = new Spacebrew.Client();
+
+            sb.name(app_name);
+            sb.description("Sliders for sending and displaying SpaceBrew range messages.");
+
+            // configure the publication and subscription feeds
+            sb.addPublish("sliderSpeed", "range", "0");
+            sb.addPublish("slidePower", "boolean", "false");
+            sb.addPublish("slideReverse", "boolean", "false");
+            sb.addPublish("strFunction", "string", "");
+
+            // override Spacebrew events - this is how you catch events coming from Spacebrew
+            sb.onOpen = onOpen;
+
+            // connect to Spacebrew
+            sb.connect();
+            
+            // listen to button clicks
+            $("#F1").on("mousedown", function() {sendCmd("F1")} );
+            $("#F2").on("mousedown", function() {sendCmd("F2")} );
+            $("#F3").on("mousedown", function() {sendCmd("F3")} );
+            $("#F4").on("mousedown", function() {sendCmd("F4")} );
+            $("#F5").on("mousedown", function() {sendCmd("F5")} );
+            $("#F6").on("mousedown", function() {sendCmd("F6")} );
+            $("#F7").on("mousedown", function() {sendCmd("F7")} );
+            $("#F8").on("mousedown", function() {sendCmd("F8")} );
+            $("#F9").on("mousedown", function() {sendCmd("F9")} );
+            $("#F10").on("mousedown", function() {sendCmd("F10")} );
+            $("#F11").on("mousedown", function() {sendCmd("F11")} );
+            $("#F12").on("mousedown", function() {sendCmd("F12")} );
+
+        };
+        
+        // global function called from index and galleryLinks.js
+        function sendCmd(cmd) {
+            console.log('Send ' + cmd);
+            sb.send("strFunction", "string", cmd);
+        };
+
+        // Function that is called when Spacebrew connection is established
+        function onOpen() {
+            console.log('Spacebrew Connected');
+            var message = "Connected as <strong>" + sb.name() + "</strong>. ";
+            if (sb.name() === app_name) {
+                message += "<br>You can customize this app's name in the query string by adding <strong>name=your_app_name</strong>."
+            }
+            $("#statusMsg").html(message);
+        }
+
+        /**
+         * setupUI Function that create the event listeners for the sliders. It creates an callback
+         * 		   function that sends a spacebrew message whenever an slide event is received.
+         */
+        function setupUI() {
+            console.log("Setting up the UI listeners");
+            // when the slider state changes it sends a message to spacebrew
+            $(".ui-slider").bind("change", function(event, ui) {
+                if (values[event.target.id] != event.target.value) {
+                    sb.send(event.target.id, "range", event.target.value);
+                    values[event.target.id] = event.target.value;
+                    console.log(event.target.value);
+                }
+            });
+            //$(".ui-field-contain").$(".ui-slider").width(400);
+        }
+    </script>
+
+</head>
+
+
+
+<body>
+
+    <div data-role="page">
+        <div data-role="header">
+            <h1>MPL Controller</h1>
+        </div>
+        <!-- <div data-role="content">	 -->
+
+        <!-- Track Power: OFF|ON -->
+        <div class="ui-field-contain">
+            <label for="powerSwitch">Power:</label>
+            <input type="checkbox" id="powerSwitch" data-role="flipswitch" />
+        </div>
+
+        <!-- Insert the Cab Speed [value]  [slider] -->
+        <div class="ui-field-contain">
+            <label for="sliderSpeed">Speed:</label>
+            <input type="range" class="ui-slider" name="ui-slider" id="sliderSpeed" value="0" min="0" max="127" data-highlight="true" />
+        </div>
+
+        <div data-role="controlgroup" data-type="horizontal">
+            <p>Functions:</p>
+            <a href="#" class="ui-btn" id="F1">Add Data</a>
+            <a href="#" class="ui-btn" id="F2">Stop</a>
+            <a href="#" class="ui-btn" id="F3">Clear</a>
+            <a href="#" class="ui-btn" id="F4">Train</a>
+            <a href="#" class="ui-btn" id="F5">Save</a>
+            <a href="#" class="ui-btn" id="F6">Backup</a>
+        </div>
+
+        <p>Motion Select:</p>
+        <div id="loco-carousel" class="blueimp-gallery blueimp-gallery-carousel">
+            <div class="slides"></div>
+            <h3 class="title"></h3>
+            <a class="prev">
+                <</a>
+                    <a class="next">></a>
+        </div>
+
+        <script src="js/blueimp-helper.js"></script>
+        <script src="js/blueimp-gallery.js"></script>
+        <script src="js/blueimp-gallery-indicator.js"></script>
+        <script src="js/jquery.blueimp-gallery.js"></script>
+        <script src="js/galleryLinks.js"></script>
+
+        <div id="statusMsg">Trying to connect</div>
+
+        <!-- </div><!-- /content -->
+    </div>
+    <!-- /page -->
+
+</body>
+
+</html>

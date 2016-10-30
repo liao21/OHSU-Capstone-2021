@@ -97,11 +97,12 @@ def model(vie):
     # format the data in a way that sklearn wants it
     f = np.squeeze(f)
     f = f.reshape(1, -1)
+
     try:
         out = int(vie.SignalClassifier.classifier.predict(f))
     except ValueError as e:
         logging.warning('Unable to classify. Error was: ' + str(e))
-        return
+        return f
 
     class_decision = vie.TrainingData.motion_names[out]
     print(class_decision)
@@ -127,6 +128,7 @@ def model(vie):
     # transmit output
     vie.DataSink.send_joint_angles(vie.Plant.JointPosition)
 
+    return f
 
 def main():
     """ Main function that involves setting up devices,

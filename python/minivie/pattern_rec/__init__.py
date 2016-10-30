@@ -177,7 +177,7 @@ class TrainingData:
         if motion_id is None:
             total = [0] * num_motions
             for c_ in range(num_motions):
-                total[c_] = self.id.count(c)
+                total[c_] = self.id.count(c_)
         else:
             total = self.id.count(motion_id)
 

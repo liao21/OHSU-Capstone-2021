@@ -557,6 +557,7 @@ def main():
         h.log_handlers = l.add_sample
         h.connect()
     elif args.TX_MODE:
+        # TODO: make this file date stamped
         f = 'hci' + str(args.IFACE) + '_myo.log'
         logging.basicConfig(filename=f, level=logging.DEBUG, format='%(asctime)s %(message)s')
         manage_connection(args.MAC, utilities.get_address(args.ADDRESS), args.IFACE)

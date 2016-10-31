@@ -37,29 +37,11 @@
             values = {};
 
         // when page loads call spacebrew setup function 
-        $(window).on("load", cbPowerSwitch);
-
-        // when page loads call spacebrew setup function 
         $(window).on("load", setupSpacebrew);
 
         // when the jquery mobile is ready to initialize the UI call the setUI function 
         $(document).bind("pageinit", setupUI);
 
-        function cbPowerSwitch() {
-            console.log("Power Switch Callback Defined");
-
-            // Create listener:
-            $('#powerSwitch').change(function() {
-                if (this.checked) {
-                    console.log("[powerOn]");
-                    sb.send("slidePower", "boolean", "true");
-                } else {
-                    console.log("[powerOff]");
-                    sb.send("slidePower", "boolean", "false");
-                }
-            });
-
-        };
 
         /**
          * setupSpacebrew Function that creates and configures the connection to the Spacebrew server.
@@ -78,9 +60,6 @@
             sb.description("Sliders for sending and displaying SpaceBrew range messages.");
 
             // configure the publication and subscription feeds
-            sb.addPublish("sliderSpeed", "range", "0");
-            sb.addPublish("slidePower", "boolean", "false");
-            sb.addPublish("slideReverse", "boolean", "false");
             sb.addPublish("strFunction", "string", "");
 
             // override Spacebrew events - this is how you catch events coming from Spacebrew
@@ -151,24 +130,8 @@
         </div>
         <!-- <div data-role="content">	 -->
 
-        <!-- Track Power: OFF|ON -->
-        <div class="ui-field-contain">
-            <label for="powerSwitch">Power:</label>
-            <input type="checkbox" id="powerSwitch" data-role="flipswitch" />
-        </div>
-
-        <!-- Insert the Cab Speed [value]  [slider] -->
-        <div class="ui-field-contain">
-            <label for="sliderSpeed">Speed:</label>
-            <input type="range" class="ui-slider" name="ui-slider" id="sliderSpeed" value="0" min="0" max="127" data-highlight="true" />
-        </div>
-
         <div data-role="controlgroup" data-type="horizontal">
             <p>Functions:</p>
-            <a href="#" class="ui-btn" id="F1">Add Data</a>
-            <a href="#" class="ui-btn" id="F2">Stop</a>
-            <a href="#" class="ui-btn" id="F3">Clear</a>
-            <a href="#" class="ui-btn" id="F4">Train</a>
             <a href="#" class="ui-btn" id="F5">Save</a>
             <a href="#" class="ui-btn" id="F6">Backup</a>
         </div>
@@ -180,6 +143,13 @@
             <a class="prev">
                 <</a>
                     <a class="next">></a>
+        </div>
+
+        <div data-role="controlgroup" data-type="horizontal">
+            <a href="#" class="ui-btn" id="F1">Add Data</a>
+            <a href="#" class="ui-btn" id="F2">Stop</a>
+            <a href="#" class="ui-btn" id="F3">Clear</a>
+            <a href="#" class="ui-btn" id="F4">Train</a>
         </div>
 
         <script src="js/blueimp-helper.js"></script>

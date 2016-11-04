@@ -105,11 +105,11 @@ def setup_file_logging(prefix='MiniVIE_', log_level=logging.INFO):
     logging.critical('-----------------------------------------------')
     logging.critical('Starting Log File "{}" with level: {}'.format(file_name, logging.getLevelName(log_level)))
     logging.critical('-----------------------------------------------')
-    logging.debug('DEBUG')
-    logging.info('INFO')
-    logging.warning('WARNING')
-    logging.error('ERROR')
-    logging.critical('CRITICAL')
+    logging.debug('TEST MSG: DEBUG')
+    logging.info('TEST MSG: INFO')
+    logging.warning('TEST MSG: WARNING')
+    logging.error('TEST MSG: ERROR')
+    logging.critical('TEST MSG: CRITICAL')
     logging.info('-----------------------------------------------')
 
     '''

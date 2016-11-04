@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 from shutil import copyfile
 import h5py
 import datetime as dt
@@ -185,10 +186,18 @@ class TrainingData:
 
     def load(self):
 
+        if not os.path.isfile(self.filename + self.file_ext):
+            print('File Not Found: ' + self.filename + self.file_ext)
+            return
+
+        if not os.access(self.filename + self.file_ext, os.R_OK):
+            print('File Not Readable: ' + self.filename + self.file_ext)
+            return
+
         try:
             h5 = h5py.File(self.filename + self.file_ext, 'r')
         except IOError:
-            print('File Not Found: ' + self.filename + self.file_ext)
+            print('Error Loading file: ' + self.filename + self.file_ext)
             return
 
         self.id = h5['/data/id'][:].tolist()
@@ -217,10 +226,19 @@ class TrainingData:
 
     def copy(self):
         # if a training file exists, copy it to a datestamped name
+
+        if not os.path.isfile(self.filename + self.file_ext):
+            print('File Not Found: ' + self.filename + self.file_ext)
+            return
+
+        if not os.access(self.filename + self.file_ext, os.R_OK):
+            print('File Not Readable: ' + self.filename + self.file_ext)
+            return
+
         t = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         src_ = self.filename + self.file_ext
         dst_ = self.filename + '_' + t + self.file_ext
         try:
             copyfile(src_, dst_)
-        except FileNotFoundError:
-            print('No file exists to backup')
+        except IOError:
+            print('Failed to create file backup')

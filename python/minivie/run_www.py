@@ -14,20 +14,23 @@ from scenarios import mpl_nfu
 from utilities import user_config, ping
 from pySpacebrew.spacebrew import Spacebrew
 
+print('starting script')
+
 dt = 0.02
 zc_thresh = 0.0
 ssc_thresh = 0.0
 sample_rate = 200
 
 add_data = False
-current_motion = 'Elbow Flexion'
+current_motion = 'Elbow Flexion' # Should match the startup page of the www trainer
 motion_id = 0
 
-vie = mpl_nfu.setup()
+vie = {}
 
 
 def setup():
     global vie
+    vie = mpl_nfu.setup()
 
     brew = Spacebrew("MPL Trainer", description="MPL Training Interface", server="192.168.1.1", port=9000)
 
@@ -171,13 +174,13 @@ def main():
         while device_ok:
             try:
                 logging.info('Starting connection to mpl:' + ip)
-                main_loop(vie)
+                main_loop()
             except KeyboardInterrupt:
                 logging.info('Got Keyboard Interrupt')
                 break
             except:
                 logging.info('Device Disconnected')
-                break
+                raise
 
         time.sleep(1.0)
 
@@ -192,6 +195,7 @@ def main():
     print("Done")
 
 if __name__ == '__main__':
-    file = 'mpl_auto_run.log'
+    print('starting script')
+    file = 'mpl_www_auto_run.log'
     logging.basicConfig(filename=file, level=logging.INFO, format='%(asctime)s %(message)s')
     main()

@@ -16,12 +16,6 @@ import os
 import struct
 import numpy as np
 
-import mpl
-
-# set logging to DEBUG for diagnostics/development
-# Note this will override planned logging setting on import!!!
-# logging.basicConfig(level=logging.DEBUG)
-
 
 class NfuUdp:
     """ 
@@ -46,6 +40,7 @@ class NfuUdp:
         self.__sock = None
         self.__lock = None
         self.__thread = None
+        self.active_connection = False
 
     def connect(self):
 
@@ -61,8 +56,6 @@ class NfuUdp:
 
         # Create threadsafe lock
         self.__lock = threading.Lock()
-
-        self.timeout_count = 0
 
         # wait
         time.sleep(0.5)
@@ -100,34 +93,33 @@ class NfuUdp:
         self.__thread.join()
 
     def message_handler(self):
-        # Loop forever to recv data
+        # Loop forever to receive data
         #
         # This is a thread to receive data as soon as it arrives.  
-        # Note that the recvfrom() function is blocking 
         while True:
             # Blocking call until data received
             try:
-                # recv call will error if socket closed on exit
-                data, address = self.__sock.recvfrom(8192)
-                # logging.debug('New data of length {} received'.format(len(data)))
+                # receive call will error if socket closed on exit
+                data, address = self.__sock.recvfrom(8192)  # blocks until timeout
+                # if the above function returns (without error) it means we have a connection
+                if not self.active_connection:
+                    logging.info('MPL Connection is Active')
+                    self.active_connection = True
+
             except socket.timeout as e:
                 # the data stream has stopped.  don't break the thread, just continue to wait
                 msg = "NfuUdp timed out during recvfrom() on IP={} Port={}. Error: {}".format(
                     self.udp['Hostname'], self.udp['TelemPort'], e)
                 logging.warning(msg)
-                self.timeout_count += 1
-                if self.timeout_count > 1:
-                    raise Exception('MPL Connection Lost')
-
-                continue
+                logging.info('MPL Connection is Lost')
+                self.active_connection = False
 
             except socket.error as e:
+                # The connection has been closed
                 msg = "NfuUdp Socket Error during recvfrom() on IP={} Port={}. Error: {}".format(
                     self.udp['Hostname'], self.udp['TelemPort'], e)
                 logging.warning(msg)
                 return
-
-            self.timeout_count = 0
 
             if len(data) == 36:
                 with self.__lock:
@@ -150,6 +142,10 @@ class NfuUdp:
         # values -
         #    joint angles in radians of size 7 for arm joints
         #    joint angles in radians of size 27 for all arm joints
+
+        if not self.active_connection:
+            print('MPL Connection is closed; not sending joint angles.')
+            return
 
         if len(values) == 7:
             # append hand angles
@@ -456,6 +452,40 @@ class NfuUdp:
             pos = np.array(lmc[22:24, :]).view(dtype=np.int16)
             logging.info('LMC POS = {} LMC TORQUE = {} '.format(pos, torque))
         return tlm
+
+
+def connection_manager(nfu):
+    """
+    This function intended to maintain limb connection through MPL power cycles
+
+    The connection is first confirmed through pings, then the data streams are established and
+    periodically monitored for transmission timeouts.  If one such occurs, the connection is closed and
+    then pings resume until re-established
+
+
+    """
+    from utilities import ping
+
+    while True:
+        logging.info('Pinging MPL at: ' + nfu.hostname)
+        device_ok = ping(nfu.hostname)
+
+        if device_ok:
+            logging.info('MPL Ping Success')
+
+            # setup the connection
+            logging.info('Connecting to MPL:' + nfu.hostname)
+            nfu.connect()
+
+            # Periodically poll the MPL connection
+            while nfu.active_connection:
+                time.sleep(1.0)  # wait between connection checks
+
+            # Connection lost
+            nfu.close()
+        else:
+            logging.info('MPL Ping Failure. Retrying...')
+            time.sleep(1.0)  # wait between pings
 
 
 def main():

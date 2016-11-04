@@ -10,9 +10,15 @@
 # Python 2 and 3:
 import logging
 import time
+import threading
 from scenarios import mpl_nfu
 from utilities import user_config, ping
+from scenarios import Scenario
 from pySpacebrew.spacebrew import Spacebrew
+from mpl.nfu import NfuUdp, connection_manager
+from inputs import myo
+import pattern_rec as pr
+from controls.plant import Plant, class_map
 
 print('starting script')
 
@@ -22,47 +28,10 @@ ssc_thresh = 0.0
 sample_rate = 200
 
 add_data = False
-current_motion = 'Elbow Flexion' # Should match the startup page of the www trainer
+current_motion = 'Elbow Flexion'  # Should match the startup page of the www trainer
 motion_id = 0
 
 vie = {}
-
-
-def setup():
-    global vie
-    vie = mpl_nfu.setup()
-
-    brew = Spacebrew("MPL Trainer", description="MPL Training Interface", server="192.168.1.1", port=9000)
-
-    user_config.setup_file_logging(prefix='MPL_')
-
-    brew.addSubscriber("Preview", "boolean")
-    brew.addSubscriber("webCommand", "string")
-
-    vie.TrainingData.motion_names = (
-        'Elbow Flexion', 'Elbow Extension',
-        'Wrist Rotate In', 'Wrist Rotate Out',
-        'Wrist Flex In', 'Wrist Extend Out',
-        'Hand Open',
-        'Spherical Grasp',
-        'Tip Grasp',
-        'Point Grasp',
-        'No Movement',
-    )
-
-    # brew.subscribe("Preview", handle_preview_boolean)
-    brew.subscribe("webCommand", handle_string)
-
-    brew.start()
-
-    return brew
-
-
-def handle_preview_boolean(value):
-    if value == 'true':
-        print('Start')
-    else:
-        print('Stop')
 
 
 def handle_string(value):
@@ -123,8 +92,60 @@ def handle_string(value):
         vie.TrainingData.copy()
 
 
-def main_loop():
+def main():
     global vie, add_data, current_motion, motion_id
+
+    # setup logging
+    user_config.setup_file_logging(prefix='MPL_')
+
+    # setup web interface
+    brew = Spacebrew("MPL Trainer", description="MPL Training Interface", server="192.168.1.1", port=9000)
+    brew.addSubscriber("webCommand", "string")
+    brew.subscribe("webCommand", handle_string)
+    brew.start()
+
+    # Setup MPL scenario
+    vie = Scenario()
+    vie.SignalSource = [myo.MyoUdp(source='//127.0.0.1:15001'), myo.MyoUdp(source='//127.0.0.1:15002')]
+    num_channels = 0
+    for s in vie.SignalSource:
+        s.connect()
+        num_channels += 8
+
+    # Training Data holds data labels
+    # training data manager
+    vie.TrainingData = pr.TrainingData()
+    vie.TrainingData.load()
+    vie.TrainingData.num_channels = num_channels
+    vie.TrainingData.motion_names = (
+        'Elbow Flexion', 'Elbow Extension',
+        'Wrist Rotate In', 'Wrist Rotate Out',
+        'Wrist Flex In', 'Wrist Extend Out',
+        'Hand Open',
+        'Spherical Grasp',
+        'Tip Grasp',
+        'Point Grasp',
+        'No Movement',
+    )
+
+    # Classifier parameters
+    vie.SignalClassifier = pr.Classifier(vie.TrainingData)
+    vie.SignalClassifier.fit()
+
+    # Plant maintains current limb state (positions) during velocity control
+    filename = "../../WrRocDefaults.xml"
+    vie.Plant = Plant(dt, filename)
+
+    # Sink is output to outside world (in this case to VIE)
+    # For MPL, this might be: real MPL/NFU, Virtual Arm, etc.
+    # data_sink = UnityUdp()  # ("192.168.1.24")
+    hostname = user_config.get_user_config_var('mplNfuIp', '192.168.1.111')
+    udp_telem_port = user_config.get_user_config_var('mplNfuUdpStreamPort', 6300)
+    udp_command_port = user_config.get_user_config_var('mplNfuUdpCommandPort', 6201)
+    nfu = NfuUdp(hostname, udp_telem_port, udp_command_port)
+    # start mpl manager as thread
+    threading.Thread(target=connection_manager(nfu))
+    vie.DataSink = nfu
 
     # ##########################
     # Run the control loop
@@ -136,7 +157,7 @@ def main_loop():
 
             # Run the actual model
             f = mpl_nfu.model(vie)
-            #
+
             if add_data:
                 vie.TrainingData.add_data(f, motion_id, current_motion)
                 print(current_motion)
@@ -153,36 +174,6 @@ def main_loop():
         except KeyboardInterrupt:
             print('Stopping')
             break
-
-
-def main():
-    brew = setup()
-
-    while True:
-
-        ip = '192.168.1.111'
-        # ip = '127.0.0.1'
-
-        logging.info('Pinging MPL at: ' + ip)
-        device_ok = ping(ip)
-
-        if device_ok:
-            logging.info('Ping Success')
-        else:
-            logging.info('Ping Failed')
-
-        while device_ok:
-            try:
-                logging.info('Starting connection to mpl:' + ip)
-                main_loop()
-            except KeyboardInterrupt:
-                logging.info('Got Keyboard Interrupt')
-                break
-            except:
-                logging.info('Device Disconnected')
-                raise
-
-        time.sleep(1.0)
 
     # cleanup
     for s in vie.SignalSource:

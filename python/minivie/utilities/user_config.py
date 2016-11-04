@@ -2,8 +2,8 @@
 Load an xml User Config file
 
 Usage:
-    from Utilities import UserConfig
-    UserConfig.getUserConfigVar('bob',5)
+    from utilities import user_config
+    user_config.get_user_config_var('my_param',5)
 
 
 Revisions:
@@ -138,9 +138,9 @@ def main():
     get_user_config_var('rocTable', '')
     
     # get default config file.  This script should be run from python\minivie, 
-    # but also support calling from module directory (Utilities)
+    # but also support calling from module directory (utilities)
     filename = "../../user_config.xml"
-    if os.path.split(os.getcwd())[1] == 'Utilities':
+    if os.path.split(os.getcwd())[1] == 'utilities':
         filename = '../' + filename
     read_user_config(filename)
     

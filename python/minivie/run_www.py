@@ -8,31 +8,11 @@
 # 2016OCT05 Armiger: Created
 
 # Python 2 and 3:
-from scenarios import mpl_nfu
-from utilities import user_config
+import logging
 import time
+from scenarios import mpl_nfu
+from utilities import user_config, ping
 from pySpacebrew.spacebrew import Spacebrew
-
-brew = Spacebrew("MPL Trainer", description="MPL Training Interface", server="192.168.1.1", port=9000)
-
-user_config.setup_file_logging(prefix='MPL_')
-
-brew.addSubscriber("Preview", "boolean")
-brew.addSubscriber("webCommand", "string")
-
-# Setup devices and modules
-vie = mpl_nfu.setup()
-
-vie.TrainingData.motion_names = (
-    'Elbow Flexion', 'Elbow Extension',
-    'Wrist Rotate In', 'Wrist Rotate Out',
-    'Wrist Flex In', 'Wrist Extend Out',
-    'Hand Open',
-    'Spherical Grasp',
-    'Tip Grasp',
-    'Point Grasp',
-    'No Movement',
-)
 
 dt = 0.02
 zc_thresh = 0.0
@@ -42,6 +22,37 @@ sample_rate = 200
 add_data = False
 current_motion = 'Elbow Flexion'
 motion_id = 0
+
+vie = mpl_nfu.setup()
+
+
+def setup():
+    global vie
+
+    brew = Spacebrew("MPL Trainer", description="MPL Training Interface", server="192.168.1.1", port=9000)
+
+    user_config.setup_file_logging(prefix='MPL_')
+
+    brew.addSubscriber("Preview", "boolean")
+    brew.addSubscriber("webCommand", "string")
+
+    vie.TrainingData.motion_names = (
+        'Elbow Flexion', 'Elbow Extension',
+        'Wrist Rotate In', 'Wrist Rotate Out',
+        'Wrist Flex In', 'Wrist Extend Out',
+        'Hand Open',
+        'Spherical Grasp',
+        'Tip Grasp',
+        'Point Grasp',
+        'No Movement',
+    )
+
+    # brew.subscribe("Preview", handle_preview_boolean)
+    brew.subscribe("webCommand", handle_string)
+
+    brew.start()
+
+    return brew
 
 
 def handle_preview_boolean(value):
@@ -53,35 +64,43 @@ def handle_preview_boolean(value):
 
 def handle_string(value):
     global current_motion, add_data, motion_id
-    print(value)
+    logging.info(value)
     if value == 'A1':
         current_motion = 'Elbow Flexion'
         motion_id = 0
+        add_data = False
     elif value == 'A2':
         current_motion = 'Elbow Extension'
         motion_id = 1
+        add_data = False
     elif value == 'A3':
         current_motion = 'Wrist Rotate In'
         motion_id = 2
+        add_data = False
     elif value == 'A4':
         current_motion = 'Wrist Rotate Out'
         motion_id = 3
+        add_data = False
     elif value == 'A5':
         current_motion = 'Wrist Flex In'
         motion_id = 4
+        add_data = False
     elif value == 'A6':
         current_motion = 'Wrist Extend Out'
         motion_id = 5
+        add_data = False
     elif value == 'A7':
         current_motion = 'Hand Open'
         motion_id = 6
+        add_data = False
     elif value == 'A8':
         current_motion = 'Spherical Grasp'
         motion_id = 7
-
+        add_data = False
     elif value == 'A9':
         current_motion = 'No Movement'
         motion_id = 10
+        add_data = False
 
     elif value == 'F1':
         add_data = True
@@ -95,13 +114,14 @@ def handle_string(value):
     elif value == 'F4':
         vie.SignalClassifier.fit()
     elif value == 'F5':
+        vie.TrainingData.copy()
         vie.TrainingData.save()
     elif value == 'F6':
         vie.TrainingData.copy()
 
 
 def main_loop():
-    global add_data, current_motion, motion_id
+    global vie, add_data, current_motion, motion_id
 
     # ##########################
     # Run the control loop
@@ -132,19 +152,46 @@ def main_loop():
             break
 
 
-# brew.subscribe("Preview", handle_preview_boolean)
-brew.subscribe("webCommand", handle_string)
+def main():
+    brew = setup()
 
-brew.start()
+    while True:
 
-# blocks until interrupt
-main_loop()
+        ip = '192.168.1.111'
+        # ip = '127.0.0.1'
 
-# cleanup
-for s in vie.SignalSource:
-    s.close()
-vie.DataSink.close()
+        logging.info('Pinging MPL at: ' + ip)
+        device_ok = ping(ip)
 
-brew.stop()
+        if device_ok:
+            logging.info('Ping Success')
+        else:
+            logging.info('Ping Failed')
 
-print("Done")
+        while device_ok:
+            try:
+                logging.info('Starting connection to mpl:' + ip)
+                main_loop(vie)
+            except KeyboardInterrupt:
+                logging.info('Got Keyboard Interrupt')
+                break
+            except:
+                logging.info('Device Disconnected')
+                break
+
+        time.sleep(1.0)
+
+    # cleanup
+    for s in vie.SignalSource:
+        s.close()
+    vie.DataSink.close()
+
+    brew.stop()
+
+    logging.info('Done')
+    print("Done")
+
+if __name__ == '__main__':
+    file = 'mpl_auto_run.log'
+    logging.basicConfig(filename=file, level=logging.INFO, format='%(asctime)s %(message)s')
+    main()

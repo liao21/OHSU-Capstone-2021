@@ -100,7 +100,6 @@ def model(vie):
     f = np.squeeze(f)
     f = f.reshape(1, -1)
 
-
     if vie.SignalClassifier.classifier is None:
         print('Untrained')
         return f_out
@@ -136,6 +135,7 @@ def model(vie):
     vie.DataSink.send_joint_angles(vie.Plant.JointPosition)
 
     return f_out
+
 
 def main():
     """ Main function that involves setting up devices,

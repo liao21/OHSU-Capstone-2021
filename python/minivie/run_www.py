@@ -37,61 +37,41 @@ vie = {}
 def handle_string(value):
     global vie, current_motion, add_data, motion_id
 
-    if value == 'A1':
-        current_motion = 'Elbow Flexion'
-        motion_id = 0
-        add_data = False
-    elif value == 'A2':
-        current_motion = 'Elbow Extension'
-        motion_id = 1
-        add_data = False
-    elif value == 'A3':
-        current_motion = 'Wrist Rotate In'
-        motion_id = 2
-        add_data = False
-    elif value == 'A4':
-        current_motion = 'Wrist Rotate Out'
-        motion_id = 3
-        add_data = False
-    elif value == 'A5':
-        current_motion = 'Wrist Flex In'
-        motion_id = 4
-        add_data = False
-    elif value == 'A6':
-        current_motion = 'Wrist Extend Out'
-        motion_id = 5
-        add_data = False
-    elif value == 'A7':
-        current_motion = 'Hand Open'
-        motion_id = 6
-        add_data = False
-    elif value == 'A8':
-        current_motion = 'Spherical Grasp'
-        motion_id = 7
-        add_data = False
-    elif value == 'A9':
-        current_motion = 'No Movement'
-        motion_id = 10
-        add_data = False
-
-    elif value == 'F1':
-        add_data = True
-    elif value == 'F2':
-        add_data = False
-        vie.SignalClassifier.fit()
-    elif value == 'F3':
-        # clear
-        vie.TrainingData.reset()
-        vie.SignalClassifier.fit()
-    elif value == 'F4':
-        vie.SignalClassifier.fit()
-    elif value == 'F5':
-        vie.TrainingData.copy()
-        vie.TrainingData.save()
-    elif value == 'F6':
-        vie.TrainingData.copy()
-
+    # Commands should come in with colon operator
+    # e.g. Cmd:Add or Cls:Elbow Flexion
     logging.info('Received New Spacebrew command:' + value)
+
+    parsed = value.split(':')
+    if not len(parsed) == 2:
+        logging.warning('Invalid Command: ' + value)
+        return
+    else:
+        cmd_type = parsed[0]
+        cmd_data = parsed[1]
+
+    if cmd_type.lower() == 'Cls'.lower():
+        # Parse a Class Message
+        current_motion = cmd_data
+        motion_id = vie.TrainingData.motion_names.index(cmd_data)
+        add_data = False
+
+    elif cmd_type.lower() == 'Cmd'.lower():
+        if cmd_data == 'Add':
+            add_data = True
+        elif cmd_data == 'Stop':
+            add_data = False
+            vie.SignalClassifier.fit()
+        elif cmd_data == 'Clear':
+            vie.TrainingData.reset()
+            vie.SignalClassifier.fit()
+        elif cmd_data == 'Train':
+            vie.SignalClassifier.fit()
+        elif cmd_data == 'Save':
+            vie.TrainingData.copy()
+            vie.TrainingData.save()
+        elif cmd_data == 'Backup':
+            vie.TrainingData.copy()
+
 
 def main():
     global vie, add_data, current_motion, motion_id

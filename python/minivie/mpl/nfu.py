@@ -38,9 +38,20 @@ class NfuUdp:
         self.udp = {'Hostname': hostname, 'TelemPort': udp_telem_port, 'CommandPort': udp_command_port}
         self.param = {'echoHeartbeat': 1, 'echoPercepts': 1, 'echoCpch': 1}
         self.__sock = None
-        self.__lock = None
-        self.__thread = None
-        self.active_connection = False
+
+        # Create threadsafe lock
+        self.__lock = threading.Lock()
+
+        # Create a receive thread
+        self.__thread = threading.Thread(target=self.message_handler)
+        self.__thread.name = 'NfuUdpRcv'
+
+        self.__active_connection = False
+
+    def is_alive(self):
+        with self.__lock:
+            val = self.__active_connection
+        return val
 
     def connect(self):
 
@@ -50,13 +61,10 @@ class NfuUdp:
         self.__sock.bind(('0.0.0.0', self.udp['TelemPort']))
         self.__sock.settimeout(3.0)
         
-        # Create a receive thread
-        self.__thread = threading.Thread(target=self.message_handler)
-        self.__thread.name = 'NfuUdpRcv'
+        # initialize the MPL
+        self.send_init_cmd()
 
-        # Create threadsafe lock
-        self.__lock = threading.Lock()
-
+    def send_init_cmd(self):
         # wait
         time.sleep(0.5)
 
@@ -83,14 +91,20 @@ class NfuUdp:
         time.sleep(0.5)
 
         # Create a thread for processing new data
-        self.__thread.start()
+        if not self.__thread.isAlive():
+            logging.warn('Starting NfuUdp rcv thread')
+            self.__thread.start()
+
+    def stop(self):
+        # stop the receive thread
+        self.__thread.join()
 
     def close(self):
         """ Cleanup socket """
         if self.__sock is not None:
             logging.info("Closing NfuUdp Socket IP={} Port={}".format(self.udp['Hostname'], self.udp['TelemPort']))
             self.__sock.close()
-        self.__thread.join()
+        self.stop()
 
     def message_handler(self):
         # Loop forever to receive data
@@ -102,24 +116,29 @@ class NfuUdp:
                 # receive call will error if socket closed on exit
                 data, address = self.__sock.recvfrom(8192)  # blocks until timeout
                 # if the above function returns (without error) it means we have a connection
-                if not self.active_connection:
-                    logging.info('MPL Connection is Active')
-                    self.active_connection = True
+                if not self.is_alive():
+                    logging.info('MPL Connection is Active: Data received')
+                    with self.__lock:
+                        self.__active_connection = True
 
             except socket.timeout as e:
                 # the data stream has stopped.  don't break the thread, just continue to wait
                 msg = "NfuUdp timed out during recvfrom() on IP={} Port={}. Error: {}".format(
                     self.udp['Hostname'], self.udp['TelemPort'], e)
                 logging.warning(msg)
-                logging.info('MPL Connection is Lost')
-                self.active_connection = False
+                with self.__lock:
+                    logging.info('MPL Connection is Lost')
+                    self.__active_connection = False
+                continue
 
             except socket.error as e:
                 # The connection has been closed
                 msg = "NfuUdp Socket Error during recvfrom() on IP={} Port={}. Error: {}".format(
                     self.udp['Hostname'], self.udp['TelemPort'], e)
                 logging.warning(msg)
-                return
+                # break so that the thread can terminate
+                #return
+                break
 
             if len(data) == 36:
                 with self.__lock:
@@ -143,8 +162,8 @@ class NfuUdp:
         #    joint angles in radians of size 7 for arm joints
         #    joint angles in radians of size 27 for all arm joints
 
-        if not self.active_connection:
-            print('MPL Connection is closed; not sending joint angles.')
+        if not self.is_alive():
+            logging.warn('MPL Connection is closed; not sending joint angles.')
             return
 
         if len(values) == 7:
@@ -466,23 +485,39 @@ def connection_manager(nfu):
     """
     from utilities import ping
 
+    ip = nfu.udp['Hostname']
+
+    # setup the connection
+    logging.info('Connecting to MPL:' + ip)
+    nfu.connect()
+
     while True:
-        logging.info('Pinging MPL at: ' + nfu.hostname)
-        device_ok = ping(nfu.hostname)
+        # print('Pinging MPL at: ' + ip)
+        logging.info('Pinging MPL at: ' + ip)
+        device_ok = ping(ip)
 
         if device_ok:
+            # print('MPL Ping Success')
             logging.info('MPL Ping Success')
 
             # setup the connection
-            logging.info('Connecting to MPL:' + nfu.hostname)
-            nfu.connect()
+            # print('Connecting to MPL:' + ip)
+            logging.info('Sending init commands to MPL and restarting receive thread')
+            nfu.send_init_cmd()
 
             # Periodically poll the MPL connection
-            while nfu.active_connection:
+            while nfu.is_alive():
+                # print('MPL Connection is Active')
                 time.sleep(1.0)  # wait between connection checks
+            #logging.warn('Joining NfuUdp recv thread')
+            #nfu.stop()
+            #logging.warn('Joining NfuUdp recv thread: Done')
+
 
             # Connection lost
-            nfu.close()
+            # RSA: Don't close the socket since it won't be reusable
+            # print('MPL Connection is Lost. Closing...')
+            # nfu.close()
         else:
             logging.info('MPL Ping Failure. Retrying...')
             time.sleep(1.0)  # wait between pings

@@ -35,8 +35,8 @@ vie = {}
 
 
 def handle_string(value):
-    global current_motion, add_data, motion_id
-    logging.info(value)
+    global vie, current_motion, add_data, motion_id
+
     if value == 'A1':
         current_motion = 'Elbow Flexion'
         motion_id = 0
@@ -91,6 +91,7 @@ def handle_string(value):
     elif value == 'F6':
         vie.TrainingData.copy()
 
+    logging.info('Received New Spacebrew command:' + value)
 
 def main():
     global vie, add_data, current_motion, motion_id
@@ -144,7 +145,11 @@ def main():
     udp_command_port = user_config.get_user_config_var('mplNfuUdpCommandPort', 6201)
     nfu = NfuUdp(hostname, udp_telem_port, udp_command_port)
     # start mpl manager as thread
-    threading.Thread(target=connection_manager(nfu))
+    # print('***starting MPL connection Thread')
+    t = threading.Thread(name='MPLNFU',target=connection_manager, args=(nfu,))
+    # print('***finished starting MPL connection Thread')
+    t.setDaemon(True)
+    t.start()
     vie.DataSink = nfu
 
     # ##########################
@@ -152,6 +157,8 @@ def main():
     # ##########################
     while True:
         try:
+            # print('running main loop')
+
             # Fixed rate loop.  get start time, run model, get end time; delay for duration
             time_begin = time.time()
 
@@ -160,7 +167,7 @@ def main():
 
             if add_data:
                 vie.TrainingData.add_data(f, motion_id, current_motion)
-                print(current_motion)
+                # print(current_motion)
                 # print(current_motion + )
 
             time_end = time.time()
@@ -186,7 +193,7 @@ def main():
     print("Done")
 
 if __name__ == '__main__':
-    print('starting script')
+    print('starting main')
     file = 'mpl_www_auto_run.log'
     logging.basicConfig(filename=file, level=logging.INFO, format='%(asctime)s %(message)s')
     main()

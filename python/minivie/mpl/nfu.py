@@ -145,10 +145,11 @@ class NfuUdp:
                     self.decode_heartbeat_msg(data)
             elif len(data) == 2190:
                 with self.__lock:
+                    pass
                     # cpch data bytes
-                    self.decode_cpch_msg(data[:1366])
+                    #self.decode_cpch_msg(data[:1366])
                     # percept bytes
-                    self.decode_percept_msg(data[1366:])
+                    #self.decode_percept_msg(data[1366:])
             else:
                 pass
                 # logging.warning('Unhandled data received')

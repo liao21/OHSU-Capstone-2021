@@ -76,15 +76,15 @@ $(function () {
         onslide: function (index, slide) {
                 // Callback function executed on slide change.
                 switch(index) {
-                case 0: sendCmd("A1"); break;
-                case 1: sendCmd("A2"); break;
-                case 2: sendCmd("A3"); break;
-                case 3: sendCmd("A4"); break;
-                case 4: sendCmd("A5"); break;
-                case 5: sendCmd("A6"); break;
-                case 6: sendCmd("A7"); break;
-                case 7: sendCmd("A8"); break;
-                case 8: sendCmd("A9"); break;
+                case 0: sendCmd("Cls:Elbow Flexion"); break;
+                case 1: sendCmd("Cls:Elbow Extension"); break;
+                case 2: sendCmd("Cls:Wrist Rotate In"); break;
+                case 3: sendCmd("Cls:Wrist Rotate Out"); break;
+                case 4: sendCmd("Cls:Wrist Flex In"); break;
+                case 5: sendCmd("Cls:Wrist Extend Out"); break;
+                case 6: sendCmd("Cls:Hand Open"); break;
+                case 7: sendCmd("Cls:Spherical Grasp"); break;
+                case 8: sendCmd("Cls:No Movement"); break;
                 default: break;
                 }        
         }

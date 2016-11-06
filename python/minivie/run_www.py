@@ -49,13 +49,13 @@ def handle_string(value):
         cmd_type = parsed[0]
         cmd_data = parsed[1]
 
-    if cmd_type.lower() == 'Cls'.lower():
+    if cmd_type == 'Cls':
         # Parse a Class Message
         current_motion = cmd_data
         motion_id = vie.TrainingData.motion_names.index(cmd_data)
         add_data = False
 
-    elif cmd_type.lower() == 'Cmd'.lower():
+    elif cmd_type == 'Cmd':
         if cmd_data == 'Add':
             add_data = True
         elif cmd_data == 'Stop':
@@ -71,6 +71,12 @@ def handle_string(value):
             vie.TrainingData.save()
         elif cmd_data == 'Backup':
             vie.TrainingData.copy()
+        elif cmd_data == 'Pause':
+            vie.pause()
+        elif cmd_data == 'SpeedUp':
+            vie.gain(1.2)
+        elif cmd_data == 'SpeedDown':
+            vie.gain(0.8)
 
 
 def main():

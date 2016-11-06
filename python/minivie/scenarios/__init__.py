@@ -13,3 +13,25 @@ class Scenario(object):
         self.TrainingData = None
         self.Plant = None
         self.DataSink = None
+
+        self.__pause = False
+        self.__gain_value = 1.0
+
+
+    def is_paused(self):
+        return self.__pause
+
+    def get_gain_value(self):
+        return self.__gain_value
+
+    def pause(self):
+        if self.__pause:
+            self.__pause = False
+        else:
+            self.__pause = True
+
+    def gain(self,factor):        
+        self.__gain_value *= factor
+        if self.__gain_value < 0.1:
+            self.__gain_value = 0.1
+        

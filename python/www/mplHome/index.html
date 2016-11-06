@@ -69,18 +69,15 @@
             sb.connect();
             
             // listen to button clicks
-            $("#F1").on("mousedown", function() {sendCmd("F1")} );
-            $("#F2").on("mousedown", function() {sendCmd("F2")} );
-            $("#F3").on("mousedown", function() {sendCmd("F3")} );
-            $("#F4").on("mousedown", function() {sendCmd("F4")} );
-            $("#F5").on("mousedown", function() {sendCmd("F5")} );
-            $("#F6").on("mousedown", function() {sendCmd("F6")} );
-            $("#F7").on("mousedown", function() {sendCmd("F7")} );
-            $("#F8").on("mousedown", function() {sendCmd("F8")} );
-            $("#F9").on("mousedown", function() {sendCmd("F9")} );
-            $("#F10").on("mousedown", function() {sendCmd("F10")} );
-            $("#F11").on("mousedown", function() {sendCmd("F11")} );
-            $("#F12").on("mousedown", function() {sendCmd("F12")} );
+            $("#ID_ADD").on("mousedown", function() {sendCmd("Cmd:Add")} );
+            $("#ID_STOP").on("mousedown", function() {sendCmd("Cmd:Stop")} );
+            $("#ID_CLEAR").on("mousedown", function() {sendCmd("Cmd:Clear")} );
+            $("#ID_TRAIN").on("mousedown", function() {sendCmd("Cmd:Train")} );
+            $("#ID_SAVE").on("mousedown", function() {sendCmd("Cmd:Save")} );
+            $("#ID_BACKUP").on("mousedown", function() {sendCmd("Cmd:Backup")} );
+            $("#ID_SPEEDUP").on("mousedown", function() {sendCmd("Cmd:SpeedUp")} );
+            $("#ID_SPEEDDOWN").on("mousedown", function() {sendCmd("Cmd:SpeedDown")} );
+            $("#ID_PAUSE").on("mousedown", function() {sendCmd("Cmd:Pause")} );
 
         };
         
@@ -132,8 +129,11 @@
 
         <div data-role="controlgroup" data-type="horizontal">
             <p>Functions:</p>
-            <a href="#" class="ui-btn" id="F5">Save</a>
-            <a href="#" class="ui-btn" id="F6">Backup</a>
+            <a href="#" class="ui-btn" id="ID_SAVE">Save</a>
+            <a href="#" class="ui-btn" id="ID_BACKUP">Bak</a>
+            <a href="#" class="ui-btn" id="ID_SPEEDUP">[+]</a>
+            <a href="#" class="ui-btn" id="ID_SPEEDDOWN">[-]</a>
+            <a href="#" class="ui-btn" id="ID_PAUSE">||</a>
         </div>
 
         <p>Motion Select:</p>
@@ -146,10 +146,10 @@
         </div>
 
         <div data-role="controlgroup" data-type="horizontal">
-            <a href="#" class="ui-btn" id="F1">Add Data</a>
-            <a href="#" class="ui-btn" id="F2">Stop</a>
-            <a href="#" class="ui-btn" id="F3">Clear</a>
-            <a href="#" class="ui-btn" id="F4">Train</a>
+            <a href="#" class="ui-btn" id="ID_ADD">Add Data</a>
+            <a href="#" class="ui-btn" id="ID_STOP">Stop</a>
+            <a href="#" class="ui-btn" id="ID_CLEAR">Clear</a>
+            <a href="#" class="ui-btn" id="ID_TRAIN">Train</a>
         </div>
 
         <script src="js/blueimp-helper.js"></script>

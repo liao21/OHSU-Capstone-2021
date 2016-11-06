@@ -99,11 +99,15 @@ def model(vie):
 
     class_info = class_map(class_decision)
 
-    grasp_gain = 1.4
-    joint_gain = 1.4
+    grasp_gain = vie.get_gain_value()
+    joint_gain = vie.get_gain_value()
 
     # Set joint velocities
     vie.Plant.new_step()
+
+    if vie.is_paused():
+        print('---PAUSED---')
+        return f_out
 
     # set the mapped class
     if class_info['IsGrasp']:

@@ -146,7 +146,6 @@ for s in vie.SignalSource:
     s.close()
 vie.DataSink.close()
 
-brew.stop()
 
 print("Done")
 

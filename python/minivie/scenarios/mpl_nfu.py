@@ -72,30 +72,37 @@ def setup():
 
 
 def model(vie):
+    # Perform forward classification and return a dictionary with status information
+
+    # initialize output
+    output = {'status': 'RUNNING', 'features': None, 'decision': 'None'}
+
     # Get features from emg data
     f = np.array([])
     for s in vie.SignalSource:
         new_data = s.get_data() * 0.01
         features = pr.feature_extract(new_data, zc_thresh, ssc_thresh, sample_rate)
         f = np.append(f, features)
-    f_out = f.tolist()
+    output['features'] = f.tolist()
 
     # format the data in a way that sklearn wants it
     f = np.squeeze(f)
     f = f.reshape(1, -1)
 
     if vie.SignalClassifier.classifier is None:
-        print('Untrained')
-        return f_out
+        output['status'] = 'UNTRAINED'
+        return output
 
     try:
         out = int(vie.SignalClassifier.classifier.predict(f))
     except ValueError as e:
         logging.warning('Unable to classify. Error was: ' + str(e))
-        return f_out
+        output['status'] = 'Error'
+        return output
 
     class_decision = vie.TrainingData.motion_names[out]
-    print(class_decision)
+    output['decision'] = class_decision
+    #print(class_decision)
 
     class_info = class_map(class_decision)
 
@@ -106,8 +113,8 @@ def model(vie):
     vie.Plant.new_step()
 
     if vie.is_paused():
-        print('---PAUSED---')
-        return f_out
+        output['status'] = 'PAUSED'
+        return output
 
     # set the mapped class
     if class_info['IsGrasp']:
@@ -122,7 +129,7 @@ def model(vie):
     # transmit output
     vie.DataSink.send_joint_angles(vie.Plant.JointPosition)
 
-    return f_out
+    return output
 
 
 def main():

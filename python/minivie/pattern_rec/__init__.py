@@ -164,6 +164,28 @@ class TrainingData:
         self.time_stamp = []
         self.num_samples = 0
 
+    def clear(self, motion_id):
+        # Remove the class data for the matching index
+
+        indices = [i for i, x in enumerate(self.id) if x == motion_id]
+
+        for rev in indices[::-1]:
+            #print('LEN {} {} {} {}'.format(len(self.time_stamp),len(self.name),len(self.id),len(self.data)))
+            #print('Removing element' + str(rev))
+            #print('timestamp {}'.format(self.time_stamp[rev]))
+            del(self.time_stamp[rev])
+            #print('name {}'.format(self.name[rev]))
+            del(self.name[rev])
+            #print('id {}'.format(self.id[rev]))
+            del(self.id[rev])
+            #print('data {}'.format(self.data[rev]))
+            del(self.data[rev])
+            self.num_samples -= 1
+
+        if self.num_samples == 0:
+            self.reset()
+
+
     def add_data(self, data_, id_, name_):
         self.time_stamp.append(time.time())
         self.name.append(name_)

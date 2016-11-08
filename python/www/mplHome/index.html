@@ -5,9 +5,9 @@
 
     <meta charset="UTF-8">
 
-    <title>MPL UI Test</title>
+    <title>MPL Mobile Trainer</title>
 
-    <meta name="viewport" content="width=devce-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
 
     <link rel="stylesheet" href="js/jquery.mobile-1.4.3/jquery.mobile-1.4.3.min.css" />
     <link rel="stylesheet" href="css/blueimp-gallery.css">
@@ -29,7 +29,7 @@
     
     <script src="js/jquery-1.11.1.min.js"></script>
     <script src="js/jquery.mobile-1.4.3/jquery.mobile-1.4.3.min.js"></script>
-    <script src="js/sb-1.3.0.js"></script>
+    <script src="js/sb-1.4.1.js"></script>
 
     <script>
         // Spacebrew Object
@@ -57,12 +57,16 @@
             sb = new Spacebrew.Client();
 
             sb.name(app_name);
-            sb.description("Sliders for sending and displaying SpaceBrew range messages.");
+            sb.description("JHU/APL Mobile Training Interface.");
 
             // configure the publication and subscription feeds
-            sb.addPublish("strFunction", "string", "");
+            sb.addPublish("strCommand", "string", "");
+            sb.addSubscribe("strStatus", "string");
+            sb.addSubscribe("strTrainingMotion", "string");
+            sb.addSubscribe("strOutputMotion", "string");
 
             // override Spacebrew events - this is how you catch events coming from Spacebrew
+            sb.onStringMessage = onStringMessage;
             sb.onOpen = onOpen;
 
             // connect to Spacebrew
@@ -71,7 +75,8 @@
             // listen to button clicks
             $("#ID_ADD").on("mousedown", function() {sendCmd("Cmd:Add")} );
             $("#ID_STOP").on("mousedown", function() {sendCmd("Cmd:Stop")} );
-            $("#ID_CLEAR").on("mousedown", function() {sendCmd("Cmd:Clear")} );
+            $("#ID_CLEARCLASS").on("mousedown", function() {sendCmd("Cmd:ClearClass")} );
+            $("#ID_CLEARALL").on("mousedown", function() {sendCmd("Cmd:ClearAll")} );
             $("#ID_TRAIN").on("mousedown", function() {sendCmd("Cmd:Train")} );
             $("#ID_SAVE").on("mousedown", function() {sendCmd("Cmd:Save")} );
             $("#ID_BACKUP").on("mousedown", function() {sendCmd("Cmd:Backup")} );
@@ -84,35 +89,39 @@
         // global function called from index and galleryLinks.js
         function sendCmd(cmd) {
             console.log('Send ' + cmd);
-            sb.send("strFunction", "string", cmd);
+            sb.send("strCommand", "string", cmd);
         };
 
         // Function that is called when Spacebrew connection is established
         function onOpen() {
             console.log('Spacebrew Connected');
-            var message = "Connected as <strong>" + sb.name() + "</strong>. ";
+            var message = "Connected as <strong>" + sb.name() + "</strong>";
             if (sb.name() === app_name) {
                 message += "<br>You can customize this app's name in the query string by adding <strong>name=your_app_name</strong>."
             }
             $("#statusMsg").html(message);
         }
 
+
         /**
-         * setupUI Function that create the event listeners for the sliders. It creates an callback
-         * 		   function that sends a spacebrew message whenever an slide event is received.
+         * onStringMessage Function that is called whenever new spacebrew string messages are received.
+         *          It accepts two parameters:
+         * @param  {String} name    Holds name of the subscription feed channel
+         * @param  {String} value 	Holds value received from the subscription feed
          */
-        function setupUI() {
-            console.log("Setting up the UI listeners");
-            // when the slider state changes it sends a message to spacebrew
-            $(".ui-slider").bind("change", function(event, ui) {
-                if (values[event.target.id] != event.target.value) {
-                    sb.send(event.target.id, "range", event.target.value);
-                    values[event.target.id] = event.target.value;
-                    console.log(event.target.value);
-                }
-            });
-            //$(".ui-field-contain").$(".ui-slider").width(400);
-        }
+         function onStringMessage( name, value ){
+             console.log("[onStringMessage] string message received ", value);
+             if (name == "strStatus") {
+                 $("#msg_status").text(value);
+             }         
+             if (name == "strTrainingMotion") {
+                 $("#msg_train").text(value);
+             }         
+             if (name == "strOutputMotion") {
+                 $("#msg_output").text(value);
+             }         
+         }
+
     </script>
 
 </head>
@@ -130,13 +139,13 @@
         <div data-role="controlgroup" data-type="horizontal">
             <p>Functions:</p>
             <a href="#" class="ui-btn" id="ID_SAVE">Save</a>
-            <a href="#" class="ui-btn" id="ID_BACKUP">Bak</a>
+            <!-- <a href="#" class="ui-btn" id="ID_BACKUP">Bkup</a>-->
             <a href="#" class="ui-btn" id="ID_SPEEDUP">[+]</a>
             <a href="#" class="ui-btn" id="ID_SPEEDDOWN">[-]</a>
             <a href="#" class="ui-btn" id="ID_PAUSE">||</a>
         </div>
 
-        <p>Motion Select:</p>
+        <p>Selected Motion: <span = id="msg_train"/></p>
         <div id="loco-carousel" class="blueimp-gallery blueimp-gallery-carousel">
             <div class="slides"></div>
             <h3 class="title"></h3>
@@ -148,8 +157,9 @@
         <div data-role="controlgroup" data-type="horizontal">
             <a href="#" class="ui-btn" id="ID_ADD">Add Data</a>
             <a href="#" class="ui-btn" id="ID_STOP">Stop</a>
-            <a href="#" class="ui-btn" id="ID_CLEAR">Clear</a>
-            <a href="#" class="ui-btn" id="ID_TRAIN">Train</a>
+            <a href="#" class="ui-btn" id="ID_CLEARCLASS">Clear</a>
+            <a href="#" class="ui-btn" id="ID_CLEARALL">Clear All</a>
+            <!-- <a href="#" class="ui-btn" id="ID_TRAIN">Train</a> -->
         </div>
 
         <script src="js/blueimp-helper.js"></script>
@@ -158,7 +168,9 @@
         <script src="js/jquery.blueimp-gallery.js"></script>
         <script src="js/galleryLinks.js"></script>
 
-        <div id="statusMsg">Trying to connect</div>
+        <p>Classifying: <span = id="msg_output"/></p>
+        <p>Status: <span = id="msg_status"/></p>
+        <p>Server: <span = id="statusMsg"/></p>
 
         <!-- </div><!-- /content -->
     </div>

@@ -61,7 +61,10 @@ def handle_string(value):
         elif cmd_data == 'Stop':
             add_data = False
             vie.SignalClassifier.fit()
-        elif cmd_data == 'Clear':
+        elif cmd_data == 'ClearClass':
+            vie.TrainingData.clear(motion_id)
+            vie.SignalClassifier.fit()
+        elif cmd_data == 'ClearAll':
             vie.TrainingData.reset()
             vie.SignalClassifier.fit()
         elif cmd_data == 'Train':
@@ -77,6 +80,8 @@ def handle_string(value):
             vie.gain(1.2)
         elif cmd_data == 'SpeedDown':
             vie.gain(0.8)
+        else:
+            logging.warning('Unknown Command: ' + cmd_type)
 
 
 def main():
@@ -87,9 +92,13 @@ def main():
 
     # setup web interface
     brew = Spacebrew("MPL Trainer", description="MPL Training Interface", server="192.168.1.1", port=9000)
-    brew.addSubscriber("webCommand", "string")
-    brew.subscribe("webCommand", handle_string)
+    brew.addSubscriber("strCommand", "string")
+    brew.addPublisher("strStatus", "string")
+    brew.addPublisher("strTrainingMotion", "string")
+    brew.addPublisher("strOutputMotion", "string")
+    brew.subscribe("strCommand", handle_string)
     brew.start()
+
 
     # Setup MPL scenario
     vie = Scenario()
@@ -141,20 +150,32 @@ def main():
     # ##########################
     # Run the control loop
     # ##########################
+    str_status = ''
+    str_training_motion = ''
+    str_output_motion = ''
+
     while True:
         try:
-            # print('running main loop')
-
             # Fixed rate loop.  get start time, run model, get end time; delay for duration
             time_begin = time.time()
 
             # Run the actual model
-            f = mpl_nfu.model(vie)
+            output = mpl_nfu.model(vie)
 
             if add_data:
-                vie.TrainingData.add_data(f, motion_id, current_motion)
-                # print(current_motion)
-                # print(current_motion + )
+                vie.TrainingData.add_data(output['features'], motion_id, current_motion)
+
+            msg = 'V=' + nfu.get_voltage() + ' ' + output['status']
+            if not str_status == msg:
+                brew.publish("strStatus", msg)
+                str_status = msg
+            msg = '{} [{:.0f}]'.format(current_motion, round(vie.TrainingData.get_totals(motion_id),-1))
+            if not str_training_motion == msg:
+                brew.publish("strTrainingMotion", msg)
+                str_training_motion = msg
+            if not str_output_motion == output['decision']:
+                brew.publish("strOutputMotion", output['decision'])
+                str_output_motion = output['decision']
 
             time_end = time.time()
             time_elapsed = time_end - time_begin
@@ -165,7 +186,6 @@ def main():
                 pass
 
         except KeyboardInterrupt:
-            print('Stopping')
             break
 
     # cleanup
@@ -176,10 +196,8 @@ def main():
     brew.stop()
 
     logging.info('Done')
-    print("Done")
 
 if __name__ == '__main__':
-    print('starting main')
     file = 'mpl_www_auto_run.log'
     logging.basicConfig(filename=file, level=logging.INFO, format='%(asctime)s %(message)s')
     main()

@@ -48,10 +48,20 @@ class NfuUdp:
 
         self.__active_connection = False
 
+        self.mpl_status = None  # updated by hearbeat messages
+
     def is_alive(self):
         with self.__lock:
             val = self.__active_connection
         return val
+
+    def get_voltage(self):
+        if self.is_alive() and self.mpl_status is not None:
+            return '{:6.2f}'.format(self.mpl_status['busVoltage'])
+        else:
+            return 'MPL_DISCONNECTED'
+        
+
 
     def connect(self):
 
@@ -142,7 +152,7 @@ class NfuUdp:
 
             if len(data) == 36:
                 with self.__lock:
-                    self.decode_heartbeat_msg(data)
+                    self.mpl_status = self.decode_heartbeat_msg(data)
             elif len(data) == 2190:
                 with self.__lock:
                     pass

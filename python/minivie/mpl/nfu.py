@@ -19,7 +19,7 @@ import numpy as np
 class NfuUdp:
     """ 
     Python Class for NFU connections 
-    
+
     Hostname is the IP of the NFU
     UdpTelemPort is where percepts and EMG from NFU are received locally
     UdpCommandPort
@@ -29,7 +29,7 @@ class NfuUdp:
     % /fs/etfs/telem_port defaults to 9027
     % /fs/etfs/cmd_port defaults to 6200
     % /fs/etfs/cmd_udp_port defaults to 6201
-    
+
     """
 
     def __init__(self, hostname="192.168.1.111", udp_telem_port=6300, udp_command_port=6201):
@@ -67,7 +67,7 @@ class NfuUdp:
         self.__sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.__sock.bind(('0.0.0.0', self.udp['TelemPort']))
         self.__sock.settimeout(3.0)
-        
+
         # initialize the MPL
         self.send_init_cmd()
 
@@ -116,7 +116,7 @@ class NfuUdp:
     def message_handler(self):
         # Loop forever to receive data
         #
-        # This is a thread to receive data as soon as it arrives.  
+        # This is a thread to receive data as soon as it arrives.
         while True:
             # Blocking call until data received
             try:
@@ -163,6 +163,8 @@ class NfuUdp:
 
                 # percept bytes
                 # tlm = decode_percept_msg(data[1366:])
+                tlm = decode_lmc_msg(data[1366:])
+
                 tlm = {'LMC': data[-308:].reshape(44, 7, order='F')}
 
                 if self.param['echoPercepts']:
@@ -484,6 +486,19 @@ def decode_percept_msg(b):
     return tlm
 
 
+def decode_lmc_msg(b):
+    # Log: Translated to Python by COP on 12OCT2016
+
+    # Check if b is input as bytes, if so, convert to uint8
+    if isinstance(b, (bytes, bytearray)):
+        b = struct.unpack('B' * len(b), b)
+        b = np.array(b, np.uint8)
+
+    tlm = {'LMC': b[-308:].reshape(44, 7, order='F')}
+
+    return tlm
+
+
 def connection_manager(nfu):
     """
     This function intended to maintain limb connection through MPL power cycles
@@ -521,10 +536,10 @@ def connection_manager(nfu):
                 # print('MPL Connection is Active')
                 time.sleep(1.0)  # wait between connection checks
 
-            # Connection lost
-            # RSA: Don't close the socket since it won't be reusable
-            # print('MPL Connection is Lost. Closing...')
-            # nfu.close()
+                # Connection lost
+                # RSA: Don't close the socket since it won't be reusable
+                # print('MPL Connection is Lost. Closing...')
+                # nfu.close()
         else:
             logging.info('MPL Ping Failure. Retrying...')
             time.sleep(1.0)  # wait between pings

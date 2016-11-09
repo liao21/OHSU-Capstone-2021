@@ -14,6 +14,8 @@ classdef MplUnity < Scenarios.OnlineRetrainer
         DemoMyoShoulderLeft = 0;
         
         Fref = eye(4);
+        Fref2 = eye(4);
+        
     end
     methods
         function initialize(obj,SignalSource,SignalClassifier,TrainingData)
@@ -129,16 +131,31 @@ classdef MplUnity < Scenarios.OnlineRetrainer
             % perform local interpolation
             mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
             
+            % one myo transradial case
             if obj.DemoMyoElbow
                 % Demo for using myo band for elbow angle
                 try
-                    ang = obj.SignalSource.getEulerAngles;
+                    if obj.DemoMyoShoulder
+                        % if using motion control for both elbow and
+                        % shoulder, get elbow from 'lower' band
+                        % ang = obj.SignalSource.SecondMyo.getEulerAngles;
+                        %[R1, R2] = obj.SignalSource.getRotationMatrix();
+                        %R2 = pinv(R2)*R1
+                        %ang = LinAlg.decompose_R(R2);
+                        
+                        % two myo TR case elbow determined later
+                        ang = [0 -90 0];
+                    else                        
+                        ang = obj.SignalSource.getEulerAngles;
+                    end
                     EL = ang(2) + 90;
                     EL = EL * pi/180;
                     mplAngles(4) = EL;
                 end
             end
-            if obj.DemoMyoShoulder
+            
+            % Trans humeral case
+            if obj.DemoMyoShoulder && ~obj.DemoMyoElbow
                 
                 R = obj.SignalSource.getRotationMatrix();
                 F = [R [0; 0; 0]; 0 0 0 1];
@@ -163,6 +180,42 @@ classdef MplUnity < Scenarios.OnlineRetrainer
                 end
             end
             
+            % two myo transradial case
+            if obj.DemoMyoShoulder && obj.DemoMyoElbow
+                
+                [R, R2] = obj.SignalSource.getRotationMatrix();
+                
+                F = [R [0; 0; 0]; 0 0 0 1];
+                if isequal(obj.Fref, eye(4))
+                    obj.Fref = F;
+                end
+                newXYZ = LinAlg.decompose_R(pinv(obj.Fref)*F);
+                
+                % Compute relative orientation between myo 1 and myo 2
+                F2 = [R2 [0; 0; 0]; 0 0 0 1];
+                if isequal(obj.Fref2, eye(4))
+                    obj.Fref2 = F2;
+                end
+               
+                
+                relXYZ = LinAlg.decompose_R(pinv(pinv(obj.Fref)*F)*pinv(obj.Fref2)*F2)
+                EL = relXYZ(3);
+                
+                if obj.DemoMyoShoulderLeft
+                    % left side angle decomposition
+                    mplAngles(1) = -newXYZ(3) * pi / 180;
+                    mplAngles(2) = -newXYZ(2) * pi / 180;
+                    mplAngles(3) = -newXYZ(1) * pi / 180;
+                    mplAngles(4) = -EL * pi/180;
+                else
+                    mplAngles(1) = newXYZ(3) * pi/180;
+                    mplAngles(2) = -newXYZ(2) * pi/180;
+                    mplAngles(3) = newXYZ(1) * pi/180;
+                    mplAngles(4) = EL * pi/180;
+                end
+                mplAngles(1:4);
+                
+            end
             obj.hSink.putData(mplAngles);
             
         end

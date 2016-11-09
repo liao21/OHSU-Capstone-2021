@@ -50,6 +50,7 @@
     <!-- Myo Stream Ports -->
     <add key="myoUdpPort1"    value="10001"/>
     <add key="myoUdpPort2"    value="10002"/>
+    <add key="myoUdpRate"    value="200"/>    
     <add key="myoElbowEnable"    value="1"/>
     <add key="myoElbowShoulder"    value="0"/>
     <add key="myoElbowShoulderLeft"    value="0"/>
@@ -61,7 +62,16 @@
     192.168.1.1:12001 - send tactor via UDP
     '' - Null / Disable
     -->
-    <add key="TactorComPort"    value=""/>
+    <!-- Tactor Types 
+    Options include:
+    ServoUDP
+    VibroUDP
+    VibroBluetooth
+    '' - Null / Disable
+    -->
+    <add key="TactorComPort" value=""/>
+    <add key="TactorType" value="VibroUDP"/>
+    
     
     <!-- User defined joint limits
      Optionally limit the range of each joint prior to sending to the MPL
@@ -74,7 +84,7 @@
     <add key="SHOULDER_FE_LIMITS"     value=" -35, 170" />
     <add key="SHOULDER_AB_AD_LIMITS"  value=" -90, 0" />
     <add key="HUMERAL_ROT_LIMITS"     value=" -35, 80" />
-    <add key="ELBOW_LIMITS"           value="  10, 140" />
+    <add key="ELBOW_LIMITS"           value="  10, 130" />
 
     <add key="WRIST_ROT_LIMITS"       value=" -90, 90" />
     <add key="WRIST_AB_AD_LIMITS"     value=" -45, 45" />

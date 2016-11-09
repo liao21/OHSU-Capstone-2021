@@ -135,7 +135,7 @@ classdef UserConfig < handle
             end
             
             % convert value to the class of the default parameter.
-            % If the defualt value isn't a character, then it needs to be
+            % If the default value isn't a character, then it needs to be
             % converted
             if ~ischar(defaultValue) && ischar(result)
                 % example '[1 3]'  --> 1 3

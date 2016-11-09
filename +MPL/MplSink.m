@@ -118,7 +118,7 @@ classdef MplSink < Common.DataSink
             tMin = zeros(numJointsMpl,1);
 
             % Maximum move velocity
-            vMax = 0.3;
+            vMax = 0.4;
             
             for i = 1:numJointsMpl
                 % compute minimum time
@@ -130,8 +130,10 @@ classdef MplSink < Common.DataSink
             fprintf('[%s.m] Minimum time for move is %6.1f\n',mfilename,max(tMin));
             
             % add 10% to get nice blends 
-            tFinal = max(tMin) * 1.1;
-            numSteps = length(0:dt:tFinal);
+            tMax = max(tMin) * 1.1;
+            t = 0:dt:tMax;
+            numSteps = length(t);
+            tFinal = max(t);
                         
             qAll = zeros(numJointsMpl,numSteps);
             

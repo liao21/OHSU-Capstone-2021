@@ -1,0 +1,9 @@
+Wrist Rotate In
+Wrist Rotate Out
+Wrist Flex In
+Wrist Extend Out
+Hand Open
+Tip Grasp
+Lateral Grasp
+Spherical Grasp
+No Movement

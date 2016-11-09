@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="1894483485" file="C:\git\minivie\Deploy\MiniVIE.prj" location="C:\git\minivie\Deploy" name="MiniVIE" preferred-package-location="C:\git\minivie\Deploy\MiniVIE\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+  <configuration build-checksum="1927626714" file="C:\git\minivie\Deploy\MiniVIE.prj" location="C:\git\minivie\Deploy" name="MiniVIE" preferred-package-location="C:\git\minivie\Deploy\MiniVIE\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
     <param.appname>MiniVIE</param.appname>
     <param.icon>${PROJECT_ROOT}\MiniVIE_resources\icon.ico</param.icon>
     <param.icons>
@@ -8,8 +8,8 @@
       <file>${PROJECT_ROOT}\MiniVIE_resources\icon_24.png</file>
       <file>${PROJECT_ROOT}\MiniVIE_resources\icon_16.png</file>
     </param.icons>
-    <param.version>2.0</param.version>
-    <param.authnamewatermark>Robert Armiger</param.authnamewatermark>
+    <param.version>2.1</param.version>
+    <param.authnamewatermark>R. Armiger</param.authnamewatermark>
     <param.email>robert.armiger@jhuapl.edu</param.email>
     <param.company>JHU/APL</param.company>
     <param.summary>Mini Virtual Integration Environment for Prosthetic Control Using Pattern Recognition</param.summary>
@@ -17,6 +17,7 @@
 but is a separate and lightweight MATLAB based implementation. 
 
 Revisions:
+11/09/2016: v2.1 Compiled with dual arm motion tracking
 10/21/2016: v2.0 New GUI R2016a Release
 07/18/2016: v1.95 Fixed Multi DAQ bug, R2016a Release
 04/16/2016: v1.9 Fixed Unity Bug, R2016a Release
@@ -43,8 +44,8 @@ Revisions:
     <param.embed.ctf>true</param.embed.ctf>
     <param.target.type>subtarget.standalone</param.target.type>
     <param.support.packages />
-    <param.web.mcr>false</param.web.mcr>
-    <param.package.mcr>true</param.package.mcr>
+    <param.web.mcr>true</param.web.mcr>
+    <param.package.mcr>false</param.package.mcr>
     <param.no.mcr>false</param.no.mcr>
     <param.web.mcr.name>MiniVieInstaller_web</param.web.mcr.name>
     <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
@@ -53,9 +54,6 @@ Revisions:
     <param.create.log>false</param.create.log>
     <param.log.file />
     <unset>
-      <param.authnamewatermark />
-      <param.email />
-      <param.company />
       <param.guid />
       <param.installpath.combo />
       <param.logo />
@@ -69,6 +67,8 @@ Revisions:
       <param.embed.ctf />
       <param.target.type />
       <param.support.packages />
+      <param.web.mcr />
+      <param.package.mcr />
       <param.no.mcr />
       <param.package.mcr.name />
       <param.no.mcr.name />

@@ -35,8 +35,8 @@ roc.main()
 from mpl import nfu
 nfu.main()
 # generates warning for too long parameter name
-nfu = nfu.NfuUdp()
-nfu.msg_update_param('LONG_PARAM' + '*' * 160 + '|', 0.0)
+nfu.NfuUdp()
+nfu.encode_param_update_msg('LONG_PARAM' + '*' * 160 + '|', 0.0)
 
 from scenarios import open_nfu
 open_nfu.main()

@@ -11,7 +11,6 @@ import time
 import threading
 import socket
 import logging
-import binascii
 import os
 import struct
 import numpy as np
@@ -163,7 +162,8 @@ class NfuUdp:
                     logging.info('CPCH data {} '.format(signal_dict['s'][17, 0]))
 
                 # percept bytes
-                tlm = decode_percept_msg(data[1366:])
+                # tlm = decode_percept_msg(data[1366:])
+                tlm = {'LMC': data[-308:].reshape(44, 7, order='F')}
 
                 if self.param['echoPercepts']:
                     torque = np.array(tlm['LMC'][20:22, :]).view(dtype=np.int16)
@@ -221,11 +221,6 @@ class NfuUdp:
 
     def send_udp_command(self, msg):
         # transmit packets (and optionally write to log for DEBUG)
-
-        logging.debug('Sending "%s"' % binascii.hexlify(msg))
-        # logging.info('Setting up UDP comms on port {}. Default destination is {}:{}:'.format(\
-        #    self.udp['TelemPort'],self.udp['Hostname'],self.udp['CommandPort']))
-
         self.__sock.sendto(msg, (self.udp['Hostname'], self.udp['CommandPort']))
 
 
@@ -257,8 +252,13 @@ def encode_param_update_msg(name, value):
 
     # format message
     msg_id = 4
-    msg = bytearray([msg_id]) + bytearray(name, 'utf-8') + bytearray(128 - len(name)) + bytearray([8, 0, 0, 0]) + \
-          bytearray(dim) + data_bytes[:]
+    msg = bytearray()
+    msg += bytearray([msg_id])
+    msg += bytearray(name, 'utf-8')
+    msg += bytearray(128 - len(name))
+    msg += bytearray([8, 0, 0, 0])
+    msg += bytearray(dim)
+    msg += data_bytes[:]
 
     return msg
 
@@ -268,7 +268,7 @@ def decode_heartbeat_msg(msg_bytes):
 
     # Check if b is input as bytes, if so, convert to uint8
     if isinstance(msg_bytes, (bytes, bytearray)):
-        msg_bytes = struct.unpack('B' * msg_bytes.__len__(), msg_bytes)
+        msg_bytes = struct.unpack('B' * len(msg_bytes), msg_bytes)
         msg_bytes = np.array(msg_bytes, np.uint8)
 
     # List of software states
@@ -307,7 +307,7 @@ def decode_cpch_msg(b):
 
     # Check if b is input as bytes, if so, convert to uint8
     if isinstance(b, (bytes, bytearray)):
-        b = struct.unpack('B' * b.__len__(), b)
+        b = struct.unpack('B' * len(b), b)
         b = np.array(b, np.uint8)
 
     # Determine expected packet size
@@ -386,7 +386,7 @@ def decode_percept_msg(b):
 
     # Check if b is input as bytes, if so, convert to uint8
     if isinstance(b, (bytes, bytearray)):
-        b = struct.unpack('B' * b.__len__(), b)
+        b = struct.unpack('B' * len(b), b)
         b = np.array(b, np.uint8)
 
     data = b[4:]
@@ -434,7 +434,7 @@ def decode_percept_msg(b):
 
             if ftsn_config[i]:  # new style
                 force = []
-                for j in np.linspace(0, 13, 14):
+                for _ in np.linspace(0, 13, 14):
                     force.append(data[data_index])
                     data_index += 1
                 d['force'] = force
@@ -474,7 +474,7 @@ def decode_percept_msg(b):
 
         tlm['ContactSensorPercept'].append(d)
 
-    if b.__len__() > 518:
+    if len(b) > 518:
         lmc = b[-308:].reshape(44, 7, order='F')
     else:
         lmc = []

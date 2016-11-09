@@ -102,7 +102,6 @@ def model(vie):
 
     class_decision = vie.TrainingData.motion_names[out]
     output['decision'] = class_decision
-    #print(class_decision)
 
     class_info = class_map(class_decision)
 

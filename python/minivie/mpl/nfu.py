@@ -165,8 +165,6 @@ class NfuUdp:
                 # tlm = decode_percept_msg(data[1366:])
                 tlm = decode_lmc_msg(data[1366:])
 
-                tlm = {'LMC': data[-308:].reshape(44, 7, order='F')}
-
                 if self.param['echoPercepts']:
                     torque = np.array(tlm['LMC'][20:22, :]).view(dtype=np.int16)
                     pos = np.array(tlm['LMC'][22:24, :]).view(dtype=np.int16)

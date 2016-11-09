@@ -140,9 +140,7 @@ def main():
     udp_command_port = user_config.get_user_config_var('mplNfuUdpCommandPort', 6201)
     nfu = NfuUdp(hostname, udp_telem_port, udp_command_port)
     # start mpl manager as thread
-    # print('***starting MPL connection Thread')
     t = threading.Thread(name='MPLNFU',target=connection_manager, args=(nfu,))
-    # print('***finished starting MPL connection Thread')
     t.setDaemon(True)
     t.start()
     vie.DataSink = nfu
@@ -153,7 +151,7 @@ def main():
     str_status = ''
     str_training_motion = ''
     str_output_motion = ''
-
+    time_elapsed = 0.0
     while True:
         try:
             # Fixed rate loop.  get start time, run model, get end time; delay for duration
@@ -170,6 +168,7 @@ def main():
                 brew.publish("strStatus", msg)
                 str_status = msg
             msg = '{} [{:.0f}]'.format(current_motion, round(vie.TrainingData.get_totals(motion_id),-1))
+            #msg = '{} [{:.0f}] {:.3f} '.format(current_motion, round(vie.TrainingData.get_totals(motion_id),-1), time_elapsed)
             if not str_training_motion == msg:
                 brew.publish("strTrainingMotion", msg)
                 str_training_motion = msg

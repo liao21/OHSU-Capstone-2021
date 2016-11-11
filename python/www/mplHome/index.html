@@ -9,8 +9,8 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
 
-    <link rel="stylesheet" href="js/jquery.mobile-1.4.3/jquery.mobile-1.4.3.min.css" />
-    <link rel="stylesheet" href="css/blueimp-gallery.css">
+    <link rel="stylesheet" href="jquery.mobile/jquery.mobile-1.4.5.min.css" />
+    <link rel="stylesheet" href="blueimp-gallery/css/blueimp-gallery.css">
     <style type='text/css'>
         html {
             background-color: #333;
@@ -27,9 +27,9 @@
     </style>
 
     
-    <script src="js/jquery-1.11.1.min.js"></script>
-    <script src="js/jquery.mobile-1.4.3/jquery.mobile-1.4.3.min.js"></script>
-    <script src="js/sb-1.4.1.js"></script>
+    <script src="jquery.mobile/jquery-1.11.1.min.js"></script>
+    <script src="jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
+    <script src="spacebrew.js/sb-1.4.1.min.js"></script>
 
     <script>
         // Spacebrew Object
@@ -146,12 +146,11 @@
         </div>
 
         <p>Selected Motion: <span = id="msg_train"/></p>
-        <div id="loco-carousel" class="blueimp-gallery blueimp-gallery-carousel">
+        <div id="blueimp-image-carousel" class="blueimp-gallery blueimp-gallery-controls blueimp-gallery-carousel">
             <div class="slides"></div>
             <h3 class="title"></h3>
-            <a class="prev">
-                <</a>
-                    <a class="next">></a>
+            <a class="prev">‹</a>
+            <a class="next">›</a>
         </div>
 
         <div data-role="controlgroup" data-type="horizontal">
@@ -162,11 +161,13 @@
             <!-- <a href="#" class="ui-btn" id="ID_TRAIN">Train</a> -->
         </div>
 
-        <script src="js/blueimp-helper.js"></script>
-        <script src="js/blueimp-gallery.js"></script>
-        <script src="js/blueimp-gallery-indicator.js"></script>
-        <script src="js/jquery.blueimp-gallery.js"></script>
-        <script src="js/galleryLinks.js"></script>
+        <script src="blueimp-gallery/js/blueimp-helper.js"></script>
+        <script src="blueimp-gallery/js/blueimp-gallery.js"></script>
+        <script src="blueimp-gallery/js/blueimp-gallery-fullscreen.js"></script>
+        <script src="blueimp-gallery/js/blueimp-gallery-indicator.js"></script>
+        <script src="blueimp-gallery/js/vendor/jquery.js"></script>
+        <script src="blueimp-gallery/js/jquery.blueimp-gallery.js"></script>
+        <script src="gallery-links.js"></script>
 
         <p>Classifying: <span = id="msg_output"/></p>
         <p>Status: <span = id="msg_status"/></p>

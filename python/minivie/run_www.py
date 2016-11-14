@@ -34,7 +34,7 @@ motion_id = 0
 vie = {}
 
 
-def handle_string(value):
+def spacebrew_string(value):
     global vie, current_motion, add_data, motion_id
 
     # Commands should come in with colon operator
@@ -95,12 +95,12 @@ def main():
     user_config.setup_file_logging(prefix='MPL_')
 
     # setup web interface
-    brew = Spacebrew("MPL Trainer", description="MPL Training Interface", server="192.168.1.1", port=9000)
+    brew = Spacebrew("MPL Embedded", description="JHU/APL Embedded Controller", server="192.168.1.1", port=9000)
     brew.addSubscriber("strCommand", "string")
     brew.addPublisher("strStatus", "string")
     brew.addPublisher("strTrainingMotion", "string")
     brew.addPublisher("strOutputMotion", "string")
-    brew.subscribe("strCommand", handle_string)
+    brew.subscribe("strCommand", spacebrew_string)
     brew.start()
 
 

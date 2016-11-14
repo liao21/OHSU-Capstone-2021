@@ -16,6 +16,7 @@ class Scenario(object):
 
         self.__pause = False
         self.__gain_value = 1.0
+        self.__hand_gain_value = 1.0
 
 
     def is_paused(self):
@@ -23,6 +24,9 @@ class Scenario(object):
 
     def get_gain_value(self):
         return self.__gain_value
+
+    def get_hand_gain_value(self):
+        return self.__hand_gain_value
 
     def pause(self):
         if self.__pause:
@@ -34,4 +38,9 @@ class Scenario(object):
         self.__gain_value *= factor
         if self.__gain_value < 0.1:
             self.__gain_value = 0.1
+
+    def hand_gain(self,factor):        
+        self.__hand_gain_value *= factor
+        if self.__hand_gain_value < 0.1:
+            self.__hand_gain_value = 0.1
         

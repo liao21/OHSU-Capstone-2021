@@ -105,7 +105,7 @@ def model(vie):
 
     class_info = class_map(class_decision)
 
-    grasp_gain = vie.get_gain_value()
+    grasp_gain = vie.get_hand_gain_value()
     joint_gain = vie.get_gain_value()
 
     # Set joint velocities

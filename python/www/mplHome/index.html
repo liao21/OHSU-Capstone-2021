@@ -82,6 +82,8 @@
             $("#ID_BACKUP").on("mousedown", function() {sendCmd("Cmd:Backup")} );
             $("#ID_SPEEDUP").on("mousedown", function() {sendCmd("Cmd:SpeedUp")} );
             $("#ID_SPEEDDOWN").on("mousedown", function() {sendCmd("Cmd:SpeedDown")} );
+            $("#ID_HAND_SPEED_UP").on("mousedown", function() {sendCmd("Cmd:HandSpeedUp")} );
+            $("#ID_HAND_SPEED_DOWN").on("mousedown", function() {sendCmd("Cmd:HandSpeedDown")} );
             $("#ID_PAUSE").on("mousedown", function() {sendCmd("Cmd:Pause")} );
 
         };
@@ -138,10 +140,11 @@
 
         <div data-role="controlgroup" data-type="horizontal">
             <p>Functions:</p>
-            <a href="#" class="ui-btn" id="ID_SAVE">Save</a>
             <!-- <a href="#" class="ui-btn" id="ID_BACKUP">Bkup</a>-->
-            <a href="#" class="ui-btn" id="ID_SPEEDUP">[+]</a>
-            <a href="#" class="ui-btn" id="ID_SPEEDDOWN">[-]</a>
+            <a href="#" class="ui-btn" id="ID_SPEEDUP">Arm+</a>
+            <a href="#" class="ui-btn" id="ID_SPEEDDOWN">Arm-</a>
+            <a href="#" class="ui-btn" id="ID_HAND_SPEED_UP">Hand+</a>
+            <a href="#" class="ui-btn" id="ID_HAND_SPEED_DOWN">Hand-</a>
             <a href="#" class="ui-btn" id="ID_PAUSE">||</a>
         </div>
 
@@ -154,10 +157,11 @@
         </div>
 
         <div data-role="controlgroup" data-type="horizontal">
-            <a href="#" class="ui-btn" id="ID_ADD">Add Data</a>
+            <a href="#" class="ui-btn" id="ID_ADD">Add</a>
             <a href="#" class="ui-btn" id="ID_STOP">Stop</a>
             <a href="#" class="ui-btn" id="ID_CLEARCLASS">Clear</a>
-            <a href="#" class="ui-btn" id="ID_CLEARALL">Clear All</a>
+            <a href="#" class="ui-btn" id="ID_CLEARALL">Reset</a>
+            <a href="#" class="ui-btn" id="ID_SAVE">Save</a>
             <!-- <a href="#" class="ui-btn" id="ID_TRAIN">Train</a> -->
         </div>
 

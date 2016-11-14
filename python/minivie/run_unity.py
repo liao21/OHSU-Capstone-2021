@@ -15,7 +15,8 @@ from scenarios import mpl_nfu
 from utilities import user_config, ping
 from scenarios import Scenario
 from pySpacebrew.spacebrew import Spacebrew
-from mpl.nfu import NfuUdp, connection_manager
+#from mpl.nfu import NfuUdp, connection_manager
+from mpl.unity import UnityUdp
 from inputs import myo
 import pattern_rec as pr
 from controls.plant import Plant, class_map
@@ -142,10 +143,11 @@ def main():
     hostname = user_config.get_user_config_var('mplNfuIp', '192.168.1.111')
     udp_telem_port = user_config.get_user_config_var('mplNfuUdpStreamPort', 6300)
     udp_command_port = user_config.get_user_config_var('mplNfuUdpCommandPort', 6201)
-    nfu = NfuUdp(hostname, udp_telem_port, udp_command_port)
-    t = threading.Thread(name='MPLNFU',target=connection_manager, args=(nfu,))
-    t.setDaemon(True)
-    t.start()
+    nfu = UnityUdp(ip='10.0.0.154')
+    #nfu = NfuUdp(hostname, udp_telem_port, udp_command_port)
+    #t = threading.Thread(name='MPLNFU',target=connection_manager, args=(nfu,))
+    #t.setDaemon(True)
+    #t.start()
     vie.DataSink = nfu
 
     # ##########################
@@ -166,7 +168,8 @@ def main():
             if add_data:
                 vie.TrainingData.add_data(output['features'], motion_id, current_motion)
 
-            msg = 'V=' + nfu.get_voltage() + ' ' + output['status']
+            ###msg = 'V=' + nfu.get_voltage() + ' ' + output['status']
+            msg = output['status']
             if not str_status == msg:
                 brew.publish("strStatus", msg)
                 str_status = msg

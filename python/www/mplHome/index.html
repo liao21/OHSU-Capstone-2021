@@ -57,7 +57,7 @@
             sb = new Spacebrew.Client();
 
             sb.name(app_name);
-            sb.description("JHU/APL Mobile Training Interface.");
+            sb.description("JHU/APL Mobile Training Interface");
 
             // configure the publication and subscription feeds
             sb.addPublish("strCommand", "string", "");
@@ -85,6 +85,7 @@
             $("#ID_HAND_SPEED_UP").on("mousedown", function() {sendCmd("Cmd:HandSpeedUp")} );
             $("#ID_HAND_SPEED_DOWN").on("mousedown", function() {sendCmd("Cmd:HandSpeedDown")} );
             $("#ID_PAUSE").on("mousedown", function() {sendCmd("Cmd:Pause")} );
+            $("#ID_SHUTDOWN").on("mousedown", function() {sendCmd("Cmd:Shutdown")} );
 
         };
         
@@ -133,20 +134,25 @@
 <body>
 
     <div data-role="page">
-        <div data-role="header">
-            <h1>MPL Controller</h1>
+        <div data-role="header" data-theme="b" >
+            <h1>MPL Mobile Trainer</h1>
         </div>
         <!-- <div data-role="content">	 -->
 
-        <div data-role="controlgroup" data-type="horizontal">
-            <p>Functions:</p>
-            <!-- <a href="#" class="ui-btn" id="ID_BACKUP">Bkup</a>-->
-            <a href="#" class="ui-btn" id="ID_SPEEDUP">Arm+</a>
-            <a href="#" class="ui-btn" id="ID_SPEEDDOWN">Arm-</a>
-            <a href="#" class="ui-btn" id="ID_HAND_SPEED_UP">Hand+</a>
-            <a href="#" class="ui-btn" id="ID_HAND_SPEED_DOWN">Hand-</a>
-            <a href="#" class="ui-btn" id="ID_PAUSE">||</a>
+        <div data-demo-html="true">
+        <div data-role="collapsible" data-collapsed-icon="carat-d" data-expanded-icon="carat-u">
+        <h4>Functions</h4>
+        <ul data-role="listview" data-inset="false">
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_SPEEDUP">Increase Arm Speed</a></li>
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_SPEEDDOWN">Decrease Arm Speed</a></li>
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_HAND_SPEED_UP">Increase Hand Speed</a></li>
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_HAND_SPEED_DOWN">Decrease Hand Speed</a></li>
+        <li><a href="#" class="ui-btn ui-btn-icon-right" id="ID_PAUSE">Pause Arm Motion</a></li>
+        <li></li>
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-alert" id="ID_SHUTDOWN">Shutdown</a></li>
+        </ul>
         </div>
+        </div><!--/demo-html -->
 
         <p>Selected Motion: <span = id="msg_train"/></p>
         <div id="blueimp-image-carousel" class="blueimp-gallery blueimp-gallery-controls blueimp-gallery-carousel">

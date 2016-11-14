@@ -9,6 +9,7 @@
 
 # Python 2 and 3:
 import logging
+import os
 import time
 import threading
 from scenarios import mpl_nfu
@@ -76,6 +77,8 @@ def spacebrew_string(value):
             vie.TrainingData.copy()
         elif cmd_data == 'Pause':
             vie.pause()
+        elif cmd_data == 'Shutdown':
+            os.system("sudo shutdown -h now")
         elif cmd_data == 'SpeedUp':
             vie.gain(1.2)
         elif cmd_data == 'SpeedDown':

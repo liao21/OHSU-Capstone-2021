@@ -10,5 +10,6 @@
 *.tif
 *.png
 *.asv
-*.pyc
 *.hdf5
+*.pyc
+spacebrew_server

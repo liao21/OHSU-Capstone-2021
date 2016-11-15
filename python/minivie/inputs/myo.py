@@ -219,9 +219,15 @@ class MyoUdp(object):
             try:
                 # recv call will error if socket closed on exit
                 data, address = self.__sock.recvfrom(1024)
-            except socket.error as e:
+            except socket.timeout:
+                # the data stream has stopped.  don't break the thread, just continue to wait
+                msg = "MyoUdp timed out during recvfrom() on IP={} Port={}. Error: {}".format(
+                    self.addr[0], self.addr[1], socket.timeout)
+                logging.warning(msg)
+                continue
+            except socket.error:
                 msg = "MyoUdp Socket Error during recvfrom() on IP={} Port={}. Error: {}".format(
-                    self.addr[0], self.addr[1], e)
+                    self.addr[0], self.addr[1], socket.error)
                 logging.warning(msg)
                 return
 
@@ -286,6 +292,11 @@ class MyoUdp(object):
                     self.__gyro = np.array(unscaled[7:10], np.float) / MYOHW_GYROSCOPE_SCALE
 
                     # print(self.__quat)
+
+            elif len(data) == 1:  # BATT Value
+                with self.__lock:
+                    msg = 'Battery Level: {}'.format(ord(data))
+                    logging.info(msg)
 
             else:
                 # incoming data is not of length = 8, 20, 40, or 48
@@ -546,6 +557,7 @@ def main():
         h.log_handlers = l.add_sample
         h.connect()
     elif args.TX_MODE:
+        # TODO: make this file date stamped
         f = 'hci' + str(args.IFACE) + '_myo.log'
         logging.basicConfig(filename=f, level=logging.DEBUG, format='%(asctime)s %(message)s')
         manage_connection(args.MAC, utilities.get_address(args.ADDRESS), args.IFACE)

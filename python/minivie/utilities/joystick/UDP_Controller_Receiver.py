@@ -105,14 +105,14 @@ def main():
                 data = bytearray(data)
 
                 if data[0] != 255 : # if non-interrupt data is recieved
-                    [btns,axes] = unpack(data)
+                    [btns, axes] = unpack(data)
                     #print(str(btns)+str(axes))
                     emit_controller(device, btn_events,axis_events,btns,axes)
 
                     
                 #handle interrupt data
                 else:
-                    print('recieved interrupt code: ', data)
+                    print('received interrupt code: ', data)
                     if len(data) > 1:
                         
                         if data[1] == ord('Q'): #quit

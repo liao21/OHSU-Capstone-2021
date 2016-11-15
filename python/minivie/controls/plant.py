@@ -30,9 +30,9 @@ import math
 import time
 import logging
 import numpy as np
-from enum import IntEnum
 
 import mpl.roc as roc
+from mpl import JointEnum as MplId
 from utilities import user_config
 
 
@@ -48,25 +48,25 @@ def class_map(class_name):
      JointId, Direction = self.Joint.get(class_name,[ [], 0 ])
     """
     class_info = {'IsGrasp': 0, 'JointId': None, 'Direction': 0, 'GraspId': None}
-    mpl = MplJointEnum
+
     # Map classes to joint id and direction of motion
     # Class Name: IsGrasp, JointId, Direction, GraspId
     class_lookup = {
         'No Movement': [False, None, 0, None],
-        'Shoulder Flexion': [False, mpl.SHOULDER_FE, +1, None],
-        'Shoulder Extension': [False, mpl.SHOULDER_FE, -1, None],
-        'Shoulder Adduction': [False, mpl.SHOULDER_AB_AD, +1, None],
-        'Shoulder Abduction': [False, mpl.SHOULDER_AB_AD, -1, None],
-        'Humeral Internal Rotation': [False, mpl.HUMERAL_ROT, +1, None],
-        'Humeral External Rotation': [False, mpl.HUMERAL_ROT, -1, None],
-        'Elbow Flexion': [False, mpl.ELBOW, +1, None],
-        'Elbow Extension': [False, mpl.ELBOW, -1, None],
-        'Wrist Rotate In': [False, mpl.WRIST_ROT, +1, None],
-        'Wrist Rotate Out': [False, mpl.WRIST_ROT, -1, None],
-        'Wrist Adduction': [False, mpl.WRIST_AB_AD, +1, None],
-        'Wrist Abduction': [False, mpl.WRIST_AB_AD, -1, None],
-        'Wrist Flex In': [False, mpl.WRIST_FE, +1, None],
-        'Wrist Extend Out': [False, mpl.WRIST_FE, -1, None],
+        'Shoulder Flexion': [False, MplId.SHOULDER_FE, +1, None],
+        'Shoulder Extension': [False, MplId.SHOULDER_FE, -1, None],
+        'Shoulder Adduction': [False, MplId.SHOULDER_AB_AD, +1, None],
+        'Shoulder Abduction': [False, MplId.SHOULDER_AB_AD, -1, None],
+        'Humeral Internal Rotation': [False, MplId.HUMERAL_ROT, +1, None],
+        'Humeral External Rotation': [False, MplId.HUMERAL_ROT, -1, None],
+        'Elbow Flexion': [False, MplId.ELBOW, +1, None],
+        'Elbow Extension': [False, MplId.ELBOW, -1, None],
+        'Wrist Rotate In': [False, MplId.WRIST_ROT, +1, None],
+        'Wrist Rotate Out': [False, MplId.WRIST_ROT, -1, None],
+        'Wrist Adduction': [False, MplId.WRIST_AB_AD, +1, None],
+        'Wrist Abduction': [False, MplId.WRIST_AB_AD, -1, None],
+        'Wrist Flex In': [False, MplId.WRIST_FE, +1, None],
+        'Wrist Extend Out': [False, MplId.WRIST_FE, -1, None],
         'Hand Open': [True, None, -1, None],
         'Spherical Grasp': [True, None, +1, 'Spherical'],
         'Tip Grasp': [True, None, +1, 'ThreeFingerPinch'],
@@ -82,46 +82,6 @@ def class_map(class_name):
     return class_info
 
 
-class MplJointEnum(IntEnum):
-    """
-        Allows enumeration reference for joint angles
-        
-        Example:
-        
-        MplJointEnum(1).name
-        'SHOULDER_AB_AD'
-
-    """
-    SHOULDER_FE = 0
-    SHOULDER_AB_AD = 1
-    HUMERAL_ROT = 2
-    ELBOW = 3
-    WRIST_ROT = 4
-    WRIST_AB_AD = 5
-    WRIST_FE = 6
-    INDEX_AB_AD = 7
-    INDEX_MCP = 8
-    INDEX_PIP = 9
-    INDEX_DIP = 10
-    MIDDLE_AB_AD = 11
-    MIDDLE_MCP = 12
-    MIDDLE_PIP = 13
-    MIDDLE_DIP = 14
-    RING_AB_AD = 15
-    RING_MCP = 16
-    RING_PIP = 17
-    RING_DIP = 18
-    LITTLE_AB_AD = 19
-    LITTLE_MCP = 20
-    LITTLE_PIP = 21
-    LITTLE_DIP = 22
-    THUMB_CMC_AB_AD = 23
-    THUMB_CMC_FE = 24
-    THUMB_MCP = 25
-    THUMB_DIP = 26
-    NUM_JOINTS = 27
-
-
 class Plant(object):
     """
         The main state-space integrator for the system.
@@ -133,16 +93,15 @@ class Plant(object):
 
     def __init__(self, dt, roc_filename):
 
-        mpl = MplJointEnum
-        self.JointPosition = np.zeros(mpl.NUM_JOINTS)
-        self.JointVelocity = np.zeros(mpl.NUM_JOINTS)
+        self.JointPosition = np.zeros(MplId.NUM_JOINTS)
+        self.JointVelocity = np.zeros(MplId.NUM_JOINTS)
 
         # Load limits from xml config file
-        self.lowerLimit = [0.0] * mpl.NUM_JOINTS
-        self.upperLimit = [30.0] * mpl.NUM_JOINTS
+        self.lowerLimit = [0.0] * MplId.NUM_JOINTS
+        self.upperLimit = [30.0] * MplId.NUM_JOINTS
 
-        for i in range(mpl.NUM_JOINTS):
-            limit = user_config.get_user_config_var(mpl(i).name + '_LIMITS', (0.0, 30.0))
+        for i in range(MplId.NUM_JOINTS):
+            limit = user_config.get_user_config_var(MplId(i).name + '_LIMITS', (0.0, 30.0))
             self.lowerLimit[i] = limit[0] * math.pi / 180
             self.upperLimit[i] = limit[1] * math.pi / 180
 
@@ -240,7 +199,7 @@ def main():
         # set the mapped class
         p.set_joint_velocity(class_info['JointId'], class_info['Direction'])
         # set a few other joints with a new velocity
-        p.set_joint_velocity([MplJointEnum.ELBOW, MplJointEnum.WRIST_AB_AD], 2.5)
+        p.set_joint_velocity([MplId.ELBOW, MplId.WRIST_AB_AD], 2.5)
 
         # set a grasp state        
         # p.GraspId = 'rest'

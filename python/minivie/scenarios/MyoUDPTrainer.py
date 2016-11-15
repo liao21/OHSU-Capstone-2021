@@ -115,7 +115,7 @@ def unity_trainer(args):
     # load saved data from disk if available
     trainer.load()
 
-    # Ideal communication protocal between unity and python
+    # Ideal communication protocol between unity and python
     # e.g. Unity -> '<command code><data>' -> Python
     # Python -> '<Acknowledgement>' -> Unity
     # sometimes the acknowledgement is omitted

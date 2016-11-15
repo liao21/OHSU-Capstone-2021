@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>MPL Mobile Trainer</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
+
+    <link rel="stylesheet" href="jquery.mobile/jquery.mobile-1.4.5.min.css" />
+    <link rel="stylesheet" href="blueimp-gallery/css/blueimp-gallery.css">
+    <style type='text/css'>
+        html {
+            background-color: #333;
+        }
+        @media only screen and (min-width: 600px) {
+            .ui-page {
+                width: 480px !important;
+                margin: 0 auto !important;
+                position: relative !important;
+                border-right: 5px #666 outset !important;
+                border-left: 5px #666 outset !important;
+            }
+        }
+    </style>
+
+    
+    <script src="jquery.mobile/jquery-1.11.1.min.js"></script>
+    <script src="jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
+    <script src="spacebrew.js/sb-1.4.1.min.js"></script>
+
+    <script>
+        // Spacebrew Object
+        var sb, app_name = "MPL Control",
+            values = {};
+
+        // when page loads call spacebrew setup function 
+        $(window).on("load", setupSpacebrew);
+
+        // when the jquery mobile is ready to initialize the UI call the setUI function 
+        $(document).bind("pageinit", setupUI);
+
+
+        /**
+         * setupSpacebrew Function that creates and configures the connection to the Spacebrew server.
+         * 				  It is called when the page loads.
+         */
+
+        function setupSpacebrew() {
+            var random_id = "0000" + Math.floor(Math.random() * 10000);
+
+            app_name = app_name + ' ' + random_id.substring(random_id.length - 4);
+
+            console.log("Setting up spacebrew connection");
+            sb = new Spacebrew.Client();
+
+            sb.name(app_name);
+            sb.description("JHU/APL Mobile Training Interface");
+
+            // configure the publication and subscription feeds
+            sb.addPublish("strCommand", "string", "");
+            sb.addSubscribe("strStatus", "string");
+            sb.addSubscribe("strTrainingMotion", "string");
+            sb.addSubscribe("strOutputMotion", "string");
+
+            // override Spacebrew events - this is how you catch events coming from Spacebrew
+            sb.onStringMessage = onStringMessage;
+            sb.onOpen = onOpen;
+
+            // connect to Spacebrew
+            sb.connect();
+            
+            // listen to button clicks
+            $("#ID_ADD").on("mousedown", function() {sendCmd("Cmd:Add")} );
+            $("#ID_STOP").on("mousedown", function() {sendCmd("Cmd:Stop")} );
+            $("#ID_CLEARCLASS").on("mousedown", function() {sendCmd("Cmd:ClearClass")} );
+            $("#ID_CLEARALL").on("mousedown", function() {sendCmd("Cmd:ClearAll")} );
+            $("#ID_TRAIN").on("mousedown", function() {sendCmd("Cmd:Train")} );
+            $("#ID_SAVE").on("mousedown", function() {sendCmd("Cmd:Save")} );
+            $("#ID_BACKUP").on("mousedown", function() {sendCmd("Cmd:Backup")} );
+            $("#ID_SPEEDUP").on("mousedown", function() {sendCmd("Cmd:SpeedUp")} );
+            $("#ID_SPEEDDOWN").on("mousedown", function() {sendCmd("Cmd:SpeedDown")} );
+            $("#ID_HAND_SPEED_UP").on("mousedown", function() {sendCmd("Cmd:HandSpeedUp")} );
+            $("#ID_HAND_SPEED_DOWN").on("mousedown", function() {sendCmd("Cmd:HandSpeedDown")} );
+            $("#ID_PAUSE").on("mousedown", function() {sendCmd("Cmd:Pause")} );
+            $("#ID_SHUTDOWN").on("mousedown", function() {sendCmd("Cmd:Shutdown")} );
+
+        };
+        
+        // global function called from index and galleryLinks.js
+        function sendCmd(cmd) {
+            console.log('Send ' + cmd);
+            sb.send("strCommand", "string", cmd);
+        };
+
+        // Function that is called when Spacebrew connection is established
+        function onOpen() {
+            console.log('Spacebrew Connected');
+            var message = "Connected as <strong>" + sb.name() + "</strong>";
+            if (sb.name() === app_name) {
+                message += "<br>You can customize this app's name in the query string by adding <strong>name=your_app_name</strong>."
+            }
+            $("#statusMsg").html(message);
+        }
+
+
+        /**
+         * onStringMessage Function that is called whenever new spacebrew string messages are received.
+         *          It accepts two parameters:
+         * @param  {String} name    Holds name of the subscription feed channel
+         * @param  {String} value 	Holds value received from the subscription feed
+         */
+         function onStringMessage( name, value ){
+             console.log("[onStringMessage] string message received ", value);
+             if (name == "strStatus") {
+                 $("#msg_status").text(value);
+             }         
+             if (name == "strTrainingMotion") {
+                 $("#msg_train").text(value);
+             }         
+             if (name == "strOutputMotion") {
+                 $("#msg_output").text(value);
+             }         
+         }
+
+    </script>
+
+</head>
+
+
+
+<body>
+
+    <div data-role="page">
+        <div data-role="header" data-theme="b" >
+            <h1>MPL Mobile Trainer</h1>
+        </div>
+        <!-- <div data-role="content">	 -->
+
+        <div data-demo-html="true">
+        <div data-role="collapsible" data-collapsed-icon="carat-d" data-expanded-icon="carat-u">
+        <h4>Functions</h4>
+        <ul data-role="listview" data-inset="false">
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_SPEEDUP">Increase Arm Speed</a></li>
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_SPEEDDOWN">Decrease Arm Speed</a></li>
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_HAND_SPEED_UP">Increase Hand Speed</a></li>
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_HAND_SPEED_DOWN">Decrease Hand Speed</a></li>
+        <li><a href="#" class="ui-btn ui-btn-icon-right" id="ID_PAUSE">Pause Arm Motion</a></li>
+        <li></li>
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-alert" id="ID_SHUTDOWN">Shutdown</a></li>
+        </ul>
+        </div>
+        </div><!--/demo-html -->
+
+        <p>Selected Motion: <span = id="msg_train"/></p>
+        <div id="blueimp-image-carousel" class="blueimp-gallery blueimp-gallery-controls blueimp-gallery-carousel">
+            <div class="slides"></div>
+            <h3 class="title"></h3>
+            <a class="prev">‹</a>
+            <a class="next">›</a>
+        </div>
+
+        <div data-role="controlgroup" data-type="horizontal">
+            <a href="#" class="ui-btn" id="ID_ADD">Add</a>
+            <a href="#" class="ui-btn" id="ID_STOP">Stop</a>
+            <a href="#" class="ui-btn" id="ID_CLEARCLASS">Clear</a>
+            <a href="#" class="ui-btn" id="ID_CLEARALL">Reset</a>
+            <a href="#" class="ui-btn" id="ID_SAVE">Save</a>
+            <!-- <a href="#" class="ui-btn" id="ID_TRAIN">Train</a> -->
+        </div>
+
+        <script src="blueimp-gallery/js/blueimp-helper.js"></script>
+        <script src="blueimp-gallery/js/blueimp-gallery.js"></script>
+        <script src="blueimp-gallery/js/blueimp-gallery-fullscreen.js"></script>
+        <script src="blueimp-gallery/js/blueimp-gallery-indicator.js"></script>
+        <script src="blueimp-gallery/js/vendor/jquery.js"></script>
+        <script src="blueimp-gallery/js/jquery.blueimp-gallery.js"></script>
+        <script src="gallery-links.js"></script>
+
+        <p>Classifying: <span = id="msg_output"/></p>
+        <p>Status: <span = id="msg_status"/></p>
+        <p>Server: <span = id="statusMsg"/></p>
+
+        <!-- </div><!-- /content -->
+    </div>
+    <!-- /page -->
+
+</body>
+
+</html>

@@ -1,1 +1,1 @@
-python myo.py --SIM_EXE --ADDRESS //127.0.0.1:10001
+python myo.py --SIM_EXE --ADDRESS //127.0.0.1:15002

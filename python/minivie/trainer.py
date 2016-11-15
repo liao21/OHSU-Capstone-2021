@@ -8,50 +8,23 @@
 # 2016OCT05 Armiger: Created
 
 # Python 2 and 3:
-import logging
+from scenarios import mpl_nfu
 from utilities import user_config
-user_config.setup_file_logging(prefix='MPL_')
 import time
 from six.moves import input
 import numpy as np
-
-from inputs import myo
 import pattern_rec as pr
-from controls.plant import Plant, class_map
-from mpl.nfu import NfuUdp as Sink
-# from mpl.unity import UnityUdp as Sink
+
+
+user_config.setup_file_logging(prefix='MPL_')
 
 # Setup devices and modules
+vie = mpl_nfu.setup()
 
-# plant aka state machine
-filename = "../../WrRocDefaults.xml"
-plant = Plant(0.02, filename)
-
-# input (emg) device
-# select either 1 or 2 myo bands
-src = (myo.MyoUdp(source='//127.0.0.1:15001'), myo.MyoUdp(source='//127.0.0.1:15002'))
-# src = [myo.MyoUdp(source='//127.0.0.1:15001')]
-num_channels = 0
-for s in src:
-    s.connect()
-    num_channels += 8
-
-# training data manager
-data = pr.TrainingData()
-data.load()
-
-data.num_channels = num_channels
-
-c = pr.Classifier(data)
-c.fit()
-
+dt = 0.02
 zc_thresh = 0.0
 ssc_thresh = 0.0
 sample_rate = 200
-
-# output destination
-data_sink = Sink()
-data_sink.connect()
 
 while True:
 
@@ -66,8 +39,8 @@ while True:
     print(" S. Save File")
     print(" X. Reset File")
     print(30 * '-')
-    for idx, val in enumerate(data.motion_names):
-        print("{:2d}. {} [{}]".format(idx+1, val, data.get_totals(idx)))
+    for idx, val in enumerate(vie.TrainingData.motion_names):
+        print("{:2d}. {} [{}]".format(idx+1, val, vie.TrainingData.get_totals(idx)))
     print(30 * '-')
     print(" 0. Exit")
     print(30 * '-')
@@ -78,29 +51,44 @@ while True:
 
     # Take action as per selected menu-option #
     if choice == '0':
+        # exit case
         print("Exiting...")
         break
     if choice.upper() == 'P':
-        for idx, s in enumerate(src):
-            print('Source ' + str(idx))
-            print(s.get_data())
-            print('\n')
+        # Preview data stream
+        while True:
+            try:
+                time.sleep(0.02)  # 50Hz
+                f = np.array([])
+                for s in vie.SignalSource:
+                    new_data = s.get_data()*0.01
+                    features = pr.feature_extract(new_data, zc_thresh, ssc_thresh, sample_rate)
+                    f = np.append(f, features)
+                f = f.tolist()
+                print(''.join(format(x, "6.2f") for x in f[0::4]))
+
+            except KeyboardInterrupt:
+                print('Stopping')
+                break
 
     elif choice.upper() == 'S':
-        data.save()
-        c.fit()
+        # save
+        vie.TrainingData.save()
+        vie.SignalClassifier.fit()
 
     elif choice.upper() == 'B':
-        data.copy()
+        # backup
+        vie.TrainingData.copy()
 
     elif choice.upper() == 'X':
-        data.reset()
-        c.fit()
+        # clear
+        vie.TrainingData.reset()
+        vie.SignalClassifier.fit()
 
     elif choice.upper() == 'R':
         # run classifier:
 
-        if c.classifier is None:
+        if vie.SignalClassifier.classifier is None:
             continue
 
         # ##########################
@@ -108,45 +96,19 @@ while True:
         # ##########################
         while True:
             try:
-                time.sleep(0.02)  # 50Hz
+                # Fixed rate loop.  get start time, run model, get end time; delay for duration
+                time_begin = time.time()
 
-                # Get features from emg data
-                f = np.array([])
-                for s in src:
-                    new_data = s.get_data() * 0.01
-                    features = pr.feature_extract(new_data, zc_thresh, ssc_thresh, sample_rate)
-                    f = np.append(f, features)
-                # format the data in a way that sklearn wants it
-                f = np.squeeze(f)
-                f = f.reshape(1, -1)
-                try:
-                    out = int(c.classifier.predict(f))
-                except ValueError as e:
-                    logging.warning('Unable to classify. Error was: ' + e)
-                    break
+                # Run the actual model
+                mpl_nfu.model(vie)
 
-                class_decision = data.motion_names[out]
-                print(class_decision)
-
-                class_info = class_map(class_decision)
-
-                graspGain = 0.5
-                jointGain = 1.2
-
-                # Set joint velocities
-                plant.new_step()
-                # set the mapped class
-                if class_info['IsGrasp']:
-                    if class_info['GraspId'] is not None:
-                        plant.GraspId = class_info['GraspId']
-                    plant.set_grasp_velocity(class_info['Direction'] * graspGain)
+                time_end = time.time()
+                time_elapsed = time_end - time_begin
+                if dt > time_elapsed:
+                    time.sleep(dt - time_elapsed)
                 else:
-                    plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * jointGain)
-
-                plant.update()
-
-                # transmit output
-                data_sink.send_joint_angles(plant.JointPosition)
+                    #print("Timing Overload: {}".format(time_elapsed))
+                    pass
 
             except KeyboardInterrupt:
                 print('Stopping')
@@ -160,26 +122,30 @@ while True:
             print('Invalid Selection')
             continue
 
-        if choice < 1 or choice > len(data.motion_names):
+        if choice < 1 or choice > len(vie.TrainingData.motion_names):
             print('Selection Out of Range')
             continue
 
         for i in range(100):
             time.sleep(0.02)
             f = np.array([])
-            for s in src:
+            for s in vie.SignalSource:
                 new_data = s.get_data()*0.01
                 features = pr.feature_extract(new_data, zc_thresh, ssc_thresh, sample_rate)
                 f = np.append(f, features)
             f = f.tolist()
-            data.add_data(f, choice - 1, data.motion_names[choice - 1])
+            vie.TrainingData.add_data(f, choice - 1, vie.TrainingData.motion_names[choice - 1])
 
-            print(data.motion_names[choice - 1] + ''.join(format(x, "6.2f") for x in f[0::4]))
+            print(vie.TrainingData.motion_names[choice - 1] + ''.join(format(x, "6.2f") for x in f[0::4]))
 
-        c.fit()
+        vie.SignalClassifier.fit()
         pass
 
-for s in src:
+# cleanup
+for s in vie.SignalSource:
     s.close()
+vie.DataSink.close()
+
 
 print("Done")
+

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 from shutil import copyfile
 import h5py
 import datetime as dt
@@ -163,6 +164,28 @@ class TrainingData:
         self.time_stamp = []
         self.num_samples = 0
 
+    def clear(self, motion_id):
+        # Remove the class data for the matching index
+
+        indices = [i for i, x in enumerate(self.id) if x == motion_id]
+
+        for rev in indices[::-1]:
+            #print('LEN {} {} {} {}'.format(len(self.time_stamp),len(self.name),len(self.id),len(self.data)))
+            #print('Removing element' + str(rev))
+            #print('timestamp {}'.format(self.time_stamp[rev]))
+            del(self.time_stamp[rev])
+            #print('name {}'.format(self.name[rev]))
+            del(self.name[rev])
+            #print('id {}'.format(self.id[rev]))
+            del(self.id[rev])
+            #print('data {}'.format(self.data[rev]))
+            del(self.data[rev])
+            self.num_samples -= 1
+
+        if self.num_samples == 0:
+            self.reset()
+
+
     def add_data(self, data_, id_, name_):
         self.time_stamp.append(time.time())
         self.name.append(name_)
@@ -177,7 +200,7 @@ class TrainingData:
         if motion_id is None:
             total = [0] * num_motions
             for c_ in range(num_motions):
-                total[c_] = self.id.count(c)
+                total[c_] = self.id.count(c_)
         else:
             total = self.id.count(motion_id)
 
@@ -185,10 +208,18 @@ class TrainingData:
 
     def load(self):
 
+        if not os.path.isfile(self.filename + self.file_ext):
+            print('File Not Found: ' + self.filename + self.file_ext)
+            return
+
+        if not os.access(self.filename + self.file_ext, os.R_OK):
+            print('File Not Readable: ' + self.filename + self.file_ext)
+            return
+
         try:
             h5 = h5py.File(self.filename + self.file_ext, 'r')
         except IOError:
-            print('File Not Found: ' + self.filename + self.file_ext)
+            print('Error Loading file: ' + self.filename + self.file_ext)
             return
 
         self.id = h5['/data/id'][:].tolist()
@@ -217,10 +248,19 @@ class TrainingData:
 
     def copy(self):
         # if a training file exists, copy it to a datestamped name
+
+        if not os.path.isfile(self.filename + self.file_ext):
+            print('File Not Found: ' + self.filename + self.file_ext)
+            return
+
+        if not os.access(self.filename + self.file_ext, os.R_OK):
+            print('File Not Readable: ' + self.filename + self.file_ext)
+            return
+
         t = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         src_ = self.filename + self.file_ext
         dst_ = self.filename + '_' + t + self.file_ext
         try:
             copyfile(src_, dst_)
-        except FileNotFoundError:
-            print('No file exists to backup')
+        except IOError:
+            print('Failed to create file backup')

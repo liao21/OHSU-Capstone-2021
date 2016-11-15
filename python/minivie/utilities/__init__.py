@@ -1,6 +1,20 @@
 import six
 
 
+def ping(host):
+    """
+    Returns True if host responds to a ping request
+    """
+    import os
+    import platform
+
+    # Ping parameters as function of OS
+    ping_str = "-n 1" if platform.system().lower() == "windows" else "-c 1"
+
+    # Ping
+    return os.system("ping " + ping_str + " " + host) == 0
+
+
 def get_address(url):
     # convert address url string to get hostname and port as tuple for socket interface
     # error checking is centralized here

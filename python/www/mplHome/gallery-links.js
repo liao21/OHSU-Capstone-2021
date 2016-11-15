@@ -9,9 +9,9 @@ $(function () {
     blueimp.Gallery([
         {
         title: 'No Movement',
-        href:  'img_arm_motions/No_Movement.bmp',
-        type: 'image/bmp',
-        thumbnail: 'img_arm_motions/No_Movement.bmp'
+        href:  'img_arm_motions/No_Movement.png',
+        type: 'image/png',
+        thumbnail: 'img_arm_motions/No_Movement.png'
         },
         {
         title: 'Elbow Flexion',
@@ -51,27 +51,27 @@ $(function () {
         },
         {
         title: 'Hand Open',
-        href:  'img_grasps/Hand_Open.bmp',
-        type: 'image/bmp',
-        thumbnail: 'img_grasps/Hand_Open.bmp'
+        href:  'img_grasps/Hand_Open.png',
+        type: 'image/png',
+        thumbnail: 'img_grasps/Hand_Open.png'
         },
         {
         title: 'Spherical Grasp',
-        href:  'img_grasps/Spherical_Grasp.bmp',
-        type: 'image/bmp',
-        thumbnail: 'img_grasps/Spherical_Grasp.bmp'
+        href:  'img_grasps/Spherical_Grasp.png',
+        type: 'image/png',
+        thumbnail: 'img_grasps/Spherical_Grasp.png'
         },
         {
         title: 'Fine Pinch Grasp',
-        href:  'img_grasps/Tip_Grasp.bmp',
-        type: 'image/bmp',
-        thumbnail: 'img_grasps/Tip_Grasp.bmp'
+        href:  'img_grasps/Tip_Grasp.png',
+        type: 'image/png',
+        thumbnail: 'img_grasps/Tip_Grasp.png'
         },
         {
         title: 'Point Grasp',
-        href:  'img_grasps/Trigger_Grasp.bmp',
-        type: 'image/bmp',
-        thumbnail: 'img_grasps/Trigger_Grasp.bmp'
+        href:  'img_grasps/Trigger_Grasp.png',
+        type: 'image/png',
+        thumbnail: 'img_grasps/Trigger_Grasp.png'
         }
     ], {
         container: '#blueimp-image-carousel',

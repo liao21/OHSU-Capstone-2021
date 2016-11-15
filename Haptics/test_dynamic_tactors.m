@@ -2,9 +2,14 @@
 % 192.168.1.1:12001 - ServoUDP
 % 192.168.1.1:8089
 % VibroUDP or TactorUDP
+% TactorPort = '192.168.1.1:12001'; 
+% TactorType = 'ServoUDP';
 TactorPort = '192.168.1.1:12001'; 
 TactorType = 'ServoUDP';
 maxAngle = 70;
+pulseNum = 2;
+pulseWidth = 0.20;
+pulseGap = 0.20;
 
 switch TactorType
     case 'ServoUDP'
@@ -31,9 +36,6 @@ handles = guidata(buttonGUI);
 
 % 
 dt = 0.01;
-pulseNum = 2;
-pulseWidth = 0.15;
-pulseGap = 0.15;
 [f, t] = createWaveform(dt, pulseWidth, pulseNum, pulseGap);
 f = f * 255;
 tactorNum = 0;

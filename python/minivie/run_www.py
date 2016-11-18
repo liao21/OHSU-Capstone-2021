@@ -27,9 +27,7 @@ def main():
     from pattern_rec.training import TrainingManagerSpacebrew
 
     # setup logging
-    file = 'mpl_www_auto_run.log'
-    logging.basicConfig(filename=file, level=logging.INFO, format='%(asctime)s %(message)s')
-    user_config.setup_file_logging(prefix='MPL_')
+    user_config.setup_file_logging(prefix='MPL_WWW_')
 
     # Setup MPL scenario
     vie = Scenario()
@@ -82,9 +80,6 @@ def main():
     # ##########################
     # Run the control loop
     # ##########################
-    str_status = ''
-    str_training_motion = ''
-    str_output_motion = ''
     time_elapsed = 0.0
     while True:
         try:
@@ -94,20 +89,11 @@ def main():
             # Run the actual model
             output = vie.update()
 
-            msg = 'V=' + nfu.get_voltage() + ' ' + output['status']
-            if not str_status == msg:
-                trainer.send_message("strStatus", msg)
-                str_status = msg
+            trainer.send_message("strStatus", 'V=' + nfu.get_voltage() + ' ' + output['status'])
+            trainer.send_message("strOutputMotion", output['decision'])
 
             msg = '{} [{:.0f}]'.format(vie.training_motion, round(vie.TrainingData.get_totals(vie.training_id), -1))
-            # msg = '{} [{:.0f}] {:.3f} '.format(current_motion, round(vie.TrainingData.get_totals(motion_id),-1), time_elapsed)
-            if not str_training_motion == msg:
-                trainer.send_message("strTrainingMotion", msg)
-                str_training_motion = msg
-
-            if not str_output_motion == output['decision']:
-                trainer.send_message("strOutputMotion", output['decision'])
-                str_output_motion = output['decision']
+            trainer.send_message("strTrainingMotion", msg)
 
             time_end = time.time()
             time_elapsed = time_end - time_begin
@@ -122,9 +108,7 @@ def main():
 
     # cleanup
     vie.close()
-
     trainer.close()
-
     logging.info('Done')
 
 if __name__ == '__main__':

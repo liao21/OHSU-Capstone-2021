@@ -16,6 +16,7 @@ class TrainingManagerSpacebrew(object):
 
     def __init__(self):
         self.brew = None
+        self.last_msg = {'strStatus': '', 'strTrainingMotion': '', 'strOutputMotion': '' }
 
     def setup(self, description="JHU/APL Embedded Controller", server="192.168.1.1", port=9000):
         from pySpacebrew.spacebrew import Spacebrew
@@ -33,7 +34,12 @@ class TrainingManagerSpacebrew(object):
         self.brew.subscribe("strCommand", func)
 
     def send_message(self, msg_id, msg):
-        self.brew.publish(msg_id, msg)
+        # send message but only when the string changes
+
+        if not self.last_msg[msg_id] == msg:
+            self.send_message(msg_id, msg)
+            self.last_msg[msg_id] = msg
+            self.brew.publish(msg_id, msg)
 
     def close(self):
         self.brew.stop()

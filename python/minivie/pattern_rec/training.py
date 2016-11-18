@@ -37,7 +37,6 @@ class TrainingManagerSpacebrew(object):
         # send message but only when the string changes
 
         if not self.last_msg[msg_id] == msg:
-            self.send_message(msg_id, msg)
             self.last_msg[msg_id] = msg
             self.brew.publish(msg_id, msg)
 

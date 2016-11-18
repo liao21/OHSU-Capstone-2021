@@ -2,22 +2,50 @@
 """
 Created on Tue Jan 26 18:03:38 2016
 
-This class is designed to receive training commands via udp. Training commands
-consist of a message length, a class id, and a class name. This can be used to 
-set the cues for which training action is active so that currently recorded data
-can be labeled correctly
+This class is designed to receive training commands. Training commands can be found in scenarios/init
 
 @author: R. Armiger
 """
 
-import threading
-import socket
-VERBOSE = 0
+
+class TrainingManagerSpacebrew(object):
+    """
+    This Training manager uses websockets provided through the spacebrew interface to manager training commands
+
+    """
+
+    def __init__(self):
+        self.brew = None
+
+    def setup(self, description="JHU/APL Embedded Controller", server="192.168.1.1", port=9000):
+        from pySpacebrew.spacebrew import Spacebrew
+
+        # setup web interface
+        self.brew = Spacebrew("MPL Embedded", description, server, port)
+        self.brew.addSubscriber("strCommand", "string")
+        self.brew.addPublisher("strStatus", "string")
+        self.brew.addPublisher("strTrainingMotion", "string")
+        self.brew.addPublisher("strOutputMotion", "string")
+        self.brew.start()
+
+    def add_message_handler(self, func):
+        # attach a function to received commands from websocket
+        self.brew.subscribe("strCommand", func)
+
+    def send_message(self, msg_id, msg):
+        self.brew.publish(msg_id, msg)
+
+    def close(self):
+        self.brew.stop()
 
 
 class TrainingUdp(object):
+    VERBOSE = 0
     """ Class for receiving Training Commands data via UDP"""
     def __init__(self, ip="127.0.0.1", port=3003):
+        import threading
+        import socket
+
         self.UDP_IP = ip
         self.UDP_PORT = port
         print("TrainingUdp target IP:", self.UDP_IP)
@@ -40,6 +68,7 @@ class TrainingUdp(object):
         self.thread.start()
 
     def recv(self):
+        import socket
         """ Receive Incoming Commands """
 
         # Loop forever to recv data

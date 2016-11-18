@@ -175,7 +175,7 @@ class MyoUdp(object):
         self.log_handlers = None
 
         # 8 channel max for myo armband
-        self.__num_channels = 8
+        self.num_channels = 8
 
         # Default kinematic values
         self.__quat = (1.0, 0.0, 0.0, 0.0)

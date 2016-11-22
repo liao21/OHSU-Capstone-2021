@@ -16,7 +16,7 @@ class TrainingManagerSpacebrew(object):
 
     def __init__(self):
         self.brew = None
-        self.last_msg = {'strStatus': '', 'strTrainingMotion': '', 'strOutputMotion': '' }
+        self.last_msg = {'strStatus': '', 'strTrainingMotion': '', 'strOutputMotion': ''}
 
     def setup(self, description="JHU/APL Embedded Controller", server="192.168.1.1", port=9000):
         from pySpacebrew.spacebrew import Spacebrew

@@ -506,10 +506,15 @@ classdef PlotUtils
             
             % workaround since matlab 2014b raises a new figure when
             % setting colormap
-            c = get(f,'HandleVisibility');
-            set(f,'HandleVisibility','on')
-            xticklabel_rotate(tickVal,30,tickLabel);
-            set(f,'HandleVisibility',c)
+            %c = get(f,'HandleVisibility');
+            %set(f,'HandleVisibility','on')
+            %xticklabel_rotate(tickVal,30,tickLabel);
+            %set(f,'HandleVisibility',c)
+
+            % Use built-in matlab rotate function as of R2014b
+            set(hAxes,'XTick',tickVal);
+            set(hAxes,'XTickLabel',flipud(tickLabel))
+            hAxes.XTickLabelRotation = 30; 
             
             title('Actual versus Predicted Class','Parent',hAxes);
             

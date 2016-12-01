@@ -15,8 +15,15 @@ class TrainingManagerSpacebrew(object):
     """
 
     def __init__(self):
+        
+        # handle to spacebrew websocket interface
         self.brew = None
+        
+        # store the last messages so we don't re-transmit a lot of repreated data
         self.last_msg = {'strStatus': '', 'strTrainingMotion': '', 'strOutputMotion': ''}
+        
+        # keep count of skipped messages so we can send at some nominal rate
+        self.msg_skip_count = 0
 
     def setup(self, description="JHU/APL Embedded Controller", server="192.168.1.1", port=9000):
         from pySpacebrew.spacebrew import Spacebrew
@@ -34,11 +41,27 @@ class TrainingManagerSpacebrew(object):
         self.brew.subscribe("strCommand", func)
 
     def send_message(self, msg_id, msg):
-        # send message but only when the string changes
+        # send message but only when the string changes (or timeout occurs)
 
         if not self.last_msg[msg_id] == msg:
             self.last_msg[msg_id] = msg
             self.brew.publish(msg_id, msg)
+            return
+        else:
+            self.msg_skip_count +=1
+            
+        # add a timeout so that we get 'some' messages as a nominal rate
+        
+        if self.msg_skip_count > 100:
+            
+            # re-send all messages
+            for key,val in self.last_msg.items():
+                self.brew.publish(key, val)
+                
+            # reset counter
+            self.msg_skip_count = 0
+            
+        
 
     def close(self):
         self.brew.stop()

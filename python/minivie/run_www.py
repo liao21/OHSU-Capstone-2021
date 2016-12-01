@@ -14,9 +14,9 @@ import threading
 from utilities import user_config
 from scenarios import Scenario
 from mpl.nfu import NfuUdp, connection_manager
-from mpl.unity import UnityUdp
 from inputs import myo
 import pattern_rec as pr
+from pattern_rec.training import TrainingManagerSpacebrew
 from controls.plant import Plant
 
 print('starting script')
@@ -25,7 +25,6 @@ dt = 0.02
 
 
 def main():
-    from pattern_rec.training import TrainingManagerSpacebrew
 
     # setup logging
     user_config.setup_file_logging(prefix='MPL_WWW_')
@@ -69,13 +68,12 @@ def main():
 
     # Sink is output to outside world (in this case to VIE)
     # For MPL, this might be: real MPL/NFU, Virtual Arm, etc.
-    nfu = UnityUdp()  # ("192.168.1.24")
-    #nfu = NfuUdp(user_config.get_user_config_var('mplNfuIp', '192.168.1.111'),
-    #             user_config.get_user_config_var('mplNfuUdpStreamPort', 6300),
-    #             user_config.get_user_config_var('mplNfuUdpCommandPort', 6201))
-    #t = threading.Thread(name='MPLNFU', target=connection_manager, args=(nfu,))
-    #t.setDaemon(True)
-    #t.start()
+    nfu = NfuUdp(user_config.get_user_config_var('mplNfuIp', '192.168.1.111'),
+                 user_config.get_user_config_var('mplNfuUdpStreamPort', 6300),
+                 user_config.get_user_config_var('mplNfuUdpCommandPort', 6201))
+    t = threading.Thread(name='MPLNFU', target=connection_manager, args=(nfu,))
+    t.setDaemon(True)
+    t.start()
     vie.DataSink = nfu
 
     # ##########################
@@ -90,7 +88,7 @@ def main():
             # Run the actual model
             output = vie.update()
 
-            #trainer.send_message("strStatus", 'V=' + nfu.get_voltage() + ' ' + output['status'])
+            trainer.send_message("strStatus", 'V=' + nfu.get_voltage() + ' ' + output['status'])
             trainer.send_message("strOutputMotion", output['decision'])
 
             msg = '{} [{:.0f}]'.format(vie.training_motion, round(vie.TrainingData.get_totals(vie.training_id), -1))

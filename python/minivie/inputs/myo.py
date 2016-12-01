@@ -568,15 +568,15 @@ def manage_connection(mac_addr='C3:0A:EA:14:14:D9', stream_addr=('127.0.0.1', 15
 
 
 def interactive_startup():
-"""
-Read Myo Armband data.  Buffer EMG Data and record the most recent IMU data.
-If this module is executed as ' $ python MyoUdp.py', the output generated can
-serve as a monitor of the EMG data streaming through UDP ports.
+    """
+    Read Myo Armband data.  Buffer EMG Data and record the most recent IMU data.
+    If this module is executed as ' $ python MyoUdp.py', the output generated can
+    serve as a monitor of the EMG data streaming through UDP ports.
 
-Selecting 1 Myo will display streaming EMG and IMU data
-Selecting 2 Myos will display streaming EMG1 and EMG2 data (no IMU data)
+    Selecting 1 Myo will display streaming EMG and IMU data
+    Selecting 2 Myos will display streaming EMG1 and EMG2 data (no IMU data)
 
-"""
+    """
     num_myo = int(input('How many Myo Armbands?'))
 
     # Instantiate MyoUdp Class which will begin listening for streaming UDP data

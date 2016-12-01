@@ -1,5 +1,109 @@
 #!/usr/bin/python
 """
+
+This module contains all the functions for interface with the Thalmic Labs Myo Armband.
+
+There are multiple use cases for talking to a myo armband.  The basic paradigm is to abstract
+the low-level bluetooth communication in favor of a network based broadcast approach.  This allows
+one class to talk over bluetooth but publish or forward the information over a network layer that can 
+be used by multiple local or remote clients.  Bluetooth messages are sent via userdatagram (UDP) 
+network messages.  Additionally, there is a receiver class designed to run on clients to read udp 
+messages and make them accessible in a buffer for use in emg based control.  Finally, two variants 
+of simulators exist for virtuall streaming [random] data for testing when a physical armband isn;t present
+
+usage: myo.py [-h] [-e] [-u] [-rx] [-tx] [-i IFACE] [-m MAC] [-a ADDRESS]
+
+MyoUdp: Read from myo and stream UDP.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -e, --SIM_EXE         Run MyoUdp.exe EMG Simulator
+  -u, --SIM_UNIX        Run UNIX EMG Simulator
+  -rx, --RX_MODE        set Myo to receive mode
+  -tx, --TX_MODE        set Myo to transmit mode
+  -i IFACE, --IFACE IFACE
+                        hciX interface
+  -m MAC, --MAC MAC     Myo MAC address
+  -a ADDRESS, --ADDRESS ADDRESS
+                        Destination Address (e.g. //127.0.0.1:15001)
+                        
+Examples:
+
++--------------------------+
+Start a myo armband server 
++--------------------------+
+
+(e.g. using the built-in bluetooth low energy module in a raspberry pi)
+From raspberry pi console, list available bluetooth low energy devices:
+
+# Verify bluetooth adapter is detected:
+$ hcitool dev
+
+
+# Find Myo MAC addresses 
+$ sudo hcitool lescan
+
+
+# Note these myo mac addresses for use with input/myo.py calls
+
+# Example usage from dual_myo.sh
+#!/bin/bash
+
+cd /home/pi/git/minivie/python/minivie/inputs/
+
+sudo ./myo.py -tx --ADDR //127.0.0.1:15001 --MAC C3:FF:EA:FF:14:D9 --IFACE 0 &
+sudo ./myo.py -tx --ADDR //127.0.0.1:15002 --MAC F0:1C:FF:A7:FF:85 --IFACE 1 &
+
+
++--------------------------+
+Start a myo armband server 
++--------------------------+
+
+(e.g. using the built-in bluetooth low energy module in a raspberry pi)
+From raspberry pi console, list available bluetooth low energy devices:
+
+# Verify bluetooth adapter is detected:
+$ hcitool dev
+
+
+# Find Myo MAC addresses 
+$ sudo hcitool lescan
+
+
+# Note these myo mac addresses for use with input/myo.py calls
+
+# Example script usage from dual_myo.sh
+
+    #!/bin/bash
+    cd /home/pi/git/minivie/python/minivie/inputs/
+    sudo ./myo.py -tx --ADDR //127.0.0.1:15001 --MAC C3:0A:EA:14:14:D9 --IFACE 0 &
+    sudo ./myo.py -tx --ADDR //127.0.0.1:15002 --MAC F0:1C:CD:A7:2C:85 --IFACE 1 &
+
+
++--------------------------+
+Start a myo armband server in simulation mode
++--------------------------+
+
+$ python myo.py -u -a //127.0.0.1:15001
+
+
++--------------------------+
+Start a myo armband receiver
++--------------------------+
+
+In a python script:
+
+from inputs import myo
+
+myo.MyoUdp(source='//127.0.0.1:15001')
+myo.get_data()   # returns a numpy data buffer of size [nSamples][nChannels] of latest samples
+
+
+
+
+
+Revisions:
+
 0.0 Created on Sat Jan 23 20:39:30 2016
 0.1 Edited on Sun Apr 24 2016 - improved data byte processing, created __main__
 0.1.a Edited on Sat APR 30 2016 - Python 3 ready, fixed compatibility to sample_main.py
@@ -9,15 +113,8 @@
 1.0.0 RSA: Added emulator, test code and verified function with linux and windows
 2.0.0 RSA: Added myo transmission code to this as a single file
 
-Read Myo Armband data.  Buffer EMG Data and record the most recent IMU data.
-If this module is executed as ' $ python MyoUdp.py', the output generated can
-serve as a monitor of the EMG data streaming through UDP ports.
-
-Selecting 1 Myo will display streaming EMG and IMU data
-Selecting 2 Myos will display streaming EMG1 and EMG2 data (no IMU data)
-
 Note __variable signifies private variable which are acccessible to getData and getAngles.
-A call to the class methods (getData, getAngles) allow external modules to read streaming data
+A call to the class methods (getData, getAngles) allows external modules to read streaming data
 that is buffered in the private variables.
 
 @author: R. Armiger
@@ -471,6 +568,15 @@ def manage_connection(mac_addr='C3:0A:EA:14:14:D9', stream_addr=('127.0.0.1', 15
 
 
 def interactive_startup():
+"""
+Read Myo Armband data.  Buffer EMG Data and record the most recent IMU data.
+If this module is executed as ' $ python MyoUdp.py', the output generated can
+serve as a monitor of the EMG data streaming through UDP ports.
+
+Selecting 1 Myo will display streaming EMG and IMU data
+Selecting 2 Myos will display streaming EMG1 and EMG2 data (no IMU data)
+
+"""
     num_myo = int(input('How many Myo Armbands?'))
 
     # Instantiate MyoUdp Class which will begin listening for streaming UDP data

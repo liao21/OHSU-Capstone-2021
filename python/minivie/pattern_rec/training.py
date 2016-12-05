@@ -45,7 +45,11 @@ class TrainingManagerSpacebrew(object):
 
         if not self.last_msg[msg_id] == msg:
             self.last_msg[msg_id] = msg
-            self.brew.publish(msg_id, msg)
+            try:
+                self.brew.publish(msg_id, msg)
+            except Exception as e:
+                print(e)
+
             return
         else:
             self.msg_skip_count +=1
@@ -55,8 +59,11 @@ class TrainingManagerSpacebrew(object):
         if self.msg_skip_count > 100:
             
             # re-send all messages
-            for key,val in self.last_msg.items():
-                self.brew.publish(key, val)
+            for key, val in self.last_msg.items():
+                try:
+                    self.brew.publish(key, val)
+                except Exception as e:
+                    print(e)
                 
             # reset counter
             self.msg_skip_count = 0

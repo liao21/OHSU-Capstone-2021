@@ -86,6 +86,7 @@
             $("#ID_HAND_SPEED_UP").on("mousedown", function() {sendCmd("Cmd:HandSpeedUp")} );
             $("#ID_HAND_SPEED_DOWN").on("mousedown", function() {sendCmd("Cmd:HandSpeedDown")} );
             $("#ID_PAUSE").on("mousedown", function() {sendCmd("Cmd:Pause")} );
+            $("#ID_PAUSE_HAND").on("mousedown", function() {sendCmd("Cmd:PauseHand")} );
             $("#ID_SHUTDOWN").on("mousedown", function() {sendCmd("Cmd:Shutdown")} );
 
         };
@@ -148,7 +149,8 @@
         <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_SPEEDDOWN">Decrease Arm Speed</a></li>
         <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_HAND_SPEED_UP">Increase Hand Speed</a></li>
         <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_HAND_SPEED_DOWN">Decrease Hand Speed</a></li>
-        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-forbidden" id="ID_PAUSE">Pause Arm Motion</a></li>
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-forbidden" id="ID_PAUSE">Pause All Motion</a></li>
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-forbidden" id="ID_PAUSE_HAND">Pause Hand</a></li>
         <li></li>
         <li><a href="#popupDialog" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-icon="power" data-theme="a" data-iconpos="right">Shutdown MPL</a></li>
 

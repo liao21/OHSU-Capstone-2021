@@ -21,12 +21,13 @@ class Scenario(object):
 
         self.num_channels = 0
 
-        self.__pause = False
+        self.__pause = {'All': False, 'Arm': False, 'Hand': False}
         self.__gain_value = 1.0
         self.__hand_gain_value = 1.0
 
-    def is_paused(self):
-        return self.__pause
+    def is_paused(self, scope='All'):
+        # return the pause value for the given context ['All' 'Arm' 'Hand']
+        return self.__pause[scope]
 
     def get_gain_value(self):
         return self.__gain_value
@@ -34,12 +35,12 @@ class Scenario(object):
     def get_hand_gain_value(self):
         return self.__hand_gain_value
 
-    def pause(self):
+    def pause(self, scope='All'):
         # Toggles pause state which suspends motion of arm
-        if self.__pause:
-            self.__pause = False
+        if self.__pause[scope]:
+            self.__pause[scope] = False
         else:
-            self.__pause = True
+            self.__pause[scope] = True
 
     def gain(self, factor):
         self.__gain_value *= factor
@@ -122,7 +123,9 @@ class Scenario(object):
             elif cmd_data == 'Backup':
                 self.TrainingData.copy()
             elif cmd_data == 'Pause':
-                self.pause()
+                self.pause('All')
+            elif cmd_data == 'PauseHand':
+                self.pause('Hand')
             elif cmd_data == 'Shutdown':
                 shutdown()
             elif cmd_data == 'SpeedUp':
@@ -176,18 +179,21 @@ class Scenario(object):
         self.Plant.new_step()
 
         # pause if applicable
-        if self.is_paused():
+        if self.is_paused('All'):
             output['status'] = 'PAUSED'
             return output
+        elif self.is_paused('Hand'):
+            output['status'] = 'HAND PAUSED'
 
         # set the mapped class into either a hand or arm motion
-        if class_info['IsGrasp']:
+        if class_info['IsGrasp'] and not self.is_paused('Hand'):
             # the motion class is either a grasp type or hand open
             if class_info['GraspId'] is not None and self.Plant.GraspPosition < 0.2:
                 # change the grasp state if still early in the grasp motion
                 self.Plant.GraspId = class_info['GraspId']
             self.Plant.set_grasp_velocity(class_info['Direction'] * self.__hand_gain_value)
-        else:
+
+        if not class_info['IsGrasp']:
             # the motion class is an arm movement
             self.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * self.__gain_value)
 

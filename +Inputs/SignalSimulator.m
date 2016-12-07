@@ -358,6 +358,19 @@ classdef SignalSimulator < Inputs.SignalInput
         end
     end
     methods (Static=true)
+        function UdpStreamLinux
+            %% Emulate the linux based myo streaming interface
+            hSrc = Inputs.SignalSimulator();
+            hSrc.initialize()
+            hSink = PnetClass(5001,15001,'127.0.0.1');
+            hSink.initialize()
+            while StartStopForm
+                drawnow
+                dat = (hSrc.getData() - 1.2) * 100; % remove offset and scale
+                sampA = [dat(end,1:8) dat(end-1,1:8)]; % send two samples
+                hSink.putData(int8(sampA))
+            end
+        end
         function UdpStream
             
             %% Stream simulator with intent of emulating Myo Arm Band

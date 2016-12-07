@@ -292,7 +292,29 @@ class MyoUdp(object):
         self.__thread = None
 
     def connect(self):
+        """
+        The command sets the Preferred Peripheral Connection Parameters (PPCP).  You can find summary Bluetooth
+        information here: https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.
+            characteristic.gap.peripheral_preferred_connection_parameters.xml
 
+        Breaking down the command "sudo hcitool cmd 0x08 0x0013 40 00 06 00 06 00 00 00 90 01 00 00 07 00"
+
+        the syntax for the 'cmd' option in 'hcitool' is:
+            hcitool cmd <ogf> <ocf> [parameters]
+
+            OGF: 0x08 "7.8 LE Controller Commands"
+
+            OCF: 0x0013 "7.8.18 LE Connection Update Command"
+
+        The significant command parameter bytes are "06 00 06 00 00 00 90 01" (0x0006, 0x0006, 0x0000, 0x0190)
+
+        These translate to setting the min, and max Connection Interval to 0x0006=6;6*1.25ms=7.5ms, with no slave
+            latency, and a 0x0190=400; 400*10ms=4s timeout.
+
+        For more info, you can search for the OGF, OCF sections listed above in the Bluetooth Core 4.2 spec
+
+        :return:
+        """
         logging.info("Setting up MyoUdp socket {}".format(self.addr))
         self.__sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Internet, UDP
         self.__sock.bind(self.addr)

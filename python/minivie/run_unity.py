@@ -68,7 +68,7 @@ def main():
 
     # Sink is output to outside world (in this case to VIE)
     # For MPL, this might be: real MPL/NFU, Virtual Arm, etc.
-    vmpl = UnityUdp()  # ("192.168.1.24")
+    vmpl = UnityUdp(remote_host="127.0.0.1")  # ("192.168.1.24")
     vie.DataSink = vmpl
 
     # ##########################

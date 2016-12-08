@@ -36,7 +36,7 @@ class TargetAchievementControl(object):
         import time
         from mpl import JointEnum as MplId
 
-        timeout = 5.0 #seconds
+        timeout = 6.0 #seconds
         dt = 0.05 # seconds
         time_end = 0
         # start timer

@@ -21,6 +21,8 @@ class Scenario(object):
 
         self.num_channels = 0
 
+        self.output = None  # Will contain latest status message
+
         self.__pause = {'All': False, 'Arm': False, 'Hand': False}
         self.__gain_value = 1.0
         self.__hand_gain_value = 1.0
@@ -35,8 +37,19 @@ class Scenario(object):
     def get_hand_gain_value(self):
         return self.__hand_gain_value
 
-    def pause(self, scope='All'):
+    def pause(self, scope='All', state=None):
         # Toggles pause state which suspends motion of arm
+        #
+        # State can be forced with optional value argument
+        #
+        # pause('All') Toggle
+        # pause('All', True) Force PAUSE
+        # pause('All', False) Force RESUME
+
+        if state is not None:
+            self.__pause[scope] = state
+            return
+
         if self.__pause[scope]:
             self.__pause[scope] = False
         else:
@@ -137,7 +150,7 @@ class Scenario(object):
             elif cmd_data == 'HandSpeedDown':
                 self.hand_gain(0.8)
             else:
-                logging.warning('Unknown Command: ' + cmd_type)
+                logging.warning('Unknown Command: ' + cmd_data)
 
     def attach_source(self, input_source):
         # Pass in a list of signal sources and they will be added to the scenario
@@ -149,28 +162,43 @@ class Scenario(object):
             self.num_channels += s.num_channels
 
     def update(self):
+        """
+        Perform forward classification and return a dictionary with status information
+
+        This is the main step for the vie consisting of the following steps:
+
+            Get data from signal sources
+                - If the data is to be used for traning purposes, label it
+            Filter data / extract features
+            Classify signals
+            Use class decision to determine limb motion
+            Move limb
+            Send output
+
+        :return:
+            output = {'status': 'RUNNING', 'features': None, 'decision': 'None'}
+
+        """
         from controls.plant import class_map
 
-        # Perform forward classification and return a dictionary with status information
-
         # initialize output
-        output = {'status': 'RUNNING', 'features': None, 'decision': 'None'}
+        self.output = {'status': 'RUNNING', 'features': None, 'decision': 'None'}
 
         # get data / features
-        output['features'], f = self.FeatureExtract.get_features(self.SignalSource)
+        self.output['features'], f = self.FeatureExtract.get_features(self.SignalSource)
 
         # if simultaneously training the system, add the current results to the data buffer
         if self.add_data:
-            self.TrainingData.add_data(output['features'], self.training_id, self.training_motion)
+            self.TrainingData.add_data(self.output['features'], self.training_id, self.training_motion)
 
         # classify
-        decision_id, output['status'] = self.SignalClassifier.predict(f)
+        decision_id, self.output['status'] = self.SignalClassifier.predict(f)
         if decision_id is None:
-            return output
+            return self.output
 
         # get decision name
         class_decision = self.TrainingData.motion_names[decision_id]
-        output['decision'] = class_decision
+        self.output['decision'] = class_decision
 
         # parse decision type as arm, grasp, etc
         class_info = class_map(class_decision)
@@ -180,10 +208,10 @@ class Scenario(object):
 
         # pause if applicable
         if self.is_paused('All'):
-            output['status'] = 'PAUSED'
-            return output
+            self.output['status'] = 'PAUSED'
+            return self.output
         elif self.is_paused('Hand'):
-            output['status'] = 'HAND PAUSED'
+            self.output['status'] = 'HAND PAUSED'
 
         # set the mapped class into either a hand or arm motion
         pause_hand = self.is_paused('Hand') or self.is_paused('All')
@@ -204,7 +232,7 @@ class Scenario(object):
         # transmit output
         self.DataSink.send_joint_angles(self.Plant.JointPosition)
 
-        return output
+        return self.output
 
     def close(self):
         # Close input and output objects

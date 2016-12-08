@@ -56,7 +56,7 @@ class TrainingManagerSpacebrew(object):
             
         # add a timeout so that we get 'some' messages as a nominal rate
         
-        if self.msg_skip_count > 100:
+        if self.msg_skip_count > 300:
             
             # re-send all messages
             for key, val in self.last_msg.items():

@@ -182,7 +182,7 @@ class Scenario(object):
         from controls.plant import class_map
 
         # initialize output
-        self.output = {'status': 'RUNNING', 'features': None, 'decision': 'None'}
+        self.output = {'status': 'RUNNING', 'features': None, 'decision': 'None', 'vote': None}
 
         # get data / features
         self.output['features'], f = self.FeatureExtract.get_features(self.SignalSource)
@@ -195,6 +195,8 @@ class Scenario(object):
         decision_id, self.output['status'] = self.SignalClassifier.predict(f)
         if decision_id is None:
             return self.output
+
+        # TODO: add majority vote
 
         # get decision name
         class_decision = self.TrainingData.motion_names[decision_id]

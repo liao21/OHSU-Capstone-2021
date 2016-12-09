@@ -88,8 +88,9 @@
             $("#ID_PAUSE").on("mousedown", function() {sendCmd("Cmd:Pause")} );
             $("#ID_PAUSE_HAND").on("mousedown", function() {sendCmd("Cmd:PauseHand")} );
             $("#ID_SHUTDOWN").on("mousedown", function() {sendCmd("Cmd:Shutdown")} );
-            $("#ID_ASSESSMENT").on("mousedown", function() {sendCmd("Cmd:StartAssessment")} );
-
+            $("#ID_ASSESSMENT_MT").on("mousedown", function() {sendCmd("Cmd:StartMotionTester")} );
+            $("#ID_ASSESSMENT_TAC").on("mousedown", function() {sendCmd("Cmd:StartAssessment")} );
+            
         };
         
         // global function called from index and galleryLinks.js
@@ -158,7 +159,8 @@
         <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-forbidden" id="ID_PAUSE">Pause All Motion</a></li>
         <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-forbidden" id="ID_PAUSE_HAND">Pause Hand</a></li>
         <li></li>
-        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-star" id="ID_ASSESSMENT">Start Assessment</a></li>                
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-star" id="ID_ASSESSMENT_TAC">Start TAC Assessment</a></li>
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-star" id="ID_ASSESSMENT_MT">Start Motion Test</a></li>                
         <li></li>
         <li><a href="#popupDialog" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-icon="power" data-theme="a" data-iconpos="right">Shutdown MPL</a></li>
         </ul>

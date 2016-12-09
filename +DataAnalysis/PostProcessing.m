@@ -159,6 +159,9 @@ classdef PostProcessing
                 % Process goes here
                 hClassifier = SignalAnalysis.Lda;
                 hClassifier.initialize(hData(i));
+                if isempty(hClassifier.getActiveChannels)
+                    continue
+                end
                 output = hClassifier.train;
                 if isempty(output)
                     continue

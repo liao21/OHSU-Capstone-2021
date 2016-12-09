@@ -14,6 +14,12 @@ classdef Assessments
             end
             sLog = structTrialLog;
             
+            if ~isfield(sLog,'AllClassNames')
+                % old file format.  abort process
+                [completionAccuracy, motionAccuracy] = deal(nan);
+                hAxes = [];
+                return
+            end
             numClasses = length(sLog.AllClassNames);
             
             testedClasses = sLog.AllClassNames(sLog.ClassIdToTest);

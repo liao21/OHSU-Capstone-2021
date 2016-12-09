@@ -247,6 +247,12 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             if nargin < 3
                 channels = obj.ActiveChannels;
             end
+
+            % Return empty if no active channels
+            if isempty(channels)
+                dataLabel = [];
+                return    
+            end
             
             % get data and labels
             [emgDataRaw, emgLabels] = obj.getStichedData(channels,1);

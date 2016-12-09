@@ -35,13 +35,15 @@ def main():
     vie = Scenario()
 
     # Setup Assessment
-    eval = assessment.TargetAchievementControl(vie)
+    tac = assessment.TargetAchievementControl(vie)
+    motion_test = assessment.MotionTester(vie)
 
     # setup web interface
     trainer = TrainingManagerSpacebrew()
     trainer.setup(description="JHU/APL Embedded Controller", server="127.0.0.1", port=9000)
     trainer.add_message_handler(vie.command_string)
-    trainer.add_message_handler(eval.command_string)
+    trainer.add_message_handler(tac.command_string)
+    trainer.add_message_handler(motion_test.command_string)
 
     # attach inputs
     vie.attach_source([myo.MyoUdp(source='//127.0.0.1:15001'), myo.MyoUdp(source='//127.0.0.1:15002')])

@@ -235,6 +235,8 @@ class TrainingData:
         self.filename = 'TRAINING_DATA'
         self.file_ext = '.hdf5'
         self.reset()
+
+        # Names of potentially trained classes
         self.motion_names = (
             'Elbow Flexion', 'Elbow Extension',
             'Wrist Rotate In', 'Wrist Rotate Out',
@@ -281,7 +283,7 @@ class TrainingData:
         self.num_samples += 1
 
     def get_totals(self, motion_id=None):
-
+        # Return a list of the total sample counts for each class
         num_motions = len(self.motion_names)
 
         if motion_id is None:

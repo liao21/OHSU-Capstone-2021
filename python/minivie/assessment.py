@@ -72,15 +72,16 @@ class MotionTester(object):
 
         self.send_status('Testing Class: ' + class_name)
 
-        dt = 0.1 # 100ms RIC JAMA
+        dt = 0.1  # 100ms RIC JAMA
         timeout = 5
+        time_begin = time.time()
         max_correct = 10
         move_complete = False
         num_correct = 0
         num_wrong = 0
         time_elapsed = 0.0
 
-        while not move_complete and not (time_elapsed < timeout):
+        while not move_complete and (time_elapsed < timeout):
 
             # get the class
             current_class = self.vie.output['decision']
@@ -88,7 +89,7 @@ class MotionTester(object):
             if current_class == class_name:
                 num_correct += 1
                 # send status to mobile trainer
-                self.send_status('Testing Class: ' + class_name + ': ' + num_correct + '/' + max_correct + ' Correct Classifications, ')
+                self.send_status('Testing Class: ' + class_name + ': ' + str(num_correct) + '/' + str(max_correct) + ' Correct Classifications, ')
             else:
                 num_wrong += 1
 
@@ -96,9 +97,9 @@ class MotionTester(object):
                 move_complete = True
 
             time.sleep(dt)
-            time_elapsed = time.time() - time.begin
+            time_elapsed = time.time() - time_begin
 
-        self.send_status('Class Assessment: ' + class_name + ': ' + num_correct + '/' + max_correct + ' Correct Classifications, ' + num_wrong + 'Misclassifications')
+        self.send_status('Class Assessment: ' + class_name + ': ' + str(num_correct) + '/' + str(max_correct) + ' Correct Classifications, ' + str(num_wrong) + ' Misclassifications')
 
         return move_complete
 

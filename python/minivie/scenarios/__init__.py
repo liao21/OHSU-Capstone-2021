@@ -100,11 +100,11 @@ class Scenario(object):
 
         # Commands should come in with colon operator
         # e.g. Cmd:Add or Cls:Elbow Flexion
-        logging.info('Received new command:' + value)
+        logging.info('Received new scenario command:' + value)
 
         parsed = value.split(':')
         if not len(parsed) == 2:
-            logging.warning('Invalid Command: ' + value)
+            logging.warning('Invalid scenario command: ' + value)
             return
         else:
             cmd_type = parsed[0]
@@ -150,7 +150,7 @@ class Scenario(object):
             elif cmd_data == 'HandSpeedDown':
                 self.hand_gain(0.8)
             else:
-                logging.warning('Unknown Command: ' + cmd_data)
+                logging.info('Unknown scenario command: ' + cmd_data)
 
     def attach_source(self, input_source):
         # Pass in a list of signal sources and they will be added to the scenario

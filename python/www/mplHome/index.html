@@ -61,10 +61,8 @@
             sb.description("JHU/APL Mobile Training Interface");
 
             // configure the publication and subscription feeds
-            sb.addPublish("strCommand", "string", "");
-            sb.addSubscribe("strStatus", "string");
-            sb.addSubscribe("strTrainingMotion", "string");
-            sb.addSubscribe("strOutputMotion", "string");
+            sb.addPublish("trainerString", "string", "");
+            sb.addSubscribe("mplString", "string");
 
             // override Spacebrew events - this is how you catch events coming from Spacebrew
             sb.onStringMessage = onStringMessage;
@@ -96,7 +94,7 @@
         // global function called from index and galleryLinks.js
         function sendCmd(cmd) {
             console.log('Send ' + cmd);
-            sb.send("strCommand", "string", cmd);
+            sb.send("trainerString", "string", cmd);
         };
 
         // Function that is called when Spacebrew connection is established
@@ -118,15 +116,21 @@
          */
          function onStringMessage( name, value ){
              console.log("[onStringMessage] string message received ", value);
-             if (name == "strStatus") {
-                 $("#msg_status").text(value);
-             }         
-             if (name == "strTrainingMotion") {
-                 $("#msg_train").text(value);
-             }         
-             if (name == "strOutputMotion") {
-                 $("#msg_output").text(value);
-             }         
+			 var parts = value.split(':');
+			 var cmd_type = parts[0];
+			 var cmd_data = parts[1];
+			 
+             if (name == "mplString") {
+				 if (cmd_type == "strStatus") {
+					 $("#msg_status").text(cmd_data);
+				 }         
+				 if (cmd_type == "strTrainingMotion") {
+					 $("#msg_train").text(cmd_data);
+				 }         
+				 if (cmd_type == "strOutputMotion") {
+					 $("#msg_output").text(cmd_data);
+				 }
+			 }
          }
 
     </script>

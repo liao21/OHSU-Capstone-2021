@@ -34,16 +34,16 @@ def main():
     # Setup MPL scenario
     vie = Scenario()
 
-    # Setup Assessment
-    tac = assessment.TargetAchievementControl(vie)
-    motion_test = assessment.MotionTester(vie)
-
     # setup web interface
     trainer = TrainingManagerSpacebrew()
     trainer.setup(description="JHU/APL Embedded Controller", server="127.0.0.1", port=9000)
     trainer.add_message_handler(vie.command_string)
-    trainer.add_message_handler(tac.command_string)
+
+    # Setup Assessment
+    tac = assessment.TargetAchievementControl(vie, trainer)
+    motion_test = assessment.MotionTester(vie, trainer)
     trainer.add_message_handler(motion_test.command_string)
+    trainer.add_message_handler(tac.command_string)
 
     # attach inputs
     vie.attach_source([myo.MyoUdp(source='//127.0.0.1:15001'), myo.MyoUdp(source='//127.0.0.1:15002')])
@@ -91,11 +91,11 @@ def main():
             # Run the actual model
             output = vie.update()
 
-            trainer.send_message("strStatus", 'V=' + vmpl.get_voltage() + ' ' + output['status'])
-            trainer.send_message("strOutputMotion", output['decision'])
+            trainer.send_message("mplString", 'strStatus:V=' + vmpl.get_voltage() + ' ' + output['status'])
+            trainer.send_message("mplString", 'strOutputMotion:' + output['decision'])
 
             msg = '{} [{:.0f}]'.format(vie.training_motion, round(vie.TrainingData.get_totals(vie.training_id), -1))
-            trainer.send_message("strTrainingMotion", msg)
+            trainer.send_message("mplString", 'strTrainingMotion:' + msg)
 
             time_end = time.time()
             time_elapsed = time_end - time_begin

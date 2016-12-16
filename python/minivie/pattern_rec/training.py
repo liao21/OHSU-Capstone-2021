@@ -20,7 +20,7 @@ class TrainingManagerSpacebrew(object):
         self.brew = None
         
         # store the last messages so we don't re-transmit a lot of repreated data
-        self.last_msg = {'strStatus': '', 'strTrainingMotion': '', 'strOutputMotion': ''}
+        self.last_msg = {'mplString': ''}
         
         # keep count of skipped messages so we can send at some nominal rate
         self.msg_skip_count = 0
@@ -30,15 +30,13 @@ class TrainingManagerSpacebrew(object):
 
         # setup web interface
         self.brew = Spacebrew("MPL Embedded", description, server, port)
-        self.brew.addSubscriber("strCommand", "string")
-        self.brew.addPublisher("strStatus", "string")
-        self.brew.addPublisher("strTrainingMotion", "string")
-        self.brew.addPublisher("strOutputMotion", "string")
+        self.brew.addSubscriber("trainerString", "string")
+        self.brew.addPublisher("mplString", "string")
         self.brew.start()
 
     def add_message_handler(self, func):
         # attach a function to received commands from websocket
-        self.brew.subscribe("strCommand", func)
+        self.brew.subscribe("trainerString", func)
 
     def send_message(self, msg_id, msg):
         # send message but only when the string changes (or timeout occurs)

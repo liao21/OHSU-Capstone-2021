@@ -2,8 +2,9 @@
 
 
 class MotionTester(object):
-    def __init__(self, vie):
+    def __init__(self, vie, trainer):
         self.vie = vie
+        self.trainer = trainer
         self.thread = None
 
     def command_string(self, value):
@@ -17,11 +18,24 @@ class MotionTester(object):
                 StartAssessment
         """
         import threading
+        import logging
 
-        if value == 'Cmd:StartMotionTester':
-            self.thread = threading.Thread(target=self.start_assessment)
-            self.thread.name = 'MotionTester'
-            self.thread.start()
+        logging.info('Received new motion tester command:' + value)
+        parsed = value.split(':')
+        if not len(parsed) == 2:
+            logging.warning('Invalid motion tester command: ' + value)
+            return
+        else:
+            cmd_type = parsed[0]
+            cmd_data = parsed[1]
+
+        if cmd_type == 'Cmd':
+            if cmd_data == 'StartMotionTester':
+                self.thread = threading.Thread(target=self.start_assessment)
+                self.thread.name = 'MotionTester'
+                self.thread.start()
+            else:
+                logging.info('Unknown motion tester command: ' + cmd_data)
 
     def start_assessment(self):
         import math
@@ -36,7 +50,7 @@ class MotionTester(object):
         print(trained_classes)
 
         # pause limb during test
-        self.vie.pause('All',True)
+        self.vie.pause('All', True)
         print('Holdout')
 
         # TODO: Don't test No movement
@@ -54,39 +68,54 @@ class MotionTester(object):
 
     def assess_class(self, class_name):
         import time
+        import logging
+
+        self.send_status('Testing Class: ' + class_name)
 
         dt = 0.1 # 100ms RIC JAMA
         timeout = 5
         max_correct = 10
         move_complete = False
-        timed_out = False
         num_correct = 0
-        time_begin = time.time()
-        time_end = time_begin
+        num_wrong = 0
         time_elapsed = 0.0
-        while not move_complete and not ((time_elapsed) < timeout):
+
+        while not move_complete and not (time_elapsed < timeout):
 
             # get the class
             current_class = self.vie.output['decision']
-            print(current_class)
 
             if current_class == class_name:
                 num_correct += 1
+                # send status to mobile trainer
+                self.send_status('Testing Class: ' + class_name + ': ' + num_correct + '/' + max_correct + ' Correct Classifications, ')
+            else:
+                num_wrong += 1
 
             if num_correct >= max_correct:
                 move_complete = True
 
-            time_end = time.time()
             time.sleep(dt)
             time_elapsed = time.time() - time.begin
 
+        self.send_status('Class Assessment: ' + class_name + ': ' + num_correct + '/' + max_correct + ' Correct Classifications, ' + num_wrong + 'Misclassifications')
+
         return move_complete
+
+    def send_status(self, status):
+        import logging
+
+        print(status)
+        logging.info(status)
+        self.trainer.send_message("mplString", 'strStatus:' + status)
+
 
 
 
 class TargetAchievementControl(object):
-    def __init__(self, vie):
+    def __init__(self, vie, trainer):
         self.vie = vie
+        self.trainer = trainer
 
     def command_string(self, value):
         """
@@ -101,10 +130,10 @@ class TargetAchievementControl(object):
         import logging
         import threading
 
-        logging.info('Received new command:' + value)
+        logging.info('Received new  TAC command:' + value)
         parsed = value.split(':')
         if not len(parsed) == 2:
-            logging.warning('Invalid Command: ' + value)
+            logging.warning('Invalid TAC command: ' + value)
             return
         else:
             cmd_type = parsed[0]

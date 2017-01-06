@@ -91,11 +91,11 @@ def main():
             # Run the actual model
             output = vie.update()
 
-            trainer.send_message("mplString", 'strStatus:V=' + vmpl.get_voltage() + ' ' + output['status'])
-            trainer.send_message("mplString", 'strOutputMotion:' + output['decision'])
+            trainer.send_message("strStatus", 'V=' + vmpl.get_voltage() + ' ' + output['status'])
+            trainer.send_message("strOutputMotion", output['decision'])
 
             msg = '{} [{:.0f}]'.format(vie.training_motion, round(vie.TrainingData.get_totals(vie.training_id), -1))
-            trainer.send_message("mplString", 'strTrainingMotion:' + msg)
+            trainer.send_message("strTrainingMotion", msg)
 
             time_end = time.time()
             time_elapsed = time_end - time_begin

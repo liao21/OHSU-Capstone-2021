@@ -6,6 +6,26 @@ class MotionTester(object):
         self.vie = vie
         self.trainer = trainer
         self.thread = None
+        self.filename = 'MOTION_TESTER_DATA'
+        self.file_ext = '.hdf5'
+        self.reset()
+
+        self.target_class = []
+        self.class_decision = []
+        self.correct_decision = []
+        self.time_stamp = []
+        self.all_class_names = []
+        self.class_id_to_test = []
+        self.data = []  # List of dicts
+
+    def reset(self):
+        self.target_class = []
+        self.class_decision = []
+        self.correct_decision = []
+        self.time_stamp = []
+        self.all_class_names = []
+        self.class_id_to_test = []
+        self.data = []  # List of dicts
 
     def command_string(self, value):
         """
@@ -38,38 +58,42 @@ class MotionTester(object):
                 logging.info('Unknown motion tester command: ' + cmd_data)
 
     def start_assessment(self):
-        import math
-        import time
-        from mpl import JointEnum as MplId
+        # Clear assessment data
+        self.reset()
 
         # Determine which classes should be trained
         motion_names = self.vie.TrainingData.motion_names
         totals = self.vie.TrainingData.get_totals()
 
         trained_classes = [motion_names[i] for i, e in enumerate(totals) if e != 0]
+        self.all_class_names = trained_classes
 
         # pause limb during test
         self.vie.pause('All', True)
         self.send_status('Holdout')
 
-        # TODO: Don't test No movement
         for i_rep in range(3):
             self.send_status('New Assessment Trial')
+            for i,i_class in enumerate(trained_classes):
+                if not (i_class == 'No Movement'):
+                    if i_rep == 1:  # Only adding new data dict for first time training each class
+                        self.class_id_to_test.append(i)
+                        self.data.append({'targetClass': i_class, 'classDecision': None, 'voteDecision': None, 'emgFrames': None})
 
-            for i_class in trained_classes:
-                is_complete = self.assess_class(i_class)
-                if is_complete:
-                    self.send_status('Motion Completed!')
-                else:
-                    self.send_status('Motion Incomplete')
+                    # Assess class
+                    is_complete = self.assess_class(i_class,i)
+                    if is_complete:
+                        self.send_status('Motion Completed!')
+                    else:
+                        self.send_status('Motion Incomplete')
 
+        self.save_results()
         self.send_status('Assessment Completed.')
         self.send_status('')
         self.vie.pause('All', False)
 
-    def assess_class(self, class_name):
+    def assess_class(self, class_name, class_index):
         import time
-        import logging
         import numpy as np
 
         # Give countdown
@@ -103,13 +127,16 @@ class MotionTester(object):
             # send status to mobile trainer
             self.send_status('Testing Class - ' + class_name + ' - ' + str(num_correct) + '/' + str(max_correct) + ' Correct Classifications')
 
+            # update data for output
+            #self.add_data(class_index,current_class,correct_decision)
+
             if num_correct >= max_correct:
                 move_complete = True
 
             time.sleep(dt)
             time_elapsed = time.time() - time_begin
 
-        self.send_status('Class Assessment - ' + class_name + ' - ' + str(num_correct) + '/' + str(max_correct) + ' Correct Classifications, ' + str(num_wrong) + ' Misclassifications, Timestamp - ' + str(time.time()))
+        self.send_status('Class Assessment - ' + class_name + ' - ' + str(num_correct) + '/' + str(max_correct) + ' Correct Classifications, ' + str(num_wrong) + ' Misclassifications')
 
         return move_complete
 
@@ -118,9 +145,36 @@ class MotionTester(object):
 
         print(status)
         logging.info(status)
-        self.trainer.send_message("mplString", 'strAssessmentStatus:' + status)
+        # TODO: Update so it doesn't update if it is the same string
+        self.trainer.send_message("strMotionTester", status)
 
+    def add_data(self, class_id_to_test, class_decision_):
+        import time
+        self.data[class_id_to_test]['classDecision'].append(class_decision_)
+        # TODO: Update the following metadata
+        self.data[class_id_to_test]['voteDecision'].append([])
+        self.data[class_id_to_test]['emgFrames'].append([])
 
+    def save_results(self):
+        import h5py
+        import datetime as dt
+
+        t = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        h5 = h5py.File(self.filename + self.file_ext, 'w')
+        group = h5.create_group('TrialLog')
+        group.attrs['description'] = t + 'Motion Tester Data'
+        group.create_dataset('AllClassNames', self.all_class_names)
+
+        group = h5.create_group('data')
+        group.attrs['description'] = t + 'Motion Tester Data'
+        group.create_dataset('time_stamp', data=self.time_stamp)
+        group.create_dataset('correct_decision', data=self.correct_decision)
+        encoded = [a.encode('utf8') for a in self.target_class]
+        group.create_dataset('target_class', data=encoded)
+        encoded = [a.encode('utf8') for a in self.class_decision]
+        group.create_dataset('class_decision', data=encoded)
+        h5.close()
+        self.send_status('Saved ' + self.filename)
 
 
 class TargetAchievementControl(object):
@@ -184,5 +238,3 @@ class TargetAchievementControl(object):
             time.sleep(dt)
 
         print('Done')
-
-

@@ -55,7 +55,7 @@
             app_name = app_name + ' ' + random_id.substring(random_id.length - 4);
 
             console.log("Setting up spacebrew connection");
-            sb = new Spacebrew.Client();
+            sb = new Spacebrew.Client("127.0.0.1");
 
             sb.name(app_name);
             sb.description("JHU/APL Mobile Training Interface");
@@ -130,6 +130,9 @@
 				 if (cmd_type == "strOutputMotion") {
 					 $("#msg_output").text(cmd_data);
 				 }
+                 if (cmd_type == "strAssessmentStatus") {
+					 $("#assessment_status").text(cmd_data);
+				 }
 			 }
          }
 
@@ -165,6 +168,7 @@
         <li></li>
         <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-star" id="ID_ASSESSMENT_TAC">Start TAC Assessment</a></li>
         <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-star" id="ID_ASSESSMENT_MT">Start Motion Test</a></li>                
+        <li>Assesment Status: <p = id="assessment_status"/></li>
         <li></li>
         <li><a href="#popupDialog" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-icon="power" data-theme="a" data-iconpos="right">Shutdown MPL</a></li>
         </ul>

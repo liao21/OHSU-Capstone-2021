@@ -47,30 +47,38 @@ class MotionTester(object):
         totals = self.vie.TrainingData.get_totals()
 
         trained_classes = [motion_names[i] for i, e in enumerate(totals) if e != 0]
-        print(trained_classes)
 
         # pause limb during test
         self.vie.pause('All', True)
-        print('Holdout')
+        self.send_status('Holdout')
 
         # TODO: Don't test No movement
         for i_rep in range(3):
-            print('New Trial')
+            self.send_status('New Assessment Trial')
 
             for i_class in trained_classes:
                 is_complete = self.assess_class(i_class)
                 if is_complete:
-                    print('Motion Completed!')
+                    self.send_status('Motion Completed!')
                 else:
-                    print('Motion Incomplete')
+                    self.send_status('Motion Incomplete')
 
+        self.send_status('Assessment Completed.')
+        self.send_status('')
         self.vie.pause('All', False)
 
     def assess_class(self, class_name):
         import time
         import logging
+        import numpy as np
 
-        self.send_status('Testing Class: ' + class_name)
+        # Give countdown
+        countdown_time = 3;
+        dt = 1;
+        tvec = np.linspace(countdown_time,0,int(round(countdown_time/dt)+1))
+        for t in tvec:
+            self.send_status('Prepare to Test Class - ' + class_name + ' - In ' + str(t) + ' Seconds')
+            time.sleep(dt)
 
         dt = 0.1  # 100ms RIC JAMA
         timeout = 5
@@ -88,10 +96,12 @@ class MotionTester(object):
 
             if current_class == class_name:
                 num_correct += 1
-                # send status to mobile trainer
-                self.send_status('Testing Class: ' + class_name + ': ' + str(num_correct) + '/' + str(max_correct) + ' Correct Classifications, ')
+
             else:
                 num_wrong += 1
+
+            # send status to mobile trainer
+            self.send_status('Testing Class - ' + class_name + ' - ' + str(num_correct) + '/' + str(max_correct) + ' Correct Classifications')
 
             if num_correct >= max_correct:
                 move_complete = True
@@ -99,7 +109,7 @@ class MotionTester(object):
             time.sleep(dt)
             time_elapsed = time.time() - time_begin
 
-        self.send_status('Class Assessment: ' + class_name + ': ' + str(num_correct) + '/' + str(max_correct) + ' Correct Classifications, ' + str(num_wrong) + ' Misclassifications')
+        self.send_status('Class Assessment - ' + class_name + ' - ' + str(num_correct) + '/' + str(max_correct) + ' Correct Classifications, ' + str(num_wrong) + ' Misclassifications, Timestamp - ' + str(time.time()))
 
         return move_complete
 
@@ -108,7 +118,7 @@ class MotionTester(object):
 
         print(status)
         logging.info(status)
-        self.trainer.send_message("mplString", 'strStatus:' + status)
+        self.trainer.send_message("mplString", 'strAssessmentStatus:' + status)
 
 
 

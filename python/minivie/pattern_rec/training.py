@@ -19,8 +19,9 @@ class TrainingManagerSpacebrew(object):
         # handle to spacebrew websocket interface
         self.brew = None
         
-        # store the last messages so we don't re-transmit a lot of repreated data
-        self.last_msg = {'strStatus': '', 'strTrainingMotion': '', 'strOutputMotion': ''}
+        # store the last messages so we don't re-transmit a lot of repeated data
+        self.last_msg = {'strStatus': '', 'strOutputMotion': '', 'strTrainingMotion': '', 'strMotionTester': '',
+                         'strTAC': ''}
         
         # keep count of skipped messages so we can send at some nominal rate
         self.msg_skip_count = 0
@@ -30,15 +31,13 @@ class TrainingManagerSpacebrew(object):
 
         # setup web interface
         self.brew = Spacebrew("MPL Embedded", description, server, port)
-        self.brew.addSubscriber("strCommand", "string")
-        self.brew.addPublisher("strStatus", "string")
-        self.brew.addPublisher("strTrainingMotion", "string")
-        self.brew.addPublisher("strOutputMotion", "string")
+        self.brew.addSubscriber("cmdString", "string")
+        self.brew.addPublisher("statusString", "string")
         self.brew.start()
 
     def add_message_handler(self, func):
         # attach a function to received commands from websocket
-        self.brew.subscribe("strCommand", func)
+        self.brew.subscribe("cmdString", func)
 
     def send_message(self, msg_id, msg):
         # send message but only when the string changes (or timeout occurs)
@@ -46,7 +45,7 @@ class TrainingManagerSpacebrew(object):
         if not self.last_msg[msg_id] == msg:
             self.last_msg[msg_id] = msg
             try:
-                self.brew.publish(msg_id, msg)
+                self.brew.publish('statusString', msg_id + ':' + msg)
             except Exception as e:
                 print(e)
 
@@ -56,12 +55,12 @@ class TrainingManagerSpacebrew(object):
             
         # add a timeout so that we get 'some' messages as a nominal rate
         
-        if self.msg_skip_count > 100:
+        if self.msg_skip_count > 300:
             
             # re-send all messages
             for key, val in self.last_msg.items():
                 try:
-                    self.brew.publish(key, val)
+                    self.brew.publish('statusString', key + ':' + val)
                 except Exception as e:
                     print(e)
                 

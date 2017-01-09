@@ -55,16 +55,14 @@
             app_name = app_name + ' ' + random_id.substring(random_id.length - 4);
 
             console.log("Setting up spacebrew connection");
-            sb = new Spacebrew.Client();
+            sb = new Spacebrew.Client("127.0.0.1");
 
             sb.name(app_name);
             sb.description("JHU/APL Mobile Training Interface");
 
             // configure the publication and subscription feeds
-            sb.addPublish("strCommand", "string", "");
-            sb.addSubscribe("strStatus", "string");
-            sb.addSubscribe("strTrainingMotion", "string");
-            sb.addSubscribe("strOutputMotion", "string");
+            sb.addPublish("cmdString", "string", "");
+            sb.addSubscribe("statusString", "string");
 
             // override Spacebrew events - this is how you catch events coming from Spacebrew
             sb.onStringMessage = onStringMessage;
@@ -88,13 +86,15 @@
             $("#ID_PAUSE").on("mousedown", function() {sendCmd("Cmd:Pause")} );
             $("#ID_PAUSE_HAND").on("mousedown", function() {sendCmd("Cmd:PauseHand")} );
             $("#ID_SHUTDOWN").on("mousedown", function() {sendCmd("Cmd:Shutdown")} );
-
+            $("#ID_ASSESSMENT_MT").on("mousedown", function() {sendCmd("Cmd:StartMotionTester")} );
+            $("#ID_ASSESSMENT_TAC").on("mousedown", function() {sendCmd("Cmd:StartAssessment")} );
+            
         };
         
         // global function called from index and galleryLinks.js
         function sendCmd(cmd) {
             console.log('Send ' + cmd);
-            sb.send("strCommand", "string", cmd);
+            sb.send("cmdString", "string", cmd);
         };
 
         // Function that is called when Spacebrew connection is established
@@ -116,15 +116,24 @@
          */
          function onStringMessage( name, value ){
              console.log("[onStringMessage] string message received ", value);
-             if (name == "strStatus") {
-                 $("#msg_status").text(value);
-             }         
-             if (name == "strTrainingMotion") {
-                 $("#msg_train").text(value);
-             }         
-             if (name == "strOutputMotion") {
-                 $("#msg_output").text(value);
-             }         
+			 var parts = value.split(':');
+			 var cmd_type = parts[0];
+			 var cmd_data = parts[1];
+			 
+             if (name == "statusString") {
+				 if (cmd_type == "strStatus") {
+					 $("#msg_status").text(cmd_data);
+				 }         
+				 if (cmd_type == "strTrainingMotion") {
+					 $("#msg_train").text(cmd_data);
+				 }         
+				 if (cmd_type == "strOutputMotion") {
+					 $("#msg_output").text(cmd_data);
+				 }
+                 if (cmd_type == "strMotionTester") {
+					 $("#assessment_status").text(cmd_data);
+				 }
+			 }
          }
 
     </script>
@@ -141,22 +150,29 @@
         </div>
         <!-- <div data-role="content">	 -->
 
-        <div data-demo-html="true">
-        <div data-role="collapsible" data-collapsed-icon="carat-d" data-expanded-icon="carat-u">
-        <h4>Functions</h4>
+        <div data-role="collapsible" data-collapsed-icon="gear" data-expanded-icon="gear">
+        <h4>Configure</h4>
         <ul data-role="listview" data-inset="false">
         <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_SPEEDUP">Increase Arm Speed</a></li>
         <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_SPEEDDOWN">Decrease Arm Speed</a></li>
         <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_HAND_SPEED_UP">Increase Hand Speed</a></li>
         <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_HAND_SPEED_DOWN">Decrease Hand Speed</a></li>
+        </ul>
+        </div>
+        
+        <div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
+        <h4>Options</h4>
+        <ul data-role="listview" data-inset="false">
         <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-forbidden" id="ID_PAUSE">Pause All Motion</a></li>
         <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-forbidden" id="ID_PAUSE_HAND">Pause Hand</a></li>
         <li></li>
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-star" id="ID_ASSESSMENT_TAC">Start TAC Assessment</a></li>
+        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-star" id="ID_ASSESSMENT_MT">Start Motion Test</a></li>                
+        <li>Assesment Status: <p = id="assessment_status"/></li>
+        <li></li>
         <li><a href="#popupDialog" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-icon="power" data-theme="a" data-iconpos="right">Shutdown MPL</a></li>
-
         </ul>
         </div>
-        </div><!--/demo-html -->
 
         <div data-role="popup" id="popupDialog" data-overlay-theme="a" data-theme="b" data-dismissible="false" style="max-width:400px;" class="ui-corner-all">
         <div data-role="header" data-theme="a" class="ui-corner-top">

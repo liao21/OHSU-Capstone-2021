@@ -18,6 +18,8 @@ from inputs import myo
 import pattern_rec as pr
 from pattern_rec.training import TrainingManagerSpacebrew
 from controls.plant import Plant
+import assessment
+
 
 print('starting script')
 
@@ -36,6 +38,12 @@ def main():
     trainer = TrainingManagerSpacebrew()
     trainer.setup(description="JHU/APL Embedded Controller", server="127.0.0.1", port=9000)
     trainer.add_message_handler(vie.command_string)
+
+    # Setup Assessment
+    tac = assessment.TargetAchievementControl(vie, trainer)
+    motion_test = assessment.MotionTester(vie, trainer)
+    trainer.add_message_handler(motion_test.command_string)
+    trainer.add_message_handler(tac.command_string)
 
     # attach inputs
     vie.attach_source([myo.MyoUdp(source='//127.0.0.1:15001'), myo.MyoUdp(source='//127.0.0.1:15002')])

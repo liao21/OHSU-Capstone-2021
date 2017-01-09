@@ -180,7 +180,6 @@ class MotionTester(object):
             g3 = g2.create_group(d['targetClass'][0])
             encoded = [a.encode('utf8') for a in d['targetClass']]
             g3.create_dataset('targetClass', shape=(len(encoded), 1), data=encoded)
-            print(d['classDecision'])
             g3.create_dataset('classDecision', shape=(len(d['classDecision']), 1), data=d['classDecision'])
 
         h5.close()

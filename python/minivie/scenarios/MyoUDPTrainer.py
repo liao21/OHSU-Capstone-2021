@@ -18,30 +18,33 @@ WIP change path behavior so that all paths use self.path
 WIP add UDP communication to/from unity for training cues and other functionality
 
 @author: D. Samson
+
+Revisions:
+2017Jan09 Samson: Initial Incorperation of pattern_rec
 """
 
-# perhaps import only into necessary scripts, rather than importing all at the beginning
 import os
 import sys
 import time
 import math
-import numpy as np
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
-from sklearn.externals import joblib
-from os.path import isfile
 import argparse
 import socket
 import errno
 import random
 import traceback
 
-from controls.plant import Plant, class_map
-from inputs.myo import MyoUdp
-from mpl.unity import UnityUdp
-# from TrainingUdp import TrainingUdp
-from pattern_rec import feature_extract
+# Allow access to minivie packages from current path in scenarios folder
+if os.path.split(os.getcwd())[1] == 'scenarios':
+    #import sys
+    sys.path.insert(0, os.path.abspath('..'))
 
+from pattern_rec import TrainingData, FeatureExtract, Classifier
+    
+
+from inputs.myo import MyoUdp
+#from controls.plant import Plant, class_map
+from mpl.unity import UnityUdp
+#from pattern_rec import feature_extract
 
 def unity_trainer(args):
     """Run Unity/Python sample trainer program. Python records myo data/runs LDA classifier based on Unity UDP cues
@@ -234,7 +237,7 @@ def parse():
     -y or --PYTHON_PORT -- set the port that python sends UDP packets on to Unity.
     -v or --VERBOSE -- specify how much console output the python program makes. 0 for minimum, 1 for some, 2 for more, etc.
     -e or --EXECUTE -- specify what main method to run when this script is called. Input is a string with the name of the method, which is then selected in a switch-like statement at the end of this file.
-    
+    -x or --DEBUG -- enter debug mode. Does things such as skip UDP handshake, ...
     Return Arguments:
     args (parser.parse_args()) -- command line arguments parsed into a dictionary for easy use.
     -- args is generally are stored into the MyoUDPTrainer object on initialization as instance data
@@ -262,6 +265,7 @@ def parse():
     parser.add_argument('-e', '--EXECUTE',
                         help='What "Main()" should this script execute: UnityTrainer, demo, main, etc.?', type=str,
                         default='main')
+    parser.add_argument('-x', '--DEBUG', help='Enter DEBUG mode', action='store_true')
     # other args relating to creating new data/etc.
 
     return parser.parse_args()
@@ -284,7 +288,7 @@ def main(args):
     (~ for no cue)
     Cue:                Function:                   Meaning:            Details:    
     ~                   __init__()            
-    cc                  create()                    "class create"
+    cc                  create()                    "class create"      Create a new set of training classes with empty training data
     ca<class>           addClass(class)             "class add"
     cr<class>           removeClass(class)          "class remove"
     dc                  clear()                     "data clear"        
@@ -324,8 +328,11 @@ def main(args):
     # Machine learning Myo UDP trainer controller
     trainer = MyoUDPTrainer(args)
 
-    # handshake between unity and python
-    trainer.handshake()
+    if not args.DEBUG:
+        # handshake between unity and python
+        trainer.handshake()
+    else:
+        print('Skipping UDP handshake for DEBUG mode.')
 
     # state = STATES.waitingStart
 
@@ -339,9 +346,13 @@ def main(args):
             print('Waiting for UDP data packet...')
             data, addr = trainer.receiveBlock()
             data = bytearray(data)
-            print('Received packet: ' + str(data)[12:-2])
+            #print out recieved data formatted according to python 2 or 3
+            if sys.version_info[0] == 2:
+                print('Received packet: "' + str(data) + '"')
+            elif sys.version_info[0] == 3:
+                print('Received packet: "' + str(data)[12:-2] + '"')
 
-            if data[0] == ord('d'):  # data
+            if data[0] == ord('f'):  # file
                 if data[1] == ord('s'):  # save
                     trainer.save()
 
@@ -351,23 +362,27 @@ def main(args):
                 elif data[1] == ord('d'):  # delete
                     trainer.delete()
 
-                elif data[1] == ord('c'):  # clear
-                    trainer.clear()
-
-                elif data[1] == ord('f'):  # fit to model
-                    trainer.fit()
+                elif data[1] == ord('c'):  # copy
+                    trainer.copy()
 
             elif data[0] == ord('c'):  # class (poses)
-                if data[1] == ord('c'):  # create (defaults)
-                    trainer.create()
-
+                if data[1] == ord('d'):  # defaults (reset to)
+                    trainer.reset()
+                
+                elif data[1] == ord('c'):  # clear
+                    className = data[2:].decode('utf-8')
+                    trainer.clear_class(className)
+                
                 elif data[1] == ord('a'):  # add
                     className = data[2:].decode('utf-8')
-                    trainer.addClass(className)
+                    trainer.add_class(className)
 
                 elif data[1] == ord('r'):  # remove
                     className = data[2:].decode('utf-8')
-                    trainer.removeClass(className)
+                    trainer.remove_class(className)
+                    
+                elif data[1] == ord('f'):  # fit to model
+                    trainer.fit()
 
             elif data[0] == ord('o'):  # output
                 if data[1] == ord('s'):  # tostring
@@ -387,11 +402,13 @@ def main(args):
                         trainer.predictMult()  # use settings in object
 
                 elif data[1] == ord('s'):  # single
-                    print(trainer.predictSingle())  # this isn't useful in generic UDP control mode
-                    pass
+                    id, status = trainer.predictSingle()  
+                    print(trainer.TrainingData.motion_names[id])
+                    print(status)
 
-            elif data[0] == ord(
-                    't'):  # train (handles sequence for training poses, e.g. progressing to next pose, training current pose, etc.)
+            elif data[0] == ord('t'):  # train 
+            #(handles sequence for training poses, e.g. progressing to next pose, training current pose, etc.)
+                
                 if data[1] == ord('a'):  # all poses
                     if len(data) >= 3:
                         cycles = 1 if len(data) == 3 else data[3]
@@ -406,42 +423,40 @@ def main(args):
                         trainer.trainSingle(curPose, pause=0)
 
                 elif data[1] == ord('n'):  # (goto) next pose
-                    if curPose + 1 < len(trainer.TrainingName):
+                    if curPose + 1 < len(trainer.TrainingData.motion_names):
                         curPose += 1
-                        print('Current pose set to "' + trainer.TrainingName[curPose] + '."\n')
+                        print('Current pose set to "' + trainer.TrainingData.motion_names[curPose] + '."\n')
                     else:
                         # curPose = 0  #may want to delete this line
-                        print('Already at last pose "' + trainer.TrainingName[curPose] + '."\n')
+                        print('Already at last pose "' + trainer.TrainingData.motion_names[curPose] + '."\n')
                         trainer.send('o')  # pose overflow
 
                 elif data[1] == ord('p'):  # (goto) previous pose
-
                     if curPose > 0:
                         curPose -= 1
-                        print('Current pose set to "' + trainer.TrainingName[curPose] + '."\n')
+                        print('Current pose set to "' + trainer.TrainingData.motion_names[curPose] + '."\n')
                     else:
-                        # curPose = len(trainer.TrainingName) - 1 #may want to delete this line.
-                        print('Already at first pose "' + trainer.TrainingName[curPose] + '."\n')
+                        # curPose = len(trainer.TrainingData.motion_names) - 1 #may want to delete this line.
+                        print('Already at first pose "' + trainer.TrainingData.motion_names[curPose] + '."\n')
                         trainer.send('o')
 
                 elif data[1] == ord('f'):  # (goto) first pose
                     curPose = 0
-                    print('Current pose set to "' + trainer.TrainingName[curPose] + '."\n')
+                    print('Current pose set to "' + trainer.TrainingData.motion_names[curPose] + '."\n')
 
                 elif data[1] == ord('l'):  # (goto) last pose
-                    curPose = len(trainer.TrainingName) - 1
-                    print('Current pose set to "' + trainer.TrainingName[curPose] + '."\n')
+                    curPose = len(trainer.TrainingData.motion_names) - 1
+                    print('Current pose set to "' + trainer.TrainingData.motion_names[curPose] + '."\n')
 
-            elif data[0] == '':
-                pass
+            #elif data[0] == ord(''):
+            #    pass
 
-            elif data[0] == '':
-                pass
+            elif data[0] == ord('q'):       # quit the UDP loop
+                print('Quit signal recieved.')
 
             else:
                 print('Unrecognized data packet. Restarting control loop.\n')
 
-            pass  # do stuff
 
         # error handling
         except Exception as err:  # print the exception, and continue running UDP flow control loop
@@ -452,8 +467,7 @@ def main(args):
                 traceback.print_exception(*exc_info)
                 print('')
                 del exc_info
-            pass
-        pass
+    
     # End of UDP flow control loop
 
     print('Exiting UDP flow control section.\n')
@@ -461,8 +475,7 @@ def main(args):
     trainer.close()
     # print('\nEnding program in 5 seconds...')
     # time.sleep(5)
-
-
+    
     pass
 
 
@@ -525,47 +538,32 @@ def enum(**enums):
     """adding Enum support to Python."""
     return type('Enum', (), enums)
 
-
+        
 class MyoUDPTrainer:
     """Python Class for managing machine learning and Myo training operations."""
-
-    def __init__(self, args, path=None):
-        """
-        Initialize the MyoUDPTrainer object.
+    
+    def __init__(self, args):
         
-        Keyword Arguments:
-        self -- pointer to this object
-        args -- preparsed command-line arguments. Comprise most of the instance data of this object
-        path -- (Optional) If passed in, sets the path to load/save data from. Otherwise path is set to current location of this file
-        """
-
-        # Set MyoUDPTrainer object instance data
-        self.TrainingData = []  # List of all feature extracted samples
-        self.TrainingClass = []  # List of class indices that each sample belongs to
-        self.TrainingName = []  # Name of each class
-
-        if path == None:  # path to script location. Saved data will be saved/accessed from here.
-            self.path = os.path.dirname(os.path.abspath(__file__))
-        else:
-            self.path = path
-
-        if args.DELETE:
-            self.delete()
-
+        self.TrainingData = TrainingData()
+        self.FeatureExtract = FeatureExtract()
+        self.Classifier = None
+        
+        #Not implemented in pattern_rec.TrainingData class
+        #if args.DELETE:
+        #    self.TrainingData.delete() #Currently unimplemented
+        
         self.quadratic = args.QUADRATIC  # set Quadratic Discriminant Analysis mode. False means LDA mode
         self.tsamples = args.TRAIN  # how many samples per training each class
-        self.tcycles = args.TRAIN_LOOP  # hoe many cycles of training each pose to repeat
+        self.tcycles = args.TRAIN_LOOP  # how many cycles of training each pose to repeat
         self.dt = 1.0 / args.FREQUENCY  # how frequently do training and prediction loops run
         self.verb = args.VERBOSE  # how much information output to the console
         self.pcycles = args.PREDICT  # how many cycles to predict for. setting to -1 means infinite cycles
         self.hMyo = MyoUdp()  # Signal Source get external bio-signal data
         self.hMyo.connect()
-        self.ROCFile = '../../WrRocDefaults.xml'  # ROC file for possible motion classes
-        self.hPlant = Plant(self.dt,
-                            self.ROCFile)  # Plant maintains current limb state (positions) during velocity control
+        ####TODO#####self.ROCFile = '../../WrRocDefaults.xml'  # ROC file for possible motion classes
+        ####TODO#####self.hPlant = Plant(self.dt, self.ROCFile)  # Plant maintains current limb state (positions) during velocity control
         self.hSink = UnityUdp()  # ("192.168.1.24")   # Sink is output to ouside world (in this case to VIE)
-        self.clf = None  # Fit training data model
-
+        
         self.UDP_IP = args.UDP_IP  # IP address to communicate with unity through (directed to localhost).
         self.PYTHON_SEND_PORT = args.PYTHON_PORT  # from python send data to unity using this port
         self.UNITY_RECEIVE_PORT = args.UNITY_PORT  # from unity receive data in python using this port
@@ -595,21 +593,21 @@ class MyoUDPTrainer:
         if samples == None:
             samples = self.tsamples
         if cycles == None:
-            samples = self.tcycles
+            cycles = self.tcycles
 
         if samples > 0:
             print('\n\nBeginning training Regime in 5 seconds...')
-            print('(Ready for first pose "' + self.TrainingName[0] + '"')
+            print('(Ready for first pose "' + self.TrainingData.motion_names[0] + '"')
             time.sleep(5)
 
             print('')
             for cycle in list(range(cycles)):
                 print('Training Cycle #' + str(cycle) + '\n')
-                for classNum, className in enumerate(self.TrainingName):
+                for classNum, className in enumerate(self.TrainingData.motion_names):
                     self.trainSingle(classNum, samples)
         print('Finished training all poses.\n')
-
-    def trainSingle(self, classNum, samples=None, pause=3):
+    
+    def trainSingle(self, classID, samples=None, pause=3):
         """
         Run training regime for single specified pose.
         
@@ -618,11 +616,16 @@ class MyoUDPTrainer:
         samples -- (Optional) If passed in, overrides number of samples to collect for each pose. Otherwise uses number of samples specified in self.tsamples
         pause -- (Optional) If passed in, set how long to pause before recording the Myo data. Otherwise default pause is 3 seconds
         """
-
+        
+        start = time.time()
+        
+        
         if samples == None:
             samples = self.tsamples
 
-        print('pose: ' + self.TrainingName[classNum])
+        className = self.TrainingData.motion_names[classID]
+        
+        print('pose: ' + self.TrainingData.motion_names[classID])
         time.sleep(pause)
 
         if self.verb == 0:
@@ -631,9 +634,16 @@ class MyoUDPTrainer:
         for i in list(range(samples)):
             loopStart = time.time()
             emgData = self.hMyo.get_data() * 0.01
-            f = (feature_extract(emgData)).tolist()[0]
-            self.TrainingData.append(f)
-            self.TrainingClass.append(classNum)
+            f_list, f_learn = self.FeatureExtract.get_features(emgData)
+            
+            #format for storing data
+            f_list = f_list[0]
+            f_learn = f_learn[0]
+
+            f = f_learn
+            
+            self.TrainingData.add_data(f, classID, className)
+            
 
             if self.verb >= 1:
                 print('%8.4f %8.4f %8.4f %8.4f' % (f[0], f[8], f[16], f[24]))
@@ -651,8 +661,11 @@ class MyoUDPTrainer:
         if self.verb == 0:
             print('Done.')
 
-        print('')
+        if self.verb >= 2:
+            print('Entire train single pose cycle execution time: ' + str(time.time() - start) + 's')
 
+        print('')
+    
     def fit(self):
         """
         Fit data currently stored in self.TrainingData and self.TrainingClass to LDA or QDA model
@@ -668,30 +681,14 @@ class MyoUDPTrainer:
         if self.verb >= 1:
             print('Fitting data to ' + ('QDA' if self.quadratic else 'LDA') + ' model.')
         start = time.time()
-
-        if len(self.TrainingData) == 0 or len(self.TrainingClass) == 0:
-            raise ValueError('Training Data or Class array(s) is empty. Did you forget to save training data?')
-        if len(self.TrainingData) != len(self.TrainingClass):
-            raise ValueError(
-                'Training Data and Training class arrays are incompatable sizes. Try generating new training data from scratch.')
-
-        X = np.array(self.TrainingData)
-        y = np.array(self.TrainingClass)
-        # if self.verb >= 3
-        # print('Training data Numpy arrays')
-        # print('shape of X: ' + str(X.shape))
-        # print('shape of y: ' + str(y.shape))
-        if self.quadratic:
-            self.clf = QuadraticDiscriminantAnalysis()
-        else:
-            self.clf = LinearDiscriminantAnalysis()
-        self.clf.fit(X, y)
+        self.Classifier = Classifier(self.TrainingData)
+        self.Classifier.fit() #want to pass in whether quadratic or linear
 
         if self.verb >= 2:
             print('Fit LDA model execution time: ' + str(time.time() - start) + 's')
 
         print('')
-
+    
     def predictMult(self, cycles=None):
         """
         Run the LDA or QDA classifier prediction based on current myo data for multiple cycles.
@@ -708,17 +705,19 @@ class MyoUDPTrainer:
         data, addr = None, None  # current UDP packet received from Unity
 
         i = 0
-        while i != cycles and (data == None or data[0] != ord('q')):
+        while i != cycles and (data == None or ord(data[0]) != ord('q')):
             data, addr = self.receiveNoBlock()  # receive UDP data to allow for exiting infinite loop
             loopStart = time.time()
-            prediction = self.predictSingle()
+            id, status = self.predictSingle()
+            prediction = self.TrainingData.motion_names[id]
             if self.verb >= 1:
                 print('prediction: ' + prediction)
             if self.verb >= 2:
+                print(status)
                 print(('QDA' if self.quadratic else 'LDA') + ' prediction execution time: ' + str(
                     time.time() - loopStart) + 's')
 
-            self.output(prediction, True)
+            #self.output(prediction, True)
 
             loopTime = time.time() - loopStart
             if loopTime < self.dt:
@@ -729,7 +728,7 @@ class MyoUDPTrainer:
             i += 1
 
         print('')
-
+        
     def predictSingle(self):
         """
         Run the LDA or QDA classifier prediction based on current myo data for a single sample.
@@ -738,51 +737,17 @@ class MyoUDPTrainer:
         self -- pointer to this object
         
         Return Arguments:
-        prediction -- model class prediction of current class based on current Myo data
+        id -- class id of predicted pose
+        status -- status message from prediction error checking
         """
-        return self.TrainingName[self.clf.predict(feature_extract(self.hMyo.get_data() * 0.01))]
-
-    def output(self, classDecision, upperAngles=False):
-        """
-        Update and output joint angles to vMPL based on class specified.
+        emgData = self.hMyo.get_data() * 0.01
+        f_list, f_learn = self.FeatureExtract.get_features(emgData)
         
-        Keyword Arguments:
-        self -- pointer to this object
-        classDecision -- string that names the pose to output
-        upperAngles -- (Optional) If passed in, specifies whether or not to output upper arm angles based on Myo orientation data. Otherwise defaults to False
-        """
-
-        # Move joints using classifier
-        # try:
-        gain = 2.0
-
-        classInfo = class_map(classDecision)
-
-        # Set joint velocities
-        self.hPlant.new_step()
-        # set the mapped class
-        if classInfo['IsGrasp']:
-            if classInfo['GraspId'] is not None:
-                self.hPlant.GraspId = classInfo['GraspId']
-            self.hPlant.set_grasp_velocity(classInfo['Direction'] * gain)
-        else:
-            self.hPlant.set_joint_velocity(classInfo['JointId'], classInfo['Direction'] * gain)
-
-        self.hPlant.update()
-
-        if upperAngles:
-            # perform joint motion update
-            vals = self.hMyo.get_angles()
-            self.hPlant.JointPosition[3] = vals[1] + math.pi / 2
-
-        # transmit output
-        self.hSink.send_joint_angles(self.hPlant.JointPosition)
-
-        # except:
-        #    print('Class "' + classDecision + '" not available from ROC table.')
-        #    #jointId, jointDir = [[],0]
-        #    pass    
-
+        return self.Classifier.predict(f_learn)
+    
+    def output(self, classDecision, upperAngles=False):
+        pass
+        
     def save(self, path=None):
         """
         Save the current data to the disk.
@@ -790,81 +755,105 @@ class MyoUDPTrainer:
         Keyword Arguments:
         self -- pointer to this object
         path -- (Optional) If passed in, overrides the path to save the data to. Otherwise save data to path at self.path
+        (path currently unimplemeneted. Saves hdf5 file in current folder)
         """
 
-        if path == None:
-            path = self.path
+        #if path == None:
+        #    path = self.path
 
         start = time.time()
 
-        print('Saving emg feature data to test file.')
-        trainFolder = os.path.join(path, 'training_data')
+        print('Saving emg feature data to hdf5 file.')
+        #trainFolder = os.path.join(path, 'training_data')
 
-        if not os.path.exists(trainFolder):
-            os.makedirs(trainFolder)
+        #if not os.path.exists(trainFolder):
+        #    os.makedirs(trainFolder)
 
-        joblib.dump(np.array(self.TrainingData), trainFolder + os.sep + 'X.pkl')
-        joblib.dump(np.array(self.TrainingClass), trainFolder + os.sep + 'y.pkl')
-        joblib.dump(self.TrainingName, trainFolder + os.sep + 'className.pkl')
+        self.TrainingData.save() #want option to save to specified path
 
         if self.verb >= 2:
             print('Save training data execution time: ' + str(time.time() - start) + 's')
 
         print('')
-
+    
     def load(self, path=None):
         """
-        Load training data from disk. Training data is stored into self.TrainingData, self.TrainingClass, and self.TrainingName.
+        Load training data from disk.
         
         Keyword Arguments:
         self -- pointer to this object
         path -- (Optional) If passed in, overrides path that training data is loaded from. Otherwise data is loaded from self.path
+        (path currently unimplemeneted. Loads hdf5 file in current folder)
         """
 
-        if path == None:
-            path = self.path
-        trainFolder = os.path.join(path, 'training_data')
-
-        # Check if data already exists
-        # Manipulate data as python arrays, then convert to numpy arrays when final size reached
-        saved = isfile(trainFolder + os.sep + 'X.pkl') and isfile(trainFolder + os.sep + 'y.pkl') and isfile(
-            trainFolder + os.sep + 'className.pkl')
-        if saved:
-            # load from files
-            print('Found saved training data. Loading training data from files.')
-            self.TrainingData = joblib.load(trainFolder + os.sep + 'X.pkl').tolist()
-            self.TrainingClass = joblib.load(trainFolder + os.sep + 'y.pkl').tolist()
-            self.TrainingName = joblib.load(trainFolder + os.sep + 'className.pkl')
-        else:
-            print('No training data found.')
-            self.create()
-
-        # perform error checks here:
-        # if error: self.create()
+        #if path == None:
+        #    path = self.path
+        
+        start = time.time()
+        
+        #trainFolder = os.path.join(path, 'training_data')
+        
+        self.TrainingData.load() #want option to load from specified path
+        
+        if self.verb >= 2:
+            print('Load training data execution time: ' + str(time.time() - start) + 's')
+        
         print('')
-
+        
     def delete(self, path=None):
         """
-        Delete training data from disk.
+        Delete the current data from the disk.
+        **Currently unimplemented in pattern_rec.TrainingData object**
         
         Keyword Arguments:
         self -- pointer to this object
-        path -- (Optional) If passed in, overrides path that training data is deleted from. Otherwise data is deleted from self.path
+        path -- (Optional) If passed in, overrides the path to delete the data from. Otherwise deletes data from path at self.path
+        (path currently unimplemeneted. Deletes hdf5 file in current folder)
         """
-        print('Deleting saved data.\n')
 
-        if path == None:
-            path = self.path
-        trainFolder = os.path.join(path, 'training_data') + os.sep
+        #if path == None:
+        #    path = self.path
 
-        if isfile(trainFolder + 'X.pkl'):
-            os.remove(trainFolder + 'X.pkl')
-        if isfile(trainFolder + 'y.pkl'):
-            os.remove(trainFolder + 'y.pkl')
-        if isfile(trainFolder + 'className.pkl'):
-            os.remove(trainFolder + 'className.pkl')
+        start = time.time()
 
-    def clear(self):
+        print('Saving emg feature data to hdf5 file.')
+        #trainFolder = os.path.join(path, 'training_data')
+
+        #if not os.path.exists(trainFolder):
+        #    os.makedirs(trainFolder)
+
+        self.TrainingData.delete() #want option to delete at specified path
+
+        if self.verb >= 2:
+            print('Delete training data execution time: ' + str(time.time() - start) + 's')
+
+        print('')
+    
+    def copy(self, path=None):
+        """
+        copy training data from current saved file.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        path -- (Optional) If passed in, overrides path that training data is copied to. Otherwise data is copied to self.path
+        (path currently unimplemeneted. copies hdf5 file to current folder)
+        """
+
+        #if path == None:
+        #    path = self.path
+        
+        start = time.time()
+        
+        #trainFolder = os.path.join(path, 'training_data')
+        
+        self.TrainingData.copy() #want option to copy to specified path
+        
+        if self.verb >= 2:
+            print('Copy training data execution time: ' + str(time.time() - start) + 's')
+        
+        print('')
+         
+    def reset(self):
         """
         Clear training data. 
         Blank training data is stored into self.TrainingData, self.TrainingClass, and self.TrainingName.
@@ -874,33 +863,71 @@ class MyoUDPTrainer:
         """
 
         # create new data from default
-        print('Clearning set of training data.\n')
-        self.TrainingData = []
-        self.TrainingClass = []
-        self.TrainingName = []
-
-    def create(self):
+        print('resetting training data set to defaults.\n')
+        self.TrainingData.reset()
+        
+    def add_class(self, toAdd):
         """
-        Create initial training data from scratch. 
-        Blank training data is stored into self.TrainingData and self.TrainingClass
-        Default data is stored into self.TrainingName.
+        Add a pose to the list of poses that are in the training set.
+        **Currently unimplemented in pattern_rec.TrainingData object**
         
         Keyword Arguments:
         self -- pointer to this object
+        newClass -- string that names the pose to add
         """
+        
+        start = time.time()
+        
+        print('Attempting to add new pose: ' + toAdd)
+        #self.TrainingData.addClass(newClass)
+        
+        if self.verb >= 2:
+            print('add class execution time: ' + str(time.time() - start) + 's')
 
-        # create new data from default
-        print('Creating new set of training data with default classes.\n')
-        self.TrainingData = []
-        self.TrainingClass = []
-        # TrainingName should be loaded from the current ROC file, or start blank, and then addClass for each class
-        # self.TrainingName = ['Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp', 'No Movement']
-        # self.TrainingName = ['No Movement', 'Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Adduction',
-        #    'Wrist Abduction', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp']
-        self.TrainingName = ['No Movement', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp']
+        
+        print('')
+        
+    def remove_class(self, toRemove):
+        """
+        Delete a pose from the list of poses that are in the training set.
+        **Currently unimplemented in pattern_rec.TrainingData object**
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        newClass -- string that names the pose to add
+        """
+        
+        start = time.time()
+        
+        print('Attempting to remove pose: ' + toRemove)
+        #id = self.TrainingData.motion_names.index(toRemove)
+        #self.TrainingData.clear(id)
+        #self.TrainingData.removeClass(id / toRemove)
+        
+        if self.verb >= 2:
+            print('remove class execution time: ' + str(time.time() - start) + 's')
 
-        pass
+        print('')
 
+    def clear_class(self, toClear):
+        """
+        Delete a pose from the list of poses that are in the training set.
+        
+        Keyword Arguments:
+        self -- pointer to this object
+        toClear -- string that names the pose to add
+        """
+        
+        start = time.time()
+        
+        id = self.TrainingData.motion_names.index(toClear)
+        self.TrainingData.clear(id)
+        
+        if self.verb >= 2:
+            print('clear class execution time: ' + str(time.time() - start) + 's')
+        
+        print('')
+        
     def close(self):
         """Cleanup currently opened UDP objects."""
         print('')
@@ -908,66 +935,6 @@ class MyoUDPTrainer:
         print('')
         self.hSink.close()
         self.hMyo.close()
-
-    def addClass(self, newClass):
-        """
-        Add a pose to the list of poses that are in the training set. New class is added to self.TrainingName (with no initial training data).
-        
-        Keyword Arguments:
-        self -- pointer to this object
-        newClass -- string that names the pose to add
-        """
-        if newClass not in self.TrainingName:
-            print('Adding class "' + newClass + '" to pose list.\n')
-            self.TrainingName.append(newClass)
-        else:
-            raise ValueError('Cannot add class "' + newClass + '" to training set. Class already exists in object.')
-
-    def removeClass(self, toRemove):
-        # bug, need to shift indexes so that class numbers are correctly sized
-        """
-        Delete a pose from the list of poses that are in the training set. New class is deleted from self.TrainingName along with all associated training data in self.TrainingData and self.TrainingClass.
-        
-        Keyword Arguments:
-        self -- pointer to this object
-        newClass -- string that names the pose to add
-        """
-        print('Attempting to remove class "' + toRemove + '."\n')
-
-        newData = []
-        newClass = []
-        newName = []
-        remIndex = None
-
-        for i in range(len(self.TrainingName)):
-            if self.TrainingName[i] != toRemove:
-                newName.append(self.TrainingName[i])
-            else:
-                if remIndex == None:
-                    remIndex = i
-                else:
-                    raise ValueError('Multiple instances of class "' + toRemove + '" in training class list.')
-
-        if remIndex == None:
-            raise ValueError('No class named "' + toRemove + '" was found in current training data.')
-        else:
-            for i in range(len(self.TrainingClass)):
-                if self.TrainingClass[i] != remIndex:
-                    # classNum = self.TrainingClass[i]
-                    # if classNum > remIndex:
-                    # classNum -= 1
-
-                    newClass.append(
-                        self.TrainingClass[i] - (1 if i > remIndex else 0))  # Convert indexes above removed class
-                    newData.append(self.TrainingData[i])
-
-        self.TrainingData = newData
-        self.TrainingClass = newClass
-        self.TrainingName = newName
-        if self.verb > 3:
-            print(newData)
-            print(newClass)
-            print(newName)
 
     def send(self, message):
         """
@@ -1079,16 +1046,29 @@ class MyoUDPTrainer:
         """
 
         # perhaps adjust output based on VERBOSE
-        sizes = [0] * len(self.TrainingName)
-        for i in range(len(self.TrainingClass)):
-            sizes[self.TrainingClass[i]] += 1
+        #sizes = [0] * len(self.TrainingData.motion_names)
+        #for i in range(len(self.TrainingData.id)):
+        #    sizes[self.TrainingData.id[i]] += 1
+        
+        totals = self.TrainingData.get_totals()
 
-        string = 'Myo Trainer Object\n'
-        for i, name in enumerate(self.TrainingName):
-            string += 'Class: ' + name + '\tSamples: ' + str(sizes[i]) + '\n'
+        string = 'Myo Trainer Object:\n'
+        
+        if self.verb >= 1:
+            string += 'Classification type: '
+            string += 'Quadratic ' if self.quadratic else 'Linear '
+            string += 'Discriminant Analysis\n'
+        
+        #list out amount of training data samples per each pose
+        for i, name in enumerate(self.TrainingData.motion_names):
+            string += 'Class: ' + name + '\tSamples: ' + str(totals[i]) + '\n'
 
-        return string
-
+        return string    
+    
+    
+    
+    
+    
 
 if __name__ == "__main__":
     """Select a method to execute as main if specified in command line arguments."""

@@ -12,7 +12,7 @@ e.g. run: python MyoUDPTrainer -x, (-x skips handshake).
 --In matlab minivie:
 >>  a = PnetClass(8050, 8051,'127.0.0.1')
 >>  a.initialize
->>  a.putData(['<tc>' uint8(<val>)]) to send a training cue plus a value
+>>  a.putData(['<cue>' uint8(<val>)]) to send a training cue plus a value
 
 
 Training builds on whatever saved training data is in the directory, so if you 

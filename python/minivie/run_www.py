@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # test script for MPL interface
 #
 # This test function is intended to be operated from the command line to bring up a short menu allow communication

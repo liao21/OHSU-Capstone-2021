@@ -44,7 +44,7 @@ import serial.rs485
 import threading
 import logging
 import numpy as np
-
+import datetime
 
 class DCellSerial(object):
     """
@@ -91,6 +91,11 @@ class DCellSerial(object):
         # Stream unless start_streaming set to false
         # Might do this if we want to run diagnostics without bogging down communications
         if start_streaming:
+
+            # Start logging
+            f = 'dcell-' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")+ '.log'
+            logging.basicConfig(filename=f, level=logging.DEBUG, format='%(asctime)s %(message)s')
+
             # Create threadsafe lock so that user based reading of values and thread-based
             # writing of values do not conflict
             self.__lock = threading.Lock()
@@ -144,6 +149,8 @@ class DCellSerial(object):
                     # Populate Strain Data Buffer (newest on top)
                     self.__dataStrain = np.roll(self.__dataStrain, 1, axis=0)
                     self.__dataStrain[0] = float(data)  # insert in first buffer entry
+                    # Logging
+                    logging.info('Strain: ' + str(float(data)))
 
     def get_data(self):
         # Method to return current strain buffer
@@ -179,3 +186,12 @@ def interactive_testing(port='/dev/ttyUSB0'):
         else:
             out = dcell.send_command(input)
             print(">>" + out)
+
+def main():
+    # Initialize object
+    dcell = DCellSerial()
+    # Connect and start streaming
+    dcell.connect()
+
+if __name__ == '__main__':
+    main()

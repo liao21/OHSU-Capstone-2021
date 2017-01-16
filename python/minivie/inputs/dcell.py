@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 This module will establish RS485 serial communications with the DCell strain gauge digitizer.
 The digitizer follows an ASCII Protocol: ex) !001:SGAI=123.456<CR>
@@ -39,12 +39,13 @@ while True:
     time.sleep(1)
 
 """
+import time
 import serial
 import serial.rs485
 import threading
 import logging
 import numpy as np
-import datetime
+from datetime import datetime
 
 class DCellSerial(object):
     """
@@ -91,10 +92,6 @@ class DCellSerial(object):
         # Stream unless start_streaming set to false
         # Might do this if we want to run diagnostics without bogging down communications
         if start_streaming:
-
-            # Start logging
-            f = 'dcell-' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")+ '.log'
-            logging.basicConfig(filename=f, level=logging.DEBUG, format='%(asctime)s %(message)s')
 
             # Create threadsafe lock so that user based reading of values and thread-based
             # writing of values do not conflict
@@ -143,6 +140,7 @@ class DCellSerial(object):
         # Loop forever to receive data
         while True:
             # Ask for current strain
+            time.sleep(0.1)
             data = self.send_command('SYS?')
             with self.__lock:
                 if data != '':  # Returns nothing if serial stream times out
@@ -188,6 +186,9 @@ def interactive_testing(port='/dev/ttyUSB0'):
             print(">>" + out)
 
 def main():
+    # Start logging
+    f = 'dcell-' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")+ '.log'
+    logging.basicConfig(filename=f, level=logging.DEBUG, format='%(asctime)s %(message)s')
     # Initialize object
     dcell = DCellSerial()
     # Connect and start streaming

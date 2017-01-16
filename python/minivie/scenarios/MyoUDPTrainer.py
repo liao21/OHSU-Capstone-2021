@@ -365,6 +365,7 @@ class MyoUDPTrainer:
         self.ROCPath = '../../WrRocDefaults.xml'    # Path to ROC file for plant
         self.Plant = Plant(self.dt, self.ROCPath)   # Plant maintains current limb state (positions) during control
         self._MyoUDPTrainer__gain_value = 1         # Not sure about what this line does. Got an error from the plant without it though
+        self._MyoUDPTrainer__hand_gain_value = 1    # Same deal as above
         self.class_decision = 0     
         self.DataSink = UnityUdp()  # ("192.168.1.24")     # Sink is output to ouside world (in this case to VIE)
         

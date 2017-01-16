@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 
 This module contains all the functions for interface with the Thalmic Labs Myo Armband.

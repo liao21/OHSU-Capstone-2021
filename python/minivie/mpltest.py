@@ -14,7 +14,7 @@ from builtins import input
 import logging
 
 import utilities
-from mpl.nfu import NfuUdp
+from mpl.open_nfu import NfuUdp
 # from mpl.unity import UnityUdp
 import mpl.roc as roc
 
@@ -53,19 +53,19 @@ if choice == 1:
 
     result = 0
     while not result:
-
         result = utilities.ping('192.168.1.111')
     print(result)
+
 elif choice == 2:
     print("Starting MPL Wrist...")
-    # hSink = UnityUdp()
-    hSink = NfuUdp()
+    # hSink = UnityUdp()  commands on 9027, telem 9028
+    hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
     hSink.connect()
 
     hSink.send_joint_angles([0, AA, 0, EL, -0.7, -0.5, -0.5])
     time.sleep(1.0)
     AA = -0.25
-    hSink.send_joint_angles([0, AA, 0, EL + 0.05, -0.7, -0.5, -0.5])
+    hSink.send_joint_angles([0, AA, 0, EL + 0.55, -0.7, -0.5, -0.5])
     time.sleep(1.0)
     hSink.send_joint_angles([0, AA, 0, EL, 0.7, 0.5, 0.5])
     time.sleep(1.0)
@@ -75,7 +75,7 @@ elif choice == 2:
 elif choice == 3:
     print("Starting MPL Grasps...")
     # hSink = UnityUdp()
-    hSink = NfuUdp()
+    hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
     hSink.connect()
 
     # Read ROC Table

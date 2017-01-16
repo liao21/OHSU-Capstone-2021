@@ -77,7 +77,7 @@ class DCellSerial(object):
             rtscts=False,
             timeout=1
         )
-        self.ser.rs485_mode = serial.rs485.RS485Settings()
+        #self.ser.rs485_mode = serial.rs485.RS485Settings()
 
         # Check that port opened
         if self.ser.isOpen():  # Check if open

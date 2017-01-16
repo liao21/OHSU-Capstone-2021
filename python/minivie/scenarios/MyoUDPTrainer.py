@@ -1,26 +1,32 @@
 """
 Created on Tue Jul 19 11:16:36 2016
 
-Initial creation of the training methods for LDA classification in Python
+Python Class and methods for controlling the whole machine learning training process back end.
 
 --VERBOSE  set to 2 or higher
 Output timing information 
 
 Most of the functionality is controlled by command line flags
-e.g. if you want to do a demo (plus timing info), you can run: 
-'python MyoUDPTrainer.py --EXECUTE demo --VERBOSE 2 --TRAIN 20 --PREDICT 1000'
-Training builds on whatever saved training data is in the directory, so if you 
-want to train from scratch, delete all of the files in the 'python\training_data\'
-folder, and then rerun the script with the train flag (alternatively run delete() function).
+Can also control training object almost entirely from UDP cues.
+e.g. run: python MyoUDPTrainer -x, (-x skips handshake). 
+--In matlab minivie:
+>>  a = PnetClass(8050, 8051,'127.0.0.1')
+>>  a.initialize
+>>  a.putData(['<tc>' uint8(<val>)]) to send a training cue plus a value
 
-WIP add delete flag to run delete method instead of manually deleting saved data
-WIP change path behavior so that all paths use self.path
-WIP add UDP communication to/from unity for training cues and other functionality
+
+Training builds on whatever saved training data is in the directory, so if you 
+want to train from scratch, delete all of the files in 'TRAINING_DATA.hdf5'
+folder, and then rerun training sequence (alternatively run delete() function).
+
+TODO Add get state method that returns the current state of the program via UDP when requested
+TODO Add acknowledgement UDP signals for when loops are ended with 'e' or 'q' signal
 
 @author: D. Samson
 
 Revisions:
 2017Jan09 Samson: Initial Incorperation of pattern_rec
+2017Jan16 Samson: Added plant support. Removed depreciated code 
 """
 
 import os
@@ -33,191 +39,32 @@ import errno
 import random
 import traceback
 
+from enum import Enum
+
 # Allow access to minivie packages from current path in scenarios folder
 if os.path.split(os.getcwd())[1] == 'scenarios':
-    #import sys
+    import sys
     sys.path.insert(0, os.path.abspath('..'))
-
-from pattern_rec import TrainingData, FeatureExtract, Classifier
+elif os.path.split(os.getcwd())[1] == 'minivie':
+    pass #do nothing
+else:
+    raise OSError('Could not find /python/minivie. Script run from unknown file location.')
     
+print('Current path: ' + os.path.split(os.getcwd())[1])
+    
+from pattern_rec import TrainingData, FeatureExtract, Classifier
 
 from inputs.myo import MyoUdp
-#from controls.plant import Plant, class_map
+from controls.plant import Plant, class_map
+#from controls.plant import class_map
+
 from mpl.unity import UnityUdp
-#from pattern_rec import feature_extract
 
-def unity_trainer(args):
-    """Run Unity/Python sample trainer program. Python records myo data/runs LDA classifier based on Unity UDP cues
-    
-    Keyword arguments:
-    args -- command line arguments parsed by python argparse. see function parse() for list of arguments
-    
-    UDP codes (received from Unity):
-    'b' -- "Begin training"
-    'a' -- "Acknowledged"
-    'r' -- "Start Recording"
-    
-    UDP codes (sent from Python)
-    '<pose name>' -- the name of the current pose to be recorded. Unity uses this to construct the UI text
-    '<next pose>' -- synonym of above. Used to denote next pose in the sequence of training poses
-    'a' -- "Acknowledged"
-    'd' -- "Done Recording Pose"
-    'f' -- "Finished Recording All Poses"
-    
-    UDP Unity/Python communication protocol
-    Handshake - run to sync Python operations with Unity operations at the start of the program
-    --Python waits for data signal from Unity
-    --Unity generates a random byte [A] and sends it to Python
-    --Python receives random byte [A], generates a random byte [B] and sends [A+1,B] to python as an acknowledgement
-    --Unity receives [A+1,B], checks that the first byte is in fact [A+1], and sends [B+1] in response to Python. Unity now enters its main program
-    --Python receives [B+1], checks that it is in fact [B+1], and then enters its main program section. The handshale is complete. Now Unity and Python are "acquainted".
-    
-    General training sequence - Unity cues Python to record training data when Unity receives UI input
-    --When the "Begin Training" button is clicked, Unity sends to Python ['b'] for "begin training"
-    --When python receives ['b'] it starts the training cycle, and responds with the name of the current pose ['<pose name>']
-    --Unity receives ['<pose name>'] and uses it to update the UI text. Unity then sends to Python ['a'] for "acknowledged"
-    --When the "Record Pose: <pose name>" button is clicked, Unity sends to Python ['r'] for "start recording <pose>"
-    --Python receives ['r'] it responds with ['a'] for "acknowledged" and begins saving feature extracted Myo data into a list of data
-    --When Python finishes recording the specified number of samples (controlled by input arg -t or --TRAIN) Python sends to Unity ['d'] for "done training"
-    --Unity receives the ['d'] and then enters the cooldown phase.
-    --Python begins transmitting ['<next pose>'] to Unity to reset the cycle for the new pose
-    --When the cooldown is complete, Unity receives ['<next pose>'] responds with ['a'] for "acknowledged"
-    --This process repeats until all of the poses have been trained.
-    --At the end of recording the last pose, Python sends ['f'] for "finished training cycle" instead of ['<next pose>']
-    --Unity receives ['f'], and hides the UI, then sends to Python ['a'] for "acknowledged"
-    --Python receives ['a'], and saves the training data, then fits the training data to the LDA model.
-    --Python then enters the prediction phase where it outputs joint angles to the vMPL based on the predicted pose for current Myo data 
-    
-    To-Do
-    --When Unity quits, send a UDP command to Python to quit if it is running, so that things close properly
-    --Make general training sequence less sequential, and more controllable by UDP cues. E.g.:
-        --ability to progress to next pose signaled by Unity UI input
-        --ability to return to previous pose signaled by Unity UI input
-        --ability to pause/resume training sequence signaled by Unity UI input
-        --ability to save/delete training data signaled by Unity UI input
-        --<see Bobby for other python control features controlled by UDP from Unity UI>
-        --(General Note about UDP control) UDP cues should be able to be from any arbitrary source, not just the Unity UI. I.e. Any program that sends the proper sequence of UDP cues to python should be able to control the training process.
-    --Discover bug where vMPL changes position during resting phase. vMPl should remain in the same spot except for the hand motions
-    --Update Plant.py so that control model uses ROC tables with interpolation as opposed to basic Python dictionary implemented. Update internal control model to handle ROC style Plant model
-    """
+if os.path.split(os.getcwd())[1] == 'scenarios':
+    #change directory to minivie
+    os.chdir('..')
 
-    # state machine variable. Same states are mirrored in Unity script.
-    STATES = enum(waitingHandshake=0, waitingStart=1, setupRecord=2, waitingRecord=3, recording=4, cooldown=5,
-                  inactive=6, off=7, none=8)
-    # initial state is waiting for Handshake from Unity
-    state = STATES.waitingHandshake
-
-    # Machine learning Myo UDP trainer controller
-    trainer = MyoUDPTrainer(args)
-
-    # handshake between unity and python
-    trainer.handshake()
-
-    state = STATES.waitingStart
-
-    # load saved data from disk if available
-    trainer.load()
-
-    # Ideal communication protocol between unity and python
-    # e.g. Unity -> '<command code><data>' -> Python
-    # Python -> '<Acknowledgement>' -> Unity
-    # sometimes the acknowledgement is omitted
-
-    # Set arm to demonstration JointPosition
-    trainer.hPlant.JointPosition[0] = 1
-    trainer.hPlant.JointPosition[3] = 1.3
-    trainer.hSink.send_joint_angles(trainer.hPlant.JointPosition)
-
-    print('Waiting for Unity to send "Begin Training" cue.')
-    while state == STATES.waitingStart:
-        # wait for signal to begin 'b'
-        data, addr = trainer.receiveBlock()
-        data = bytearray(data)
-        if data[0] == ord('q'):  # quit training session
-            trainer.close()
-            quit()
-        if data[0] == ord('b'):
-            state = STATES.setupRecord
-            print('Beginning training session.\n')
-
-
-
-            # adjust in future to read in classes based on unity settings/take all from ROC file
-            # if trainer.TrainingName == []:
-            # trainer.TrainingName = ['No Movement', 'Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Adduction',
-            # 'Wrist Abduction', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open', 'Spherical Grasp']
-
-    for trainCycle in list(range(trainer.tcycles)):  # repeat training process a specified number of times
-        for pose in trainer.TrainingName:  # run training process for each pose
-            # Set arm to demonstration JointPosition
-            trainer.hPlant.JointPosition[0] = 1
-            trainer.hPlant.JointPosition[3] = 1.3
-            trainer.hSink.send_joint_angles(trainer.hPlant.JointPosition)
-
-            # train each pose while communicating with unity UI
-            # tell unity pose name to be trained
-            state = STATES.setupRecord  # Unity will initially still be in cooldown, so python waits until Unity acknowledges the start of the setupRecord phase
-            print('waiting for acknowledgement that unity received pose: ' + pose + '.')
-            while data == None or data[0] != ord('a'):
-                trainer.send(pose)
-                data, addr = trainer.receiveBlock()
-                print('received packet: ' + str(data))
-                if data != None:
-                    data = bytearray(data)
-
-                if data[0] == ord('q'):  # quit training session
-                    trainer.close()
-                    quit()
-
-            start = time.time()
-            while time.time() - start < 1:
-                trainer.output(pose)
-
-            state = STATES.waitingRecord
-            print('waiting for training signal.')
-            # wait for unity to signal recording of pose
-            while data == None or data[0] != ord('r'):
-                # trainer.output(pose)
-                data, addr = trainer.receiveBlock()
-                print('received packet: ' + str(data))
-                if data != None:
-                    data = bytearray(data)
-                if data[0] == ord('q'):  # quit training session
-                    trainer.close()
-                    quit()
-            trainer.send('a')
-            state = STATES.recording
-            trainer.trainSingle(trainer.TrainingName.index(pose), pause=1)
-            trainer.send('d')
-
-            # zero out hand joints
-            for i in list(range(len(trainer.hPlant.JointPosition))):
-                trainer.hPlant.JointPosition[i] = 0
-            trainer.hPlant.JointPosition[0] = 1
-            trainer.hPlant.JointPosition[3] = 1.3
-            trainer.hSink.send_joint_angles(trainer.hPlant.JointPosition)
-
-            state = STATES.cooldown  # python will immediately enter the setupRecord state while Unity will remain in cooldown until the cooldown timer completes
-
-    # wait for end of unity cooldown. Notify that training is done.
-    while data == None or data[0] != ord('a'):
-        trainer.send('f')
-        data, addr = trainer.receiveNoBlock(timeout=1.0)
-        print('received packet: ' + str(data))
-        if data != None:
-            data = bytearray(data)
-    trainer.save()
-    trainer.fit()
-
-    print('')
-    print(str(trainer))
-
-    print('Running prediction model:')
-    trainer.predictMult()
-
-    trainer.close()
-    print('\nEnding program in 5 seconds...')
-    time.sleep(5)
+print('Current path: ' + os.path.split(os.getcwd())[1])
 
 
 def parse():
@@ -237,7 +84,8 @@ def parse():
     -y or --PYTHON_PORT -- set the port that python sends UDP packets on to Unity.
     -v or --VERBOSE -- specify how much console output the python program makes. 0 for minimum, 1 for some, 2 for more, etc.
     -e or --EXECUTE -- specify what main method to run when this script is called. Input is a string with the name of the method, which is then selected in a switch-like statement at the end of this file.
-    -x or --DEBUG -- enter debug mode. Does things such as skip UDP handshake, ...
+    -x or --DEBUG -- enter debug mode. Does things such as skip UDP handshake, ...(other feature to be added)
+    
     Return Arguments:
     args (parser.parse_args()) -- command line arguments parsed into a dictionary for easy use.
     -- args is generally are stored into the MyoUDPTrainer object on initialization as instance data
@@ -284,31 +132,33 @@ def main(args):
     At start of this method, this program expects a handhsake response (see handshake function).
     Then this program enters the main UDP flow control loop.
     
-    UDP Cues for Trainer Functions
+    UDP Cues for MyoUDPTrainer Functions
     (~ for no cue)
     Cue:                Function:                   Meaning:            Details:    
-    ~                   __init__()            
-    cc                  create()                    "class create"      Create a new set of training classes with empty training data
-    ca<class>           addClass(class)             "class add"
-    cr<class>           removeClass(class)          "class remove"
-    dc                  clear()                     "data clear"        
-    dd                  delete()                    "data delete"
-    df                  fit()                       "data fit"
-    dl                  load()                      "data load"
-    ds                  save()                      "data save"
-    op                  output()                    "output plant"
-    os                  print(__str__)              "output string"
-    pm<count>           predictMult(count)          "predict multiple"  (<count> is optional. 'infinite' for -1, else, 1 uint8 for <count> value.)
-    ps                  predictsingle()             "predict single"
-    ta<samples,cycles>  trainall(samples, cycles)   "train all"         (<samples> is optional; 1 uint8 for value at data[2]. <cycles> is optional (requires samples present); 1 uint8 at data[3].)
-    tn                  (next pose)                 "train next"        ((not a function) increments a class counter by 1) (overflow causes a UDP reply 'o')
-    tp                  (previous pose)             "train previous"    ((not a function) decrements a class counter by 1) (underflow causes a UDP reply 'o')
-    ts<cycles>          trainsingle()               "train single"      (<cycles> is optional. 1 uint8 for <cycles> value)
-    ~                   send()           
-    ~                   receiveNoBlock()
-    ~                   receiveBlock()
-    ~                   handshake()
-
+    fs                  save()                      "file save"         save training data to hdf5 file
+    fl                  load()                      "file load"         load training data from hdf5 file
+    fd                  delete()                    "file delete"       **Currently unimplemented** Delete the existing save data file
+    fc                  copy()                      "file copy"         make a copy of the current training data file
+    cd                  reset()                     "class defaults"    reset all training data to empty/defaults (doesn't affect saved data)
+    cc<class>           clear(class)                "class clear"       remove all training data for specified <class>
+    ca<class>           add_class(class)            "class add"         **Currently unimplemeneted** add <class> to available classes list
+    cr<class>           remove_class(class)         "class remove"      **Currently unimplemeneted** remove <class> from available classes list
+    cf                  fit()                       "class fit"         fit LDA model to training data
+    os                  print(__str__())            "output string"     print out the to string of the MyoUDPTrainer object
+    op                  output()                    "output plant"      update/emit plant based on current prediction
+    ps                  predictSingle()             "predict single"    Output a single prediction from the LDA model based on the current EMG data
+    pm<count>           predictMult(count)          "predict multiple"  Output multiple predictions from LDA model based on current EMG data
+    ...                                                                 (<count> is optional. 'infinite' for -1, else, a uint8 for <count> value.)
+    ts<cycles>          trainSingle(cycles)         "train single"      Train the currently selected pose by collecting <cycles> samples of EMG data
+    ...                                                                 (<cycles> is optional. 1 uint8 for <cycles> value)
+    ta<samples,cycles>  trainAll(samples, cycles)   "train all"         Run training regime for all poses. Collects <samples> samples of EMG data, and repeats all poses <cycles> times
+    ...                                                                 (<samples> is optional; 1 uint8 for value at data[2]. <cycles> is optional (requires samples passed in); 1 uint8 at data[3].)
+    tr                  trainContinuous()           "train record"      Train the current pose continuously until the 'e' UDP signal is recieved
+    tn                  (next pose)                 "train next"        (not a function) increments current class counter by 1. (overflow causes a UDP reply 'o')
+    tp                  (previous pose)             "train previous"    (not a function) decrements current class counter by 1. (underflow causes a UDP reply 'o')
+    tf                  (first pose)                "train first"       (not a function) set current class counter to 0 (first pose)
+    tl                  (last pose)                 "train last"        (not a function) set current class counter to len(motion_names)-1 (last pose)
+    
     Others UDP Codes:
     code:               Meaning:                    Details:
     {ACK} (0x06)        "Acknowledged"
@@ -321,9 +171,19 @@ def main(args):
     print('Running UDP driven trainer. Progress will only continue if proper UDP cues are returned.\n')
 
     # state machine variable. Same states are mirrored in Unity script.
-    # STATES = enum(waitingHandshake=0, waitingStart=1, setupRecord=2, waitingRecord=3, recording=4, cooldown=5, inactive=6, off=7, none=8)
+    class STATES(Enum):
+        waitingHandshake = 0
+        waitingStart = 1
+        setupRecord = 2
+        waitingRecord = 3
+        recording = 4
+        cooldown = 5
+        inactive = 6
+        off = 7
+        none = 8
+        
     # initial state is waiting for Handshake from Unity
-    # state = STATES.waitingHandshake
+    state = STATES.waitingHandshake
 
     # Machine learning Myo UDP trainer controller
     trainer = MyoUDPTrainer(args)
@@ -334,16 +194,17 @@ def main(args):
     else:
         print('Skipping UDP handshake for DEBUG mode.')
 
-    # state = STATES.waitingStart
+    state = STATES.waitingStart
 
     data, addr = None, None  # current UDP packet received from Unity
     curPose = 0  # index of the current pose being operated on
 
     # handle generic UDP cues
     print('Start of UDP flow control section.')
-    while data is None or data[0] != ord('q'):  # 'q' cue for "quit"
+    while data is None or data[0] != ord('q'):  # 'q' UDP cue for "quit"
         try:
             print('Waiting for UDP data packet...')
+            
             data, addr = trainer.receiveBlock()
             data = bytearray(data)
             #print out recieved data formatted according to python 2 or 3
@@ -389,7 +250,7 @@ def main(args):
                     print(str(trainer))
 
                 elif data[1] == ord('p'):  # plant
-                    # output plant. not sure how this would be used...
+                    trainer.ouput()# output plant. not sure how this would be used...
                     pass
 
             elif data[0] == ord('p'):  # predict
@@ -397,6 +258,7 @@ def main(args):
                     if len(data) == 3:
                         trainer.predictMult(data[2])
                     elif len(data) > 3 and data[2:].decode('utf-8').lower() == 'infinity':
+                        #send UDP cue 'e' to end infinite prediction cycle
                         trainer.predictMult(-1)
                     else:
                         trainer.predictMult()  # use settings in object
@@ -421,6 +283,10 @@ def main(args):
                         trainer.trainSingle(curPose, samples=data[2], pause=0)
                     else:
                         trainer.trainSingle(curPose, pause=0)
+                
+                elif data[1] == ord('r'):  # start recording current pose
+                    #send UDP 'e' to end recording
+                    trainer.trainContinuous(curPose)
 
                 elif data[1] == ord('n'):  # (goto) next pose
                     if curPose + 1 < len(trainer.TrainingData.motion_names):
@@ -448,15 +314,11 @@ def main(args):
                     curPose = len(trainer.TrainingData.motion_names) - 1
                     print('Current pose set to "' + trainer.TrainingData.motion_names[curPose] + '."\n')
 
-            #elif data[0] == ord(''):
-            #    pass
-
             elif data[0] == ord('q'):       # quit the UDP loop
                 print('Quit signal recieved.')
 
             else:
                 print('Unrecognized data packet. Restarting control loop.\n')
-
 
         # error handling
         except Exception as err:  # print the exception, and continue running UDP flow control loop
@@ -478,66 +340,6 @@ def main(args):
     
     pass
 
-
-def demo(args):
-    """console demo of training sequence."""
-
-    trainer = MyoUDPTrainer(args)
-    print('')
-
-    if args.DELETE:
-        trainer.delete()
-    # trainer.create()
-
-    testClasses = ['Wrist Rotate In', 'Wrist Rotate Out', 'Wrist Flex In', 'Wrist Extend Out', 'Hand Open',
-                   'Spherical Grasp', 'No Movement']
-    # import poses example
-    for pose in testClasses:
-        try:
-            trainer.addClass(pose)
-        except:
-            pass
-
-    # trainer.addClass('randomClass')
-
-    # trainer.removeClass('randomClass')
-    # trainer.removeClass('No Movement')
-    # trainer.addClass('No Movement')
-
-    if args.DELETE == False:
-        trainer.load()
-    trainer.trainAll()
-    trainer.save()
-    trainer.fit()
-
-    print('')
-    print(str(trainer))
-
-    print('Running prediction model:')
-    trainer.predictMult()
-    pass
-
-
-def replay(args):
-    """replay using saved training data"""
-
-    trainer = MyoUDPTrainer(args)
-    print('')
-    trainer.load()
-    trainer.fit()
-
-    print('')
-    print(str(trainer))
-
-    print('Running prediction model:')
-    trainer.predictMult()
-    pass
-
-
-def enum(**enums):
-    """adding Enum support to Python."""
-    return type('Enum', (), enums)
-
         
 class MyoUDPTrainer:
     """Python Class for managing machine learning and Myo training operations."""
@@ -552,21 +354,23 @@ class MyoUDPTrainer:
         #if args.DELETE:
         #    self.TrainingData.delete() #Currently unimplemented
         
-        self.quadratic = args.QUADRATIC  # set Quadratic Discriminant Analysis mode. False means LDA mode
-        self.tsamples = args.TRAIN  # how many samples per training each class
-        self.tcycles = args.TRAIN_LOOP  # how many cycles of training each pose to repeat
-        self.dt = 1.0 / args.FREQUENCY  # how frequently do training and prediction loops run
-        self.verb = args.VERBOSE  # how much information output to the console
-        self.pcycles = args.PREDICT  # how many cycles to predict for. setting to -1 means infinite cycles
-        self.hMyo = MyoUdp()  # Signal Source get external bio-signal data
+        self.quadratic = args.QUADRATIC     # set Quadratic Discriminant Analysis mode. False means LDA mode
+        self.tsamples = args.TRAIN          # how many samples per training each class
+        self.tcycles = args.TRAIN_LOOP      # how many cycles of training each pose to repeat
+        self.dt = 1.0 / args.FREQUENCY      # how frequently do training and prediction loops run
+        self.verb = args.VERBOSE            # how much information output to the console
+        self.pcycles = args.PREDICT         # how many cycles to predict for. setting to -1 means infinite cycles
+        self.hMyo = MyoUdp()                # Signal Source get external bio-signal data
         self.hMyo.connect()
-        ####TODO#####self.ROCFile = '../../WrRocDefaults.xml'  # ROC file for possible motion classes
-        ####TODO#####self.hPlant = Plant(self.dt, self.ROCFile)  # Plant maintains current limb state (positions) during velocity control
-        self.hSink = UnityUdp()  # ("192.168.1.24")   # Sink is output to ouside world (in this case to VIE)
+        self.ROCPath = '../../WrRocDefaults.xml'    # Path to ROC file for plant
+        self.Plant = Plant(self.dt, self.ROCPath)   # Plant maintains current limb state (positions) during control
+        self._MyoUDPTrainer__gain_value = 1         # Not sure about what this line does. Got an error from the plant without it though
+        self.class_decision = 0     
+        self.DataSink = UnityUdp()  # ("192.168.1.24")     # Sink is output to ouside world (in this case to VIE)
         
-        self.UDP_IP = args.UDP_IP  # IP address to communicate with unity through (directed to localhost).
-        self.PYTHON_SEND_PORT = args.PYTHON_PORT  # from python send data to unity using this port
-        self.UNITY_RECEIVE_PORT = args.UNITY_PORT  # from unity receive data in python using this port
+        self.UDP_IP = args.UDP_IP                   # IP address to communicate with unity through (directed to localhost).
+        self.PYTHON_SEND_PORT = args.PYTHON_PORT    # from python send data to unity using this port
+        self.UNITY_RECEIVE_PORT = args.UNITY_PORT   # from unity receive data in python using this port
 
         # UDP communication to and from Unity
         self.UnityReceiverSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -588,6 +392,7 @@ class MyoUDPTrainer:
         Keyword Arguments:
         self -- pointer to this object
         samples -- (Optional) If passed in, overrides number of samples to collect for each pose. Otherwise uses number of samples specified in self.tsamples
+        cycles -- (Optional) If passed in, overrides number of times to repeat training process
         """
 
         if samples == None:
@@ -625,7 +430,8 @@ class MyoUDPTrainer:
 
         className = self.TrainingData.motion_names[classID]
         
-        print('pose: ' + self.TrainingData.motion_names[classID])
+        if self.verb >= 0:
+            print('pose: ' + self.TrainingData.motion_names[classID])
         time.sleep(pause)
 
         if self.verb == 0:
@@ -664,8 +470,37 @@ class MyoUDPTrainer:
         if self.verb >= 2:
             print('Entire train single pose cycle execution time: ' + str(time.time() - start) + 's')
 
-        print('')
+        if self.verb >= 0:
+            print('')
     
+    def trainContinuous(self, classID):
+        """
+        continuously train the currently set motion until quit signal recieved
+        
+        """
+        
+        start = time.time()
+        
+        #set length of pause/number of samples for trainSingle() function
+        samples=1
+        pause=0
+        
+        s = 0   #how many samples have been recorded
+        
+        data, addr = None, None  # current UDP packet received from Unity
+
+        while data == None or ord(data[0]) != ord('e'):
+            data, addr = self.receiveNoBlock()  # receive UDP data to allow for exiting infinite loop
+            loopStart = time.time()
+            self.trainSingle(classID, samples, pause)
+            s += 1 #update cound of samples recorded
+            
+        if self.verb >= 2:
+            print('Trained ' + self.TrainingData.motion_names[classID] + ' for ' + str(time.time() - start) + 's')
+        if self.verb >= 1:
+            print('Recorded ' + str(s) + ' samples')
+        print('')
+        
     def fit(self):
         """
         Fit data currently stored in self.TrainingData and self.TrainingClass to LDA or QDA model
@@ -705,7 +540,7 @@ class MyoUDPTrainer:
         data, addr = None, None  # current UDP packet received from Unity
 
         i = 0
-        while i != cycles and (data == None or ord(data[0]) != ord('q')):
+        while i != cycles and (data == None or ord(data[0]) != ord('e')):
             data, addr = self.receiveNoBlock()  # receive UDP data to allow for exiting infinite loop
             loopStart = time.time()
             id, status = self.predictSingle()
@@ -743,10 +578,76 @@ class MyoUDPTrainer:
         emgData = self.hMyo.get_data() * 0.01
         f_list, f_learn = self.FeatureExtract.get_features(emgData)
         
-        return self.Classifier.predict(f_learn)
+        id, status = self.Classifier.predict(f_learn)
+        self.class_decision = id
+        self.output(id)
+        return (id, status)
     
-    def output(self, classDecision, upperAngles=False):
-        pass
+    def output(self, decision_id=None):
+        """
+        Update plant model with current class decision, and output current joint angles over UDP
+        **Needs to be tested**
+        
+        Keyword Arguements:
+        self -- pointer to this object
+        decision_id -- integer class decision value for current pose
+        """
+        
+        if decision_id == None:
+            decision_id = self.class_decision
+            
+        # initialize output
+        #self.output = {'status': 'RUNNING', 'features': None, 'decision': 'None', 'vote': None}
+
+        # get data / features
+        #self.output['features'], f = self.FeatureExtract.get_features(self.SignalSource)
+
+        # if simultaneously training the system, add the current results to the data buffer
+        #if self.add_data:
+        #    self.TrainingData.add_data(self.output['features'], self.training_id, self.training_motion)
+
+        # classify
+        #decision_id, self.output['status'] = self.SignalClassifier.predict(f)
+        #if decision_id is None:
+        #    return self.output
+
+        # TODO: add majority vote
+
+        # get decision name
+        class_decision = self.TrainingData.motion_names[decision_id]
+        #self.output['decision'] = class_decision
+
+        # parse decision type as arm, grasp, etc
+        class_info = class_map(class_decision)
+
+        # Set joint velocities
+        self.Plant.new_step()
+
+        # pause if applicable
+        #if self.is_paused('All'):
+        #    self.output['status'] = 'PAUSED'
+        #    return self.output
+        #elif self.is_paused('Hand'):
+        #    self.output['status'] = 'HAND PAUSED'
+
+        # set the mapped class into either a hand or arm motion
+        #pause_hand = self.is_paused('Hand') or self.is_paused('All')
+        if class_info['IsGrasp']:# and not pause_hand:
+            # the motion class is either a grasp type or hand open
+            if class_info['GraspId'] is not None and self.Plant.GraspPosition < 0.2:
+                # change the grasp state if still early in the grasp motion
+                self.Plant.GraspId = class_info['GraspId']
+            self.Plant.set_grasp_velocity(class_info['Direction'] * self.__hand_gain_value)
+
+        #pause_arm = self.is_paused('Arm') or self.is_paused('All')
+        if not class_info['IsGrasp']:# and not pause_arm:
+            # the motion class is an arm movement
+            self.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * self.__gain_value)
+
+        self.Plant.update()
+
+        # transmit output
+        self.DataSink.send_joint_angles(self.Plant.JointPosition)
         
     def save(self, path=None):
         """
@@ -933,7 +834,7 @@ class MyoUDPTrainer:
         print('')
         print('Cleaning up...')
         print('')
-        self.hSink.close()
+        self.DataSink.close()
         self.hMyo.close()
 
     def send(self, message):
@@ -1065,10 +966,7 @@ class MyoUDPTrainer:
 
         return string    
     
-    
-    
-    
-    
+  
 
 if __name__ == "__main__":
     """Select a method to execute as main if specified in command line arguments."""

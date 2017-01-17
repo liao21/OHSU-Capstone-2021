@@ -213,6 +213,11 @@ def main(args):
             elif sys.version_info[0] == 3:
                 print('Received packet: "' + str(data)[12:-2] + '"')
 
+            if len(data) == 0:  # check for empty string
+                data = ' '
+                print('Recieved empty string\n')
+                continue
+            
             if data[0] == ord('f'):  # file
                 if data[1] == ord('s'):  # save
                     trainer.save()

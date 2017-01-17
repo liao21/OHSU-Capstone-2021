@@ -156,7 +156,7 @@ classdef OpenBciChipKit < Inputs.SignalInput
             %     Bytes 12-14: Data value for EEG channel 4
             %     Bytes 15-17: Data value for EEG channel 5
             %     Bytes 18-20: Data value for EEG channel 6
-            %     Bytes 21-23: Data value for EEG channel 6
+            %     Bytes 21-23: Data value for EEG channel 7
             %     Bytes 24-26: Data value for EEG channel 8
             %
             % Accelerometer Data

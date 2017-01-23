@@ -47,7 +47,7 @@ class NfuUdp:
 
         self.__active_connection = False
 
-        self.mpl_status = None  # updated by hearbeat messages
+        self.mpl_status = None  # updated by heartbeat messages
 
     def is_alive(self):
         with self.__lock:

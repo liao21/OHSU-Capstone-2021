@@ -71,66 +71,6 @@ def setup():
     return vie
 
 
-def model(vie):
-    # Perform forward classification and return a dictionary with status information
-
-    # initialize output
-    output = {'status': 'RUNNING', 'features': None, 'decision': 'None'}
-
-    # Get features from emg data
-    f = np.array([])
-    for s in vie.SignalSource:
-        new_data = s.get_data() * 0.01
-        features = pr.feature_extract(new_data, zc_thresh, ssc_thresh, sample_rate)
-        f = np.append(f, features)
-    output['features'] = f.tolist()
-
-    # format the data in a way that sklearn wants it
-    f = np.squeeze(f)
-    f = f.reshape(1, -1)
-
-    if vie.SignalClassifier.classifier is None:
-        output['status'] = 'UNTRAINED'
-        return output
-
-    try:
-        out = int(vie.SignalClassifier.classifier.predict(f))
-    except ValueError as e:
-        logging.warning('Unable to classify. Error was: ' + str(e))
-        output['status'] = 'Error'
-        return output
-
-    class_decision = vie.TrainingData.motion_names[out]
-    output['decision'] = class_decision
-
-    class_info = class_map(class_decision)
-
-    grasp_gain = vie.get_hand_gain_value()
-    joint_gain = vie.get_gain_value()
-
-    # Set joint velocities
-    vie.Plant.new_step()
-
-    if vie.is_paused():
-        output['status'] = 'PAUSED'
-        return output
-
-    # set the mapped class
-    if class_info['IsGrasp']:
-        if class_info['GraspId'] is not None:
-            vie.Plant.GraspId = class_info['GraspId']
-        vie.Plant.set_grasp_velocity(class_info['Direction'] * grasp_gain)
-    else:
-        vie.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * joint_gain)
-
-    vie.Plant.update()
-
-    # transmit output
-    vie.DataSink.send_joint_angles(vie.Plant.JointPosition)
-
-    return output
-
-
 def main():
     """ Main function that involves setting up devices,
         looping at a fixed time interval, and performing cleanup

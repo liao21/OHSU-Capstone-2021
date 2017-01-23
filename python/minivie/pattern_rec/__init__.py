@@ -10,11 +10,71 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 import numpy as np
 
 
+class FeatureExtract(object):
+    """
+    Class for setting feature extract parameters and calling the feature extract process
+
+    @author: R. Armiger
+
+    Input:
+     data buffer to compute features
+     data_buffer = numpy.zeros((numSamples, numChannels))
+     E.g. numpy.zeros((50, 8))
+
+    Optional:
+    Thresholds for computing zero crossing and slope sign change features
+
+    Output: feature vector should be [1,nChan*nFeat]
+    data ordering is as follows
+    [ch1f1, ch1f2, ch1f3, ch1f4, ch2f1, ch2f2, ch2f3, ch2f4, ... chNf4]
+
+    Revisions;
+        17NOV2016 Armiger: Created
+
+    """
+    def __init__(self, zc_thresh=0.15, ssc_thresh=0.15, sample_rate=200):
+        self.zc_thresh = zc_thresh
+        self.ssc_thresh = ssc_thresh
+        self.sample_rate = sample_rate
+
+    def get_features(self, data_input):
+        """
+        perform feature extraction
+
+        this method supports numpy ndarray types in which features are computed directly and SignalSource objects in
+        which the source's get data method is called, then features are extracted
+
+        """
+
+        if data_input is None:
+            # Can't get features
+            return None, None
+        elif isinstance(data_input, np.ndarray):
+            # Extract features from the data provided
+            f = feature_extract(data_input, self.zc_thresh, self.ssc_thresh, self.sample_rate)
+        else:
+            # input is a data source so call it's get_data method
+
+            # Get features from emg data
+            f = np.array([])
+            for s in data_input:
+                new_data = s.get_data() * 0.01
+                features = feature_extract(new_data, self.zc_thresh, self.ssc_thresh, self.sample_rate)
+                f = np.append(f, features)
+        feature_list = f.tolist()
+
+        # format the data in a way that sklearn wants it
+        f = np.squeeze(f)
+        feature_learn = f.reshape(1, -1)
+
+        return feature_list, feature_learn
+
+
 def feature_extract(y, zc_thresh=0.15, ssc_thresh=0.15, sample_rate=200):
     """
     Created on Mon Jan 25 16:25:14 2016
 
-    Perform feature extraction, veoctorized
+    Perform feature extraction, vectorized
 
     @author: R. Armiger
     # compute features
@@ -133,6 +193,41 @@ class Classifier:
         self.classifier = LinearDiscriminantAnalysis()
         self.classifier.fit(f_, y)
 
+    def predict(self, features):
+        """
+
+        Call the classifier prediction method with error checking
+
+        returns class decision and status message
+
+        """
+        import logging
+
+        if self.classifier is None or features is None:
+            # Classifier is untrained
+            status_msg = 'UNTRAINED'
+            decision_id = None
+            return decision_id, status_msg
+
+        if not features.any():
+            # all zero values
+            status_msg = 'NO_DATA'
+            decision_id = None
+            return decision_id, status_msg
+
+        try:
+            # run sklearn prediciton, returns array, but with one sample in we just want the first value
+            prediction = self.classifier.predict(features)
+            status_msg = 'RUNNING'
+            decision_id = prediction[0]
+
+        except ValueError as e:
+            logging.warning('Unable to classify. Error was: ' + str(e))
+            status_msg = 'ERROR'
+            decision_id = None
+
+        return decision_id, status_msg
+
 
 class TrainingData:
     """Python Class for managing machine learning and Myo training operations."""
@@ -140,6 +235,8 @@ class TrainingData:
         self.filename = 'TRAINING_DATA'
         self.file_ext = '.hdf5'
         self.reset()
+
+        # Names of potentially trained classes
         self.motion_names = (
             'Elbow Flexion', 'Elbow Extension',
             'Wrist Rotate In', 'Wrist Rotate Out',
@@ -166,25 +263,17 @@ class TrainingData:
 
     def clear(self, motion_id):
         # Remove the class data for the matching index
-
         indices = [i for i, x in enumerate(self.id) if x == motion_id]
 
         for rev in indices[::-1]:
-            #print('LEN {} {} {} {}'.format(len(self.time_stamp),len(self.name),len(self.id),len(self.data)))
-            #print('Removing element' + str(rev))
-            #print('timestamp {}'.format(self.time_stamp[rev]))
             del(self.time_stamp[rev])
-            #print('name {}'.format(self.name[rev]))
             del(self.name[rev])
-            #print('id {}'.format(self.id[rev]))
             del(self.id[rev])
-            #print('data {}'.format(self.data[rev]))
             del(self.data[rev])
             self.num_samples -= 1
 
         if self.num_samples == 0:
             self.reset()
-
 
     def add_data(self, data_, id_, name_):
         self.time_stamp.append(time.time())
@@ -194,7 +283,7 @@ class TrainingData:
         self.num_samples += 1
 
     def get_totals(self, motion_id=None):
-
+        # Return a list of the total sample counts for each class
         num_motions = len(self.motion_names)
 
         if motion_id is None:

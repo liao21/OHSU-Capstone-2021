@@ -47,6 +47,9 @@ if choice == 0:
     pass
 if choice == 1:
     print("Starting ping...")
+    print(60 * '-')
+    print("NOTE: MPL/NFU and host MAC addresses must be on the approved access list in /etc/iptables/rules.v4")
+    print(60 * '-')
 
     result = 0
     while not result:
@@ -100,6 +103,9 @@ elif choice == 3:
             time.sleep(0.02)
     hSink.close()
 elif choice == 4:
+    print(60 * '-')
+    print("NOTE: NFU hostname must be properly configured on NFU: /fs/etfs/hostname (192.168.1.1)")
+    print(60 * '-')
     logging.basicConfig(level=logging.INFO)
     hSink = NfuUdp()
     hSink.connect()

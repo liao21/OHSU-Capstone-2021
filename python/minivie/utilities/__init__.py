@@ -1,3 +1,4 @@
+import os
 import six
 
 
@@ -5,7 +6,6 @@ def ping(host):
     """
     Returns True if host responds to a ping request
     """
-    import os
     import platform
 
     # Ping parameters as function of OS
@@ -27,3 +27,7 @@ def get_address(url):
     assert isinstance(a.hostname, six.string_types), "hostname is not a string: %r" % a.hostname
     assert isinstance(a.port, six.integer_types), "port is not an integer: %r" % a.port
     return a.hostname, a.port
+
+
+def shutdown():
+    os.system("sudo shutdown -h now")

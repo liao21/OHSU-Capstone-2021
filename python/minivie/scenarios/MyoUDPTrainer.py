@@ -773,7 +773,9 @@ class MyoUDPTrainer:
         """
 
         # create new data from default
-        print('resetting training data set to defaults.\n')
+        if self.verb >= 1:
+            print('resetting training data set to defaults.\n')
+            
         self.TrainingData.reset()
         
     def add_class(self, toAdd):
@@ -789,7 +791,7 @@ class MyoUDPTrainer:
         start = time.time()
         
         print('Attempting to add new pose: ' + toAdd)
-        #self.TrainingData.addClass(newClass)
+        self.TrainingData.addClass(newClass)
         
         if self.verb >= 2:
             print('add class execution time: ' + str(time.time() - start) + 's')
@@ -810,9 +812,9 @@ class MyoUDPTrainer:
         start = time.time()
         
         print('Attempting to remove pose: ' + toRemove)
-        #id = self.TrainingData.motion_names.index(toRemove)
-        #self.TrainingData.clear(id)
-        #self.TrainingData.removeClass(id / toRemove)
+        id = self.TrainingData.motion_names.index(toRemove)
+        self.TrainingData.clear(id)
+        self.TrainingData.removeClass(id)
         
         if self.verb >= 2:
             print('remove class execution time: ' + str(time.time() - start) + 's')

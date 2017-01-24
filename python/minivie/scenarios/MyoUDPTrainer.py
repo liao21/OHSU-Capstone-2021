@@ -123,14 +123,22 @@ def main(args):
     """
     Default execution case. Fully controllable training process via agnostically generatied UDP cues.
     
+    For control from Python:
+    goto \minivie\python\minivie\utilities
+    python send_to_udp.py
+    <enter_data_to_transmit>
+    (use spaces to separate numbers and strings. numbers are converted to bytes which are sent)
+    
     For control from Matlab PnetClass:
-    (goto MiniVIE)
+    "goto MiniVIE" shortcut
     >> a = PnetClass(8050, 8051,'127.0.0.1')
     >> a.initialize
     >> a.putData([uint8(<data_to_transmit>)])
     
     At start of this method, this program expects a handhsake response (see handshake function).
-    Then this program enters the main UDP flow control loop.
+    Then this program enters the main UDP flow control loop. 
+    To skip handshake, run python MyoUDPTrainer.py -x
+    
     
     UDP Cues for MyoUDPTrainer Functions
     (~ for no cue)
@@ -141,7 +149,7 @@ def main(args):
     fc                  copy()                      "file copy"         make a copy of the current training data file
     cd                  reset()                     "class defaults"    reset all training data to empty/defaults (doesn't affect saved data)
     cc<class>           clear(class)                "class clear"       remove all training data for specified <class>
-    ca<class>           add_class(class)            "class add"         **Currently unimplemeneted** add <class> to available classes list
+    ca<class>           add_class(class)            "class add"         add <class> to available classes list
     cr<class>           remove_class(class)         "class remove"      **Currently unimplemeneted** remove <class> from available classes list
     cf                  fit()                       "class fit"         fit LDA model to training data
     os                  print(__str__())            "output string"     print out the to string of the MyoUDPTrainer object
@@ -158,13 +166,69 @@ def main(args):
     tp                  (previous pose)             "train previous"    (not a function) decrements current class counter by 1. (underflow causes a UDP reply 'o')
     tf                  (first pose)                "train first"       (not a function) set current class counter to 0 (first pose)
     tl                  (last pose)                 "train last"        (not a function) set current class counter to len(motion_names)-1 (last pose)
+    gc                  (current pose name)         "get current"       **(not a function) send over UDP the name of the current pose    
+    gi                  (current pose index)        "get index"         **(not a function) send over UDP the index of the current pose
+    gn                  (number of poses)           "get number"        **(not a function) send over UDP the number of poses
+    gs                  (saved file exists?)        "get saved"         **(not a function) send over UDP if the save data file exists.
     
-    Others UDP Codes:
+    
+    Others UDP Codes
     code:               Meaning:                    Details:
-    {ACK} (0x06)        "Acknowledged"
-    {NAK} (0x15)        "Negative Acknowledge"
+    {ACK} (\0x06)       "Acknowledged"              **currently unused**
+    {NAK} (\0x15)       "Negative Acknowledge"      **currently unused**
     o                   "counter out of bounds"     (sent when 'tn' or 'tp' is received and counter would progress past -1, or len(classes)) (i.e. counter at start or end of class list)
-    q                   "quit (current loop)"
+    q                   "quit (main program)"       Only works if called from the main flow control loop
+    e                   "end (current loop)"        ends the execution of the currently running infinite loop ("predict multiple (infinity)", or "train continuously")
+    
+    
+    
+    Useful UDP Cue Combinations
+    
+    send_to_upd.py format:      Literal cue sent:       What it does:
+    -----------------------------------------------------------------
+    
+    
+    [Sample use case for auto training]
+    <perform handshake with trainer>
+    "ta 50"                     "ta\0x32"               Run through the auto training sequence, collecting 50 samples per pose
+    "cf"                        "cf"                    Fit data just collected to an LDA model
+    "fs"                        "fs"                    save the data just collected to an HDF5 file
+    "pm infinity"               "pminfinity"            continuously predict pose based on current Myo EMG data. Also output joint angles to unity.
+    "e"                         "e"                     end the infinite prediction loop
+    <may continue using the trainer here>
+    "os"                        "os"                    Print out the current state of the trainer object
+    "q"                         "q"                     quit the python trainer script
+    
+    
+    
+    [Sample use case for manual training]
+    <perform handshake with trainer>
+    "gc"                        "gc"                    tells python to send the name of the current pose being trained. (currently aimed to Unity)
+    "tr"                        "tr"                    continuously train the current pose
+    "e"                         "e"                     complete training the current pose
+    "tn"                        "tn"                    set current pose to the next in the list. returns the name of the next pose over UDP
+    "tr"                        "tr"                    continuously train the current pose
+    "e"                         "e"                     complete training the current pose
+    ...
+    <train whatever poses you want>
+    ...
+    "cf"                        "cf"                    fit the collected data to an LDA model
+    "fs"                        "fs"                    save recorded data to HDF5 file
+    "pm 255"                    "pm\0xFF"               output 255 sequential predictions of the current pose based on Myo EMG data. Also output joint angles to unity.
+    <when prediction cycles complete>
+    <may continue using the trainer here>
+    "q"                         "q"                     quit the python trainer script
+    
+    
+    
+    [Sample use case with preloaded data]
+    <perform handshake with trainer>
+    "gs"                        "gs"                    check if the save file exists. returns over UDP "true" or "false"
+    "fl"                        "fl"                    load saved training data
+    "cf"                        "cf"                    fit the data to the LDA model
+    "pm infinity"               "pminfinity"            continuously predictions of the current pose. also output joint angles to unity
+    "e"                         "e"                     end prediction loop
+    "q"                         "q"                     quit the python trainer script
     
     """
 
@@ -778,10 +842,9 @@ class MyoUDPTrainer:
             
         self.TrainingData.reset()
         
-    def add_class(self, toAdd):
+    def add_class(self, newClass):
         """
         Add a pose to the list of poses that are in the training set.
-        **Currently unimplemented in pattern_rec.TrainingData object**
         
         Keyword Arguments:
         self -- pointer to this object
@@ -790,8 +853,10 @@ class MyoUDPTrainer:
         
         start = time.time()
         
-        print('Attempting to add new pose: ' + toAdd)
-        self.TrainingData.addClass(newClass)
+        if self.verb >= 1:
+            print('Adding new pose: "' + newClass + '"')
+        
+        self.TrainingData.add_class(newClass)
         
         if self.verb >= 2:
             print('add class execution time: ' + str(time.time() - start) + 's')
@@ -814,7 +879,8 @@ class MyoUDPTrainer:
         print('Attempting to remove pose: ' + toRemove)
         id = self.TrainingData.motion_names.index(toRemove)
         self.TrainingData.clear(id)
-        self.TrainingData.removeClass(id)
+        self.TrainingData.removeClass(id)   #this function currently does not exist. 
+                                            #problem is that the ID numbers of the poses that are larger than the one removed all need to be shifted down by one
         
         if self.verb >= 2:
             print('remove class execution time: ' + str(time.time() - start) + 's')
@@ -831,6 +897,9 @@ class MyoUDPTrainer:
         """
         
         start = time.time()
+        
+        if self.verb >= 1:
+            print('Clearing data from class "' + toClear + '"')
         
         id = self.TrainingData.motion_names.index(toClear)
         self.TrainingData.clear(id)

@@ -698,6 +698,9 @@ class MyoUDPTrainer:
         
         start = time.time()
         
+        if self.verb >= 1:
+            print('Loading saved training data...')
+        
         #trainFolder = os.path.join(path, 'training_data')
         
         self.TrainingData.load() #want option to load from specified path

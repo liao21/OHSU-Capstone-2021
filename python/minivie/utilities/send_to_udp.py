@@ -22,6 +22,7 @@ def main():
 
     print('UDP target IP: ' + UDP_IP)
     print('UDP target port: ' + str(UDP_SENDTO_PORT))
+    print('UDP listener port: ' + str(UDP_RECFROM_PORT))
     print('')
 
     message = ''
@@ -53,7 +54,7 @@ def main():
                 sock.sendto('q', (UDP_IP, UDP_SENDTO_PORT))
                 sock.sendto('q', (UDP_IP, UDP_RECFROM_PORT))
                 sock.close()
-                quit()
+                break
         except Exception as err:  # print the exception, and continue running UDP flow control loop
                 try:
                     exc_info = sys.exc_info()
@@ -83,5 +84,5 @@ def listener():
 if __name__ == "__main__":
     thread.start_new_thread(listener, ())
     main()
-    
+    time.sleep(0.2)
         

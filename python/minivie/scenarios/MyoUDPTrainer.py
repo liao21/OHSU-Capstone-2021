@@ -9,6 +9,14 @@ Output timing information
 Most of the functionality is controlled by command line flags
 Can also control training object almost entirely from UDP cues.
 e.g. run: python MyoUDPTrainer -x, (-x skips handshake). 
+--In python minivie:
+>>  cd \minivie\python\minivie\utilities
+>>  python send_to_udp.py
+>>  <enter_data_to_transmit>
+(use spaces to separate numbers and strings. numbers are converted to bytes which are sent)
+
+alternatively
+
 --In matlab minivie:
 >>  a = PnetClass(8050, 8051,'127.0.0.1')
 >>  a.initialize
@@ -26,7 +34,8 @@ TODO Add acknowledgement UDP signals for when loops are ended with 'e' or 'q' si
 
 Revisions:
 2017Jan09 Samson: Initial Incorperation of pattern_rec
-2017Jan16 Samson: Added plant support. Removed depreciated code 
+2017Jan16 Samson: Added plant support. Removed depreciated code
+2017Jan25 Samson: Added features/documentation useful for CONVEY project
 """
 
 import os
@@ -38,6 +47,7 @@ import socket
 import errno
 import random
 import traceback
+import struct
 
 from enum import Enum
 
@@ -124,16 +134,16 @@ def main(args):
     Default execution case. Fully controllable training process via agnostically generatied UDP cues.
     
     For control from Python:
-    goto \minivie\python\minivie\utilities
-    python send_to_udp.py
-    <enter_data_to_transmit>
+    >>  cd \minivie\python\minivie\utilities
+    >>  python send_to_udp.py
+    >>  <enter_data_to_transmit>
     (use spaces to separate numbers and strings. numbers are converted to bytes which are sent)
     
     For control from Matlab PnetClass:
     "goto MiniVIE" shortcut
-    >> a = PnetClass(8050, 8051,'127.0.0.1')
-    >> a.initialize
-    >> a.putData([uint8(<data_to_transmit>)])
+    >>  a = PnetClass(8050, 8051,'127.0.0.1')
+    >>  a.initialize
+    >>  a.putData([uint8(<data_to_transmit>)])
     
     At start of this method, this program expects a handhsake response (see handshake function).
     Then this program enters the main UDP flow control loop. 
@@ -162,14 +172,14 @@ def main(args):
     ta<samples,cycles>  trainAll(samples, cycles)   "train all"         Run training regime for all poses. Collects <samples> samples of EMG data, and repeats all poses <cycles> times
     ...                                                                 (<samples> is optional; 1 uint8 for value at data[2]. <cycles> is optional (requires samples passed in); 1 uint8 at data[3].)
     tr                  trainContinuous()           "train record"      Train the current pose continuously until the 'e' UDP signal is recieved
-    tn                  (next pose)                 "train next"        (not a function) increments current class counter by 1. (overflow causes a UDP reply 'o')
-    tp                  (previous pose)             "train previous"    (not a function) decrements current class counter by 1. (underflow causes a UDP reply 'o')
-    tf                  (first pose)                "train first"       (not a function) set current class counter to 0 (first pose)
-    tl                  (last pose)                 "train last"        (not a function) set current class counter to len(motion_names)-1 (last pose)
-    gc                  (current pose name)         "get current"       **(not a function) send over UDP the name of the current pose    
-    gi                  (current pose index)        "get index"         **(not a function) send over UDP the index of the current pose
-    gn                  (number of poses)           "get number"        **(not a function) send over UDP the number of poses
-    gs                  (saved file exists?)        "get saved"         **(not a function) send over UDP if the save data file exists.
+    tn                  (next pose)                 "train next"        (not a function) increments current class counter by 1. (overflow causes a UDP reply 'o'). (Sends new pose name over UDP)
+    tp                  (previous pose)             "train previous"    (not a function) decrements current class counter by 1. (underflow causes a UDP reply 'o'). (Sends new pose name over UDP)
+    tf                  (first pose)                "train first"       (not a function) set current class counter to 0 (first pose). (Sends new pose name over UDP)
+    tl                  (last pose)                 "train last"        (not a function) set current class counter to len(motion_names)-1 (last pose). (Sends new pose name over UDP)
+    gc                  (current pose name)         "get current"       (not a function) send over UDP the name of the current pose    
+    gi                  (current pose index)        "get index"         (not a function) send over UDP the index of the current pose
+    gn                  (number of poses)           "get number"        (not a function) send over UDP the number of poses
+    gs                  (saved file exists?)        "get saved"         (not a function) send over UDP if the save data file exists.
     
     
     Others UDP Codes
@@ -361,6 +371,7 @@ def main(args):
                     if curPose + 1 < len(trainer.TrainingData.motion_names):
                         curPose += 1
                         print('Current pose set to "' + trainer.TrainingData.motion_names[curPose] + '."\n')
+                        trainer.send(trainer.TrainingData.motion_names[curPose])
                     else:
                         # curPose = 0  #may want to delete this line
                         print('Already at last pose "' + trainer.TrainingData.motion_names[curPose] + '."\n')
@@ -370,6 +381,7 @@ def main(args):
                     if curPose > 0:
                         curPose -= 1
                         print('Current pose set to "' + trainer.TrainingData.motion_names[curPose] + '."\n')
+                        trainer.send(trainer.TrainingData.motion_names[curPose])
                     else:
                         # curPose = len(trainer.TrainingData.motion_names) - 1 #may want to delete this line.
                         print('Already at first pose "' + trainer.TrainingData.motion_names[curPose] + '."\n')
@@ -378,11 +390,33 @@ def main(args):
                 elif data[1] == ord('f'):  # (goto) first pose
                     curPose = 0
                     print('Current pose set to "' + trainer.TrainingData.motion_names[curPose] + '."\n')
+                    trainer.send(trainer.TrainingData.motion_names[curPose])
 
                 elif data[1] == ord('l'):  # (goto) last pose
                     curPose = len(trainer.TrainingData.motion_names) - 1
                     print('Current pose set to "' + trainer.TrainingData.motion_names[curPose] + '."\n')
+                    trainer.send(trainer.TrainingData.motion_names[curPose])
 
+            elif data[0] == ord('g'):  # get (over UDP)
+                
+                if data[1] == ord('c'):  # current pose
+                    trainer.send(trainer.TrainingData.motion_names[curPose])
+                    print('')
+
+                elif data[1] == ord('i'):  # index of current pose
+                    trainer.send(struct.pack('B', curPose))
+                    print('')
+                    
+                elif data[1] == ord('n'):  # number of poses
+                    trainer.send(struct.pack('B', len(trainer.TrainingData.motion_names)))
+                    print('')
+                    
+                elif data[1] == ord('s'):  # saved data exists?
+                    trainer.send(str(trainer.checkSaved()).lower())
+                    print('')
+            
+            
+            
             elif data[0] == ord('q'):       # quit the UDP loop
                 print('Quit signal recieved.')
 
@@ -747,6 +781,18 @@ class MyoUDPTrainer:
 
         print('')
     
+    def checkSaved(self):
+        """
+        Check if saved data file exists
+        
+        Keyword Arguements:
+        self -- pointer to this object
+        
+        Return Arguements:
+        saved -- boolean of whether or not saved data exists
+        """
+        return self.TrainingData.file_saved()
+        
     def load(self, path=None):
         """
         Load training data from disk.

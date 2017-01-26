@@ -6,6 +6,12 @@ import thread
 import time
 
 
+#input messages are delimeted by spaces
+#integers are converted to bytes
+#example input messages: 
+#   "ts 255" becomes "\0x74\0x73\0xFF" ("ts\0xFF")
+#   "pm infinity" becomes "\0x70\0x6D\0x69\0x6E\0x66\0x69\0x6E\0x69\0x74\0x79" ("pminfinity")
+#UDP cues recieved from the specified port are displayed as well
 
 UDP_IP = "127.0.0.1"
 UDP_SENDTO_PORT = 8051
@@ -22,11 +28,6 @@ def main():
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    #input messages are delimeted by spaces
-    #integers are converted to bytes
-    #example input messages: 
-    #   "ts 255" becomes "\0x74\0x73\0xFF" ("tm\0xFF")
-    #   "pm infinity" becomes "\0x70\0x6D\0x69\0x6E\0x66\0x69\0x6E\0x69\0x74\0x79" ("pminfinity")
 
     while True:
         try:

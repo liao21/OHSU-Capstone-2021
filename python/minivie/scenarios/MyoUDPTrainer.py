@@ -66,7 +66,6 @@ from pattern_rec import TrainingData, FeatureExtract, Classifier
 
 from inputs.myo import MyoUdp
 from controls.plant import Plant, class_map
-#from controls.plant import class_map
 
 from mpl.unity import UnityUdp
 
@@ -244,7 +243,7 @@ def main(args):
 
     print('Running UDP driven trainer. Progress will only continue if proper UDP cues are returned.\n')
 
-    # state machine variable. Same states are mirrored in Unity script.
+    # state machine variable. (Out of date) Same states are mirrored in Unity script.
     class STATES(Enum):
         waitingHandshake = 0
         waitingStart = 1
@@ -1038,10 +1037,19 @@ class MyoUDPTrainer:
 
         while not acquainted:
             print('Attempting handshake with UDP driver.')
-
-            data, addr = self.receiveBlock()
-            data = bytearray(data)
-            print('Received handshake request from Unity: ' + str(int(data[0])))
+            
+            data = ''
+            
+            while data is None or len(data) == 0:
+                data, addr = self.receiveBlock()
+                if data is None:
+                    print('Failed handshake. Retrying...\n')
+                    continue
+                data = bytearray(data)
+                if len(data) == 0:
+                    print('Failed handshake. Retrying...\n')
+                    continue
+                print('Received handshake request from Unity: ' + str(int(data[0])))
 
             # send response with random byte
             response = random.randint(0, 255)
@@ -1050,7 +1058,13 @@ class MyoUDPTrainer:
 
             # wait for second response
             data, addr = self.receiveBlock()
+            if data is None:
+                print('Failed handshake. Retrying...\n')
+                continue
             data = bytearray(data)
+            if len(data) == 0:
+                print('Failed handshake. Retrying...\n')
+                continue
             print('Received handshake response from Unity: ' + str(int(data[0])))
             if data[0] == (response + 1) % 256:
                 acquainted = True
@@ -1099,13 +1113,12 @@ if __name__ == "__main__":
 
     args = parse()
     switch = args.EXECUTE
-    if (switch == 'UnityTrainer'):
-        unity_trainer(args)
-    elif (switch == 'demo'):
-        demo(args)
-    elif (switch == 'main'):
+    
+    if (switch == 'main'):
         main(args)
-    elif (switch == 'replay'):
-        replay(args)
+        
+    elif (switch == 'some_other_method'):   #example of calling something other than main
+        some_other_method(args)             #not an actual method
+
     else:
         print('Invalid main method requested. No method mapped to "' + switch + '."')

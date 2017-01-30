@@ -275,6 +275,14 @@ class TrainingData:
         if self.num_samples == 0:
             self.reset()
 
+    def add_class(self, new_class):
+        if new_class not in self.motion_names:
+            self.motion_names = tuple(list(self.motion_names) + [new_class])
+            return True
+        else:
+            print('Error, "' + new_class + '" already contained in class list.')
+            return False
+        
     def add_data(self, data_, id_, name_):
         self.time_stamp.append(time.time())
         self.name.append(name_)
@@ -321,6 +329,17 @@ class TrainingData:
 
         self.num_samples = len(self.id)
 
+    def file_saved(self):
+        if not os.path.isfile(self.filename + self.file_ext):
+            print('File Not Found: ' + self.filename + self.file_ext)
+            return False
+
+        if not os.access(self.filename + self.file_ext, os.R_OK):
+            print('File Not Readable: ' + self.filename + self.file_ext)
+            return False
+            
+        return True
+        
     def save(self):
         t = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         h5 = h5py.File(self.filename + self.file_ext, 'w')

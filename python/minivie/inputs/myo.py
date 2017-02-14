@@ -529,6 +529,12 @@ def connect(mac_addr, stream_addr, hci_interface):
     subprocess.Popen(cmd, shell=True).wait()
     logging.info("Done")
 
+    logging.info("Setting Update Rate")
+    cmd = "sudo hcitool -i hci%d cmd 0x08 0x0013 41 00 06 00 06 00 00 00 90 01 00 00 07 00" % hci_interface
+    logging.info(cmd)
+    subprocess.Popen(cmd, shell=True).wait()
+    logging.info("Done")
+
     set_parameters(p)
 
     # Setup Socket
@@ -548,8 +554,8 @@ def connect(mac_addr, stream_addr, hci_interface):
             if t_elapsed > 2.0:
                 rate1 = h_delegate.pCount / t_elapsed
                 rate2 = h_delegate.imuCount / t_elapsed
-                logging.info("Port: %d EMG: %4.1f Hz IMU: %4.1f Hz BattEvts: %d" % (
-                    stream_addr[1], rate1, rate2, h_delegate.battCount))
+                logging.info("MAC: %s Port: %d EMG: %4.1f Hz IMU: %4.1f Hz BattEvts: %d" % (
+                    mac_addr,stream_addr[1], rate1, rate2, h_delegate.battCount))
                 t_start = t_now
                 h_delegate.pCount = 0
                 h_delegate.imuCount = 0
@@ -565,7 +571,7 @@ def manage_connection(mac_addr='C3:0A:EA:14:14:D9', stream_addr=('127.0.0.1', 15
 
         logging.debug('Running subprocess command: hcitool dev')
         hci = 'hci' + str(hci_interface)
-        
+
         if hci in subprocess.check_output(["hcitool", "dev"]):
             logging.info('Found device: ' + hci)
             device_ok = True
@@ -655,10 +661,10 @@ def interactive_startup():
 
 def main():
     """Parse command line arguments into argparse model.
-    
+
     Command-line arguments:
     -h or --help -- output help text describing command-line arguments.
-    
+
     """
     import sys
     import argparse

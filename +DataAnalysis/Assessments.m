@@ -12,17 +12,35 @@ classdef Assessments
                 f = figure('Units','pixels','ToolBar','figure','Position',p);
                 hAxes = axes('Parent',f);
             end
-            sLog = structTrialLog;
             
-            if ~isfield(sLog,'AllClassNames')
-                % old file format.  abort process
-                [completionAccuracy, motionAccuracy] = deal(nan);
-                hAxes = [];
-                return
+            if isfield(structTrialLog,'AllClassNames')
+                % new version
+                sLog = structTrialLog;
+            else
+                
+                % % old file format.  abort process
+                % [completionAccuracy, motionAccuracy] = deal(nan);
+                % hAxes = [];
+                % return
+                
+                % try to work similar data from old file types
+                classIdToTest = 1:length(structTrialLog);
+                classNames = {structTrialLog(:).targetClass};
+                if all(cellfun(@isempty,strfind(classNames,'No Movement')))
+                    % Append No Movement if it's not there
+                    classNames{end+1} = 'No Movement';
+                end
+                version = 'V1';
+                
+                sLog.AllClassNames = classNames;
+                sLog.ClassIdToTest = classIdToTest;
+                sLog.Data = structTrialLog;
+                
             end
-            numClasses = length(sLog.AllClassNames);
             
+            numClasses = length(sLog.AllClassNames);
             testedClasses = sLog.AllClassNames(sLog.ClassIdToTest);
+
             
             confuseMat = zeros(numClasses);
             for iClass = 1:length(sLog.Data)

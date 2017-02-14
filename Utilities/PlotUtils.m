@@ -498,7 +498,7 @@ classdef PlotUtils
             set(hAxes,'YLim',[1 numClasses+1])
             
             tickVal = (1:numClasses)+0.5;
-            tickLabel = classNames;
+            tickLabel = classNames(:);
             pad = @(s) sprintf('%s   ',s);
             tickLabel = cellfun(pad,tickLabel,'UniformOutput',false);
             set(hAxes,'YTick',tickVal);
@@ -513,7 +513,8 @@ classdef PlotUtils
 
             % Use built-in matlab rotate function as of R2014b
             set(hAxes,'XTick',tickVal);
-            set(hAxes,'XTickLabel',flipud(tickLabel))
+            %set(hAxes,'XTickLabel',flipud(tickLabel))
+            set(hAxes,'XTickLabel',tickLabel)
             hAxes.XTickLabelRotation = 30; 
             
             title('Actual versus Predicted Class','Parent',hAxes);

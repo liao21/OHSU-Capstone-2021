@@ -14,7 +14,7 @@ Python translation of CpchSerial.m in MATLAB minivie
 
 import numpy as np
 import serial
-from cpc_headstage import CpcHeadstage
+from inputs.cpc_headstage import CpcHeadstage
 import time
 import struct
 
@@ -109,11 +109,13 @@ class CpchSerial(CpcHeadstage):
         
         
         bits = self.BioampMask.bit_length
-        max_bits = 8 if (bits > 0 and bits <= 8) else 16 if (bits > 8 and bits <= 16) else None
+        #max_bits = 8 if (bits > 0 and bits <= 8) else 16 if (bits > 8 and bits <= 16) else None
+        max_bits = 16
         self.BioampCnt = bin(self.BioampMask).count("1")
         
         bits = self.GPIMask.bit_length
-        max_bits = 8 if (bits > 0 and bits <= 8) else 16 if (bits > 8 and bits <= 16) else None
+        #max_bits = 8 if (bits > 0 and bits <= 8) else 16 if (bits > 8 and bits <= 16) else None
+        max_bits = 16
         self.GPICnt = bin(self.GPIMask).count("1")
         
         
@@ -267,10 +269,26 @@ class CpchSerial(CpcHeadstage):
         
         pass
         
-        
+    def start(self):
+        '''
+
+        Start the data streaming
+
+        :return:
+        '''
+
+        msg = self.EncodeStartMsg()
+        self.SerialObj.write(msg)
+
+        pass
         
 
     def getData(self, numSamples, idxChannel):
+
+
+
+
+
         pass
         
     ###TODO## translate the rest of the methods from matlab to python

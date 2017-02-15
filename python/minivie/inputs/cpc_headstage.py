@@ -32,22 +32,34 @@ class CpcHeadstage(object):
         self.msgIdConfigurationReadResponse = 131
         self.msgIdConfigurationWriteResponse = 132
     
+    def EncodeStartMsg(self):
+        msg = bytearray()
+        msg += struct.pack('B', 1)
+        msg += struct.pack('B', self.XorChksum(msg))
+        return msg
+
     def EncodeStopMsg(self):
         msg = bytearray()
-        msg = msg + struct.pack('B',2)
-        msg = msg + struct.pack('B',self.XorChksum(msg))
+        msg += struct.pack('B', 2)
+        msg += struct.pack('B', self.XorChksum(msg))
         return msg
-    
+
+    def EncodeStatusMsg(self):
+        msg = bytearray()
+        msg += struct.pack('B', 3)
+        msg += struct.pack('B', self.XorChksum(msg))
+        return msg
+
     def XorChksum(self, msg, poly=0b101001101):
         """
         XOR checksum of msg using 0xA6 default polynomial
         
-        Input Arguemnets:
+        Input Arguments:
         self -- reference to this object
         msg -- bytearray to be checksummed
         poly -- integer of taps in the polynomial
         
-        Return Arguemnets:
+        Return Arguments:
         check -- checksum result byte
         """
         

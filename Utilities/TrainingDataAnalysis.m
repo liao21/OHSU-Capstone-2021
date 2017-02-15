@@ -270,7 +270,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             end
             
             if doFilter
-                chEmg = TrainingDataAnalysis.filter_data(chEmg);
+                chEmg = TrainingDataAnalysis.filter_data(chEmg,[]);
                 dataLabel = strcat(dataLabel,'_filtered');
             end
             
@@ -589,7 +589,12 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             d = load(fullfile(pathName,fileName),'-mat');
             assert(~isempty(d.signalData),'Signal Data Not Found');
         end
-        function filteredData = filter_data(dataIn)
+        function filteredData = filter_data(dataIn,reflectValue)
+            
+            if nargin < 2
+                reflectValue = 1.2;
+            end
+            
             % filter Data
             % note that if filtfilt is used, the filter order is doubled
             %HPF = Inputs.HighPass(10,2,1000);
@@ -597,8 +602,8 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             HPF = Inputs.HighPass(20,3,Fs);
             %NF = Inputs.Notch([120 240 360],64,1,Fs);
             
-            HPF.ReflectOnApply = 1;
-            HPF.ReflectValue = 1.2;
+            HPF.ReflectOnApply = ~isempty(reflectValue);
+            HPF.ReflectValue = reflectValue;
             
             filteredData = HPF.apply(double(dataIn));
             %filteredData = NF.apply(filteredData);

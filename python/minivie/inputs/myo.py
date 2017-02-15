@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 
 This module contains all the functions for interface with the Thalmic Labs Myo Armband.
@@ -26,11 +26,11 @@ optional arguments:
   -m MAC, --MAC MAC     Myo MAC address
   -a ADDRESS, --ADDRESS ADDRESS
                         Destination Address (e.g. //127.0.0.1:15001)
-                        
+
 Examples:
 
 +--------------------------+
-Start a myo armband server 
+Start a myo armband server
 +--------------------------+
 
 (e.g. using the built-in bluetooth low energy module in a raspberry pi)
@@ -40,7 +40,7 @@ From raspberry pi console, list available bluetooth low energy devices:
 $ hcitool dev
 
 
-# Find Myo MAC addresses 
+# Find Myo MAC addresses
 $ sudo hcitool lescan
 
 
@@ -56,7 +56,7 @@ sudo ./myo.py -tx --ADDR //127.0.0.1:15002 --MAC F0:1C:FF:A7:FF:85 --IFACE 1 &
 
 
 +--------------------------+
-Start a myo armband server 
+Start a myo armband server
 +--------------------------+
 
 (e.g. using the built-in bluetooth low energy module in a raspberry pi)
@@ -66,7 +66,7 @@ From raspberry pi console, list available bluetooth low energy devices:
 $ hcitool dev
 
 
-# Find Myo MAC addresses 
+# Find Myo MAC addresses
 $ sudo hcitool lescan
 
 
@@ -293,27 +293,8 @@ class MyoUdp(object):
 
     def connect(self):
         """
-        The command sets the Preferred Peripheral Connection Parameters (PPCP).  You can find summary Bluetooth
-        information here: https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.
-            characteristic.gap.peripheral_preferred_connection_parameters.xml
+            Connect to the udp server and receive Myo Packets
 
-        Breaking down the command "sudo hcitool cmd 0x08 0x0013 40 00 06 00 06 00 00 00 90 01 00 00 07 00"
-
-        the syntax for the 'cmd' option in 'hcitool' is:
-            hcitool cmd <ogf> <ocf> [parameters]
-
-            OGF: 0x08 "7.8 LE Controller Commands"
-
-            OCF: 0x0013 "7.8.18 LE Connection Update Command"
-
-        The significant command parameter bytes are "06 00 06 00 00 00 90 01" (0x0006, 0x0006, 0x0000, 0x0190)
-
-        These translate to setting the min, and max Connection Interval to 0x0006=6;6*1.25ms=7.5ms, with no slave
-            latency, and a 0x0190=400; 400*10ms=4s timeout.
-
-        For more info, you can search for the OGF, OCF sections listed above in the Bluetooth Core 4.2 spec
-
-        :return:
         """
         logging.info("Setting up MyoUdp socket {}".format(self.addr))
         self.__sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Internet, UDP
@@ -519,14 +500,63 @@ def set_parameters(p):
 
 
 def connect(mac_addr, stream_addr, hci_interface):
+    '''
+        The command sets the Preferred Peripheral Connection Parameters (PPCP).  You can find summary Bluetooth
+        information here: https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.
+            characteristic.gap.peripheral_preferred_connection_parameters.xml
+
+        Breaking down the command "sudo hcitool cmd 0x08 0x0013 40 00 06 00 06 00 00 00 90 01 00 00 07 00"
+
+        the syntax for the 'cmd' option in 'hcitool' is:
+            hcitool cmd <ogf> <ocf> [parameters]
+
+            OGF: 0x08 "7.8 LE Controller Commands"
+
+            OCF: 0x0013 "7.8.18 LE Connection Update Command"
+
+        The significant command parameter bytes are "06 00 06 00 00 00 90 01" (0x0006, 0x0006, 0x0000, 0x0190)
+
+        These translate to setting the min, and max Connection Interval to 0x0006=6;6*1.25ms=7.5ms, with no slave
+            latency, and a 0x0190=400; 400*10ms=4s timeout.
+
+        For more info, you can search for the OGF, OCF sections listed above in the Bluetooth Core 4.2 spec
+
+        :return:
+
+
+        Example session to create a connection:
+
+        from bluepy.btle import DefaultDelegate as btleDefaultDelegate
+        from bluepy.btle import BTLEException as btleBTLEException
+        from bluepy.btle import Peripheral as btlePeripheral
+        from bluepy.btle import ADDR_TYPE_PUBLIC as btleADDR_TYPE_PUBLIC
+        mac_addr = 'E8:A2:46:0b:2c:49'
+        hci_interface = 0
+        p = btlePeripheral(mac_addr, addrType=btleADDR_TYPE_PUBLIC, iface=hci_interface)
+
+    '''
+
+    # This blocks until device is awake and connection established
     logging.info("Connecting to: " + mac_addr)
     p = btlePeripheral(mac_addr, addrType=btleADDR_TYPE_PUBLIC, iface=hci_interface)
     logging.info("Done")
 
+    # get the connection information
+    conn_raw = subprocess.check_output(['hcitool', 'con'])
+    # parse to get our connection handle
+    conn_lines = conn_raw.decode('utf-8').split('\n')
+    for conn in conn_lines:
+        if conn.find(mac_addr.upper()) > 0:
+            start = 'handle'
+            end = 'state'
+            handle = int(conn.split(start)[1].split(end)[0])
+            handle_hex = '{:04x}'.format(handle)
+            logging.info('MAC: {} is handle {}'.format(mac_addr,handle))
+
     logging.info("Setting Update Rate")
-    cmd = "sudo hcitool -i hci%d cmd 0x08 0x0013 40 00 06 00 06 00 00 00 90 01 00 00 07 00" % hci_interface
-    logging.info(cmd)
-    subprocess.Popen(cmd, shell=True).wait()
+    cmd_str = "hcitool -i hci{} cmd 0x08 0x0013 {} {} 06 00 06 00 00 00 90 01 00 00 07 00".format(hci_interface, handle_hex[2:], handle_hex[:2])
+    logging.info(cmd_str)
+    subprocess.Popen(cmd_str, shell=True)
     logging.info("Done")
 
     set_parameters(p)
@@ -548,8 +578,8 @@ def connect(mac_addr, stream_addr, hci_interface):
             if t_elapsed > 2.0:
                 rate1 = h_delegate.pCount / t_elapsed
                 rate2 = h_delegate.imuCount / t_elapsed
-                logging.info("Port: %d EMG: %4.1f Hz IMU: %4.1f Hz BattEvts: %d" % (
-                    stream_addr[1], rate1, rate2, h_delegate.battCount))
+                logging.info("MAC: %s Port: %d EMG: %4.1f Hz IMU: %4.1f Hz BattEvts: %d" % (
+                    mac_addr,stream_addr[1], rate1, rate2, h_delegate.battCount))
                 t_start = t_now
                 h_delegate.pCount = 0
                 h_delegate.imuCount = 0
@@ -565,7 +595,7 @@ def manage_connection(mac_addr='C3:0A:EA:14:14:D9', stream_addr=('127.0.0.1', 15
 
         logging.debug('Running subprocess command: hcitool dev')
         hci = 'hci' + str(hci_interface)
-        
+
         if hci in subprocess.check_output(["hcitool", "dev"]):
             logging.info('Found device: ' + hci)
             device_ok = True
@@ -655,10 +685,10 @@ def interactive_startup():
 
 def main():
     """Parse command line arguments into argparse model.
-    
+
     Command-line arguments:
     -h or --help -- output help text describing command-line arguments.
-    
+
     """
     import sys
     import argparse

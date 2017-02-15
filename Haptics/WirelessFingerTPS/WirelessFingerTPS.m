@@ -240,7 +240,7 @@ end
 function strWarnings = load_library()
 strWarnings = [];
 if ~libisloaded(WirelessFingerTPS.libName)
-    [notfound,strWarnings] = loadlibrary('PPSDaq.dll','PPSDaq.h');
+    [notfound,strWarnings] = loadlibrary('PPSDaq','PPSDaq.h');
     if isempty(notfound)
         fprintf('Library %s loaded sucessfully\n',WirelessFingerTPS.libName);
     end

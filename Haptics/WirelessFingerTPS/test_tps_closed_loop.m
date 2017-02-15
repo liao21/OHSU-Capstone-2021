@@ -2,8 +2,8 @@
 % 192.168.1.1:12001 - ServoUDP
 % 192.168.1.1:8089
 % VibroUDP or TactorUDP
-TactorPort = '169.254.173.160:12001'; 
-TactorType = 'VibroUDP';
+TactorPort = '192.168.1.1:12001'; 
+TactorType = 'ServoUDP';
 
 switch TactorType
     case 'ServoUDP'
@@ -53,7 +53,7 @@ while StartStopForm
     sensorData = obj.getdata(); % returns 12x1
     % do some mapping
     outputData = sensorData(keepIndices);
-    disp(outputData');
+%     disp(outputData');
     
     collectedMinMax(1, :) = min([outputData'; collectedMinMax(1, :)], [], 1);
     collectedMinMax(2, :) = max([outputData'; collectedMinMax(2, :)], [], 1);
@@ -70,7 +70,9 @@ while StartStopForm
 %     disp(outputData');
    
     % do some range checking
-    hTactors.tactorVals = outputData([littleSensor, ringSensor, middleSensor, indexSensor, thumbSensor]);
+%     hTactors.tactorVals = outputData([littleSensor, ringSensor, middleSensor, indexSensor, thumbSensor]);
+    hTactors.tactorVals = outputData([thumbSensor, indexSensor, middleSensor, ringSensor, littleSensor]);
+    disp(hTactors.tactorVals);
     hTactors.transmit();
     
     pause(0.02)

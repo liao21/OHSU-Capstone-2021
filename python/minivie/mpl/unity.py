@@ -81,7 +81,7 @@ class UnityUdp(object):
         logging.info("UnityUdp local port: {}".format(self.udp['LocalPort']))
         logging.info("UnityUdp remote port: {}:{}".format(self.udp['RemoteHost'], self.udp['RemotePort']))
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind(('127.0.0.1', self.udp['LocalPort']))
+        self.sock.bind(('0.0.0.0', self.udp['LocalPort']))
         self.sock.settimeout(3.0)
         self.is_connected = True
 

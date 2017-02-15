@@ -61,7 +61,19 @@ classdef UserConfig < handle
                 
                 % read the file
                 if ~isempty(userConfigFile)
-                    localObj.domNode = xmlread(userConfigFile);
+                    
+                    try 
+                        localObj.domNode = xmlread(userConfigFile);
+                    catch ME
+                        fprintf(2,'**********\n')
+                        fprintf(2,'Error parsing xml file: %s\n',userConfigFile);
+                        fprintf(2,'Note: Typical start of an XML doc (with no leading whitespace) is: <?xml version=''1.0''?>\n');
+                        fprintf(2,'**********\n')
+                        
+                        rethrow(ME)
+                    end
+                    
+                    
                 end
                 
             else

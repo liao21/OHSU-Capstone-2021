@@ -235,7 +235,7 @@ classdef TrainingData < handle
             %   sort - [Optional] true/false whether results should be
             %   grouped by classname.  Since multiple repitions of the same
             %   movement might be contained in the same data set, this will
-            %   consolidate each to a single pool. Defualt is unsorted
+            %   consolidate each to a single pool. Default is unsorted
             %
 
             % Rather then accessing the raw data property directly (which
@@ -272,28 +272,15 @@ classdef TrainingData < handle
             for i = 1:size(s,3)-1
                 s1 = s(:,:,i);
                 s2 = s(:,:,i+1);
-                D = finddelay(s2',s1');
-                if all(D == 0)
-                    % signal is identical
-                    lag(i) = 0;
-                else 
-                    % ignore zero case (flat signals)
-                    delayVals = D(D ~= 0);
-                    
-                    % find most common delay
-                    bestDelay = mode(delayVals);
-                    
-                    nDisagree = sum(delayVals ~= bestDelay);
-                    
-                    if nDisagree > 2
-                        % likely signals don't correlate since they are
-                        % entirely unique
-                        lag(i) = NaN;
-                    else
-                        lag(i) = bestDelay;
-                    end
-                end
                 
+                %%
+                for j = 1:size(s1,2)
+                    diff = s2(:,1:end-j) - s1(:,j:end-1);
+                    if all(diff == 0)
+                        lag(i) = j;
+                        break
+                    end
+                end                
             end
             dbstop if error
             % concat EMG waveform

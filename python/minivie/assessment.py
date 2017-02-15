@@ -6,7 +6,7 @@ class MotionTester(object):
         self.vie = vie
         self.trainer = trainer
         self.thread = None
-        self.filename = 'MOTION_TESTER_DATA'
+        self.filename = 'MOTION_TESTER_LOG'
         self.file_ext = '.hdf5'
         self.reset()
 
@@ -14,7 +14,6 @@ class MotionTester(object):
         self.class_decision = []
         self.correct_decision = []
         self.time_stamp = []
-        self.all_class_names = []
         self.class_id_to_test = []
         self.data = []  # List of dicts
 
@@ -23,7 +22,6 @@ class MotionTester(object):
         self.class_decision = []
         self.correct_decision = []
         self.time_stamp = []
-        self.all_class_names = []
         self.class_id_to_test = []
         self.data = []  # List of dicts
 
@@ -62,11 +60,10 @@ class MotionTester(object):
         self.reset()
 
         # Determine which classes should be trained
-        motion_names = self.vie.TrainingData.motion_names
+        all_class_names = self.vie.TrainingData.motion_names;
         totals = self.vie.TrainingData.get_totals()
 
-        trained_classes = [motion_names[i] for i, e in enumerate(totals) if e != 0]
-        self.all_class_names = trained_classes
+        trained_classes = [all_class_names[i] for i, e in enumerate(totals) if e != 0]
 
         # pause limb during test
         self.vie.pause('All', True)
@@ -75,13 +72,13 @@ class MotionTester(object):
         for i_rep in range(3):
             self.send_status('New Assessment Trial')
             for i,i_class in enumerate(trained_classes):
-                if not (i_class == 'No Movement'):
-                    if i_rep == 1:  # Only adding new data dict for first time training each class
-                        self.class_id_to_test.append(i)
-                        self.data.append({'targetClass': i_class, 'classDecision': None, 'voteDecision': None, 'emgFrames': None})
+                if not (i_class == 'No Movement'):  # Don't train no movement
+                    if i_rep == 0:  # Only adding new data dict for first time training each class
+                        self.class_id_to_test.append(all_class_names.index(i_class))
+                        self.data.append({'targetClass': [], 'classDecision': [], 'voteDecision': [], 'emgFrames': []})
 
                     # Assess class
-                    is_complete = self.assess_class(i_class,i)
+                    is_complete = self.assess_class(i_class)
                     if is_complete:
                         self.send_status('Motion Completed!')
                     else:
@@ -92,7 +89,7 @@ class MotionTester(object):
         self.send_status('')
         self.vie.pause('All', False)
 
-    def assess_class(self, class_name, class_index):
+    def assess_class(self, class_name):
         import time
         import numpy as np
 
@@ -128,7 +125,7 @@ class MotionTester(object):
             self.send_status('Testing Class - ' + class_name + ' - ' + str(num_correct) + '/' + str(max_correct) + ' Correct Classifications')
 
             # update data for output
-            #self.add_data(class_index,current_class,correct_decision)
+            self.add_data(class_name,current_class)
 
             if num_correct >= max_correct:
                 move_complete = True
@@ -148,12 +145,22 @@ class MotionTester(object):
         # TODO: Update so it doesn't update if it is the same string
         self.trainer.send_message("strMotionTester", status)
 
-    def add_data(self, class_id_to_test, class_decision_):
-        import time
-        self.data[class_id_to_test]['classDecision'].append(class_decision_)
+    def add_data(self, class_name_to_test, current_class):
+        # TODO: Better fix for this, should 'None' be an available classification in first place?
+        if current_class is 'None':
+            current_class = 'No Movement'
+
+        # Find ids
+        class_id_to_test = self.vie.TrainingData.motion_names.index(class_name_to_test)
+        dict_id = self.class_id_to_test.index(class_id_to_test)
+        current_class_id = self.vie.TrainingData.motion_names.index(current_class)
+
+        # Append to data dicts
+        self.data[dict_id]['targetClass'].append(class_name_to_test)
+        self.data[dict_id]['classDecision'].append(current_class_id)
         # TODO: Update the following metadata
-        self.data[class_id_to_test]['voteDecision'].append([])
-        self.data[class_id_to_test]['emgFrames'].append([])
+        #self.data[class_id_to_test]['voteDecision'].append([])
+        #self.data[class_id_to_test]['emgFrames'].append([])
 
     def save_results(self):
         import h5py
@@ -161,18 +168,20 @@ class MotionTester(object):
 
         t = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         h5 = h5py.File(self.filename + self.file_ext, 'w')
-        group = h5.create_group('TrialLog')
-        group.attrs['description'] = t + 'Motion Tester Data'
-        group.create_dataset('AllClassNames', self.all_class_names)
+        g1 = h5.create_group('TrialLog')
+        g1.attrs['description'] = t + 'Motion Tester Data'
+        encoded = [a.encode('utf8') for a in self.vie.TrainingData.motion_names]
+        g1.create_dataset('AllClassNames', shape=(len(encoded), 1), data=encoded)
+        g1.create_dataset('ClassIdToTest', self.class_id_to_test)
 
-        group = h5.create_group('data')
-        group.attrs['description'] = t + 'Motion Tester Data'
-        group.create_dataset('time_stamp', data=self.time_stamp)
-        group.create_dataset('correct_decision', data=self.correct_decision)
-        encoded = [a.encode('utf8') for a in self.target_class]
-        group.create_dataset('target_class', data=encoded)
-        encoded = [a.encode('utf8') for a in self.class_decision]
-        group.create_dataset('class_decision', data=encoded)
+        g2 = g1.create_group('Data')
+
+        for d in self.data:
+            g3 = g2.create_group(d['targetClass'][0])
+            encoded = [a.encode('utf8') for a in d['targetClass']]
+            g3.create_dataset('targetClass', shape=(len(encoded), 1), data=encoded)
+            g3.create_dataset('classDecision', shape=(len(d['classDecision']), 1), data=d['classDecision'])
+
         h5.close()
         self.send_status('Saved ' + self.filename)
 

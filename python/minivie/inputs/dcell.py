@@ -22,7 +22,7 @@ http://www.mantracourt.com/software/panel-mount-instrumentation/test-and-configu
 Documentation for DCell including communications protocols and available commands can be found here:
 http://www.mantracourt.com/products/signal-converters/digital-load-cell-converter#downloads
 
-Examples:
+Example usage from python script
 
 import dcell
 import time
@@ -38,6 +38,12 @@ while True:
     print('Measured Strain: ' + str(strain_data[0]) + '\n')
     time.sleep(1)
 
+
+Example usage from shell
+
+#!/bin/bash
+cd /home/pi/git/minivie/python/minivie/inputs/
+sudo ./dcell.py --PORT COM4 &
 """
 import serial
 import serial.rs485
@@ -188,8 +194,17 @@ def interactive_testing(port='/dev/ttyUSB0'):
             print(">>" + out)
 
 def main():
+
+    import argparse
+
+    # Parameters:
+    parser = argparse.ArgumentParser(description='DCell: Read from dcell and log.')
+    parser.add_argument('-p', '--PORT', help='Serial Port Name (e.g. /dev/ttyUSB0)',
+                        default='/dev/ttyUSB0')
+    args = parser.parse_args()
+
     # Initialize object
-    dcell = DCellSerial()
+    dcell = DCellSerial(port=args.PORT)
     # Connect and start streaming
     dcell.connect()
 

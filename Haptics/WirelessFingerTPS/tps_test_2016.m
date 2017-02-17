@@ -1,5 +1,5 @@
 %%
-[notfound,warnings] = loadlibrary('PPSDaq.dll','PPSDaq.h')
+[notfound,warnings] = loadlibrary('PPSDaq','PPSDaq.h')
 
 %%
 configfile = 'fingertps-05bc.cfg'

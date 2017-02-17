@@ -57,7 +57,7 @@ classdef BluetoothTactor_UDP < handle
         function transmit(obj)
             % send the current values through the udp port
             newData = sprintf('%d %d %d %d %d', round(double(obj.tactorVals) ./ 255 .* obj.maxAngle)); % !!!!
-            
+%             fprintf('%s\n', newData);
             % print out the tactor values, to std. out or udp port
             try
                 pnet(obj.hUDP,'write', newData);

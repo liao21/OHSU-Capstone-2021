@@ -5,9 +5,9 @@ classdef ParsePythonData
     properties
     end
     
-    methods
-        function get_hci_log(file)
-            % ParsePythonData.get_hci_log('hci0_myo.log')
+    methods (Static = true)
+        function C = get_hci_log(file)
+            % DataAnalysis.ParsePythonData.get_hci_log('hci0_myo.log')
             if nargin < 1
                 p = '';
                 f = 'hci0_myo.log';

@@ -320,7 +320,7 @@ class MyoUdp(object):
             try:
                 # recv call will error if socket closed on exit
                 data, address = self.__sock.recvfrom(1024)
-                print('Got Packet')
+                #print('Got Packet')
             except socket.timeout:
                 # the data stream has stopped.  don't break the thread, just continue to wait
                 msg = "MyoUdp timed out during recvfrom() on IP={} Port={}. Error: {}".format(

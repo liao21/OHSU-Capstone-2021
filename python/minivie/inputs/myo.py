@@ -722,7 +722,8 @@ def main():
     elif args.TX_MODE:
         # TODO: make this file date stamped
         f = 'hci' + str(args.IFACE) + '_myo.log'
-        logging.basicConfig(filename=f, level=logging.DEBUG, format='%(asctime)s %(message)s')
+        #logging.basicConfig(filename=f, level=logging.DEBUG, format='%(asctime)s %(message)s')
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)s %(message)s')
         manage_connection(args.MAC, utilities.get_address(args.ADDRESS), args.IFACE)
     else:
         # No Action

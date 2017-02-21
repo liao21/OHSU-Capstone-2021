@@ -36,7 +36,7 @@ classdef BluetoothTactor_UDP < handle
             
             % create refresh timer
             obj.hTimer = UiTools.create_timer('BluetoothTactorTimer',@(src,evt) obj.transmit );
-            obj.hTimer.Period = 0.1;
+            obj.hTimer.Period = 0.05;
             
             
             fprintf('Opening %s:%f...',obj.udpIP, obj.udpPort)

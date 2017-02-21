@@ -7,7 +7,7 @@
 TactorPort = '192.168.1.1:12001'; 
 TactorType = 'ServoUDP';
 maxAngle = 70;
-pulseNum = 2;
+pulseNum = 1;
 pulseWidth = 0.20;
 pulseGap = 0.20;
 
@@ -22,6 +22,7 @@ end
 hTactors.initialize();
 
 %% update via:
+hTactors.maxAngle = 60;
 hTactors.tactorVals = [0 0 0 0 0];
 hTactors.transmit
 
@@ -37,8 +38,15 @@ handles = guidata(buttonGUI);
 % 
 dt = 0.01;
 [f, t] = createWaveform(dt, pulseWidth, pulseNum, pulseGap);
-f = f * 255;
+f = f * 150;
 tactorNum = 0;
+
+figure;
+nameCell = {'INDEX', 'NOTHING', 'NONE', 'NONE', 'NONE'};
+trialCounter = 12;
+gca;
+axis off;
+textHandle = text(0.5, 0.5, '.', 'HorizontalAlignment', 'center');
 
 while StartStopForm && ishandle(handles.figure1)
     drawnow
@@ -77,8 +85,16 @@ while StartStopForm && ishandle(handles.figure1)
         
         hTactors.tactorVals = zeros(1, 5);
         hTactors.transmit;
+        
+        delete(textHandle);
+        textHandle = text(0.5, 0.5, [num2str(trialCounter) ' - ' nameCell{tactorNum}], 'FontSize', 128, 'HorizontalAlignment', 'center');
+        trialCounter = trialCounter + 1;
+        
         tactorNum = 0;
+        
     end
+    
+    
     
     drawnow;
     pause(0.01)

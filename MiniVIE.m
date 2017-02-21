@@ -1076,6 +1076,10 @@ classdef MiniVIE < Common.MiniVieObj
         
         function cbRocEditor(obj)
             % Launch the ROC Editor.
+            % Note if the roc changes and is different than the one in the
+            % Presentation then the user will be prompted to update
+            %
+            % Note this won't be the case if a Scenario does not yet exist
             
             % Ensure that if a scenario exists that it is not running
             drawnow
@@ -1086,7 +1090,24 @@ classdef MiniVIE < Common.MiniVieObj
             
             % Open GUI
             rocTable = UserConfig.getUserConfigVar('rocTable','WrRocDefaults.xml');
-            GUIs.guiRocEditor(rocTable);
+            roc = GUIs.guiRocEditor(rocTable);
+            
+            if ~isempty(obj.Presentation)
+                uiwait(roc.hParent)
+                newRoc = roc.structRoc;
+                oldRoc = obj.Presentation.RocTable;
+            
+                if ~isequal(newRoc, oldRoc)
+                    r = questdlg('Replace the system ROC table with changes?','ROC Table','Yes','No','Yes');
+                    if strcmp(r,'Yes')
+                        obj.Presentation.RocTable = newRoc;
+                    end
+                end
+            end
+                        
+            
+            
+            
         end
         function cbImpedance(obj)
             % Toggle the impedance property for the MPL/NFU

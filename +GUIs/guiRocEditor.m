@@ -21,6 +21,7 @@ classdef guiRocEditor < handle
     properties
         hDataEmitter = Common.DataEmitter;  % handle to the data output sinks (udp)
         hMud = MPL.MudCommandEncoder;       % handle for the message encoder
+        hParent;        % Figure
         
         structRoc;                          % structure for storing the current roc table
         
@@ -42,7 +43,6 @@ classdef guiRocEditor < handle
         jointAngles = zeros(1,27);
     end
     properties (Access = 'protected')
-        hParent;        % Figure
         hAxes;          % Array of axes for sliders
         
         % roc related gui handles
@@ -655,6 +655,7 @@ classdef guiRocEditor < handle
             MPL.RocTable.writeRocTable(xmlFileName,obj.structRoc);
             
             obj.IsDirty = false;
+            obj.updateFigure()
             
             success = true;
             

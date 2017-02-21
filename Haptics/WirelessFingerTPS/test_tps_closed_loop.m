@@ -16,22 +16,22 @@ end
 hTactors.initialize();
 
 %% update via:
+hTactors.maxAngle = 60;
 hTactors.tactorVals = [0 0 0 0 0];
-hTactors.transmit
 
 
 %% Setup Wireless TPS
 obj = WirelessFingerTPS.getInstance;
 
 % get input linearization ranges
-minMaxSensor.thumb = [300 500];
+minMaxSensor.thumb = [325 450];
 minMaxSensor.index = [300 500];
 minMaxSensor.middle = [300 500];
 minMaxSensor.ring = [300 500];
 minMaxSensor.little = [300 500];
 
 % this is the output range
-minMaxTactor = [0 255];
+minMaxTactor = [0 150];
 
 % label the sensors
 thumbSensor = 1;
@@ -72,8 +72,8 @@ while StartStopForm
     % do some range checking
 %     hTactors.tactorVals = outputData([littleSensor, ringSensor, middleSensor, indexSensor, thumbSensor]);
     hTactors.tactorVals = outputData([thumbSensor, indexSensor, middleSensor, ringSensor, littleSensor]);
-    disp(hTactors.tactorVals);
-    hTactors.transmit();
+    fprintf('%6.0f %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f\n', hTactors.tactorVals, sensorData(keepIndices(1:5)));
+%     hTactors.transmit();
     
     pause(0.02)
     

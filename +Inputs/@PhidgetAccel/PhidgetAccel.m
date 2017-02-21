@@ -2,8 +2,6 @@ classdef PhidgetAccel < handle
     % PhidgetAccel - MATLAB Class for accessing phidget accelerometer via
     % dll.  Part of the myopen/MiniVIE Project.
     %
-    % For use with 32-bit Matlab on windows based systems only.  Note that
-    % 32 bit matlab will run on 32/64 bit Windows XP/Vista/7
     %
     % Refer to product documentation at:
     % "http://www.phidgets.com/products.php?product_id=1059"
@@ -13,13 +11,13 @@ classdef PhidgetAccel < handle
     % Phidget21 C library is contained in phidget21.dll, and referenced using
     % the phidget21Matlab.h header file.  These files are stored in the package
     % folder: C:\svn\myopen\MiniVIE\+Inputs\@PhidgetAccel
-    % 
+    %
     % C library files in matlab are interfaced using the following commands:
     % - loadlibrary
     % - libpointer
     % - libstruct
     % - calllib
-    % More info can be found via MATLAB Documentation: 
+    % More info can be found via MATLAB Documentation:
     % MATLAB > Advanced Software Development > Calling External Functions >
     % Call C Shared Libraries
     %
@@ -46,7 +44,7 @@ classdef PhidgetAccel < handle
     %   hPhidget = Inputs.PhidgetAccel();
     %   hPhidget.initialize();
     %   hPhidget.previewAngles;
-    %   hPhidget.close();    
+    %   hPhidget.close();
     %
     % See Also: Inputs.PhidgetSource
     %
@@ -70,31 +68,23 @@ classdef PhidgetAccel < handle
     methods
         function obj = PhidgetAccel
             % Create PhidgetAccel object
-            % Current support is only for 32-bit MATLAB installations on
-            % windows.
-            % 
+            %
             % initialize() method must be called before use.
             % close() method must be called before reinitialization
             %
-            assert(strcmpi(computer('arch'),'WIN32'),...
-                'Phidget interface currently only supported on 32bit matlab running on windows architecture');
-            
         end
         function initialize(obj)
             % obj.initialize()
-            % Initialize Phidget Accelerometer 
+            % Initialize Phidget Accelerometer
             if obj.isInitialized
                 fprintf('Device already initialized\n');
                 return
             end
-            if ~libisloaded(obj.libraryName)
-                pathName = fileparts(which('Inputs.PhidgetAccel'));
-                loadlibrary(obj.libraryName,fullfile(pathName,obj.headerName));
-            end
             
-            phidPtr = libpointer('int32Ptr',0);
-            calllib(obj.libraryName, 'CPhidgetAccelerometer_create', phidPtr);
-            obj.hPhid = get(phidPtr, 'Value');
+            Inputs.PhidgetAccel.loadphidget21()
+            
+            obj.hPhid = libpointer('int32Ptr',0);
+            calllib(obj.libraryName, 'CPhidgetAccelerometer_create', obj.hPhid);
             calllib(obj.libraryName, 'CPhidget_open', obj.hPhid, -1);
             
             if calllib(obj.libraryName, 'CPhidget_waitForAttachment', obj.hPhid, 2500)
@@ -156,7 +146,7 @@ classdef PhidgetAccel < handle
             % directions
             %
             % Order is: [XY YX XZ ZX YZ ZY]
-
+            
             if ~obj.isInitialized
                 error('Device not initialized\n');
             end
@@ -193,7 +183,7 @@ classdef PhidgetAccel < handle
             % plots data in real-time
             %
             % Requires MiniVIE env to be configured
-
+            
             if ~obj.isInitialized
                 error('Device not initialized\n');
             end
@@ -212,7 +202,7 @@ classdef PhidgetAccel < handle
         function previewAngles(obj)
             % Opens strip-chart preview of the accel device output and
             % plots angle measurements in real-time
-
+            
             if ~obj.isInitialized
                 error('Device not initialized\n');
             end
@@ -231,6 +221,31 @@ classdef PhidgetAccel < handle
         end
     end
     methods (Static = true)
+        %loadphidget21.m - Loads the phidget21 library, paying attention to OS,
+        %suppressing warnings.
+        function loadphidget21
+            
+            if not(libisloaded('phidget21'))
+                warning off MATLAB:loadlibrary:TypeNotFound
+                warning off MATLAB:loadlibrary:TypeNotFoundForStructure
+                switch computer
+                    case 'PCWIN'
+                        p = fileparts(which('Inputs.PhidgetAccel')); % path to header file
+                        [notfound,warnings]=loadlibrary('phidget21', fullfile(p,'phidget21Matlab_Windows_x86.h'));
+                    case 'PCWIN64'
+                        p = fileparts(which('Inputs.PhidgetAccel')); % path to header file
+                        [notfound,warnings]=loadlibrary('phidget21', fullfile(p,'phidget21Matlab_Windows_x64.h'));
+                    case 'MAC'
+                    case 'MACI'
+                    case 'MACI64'
+                        [notfound,warnings]=loadlibrary('/Library/frameworks/Phidget21.framework/Versions/Current/Phidget21', 'phidget21matlab_unix.h', 'alias', 'phidget21');
+                    case 'GLNX86'
+                    case 'GLNXA64'
+                        [notfound,warnings]=loadlibrary('/usr/lib/libphidget21.so', 'phidget21matlab_unix.h', 'alias', 'phidget21');
+                end
+            end
+        end
+        
         function [newData, t] = Test
             % Test Phidget device and return the true sample rate (since
             % library may be called faster but return duplicate samples

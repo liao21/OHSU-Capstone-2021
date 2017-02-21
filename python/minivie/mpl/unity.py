@@ -117,7 +117,10 @@ class UnityUdp(object):
         logging.debug('Joint Command:' + np.array2string(np.array(values), precision=2, separator=','))
         packer = struct.Struct('27f')
         packed_data = packer.pack(*values)
-        self.sock.sendto(packed_data, (self.udp['RemoteHost'], self.udp['RemotePort']))
+        if self.is_connected:
+            self.sock.sendto(packed_data, (self.udp['RemoteHost'], self.udp['RemotePort']))
+        else:
+            print('Socket disconnected')
 
     def get_percepts(self):
         """

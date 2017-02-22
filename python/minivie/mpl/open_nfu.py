@@ -37,7 +37,7 @@ class NfuUdp:
         self.__thread = threading.Thread(target=self.message_handler)
         self.__thread.name = 'NfuUdpRcv'
 
-        self.__active_connection = False
+        self.__active_connection = True
 
         self.mpl_status = None  # updated by heartbeat messages
 

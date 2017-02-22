@@ -105,6 +105,9 @@ def run(vie):
                 # print("Timing Overload: {}".format(time_elapsed))
                 pass
 
+            print('{0} dt={1:6.3f}'.format(output['decision'],time_elapsed))
+
+
         except KeyboardInterrupt:
             break
 

@@ -119,10 +119,12 @@ class NfuUdp:
         # This is a thread to receive data as soon as it arrives.
         while True:
             # Blocking call until data received
+            time.sleep(0.005)
             try:
                 # receive call will error if socket closed on exit
                 data, address = self.__sock.recvfrom(8192)  # blocks until timeout
-                print(data)
+                #print('Got message len={}'.format(len(data)))
+                #print(data)
                 # if the above function returns (without error) it means we have a connection
                 if not self.is_alive():
                     logging.info('MPL Connection is Active: Data received')
@@ -147,7 +149,7 @@ class NfuUdp:
                 # break so that the thread can terminate
                 break
 
-            if len(data) == 8:
+            if len(data) == 24:
                 msg = decode_heartbeat_msg_v2(data)
                 with self.__lock:
                     self.mpl_status = msg
@@ -287,6 +289,7 @@ def decode_heartbeat_msg_v2(msg_bytes):
         'SW_STATE_NUM_STATES',
     ]
 
+    # format: uint16 LEN uint8 msgID
     msg = {
         'SW_STATE': msg_bytes[3:4].view(np.uint8)[0],
         'strState': '',
@@ -295,9 +298,22 @@ def decode_heartbeat_msg_v2(msg_bytes):
         'lcStreaming': 0,
         'cpchStreaming': 0,
         'busVoltageCounts': 0,
-        'busVoltage': msg_bytes[4:8].view(np.float32)[0],
+        'busVoltage': msg_bytes[6:10].view(dtype=np.dtype('>f'))[0],
     }
-    msg['strState'] = nfu_states[msg['SW_STATE']]
+    #msg['strState'] = nfu_states[msg['SW_STATE']]
+
+    msg_len = msg_bytes[0:2].view(np.uint16)[0]
+    msg_id = msg_bytes[2:3].view(np.uint8)[0]
+    nfu_state = msg_bytes[3:4].view(np.uint8)[0]
+    lc_state = msg_bytes[4:5].view(np.uint8)[0]
+    lmc_state = msg_bytes[5:6].view(np.uint8)[0]
+    v_bus = msg_bytes[6:14].view(np.float)[0]
+    dom_count = msg_bytes[14:22].view(np.float)[0]
+    #actuate_count = msg_bytes[14:18].view(dtype=np.dtype('>f'))[0]
+    print('Msg Length: {} \n'.format(msg_len))
+
+
+
 
     return msg
 

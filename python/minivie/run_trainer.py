@@ -14,12 +14,20 @@ import time
 from six.moves import input
 import numpy as np
 import pattern_rec as pr
-
+from mpl.open_nfu import NfuUdp
 
 user_config.setup_file_logging(prefix='MPL_')
 
 # Setup devices and modules
 vie = mpl_nfu.setup()
+vie.DataSink.close()
+# Replace sink with actual arm
+hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
+#t = threading.Thread(name='MPLNFU', target=connection_manager, args=(hSink,))
+#t.setDaemon(True)
+#t.start()
+hSink.connect()
+vie.DataSink = hSink
 
 
 dt = 0.02

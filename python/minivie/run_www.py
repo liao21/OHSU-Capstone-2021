@@ -11,7 +11,7 @@
 import threading
 from utilities import user_config
 from scenarios import mpl_nfu
-from mpl.open_nfu import NfuUdp, connection_manager
+from mpl.open_nfu import NfuUdp
 from pattern_rec.training import TrainingManagerSpacebrew
 import assessment
 
@@ -27,9 +27,10 @@ def main():
 
     # Replace sink with actual arm
     hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
-    t = threading.Thread(name='MPLNFU', target=connection_manager, args=(hSink,))
-    t.setDaemon(True)
-    t.start()
+    hSink.connect()
+    #t = threading.Thread(name='MPLNFU', target=connection_manager, args=(hSink,))
+    #t.setDaemon(True)
+    #t.start()
     vie.DataSink = hSink
 
     # setup web interface

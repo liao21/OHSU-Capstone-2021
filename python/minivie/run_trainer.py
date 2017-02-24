@@ -14,16 +14,25 @@ import time
 from six.moves import input
 import numpy as np
 import pattern_rec as pr
-
+from mpl.open_nfu import NfuUdp
 
 user_config.setup_file_logging(prefix='MPL_')
 
 # Setup devices and modules
 vie = mpl_nfu.setup()
+vie.DataSink.close()
+# Replace sink with actual arm
+hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
+#t = threading.Thread(name='MPLNFU', target=connection_manager, args=(hSink,))
+#t.setDaemon(True)
+#t.start()
+hSink.connect()
+vie.DataSink = hSink
+
 
 dt = 0.02
-zc_thresh = 0.0
-ssc_thresh = 0.0
+zc_thresh = 0.05
+ssc_thresh = 0.05
 sample_rate = 200
 
 while True:
@@ -58,7 +67,7 @@ while True:
         # Preview data stream
         while True:
             try:
-                time.sleep(0.02)  # 50Hz
+                time.sleep(dt)  # 50Hz
                 f = np.array([])
                 for s in vie.SignalSource:
                     new_data = s.get_data()*0.01
@@ -91,28 +100,7 @@ while True:
         if vie.SignalClassifier.classifier is None:
             continue
 
-        # ##########################
-        # Run the control loop
-        # ##########################
-        while True:
-            try:
-                # Fixed rate loop.  get start time, run model, get end time; delay for duration
-                time_begin = time.time()
-
-                # Run the actual model
-                mpl_nfu.model(vie)
-
-                time_end = time.time()
-                time_elapsed = time_end - time_begin
-                if dt > time_elapsed:
-                    time.sleep(dt - time_elapsed)
-                else:
-                    #print("Timing Overload: {}".format(time_elapsed))
-                    pass
-
-            except KeyboardInterrupt:
-                print('Stopping')
-                break
+        mpl_nfu.run(vie)
 
     else:
         # Train the selected class
@@ -127,7 +115,7 @@ while True:
             continue
 
         for i in range(100):
-            time.sleep(0.02)
+            time.sleep(dt)
             f = np.array([])
             for s in vie.SignalSource:
                 new_data = s.get_data()*0.01
@@ -142,10 +130,6 @@ while True:
         pass
 
 # cleanup
-for s in vie.SignalSource:
-    s.close()
-vie.DataSink.close()
-
+vie.close()
 
 print("Done")
-

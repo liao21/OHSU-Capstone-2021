@@ -107,7 +107,7 @@ elif choice == 4:
     print("NOTE: NFU hostname must be properly configured on NFU: /fs/etfs/hostname (192.168.1.1)")
     print(60 * '-')
     logging.basicConfig(level=logging.INFO)
-    hSink = NfuUdp()
+    hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
     hSink.connect()
     while True:
         try:

@@ -316,10 +316,12 @@ class MyoUdp(object):
 
         # Loop forever to receive data
         while True:
+            time.sleep(0.002)
             # Blocking call until data received
             try:
                 # recv call will error if socket closed on exit
                 data, address = self.__sock.recvfrom(1024)
+                #print('Got Packet')
             except socket.timeout:
                 # the data stream has stopped.  don't break the thread, just continue to wait
                 msg = "MyoUdp timed out during recvfrom() on IP={} Port={}. Error: {}".format(
@@ -542,6 +544,8 @@ def connect(mac_addr, stream_addr, hci_interface):
     p = btlePeripheral(mac_addr, addrType=btleADDR_TYPE_PUBLIC, iface=hci_interface)
     logging.info("Done")
 
+    time.sleep(1.0)
+
     # get the connection information
     conn_raw = subprocess.check_output(['hcitool', 'con'])
     # parse to get our connection handle
@@ -559,6 +563,7 @@ def connect(mac_addr, stream_addr, hci_interface):
     logging.info(cmd_str)
     subprocess.Popen(cmd_str, shell=True)
     logging.info("Done")
+    time.sleep(1.0)
 
     set_parameters(p)
 

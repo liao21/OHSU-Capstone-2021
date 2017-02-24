@@ -12,6 +12,7 @@ class Scenario(object):
         self.SignalClassifier = None
         self.FeatureExtract = None
         self.TrainingData = None
+        self.TrainingInterface = None
         self.Plant = None
         self.DataSink = None
 

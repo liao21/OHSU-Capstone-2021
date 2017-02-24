@@ -657,6 +657,83 @@ classdef TrainingData < handle
             
         end
         
+        function [success, fullFile] = loadTrainingDataH5(obj,fname)
+            %[success, fullFile] = loadTrainingData(obj,fname)
+            % Load Training Data into object properties
+            % fields are:
+            % 'features3D','classLabelId','classNames','featureNames',
+            % 'activeChannels','signalData','sampleRateHz');
+            
+            success = false;
+            fullFile = '';
+            
+            % If no input given, raise new dialog
+            % If valid file given, open directly
+            % If partial file given, open dialog with that info
+            if (nargin == 1) || isempty(fname)
+                % Get filename interactively
+                FilterSpec = '*.hdf5';
+                [FileName,PathName,FilterIndex] = uigetfile(FilterSpec,'Select Training Data File to Open');
+                if FilterIndex == 0
+                    % User Cancelled
+                    return
+                else
+                    fullFile = fullfile(PathName,FileName);
+                end
+            elseif exist(fname, 'file') == 2
+                % Get filename from function input literally
+                fullFile = fname;
+            else
+                FilterSpec = fname;
+                [FileName,PathName,FilterIndex] = uigetfile(FilterSpec,'Select Training Data File to Open');
+                if FilterIndex == 0
+                    % User Cancelled
+                    return
+                else
+                    fullFile = fullfile(PathName,FileName);
+                end
+            end
+            
+            try
+                % Load data
+                % print contents
+                h5disp(fullFile)
+                
+                desc = h5readatt(fullFile,'/data','description')
+                numchannels = h5readatt(fullFile,'/data','num_channels')
+                features = h5read(fullFile,'/data/data');
+                class_labels = double(h5read(fullFile,'/data/id'));
+                names = h5read(fullFile,'/data/name');
+                classnames = deblank(unique(names));
+            catch ME
+                msg = { 'Error loading file', fullFile , ...
+                    'Error was: ' ME.message};
+                errordlg(msg);
+                return
+            end
+            
+            % load features
+            obj.SignalFeatures3D = reshape(features,16,4,[]);
+            obj.MaxChannels = double(numchannels);
+            
+            % load labels
+            obj.ClassLabelId = class_labels;
+            
+            %RSA: 9/19/2012 -- This was commented out.  why?
+            obj.SampleCount = length(class_labels);
+            fprintf('[%s] Loading %d Samples\n',mfilename,obj.SampleCount);
+            
+            obj.EnableLabel = true(1,obj.SampleCount);
+            
+            % Restore class names
+            obj.ClassNames = classnames;
+            obj.ActiveChannels = 1:numchannels;
+            
+            fprintf('[%s] Sample rate empty.  Assuming 200Hz\n',mfilename);
+            obj.SampleRate = 200;
+            
+            success = true;
+        end
         function [success, fullFile] = loadTrainingData(obj,fname)
             %[success, fullFile] = loadTrainingData(obj,fname)
             % Load Training Data into object properties

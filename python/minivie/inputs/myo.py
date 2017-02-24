@@ -273,6 +273,7 @@ class MyoUdp(object):
 
         # 8 channel max for myo armband
         self.num_channels = 8
+        self.num_samples = num_samples
 
         # Default kinematic values
         self.__quat = (1.0, 0.0, 0.0, 0.0)

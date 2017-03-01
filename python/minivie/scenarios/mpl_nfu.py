@@ -92,7 +92,7 @@ def run(vie):
 
             # send gui updates
             if vie.TrainingInterface is not None:
-                vie.TrainingInterface.send_message("strStatus", 'V=' + vie.DataSink.get_voltage() + ' ' + output['status'])
+                vie.TrainingInterface.send_message("strStatus", vie.DataSink.get_status_msg() + ' ' + output['status'])
                 vie.TrainingInterface.send_message("strOutputMotion", output['decision'])
                 msg = '{} [{:.0f}]'.format(vie.training_motion, round(vie.TrainingData.get_totals(vie.training_id), -1))
                 vie.TrainingInterface.send_message("strTrainingMotion", msg)

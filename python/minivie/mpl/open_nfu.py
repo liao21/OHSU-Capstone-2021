@@ -6,6 +6,7 @@
 
 import time
 import threading
+import subprocess
 import socket
 import logging
 import struct
@@ -14,8 +15,8 @@ import mpl
 
 
 class NfuUdp:
-    """ 
-    Python Class for NFU connections 
+    """
+    Python Class for NFU connections
 
     Hostname is the IP of the NFU
     UdpTelemPort is where percepts and EMG from NFU are received locally
@@ -39,7 +40,16 @@ class NfuUdp:
 
         self.__active_connection = True
 
-        self.mpl_status = None  # updated by heartbeat messages
+        # mpl_status updated by heartbeat messages
+        self.mpl_status = {
+            'nfu_state': 'NULL',
+            'lc_software_state': 'NULL',
+            'lmc_software_state': [0,0,0,0,0,0,0],
+            'bus_voltage': 0.0,
+            'nfu_ms_per_CMDDOM': 0.0,
+            'nfu_ms_per_ACTUATEMPL': 0.0,
+        }
+
 
     def is_alive(self):
         with self.__lock:
@@ -47,17 +57,40 @@ class NfuUdp:
         return val
 
     def get_voltage(self):
-        if self.is_alive() and self.mpl_status is not None:
-            return '{:6.2f}'.format(self.mpl_status['bus_voltage'])
-        else:
-            return 'MPL_DISCONNECTED'
+        # returns the battery voltage as a string
+        return '{:6.2f}'.format(self.mpl_status['bus_voltage'])
+
+    def get_temperature(self):
+        # Get the processor temperature from the system
+        # returns float
+        # units is celsius
+
+        try:
+            with open('/sys/class/thermal/thermal_zone0/temp','r') as f:
+                contents = f.read()
+            return float(contents) / 1000.0
+        except FileNotFoundError:
+            logging.warning('Failed to get system processor temperature')
+            return 0.0
+
+    def get_status_msg(self):
+        # returns a general purpose status message about the system state
+        # e.g. ' 22.5V 72.6C'
+
+        return '{0:4.1f}V {1:3.0f}C'.format(self.mpl_status['bus_voltage'],self.get_temperature())
 
     def connect(self):
+        # open up the socket and bind to IP address
 
+        # log socket creation
         logging.info('Setting up UDP comms on port {}. Default destination is {}:{}:'.format(
             self.udp['TelemPort'], self.udp['Hostname'], self.udp['CommandPort']))
+
+        # create socket
         self.__sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # bind to any IP address at the 'Telemetry' port (the port on which percepts are received)
         self.__sock.bind(('0.0.0.0', self.udp['TelemPort']))
+        # set timeout in seconds
         self.__sock.settimeout(3.0)
 
         # Create a thread for processing new data
@@ -77,13 +110,13 @@ class NfuUdp:
         self.stop()
 
     def message_handler(self):
-        # Loop forever to receive data
+        # Loop forever to receive data via UDP
         #
         # This is a thread to receive data as soon as it arrives.
         while True:
             # Blocking call until data received
             try:
-                # receive call will error if socket closed on exit
+                # receive call will error if socket closed externally (i.e. on exit)
                 data, address = self.__sock.recvfrom(8192)  # blocks until timeout or socket closed
 
                 # if the above function returns (without error) it means we have a connection
@@ -110,23 +143,24 @@ class NfuUdp:
                 # break so that the thread can terminate
                 break
 
-            if len(data) < 2:
-                logging.warning('Message received was too small')
+            # Get the message ID
+            if len(data) < 3:
+                logging.warning('Message received was too small. Minimum message size is 3 bytes')
                 continue
             else:
-                msg_length = data[0]
-                msg_id = data[1]
-                print('Got NFU MSG ID = {} LEN = {}/n'.format(msg_id,msg_length))
+                msg_id = ord(data[2])
+                #print('Got NFU MSG ID = {} LEN = {}\n'.format(msg_id,len(data)))
 
             if msg_id == mpl.NfuUdpMsgId.UDPMSGID_HEARTBEATV2:
 
                 # pass message bytes
-                msg = decode_heartbeat_msg_v2(data[2:])
+                msg = decode_heartbeat_msg_v2(data[3:])
                 with self.__lock:
                     self.mpl_status = msg
+
+                logging.info(msg)
+
                 if self.param['echoHeartbeat']:
-                    msg = 'NFU: V = {:6.2f}'.format(msg['bus_voltage'])
-                    logging.info(msg)
                     print(msg)
 
     def send_joint_angles(self, values):
@@ -202,14 +236,25 @@ def decode_heartbeat_msg_v2(msg_bytes):
     # // messages per second
     # // flag - doubled messages per handle
 
+    nfu_state_id = msg_bytes[0].view(np.uint8)
+    print(nfu_state_id)
+    lc_state_id = msg_bytes[1].view(np.uint8)
     msg = {
-        'nfu_state': str(mpl.NfuUdpMsgId(msg_bytes[0])).split('.')[1],
-        'lc_software_state': str(mpl.LcSwState(msg_bytes[1])).split('.')[1],
+        'nfu_state': nfu_state_id,
+        'lc_software_state': lc_state_id,
         'lmc_software_state': msg_bytes[2:9],
         'bus_voltage': msg_bytes[9:13].view(np.float32)[0],
         'nfu_ms_per_CMDDOM': msg_bytes[13:17].view(np.float32)[0],
         'nfu_ms_per_ACTUATEMPL': msg_bytes[17:21].view(np.float32)[0],
     }
+    #msg = {
+    #    'nfu_state': str(mpl.NfuUdpMsgId(nfu_state_id)).split('.')[1],
+    #    'lc_software_state': str(mpl.LcSwState(lc_state_id)).split('.')[1],
+    #    'lmc_software_state': msg_bytes[2:9],
+    #    'bus_voltage': msg_bytes[9:13].view(np.float32)[0],
+    #    'nfu_ms_per_CMDDOM': msg_bytes[13:17].view(np.float32)[0],
+    #    'nfu_ms_per_ACTUATEMPL': msg_bytes[17:21].view(np.float32)[0],
+    #}
 
     print(msg)
 

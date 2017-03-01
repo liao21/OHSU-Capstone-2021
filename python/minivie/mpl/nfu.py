@@ -54,9 +54,11 @@ class NfuUdp:
             val = self.__active_connection
         return val
 
-    def get_voltage(self):
+    def get_status_msg(self):
+        # returns a general purpose status message about the system state
+        # e.g. ' 22.5V'
         if self.is_alive() and self.mpl_status is not None:
-            return '{:6.2f}'.format(self.mpl_status['busVoltage'])
+            return '{:6.2f}V'.format(self.mpl_status['busVoltage'])
         else:
             return 'MPL_DISCONNECTED'
 

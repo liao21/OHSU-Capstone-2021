@@ -111,7 +111,8 @@ elif choice == 4:
     hSink.connect()
     while True:
         try:
-            time.sleep(2)
+            print(hSink.get_status_msg())
+            time.sleep(1)
         except KeyboardInterrupt:
             break
 

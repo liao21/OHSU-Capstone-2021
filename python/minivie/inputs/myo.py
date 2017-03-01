@@ -273,6 +273,7 @@ class MyoUdp(object):
 
         # 8 channel max for myo armband
         self.num_channels = 8
+        self.num_samples = num_samples
 
         # Default kinematic values
         self.__quat = (1.0, 0.0, 0.0, 0.0)
@@ -315,7 +316,6 @@ class MyoUdp(object):
 
         # Loop forever to receive data
         while True:
-            time.sleep(0.002)
             # Blocking call until data received
             try:
                 # recv call will error if socket closed on exit

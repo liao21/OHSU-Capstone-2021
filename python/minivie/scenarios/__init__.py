@@ -233,7 +233,8 @@ class Scenario(object):
         self.Plant.update()
 
         # transmit output
-        self.DataSink.send_joint_angles(self.Plant.JointPosition)
+        if self.DataSink != None:
+            self.DataSink.send_joint_angles(self.Plant.JointPosition)
 
         return self.output
 

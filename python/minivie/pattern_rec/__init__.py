@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
+import os.path
 from shutil import copyfile
 import h5py
 import datetime as dt
 import time
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-
+import csv
 
 import numpy as np
 
@@ -372,3 +373,33 @@ class TrainingData:
             copyfile(src_, dst_)
         except IOError:
             print('Failed to create file backup')
+
+    def get_motion_image(self, motion_name):
+        # Method to return motion image filename relative to www/mplHome directoy
+
+        # Ensure class name exists
+        try:
+            idx_motion = self.motion_names.index(motion_name)
+        except ValueError:
+            print('Motion name ' + motion_name + ' does not exist')
+            return None
+
+        # Parse motion name - image map file
+        pattern_rec_dir = os.path.dirname(os.path.abspath(__file__))
+        map_path = pattern_rec_dir + '\\..\\..\\www\\mplHome\\motion_name_image_map.csv'
+        mapped_motion_names = []
+        mapped_image_names = []
+        with open(map_path, 'rb') as csvfile:
+            rows = csv.reader(csvfile, delimiter=',')
+            for row in rows:
+                mapped_motion_names.append(row[0])
+                mapped_image_names.append(row[1])
+
+        # Check if queried motion name is in map file
+        if motion_name not in mapped_motion_names:
+            print('Motion name ' + motion_name + ' does not have associated image file')
+            return None
+
+        # Pull mapped image name corresponding to motion name
+        image_name = mapped_image_names[mapped_motion_names.index(motion_name)]
+        return image_name

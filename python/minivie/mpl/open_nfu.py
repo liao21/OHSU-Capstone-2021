@@ -15,8 +15,8 @@ import mpl
 
 
 class NfuUdp:
-    """ 
-    Python Class for NFU connections 
+    """
+    Python Class for NFU connections
 
     Hostname is the IP of the NFU
     UdpTelemPort is where percepts and EMG from NFU are received locally
@@ -66,9 +66,9 @@ class NfuUdp:
         # units is celsius
 
         try:
-            conn_raw = subprocess.check_output('test_temp2.bat')
-            conn_lines = conn_raw.decode('utf-8').split('\n')
-            return int(conn_lines[2]) / 1000
+            with open('/sys/class/thermal/thermal_zone0/temp','r') as f:
+                contents = f.read()
+            return float(contents) / 1000.0
         except FileNotFoundError:
             logging.warning('Failed to get system processor temperature')
             return 0.0
@@ -77,7 +77,7 @@ class NfuUdp:
         # returns a general purpose status message about the system state
         # e.g. ' 22.5V 72.6C'
 
-        return '{0:4.1f}V {1:3.1f}C'.format(self.mpl_status['bus_voltage'],self.get_temperature())
+        return '{0:4.1f}V {1:3.0f}C'.format(self.mpl_status['bus_voltage'],self.get_temperature())
 
     def connect(self):
         # open up the socket and bind to IP address
@@ -148,7 +148,7 @@ class NfuUdp:
                 logging.warning('Message received was too small. Minimum message size is 3 bytes')
                 continue
             else:
-                msg_id = data[2]
+                msg_id = ord(data[2])
                 #print('Got NFU MSG ID = {} LEN = {}\n'.format(msg_id,len(data)))
 
             if msg_id == mpl.NfuUdpMsgId.UDPMSGID_HEARTBEATV2:
@@ -236,15 +236,26 @@ def decode_heartbeat_msg_v2(msg_bytes):
     # // messages per second
     # // flag - doubled messages per handle
 
+    nfu_state_id = msg_bytes[0].view(np.uint8)
+    print(nfu_state_id)
+    lc_state_id = msg_bytes[1].view(np.uint8)
     msg = {
-        'nfu_state': str(mpl.NfuUdpMsgId(msg_bytes[0])).split('.')[1],
-        'lc_software_state': str(mpl.LcSwState(msg_bytes[1])).split('.')[1],
+        'nfu_state': nfu_state_id,
+        'lc_software_state': lc_state_id,
         'lmc_software_state': msg_bytes[2:9],
         'bus_voltage': msg_bytes[9:13].view(np.float32)[0],
         'nfu_ms_per_CMDDOM': msg_bytes[13:17].view(np.float32)[0],
         'nfu_ms_per_ACTUATEMPL': msg_bytes[17:21].view(np.float32)[0],
     }
+    #msg = {
+    #    'nfu_state': str(mpl.NfuUdpMsgId(nfu_state_id)).split('.')[1],
+    #    'lc_software_state': str(mpl.LcSwState(lc_state_id)).split('.')[1],
+    #    'lmc_software_state': msg_bytes[2:9],
+    #    'bus_voltage': msg_bytes[9:13].view(np.float32)[0],
+    #    'nfu_ms_per_CMDDOM': msg_bytes[13:17].view(np.float32)[0],
+    #    'nfu_ms_per_ACTUATEMPL': msg_bytes[17:21].view(np.float32)[0],
+    #}
 
-    #print(msg)
+    print(msg)
 
     return msg

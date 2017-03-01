@@ -316,7 +316,6 @@ class MyoUdp(object):
 
         # Loop forever to receive data
         while True:
-            time.sleep(0.002)
             # Blocking call until data received
             try:
                 # recv call will error if socket closed on exit

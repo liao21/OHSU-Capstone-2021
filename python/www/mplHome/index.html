@@ -25,6 +25,55 @@
                 border-left: 5px #666 outset !important;
             }
         }
+		
+		#mtProgressBackground {
+		  width: 100%;
+		  height: 30px;
+		  background-color: #ddd;
+		}
+
+		#mtProgressBar {
+		  width: 0%;
+		  height: 100%;
+		  background-color: #4CAF50;
+		}
+
+		#mtProgressLabel {
+		  text-align: center;
+		  line-height: 30px;
+		  color: white;
+		}
+		  
+		#tacJoint1Background, #tacJoint2Background, #tacJoint3Background {
+		  width: 100%;
+		  height: 30px;
+		  background-color: #ddd;
+		  position:relative;
+		}
+		
+		#tacJoint1Target, #tacJoint2Target , #tacJoint3Target{
+		  width: 10%;
+		  height: 100%;
+		  background-color: #1E90FF;
+		  margin-left: 0%;
+		  position: absolute;
+		}
+
+		#tacJoint1Bar, #tacJoint2Bar, #tacJoint3Bar {
+		  width: 5%;
+		  height: 100%;
+		  background-color: #4CAF50;
+		  margin-left: 0%;
+          position: absolute;
+          z-index: 10;
+		}
+
+		#tacJoint1Label, #tacJoint2Label, #tacJoint3Label {
+		  text-align: center;
+		  line-height: 30px;
+		  color: white;
+		 }
+		 
     </style>
 
     
@@ -87,7 +136,8 @@
             $("#ID_PAUSE_HAND").on("mousedown", function() {sendCmd("Cmd:PauseHand")} );
             $("#ID_SHUTDOWN").on("mousedown", function() {sendCmd("Cmd:Shutdown")} );
             $("#ID_ASSESSMENT_MT").on("mousedown", function() {sendCmd("Cmd:StartMotionTester")} );
-            $("#ID_ASSESSMENT_TAC").on("mousedown", function() {sendCmd("Cmd:StartAssessment")} );
+            $("#ID_ASSESSMENT_TAC1").on("mousedown", function() {sendCmd("Cmd:StartTAC1")} );
+			$("#ID_ASSESSMENT_TAC3").on("mousedown", function() {sendCmd("Cmd:StartTAC3")} );
             
         };
         
@@ -128,14 +178,96 @@
 					 $("#msg_train").text(cmd_data);
 				 }         
 				 if (cmd_type == "strOutputMotion") {
-					 $("#msg_output").text(cmd_data);
+					 $("#main_output").text(cmd_data);
+					 $("#mt_output").text(cmd_data);
+					 $("#tac_output").text(cmd_data);
 				 }
                  if (cmd_type == "strMotionTester") {
-					 $("#assessment_status").text(cmd_data);
+					 $("#mt_status").text(cmd_data);
+				 }
+				 if (cmd_type == "strMotionTesterProgress") {
+					 updateMTProgressBar(cmd_data);
+				 }
+				 if (cmd_type == "strMotionTesterImage") {
+					 updateMTImage(cmd_data);
+				 }
+				 if (cmd_type == "strTAC") {
+					 $("#tac_status").text(cmd_data);
+				 }
+				 if (cmd_type == "strTACJoint1Name") {
+					 $("#tacJoint1Name").text(cmd_data);
+				 }
+				 if (cmd_type == "strTACJoint1Bar") {
+					 updateTACJointBar(cmd_data, "tacJoint1Bar");
+				 }
+				 if (cmd_type == "strTACJoint1Target") {
+					updateTACJointTarget(cmd_data, "tacJoint1Target");
+				 }
+				 if (cmd_type == "strTACJoint1Error") {
+					updateTACJointError(cmd_data, "tacJoint1Target");
+				 }
+				 if (cmd_type == "strTACJoint2Name") {
+					 $("#tacJoint2Name").text(cmd_data);
+				 }
+				 if (cmd_type == "strTACJoint2Bar") {
+					 updateTACJointBar(cmd_data, "tacJoint2Bar");
+				 }
+				 if (cmd_type == "strTACJoint2Target") {
+					updateTACJointTarget(cmd_data, "tacJoint2Target");
+				 }
+				 if (cmd_type == "strTACJoint2Error") {
+					updateTACJointError(cmd_data, "tacJoint2Target");
+				 }
+				 if (cmd_type == "strTACJoint3Name") {
+					 $("#tacJoint3Name").text(cmd_data);
+				 }
+				 if (cmd_type == "strTACJoint3Bar") {
+					 updateTACJointBar(cmd_data, "tacJoint3Bar");
+				 }
+				 if (cmd_type == "strTACJoint3Target") {
+					updateTACJointTarget(cmd_data, "tacJoint3Target");
+				 }
+				 if (cmd_type == "strTACJoint3Error") {
+					updateTACJointError(cmd_data, "tacJoint3Target");
 				 }
 			 }
-         }
+         }   
 
+		 // Function to update the motion tester progress bar based on user input
+		 // See http://www.w3schools.com/howto/howto_js_progressbar.asp for details
+		function updateMTProgressBar(percent) {
+			var elem = document.getElementById("mtProgressBar");   
+			elem.style.width = percent + '%'; 
+			document.getElementById("mtProgressLabel").innerHTML = percent * 1  + '%';
+		}
+		
+		// Function to update motion tester image based on class being assessed
+		function updateMTImage(imageFile){
+			document.getElementById("ID_MT_IMAGE").src=imageFile
+		}
+		
+		function updateTACJointBar(value, elementId) {
+			var elem = document.getElementById(elementId);   
+			elem.style.marginLeft = value - 2.5 + '%'; // The 2.5 is to account for 5% width
+			document.getElementById("tacJoint1Label").innerHTML = Math.round(value * 1);
+		}
+		
+		function updateTACJointError(value, elementId) {
+			var elem = document.getElementById(elementId); 
+            elem.style.width = value*2 + '%'			
+		}
+		
+		function updateTACJointTarget(value, elementId) {
+			var elem = document.getElementById(elementId);
+			percentChar = elem.style.width
+			percentNum  = percentChar.substring(0, percentChar.length - 1) // Remove percent sign
+			halfWidth = percentNum * 1 / 2
+			valuePercent = value * 1
+			newMargin = valuePercent  - halfWidth
+			newMarginPercent = newMargin * 1 + '%'
+			elem.style.marginLeft = newMarginPercent;
+		}
+		
     </script>
 
 </head>
@@ -143,80 +275,131 @@
 
 
 <body>
-
-    <div data-role="page">
+	<!-- Main Mobile Trainer Page -->
+    <div data-role="page" id="ID_MAIN_PAGE">
         <div data-role="header" data-theme="b" >
             <h1>MPL Mobile Trainer</h1>
-        </div>
-        <!-- <div data-role="content">	 -->
+        </div><!-- /header -->
+		<div data-role="content">
+			<div data-role="collapsible" data-collapsed-icon="gear" data-expanded-icon="gear">
+			<h4>Configure</h4>
+			<ul data-role="listview" data-inset="false">
+			<li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_SPEEDUP">Increase Arm Speed</a></li>
+			<li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_SPEEDDOWN">Decrease Arm Speed</a></li>
+			<li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_HAND_SPEED_UP">Increase Hand Speed</a></li>
+			<li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_HAND_SPEED_DOWN">Decrease Hand Speed</a></li>
+			</ul>
+			</div>
+			
+			<div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
+			<h4>Options</h4>
+			<ul data-role="listview" data-inset="false">
+			<li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-forbidden" id="ID_PAUSE">Pause All Motion</a></li>
+			<li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-forbidden" id="ID_PAUSE_HAND">Pause Hand</a></li>
+			<li></li>
+			<li><a href="#ID_TAC_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-star">TAC Assessment</a></li>
+			<li><a href="#ID_MT_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-star">Motion Tester</a></li>                
+			<li></li>
+			<li><a href="#popupDialog" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-icon="power" data-theme="a" data-iconpos="right">Shutdown MPL</a></li>
+			</ul>
+			</div>
 
-        <div data-role="collapsible" data-collapsed-icon="gear" data-expanded-icon="gear">
-        <h4>Configure</h4>
-        <ul data-role="listview" data-inset="false">
-        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_SPEEDUP">Increase Arm Speed</a></li>
-        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_SPEEDDOWN">Decrease Arm Speed</a></li>
-        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_HAND_SPEED_UP">Increase Hand Speed</a></li>
-        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_HAND_SPEED_DOWN">Decrease Hand Speed</a></li>
-        </ul>
-        </div>
-        
-        <div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
-        <h4>Options</h4>
-        <ul data-role="listview" data-inset="false">
-        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-forbidden" id="ID_PAUSE">Pause All Motion</a></li>
-        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-forbidden" id="ID_PAUSE_HAND">Pause Hand</a></li>
-        <li></li>
-        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-star" id="ID_ASSESSMENT_TAC">Start TAC Assessment</a></li>
-        <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-star" id="ID_ASSESSMENT_MT">Start Motion Test</a></li>                
-        <li>Assesment Status: <p = id="assessment_status"/></li>
-        <li></li>
-        <li><a href="#popupDialog" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-icon="power" data-theme="a" data-iconpos="right">Shutdown MPL</a></li>
-        </ul>
-        </div>
+			<div data-role="popup" id="popupDialog" data-overlay-theme="a" data-theme="b" data-dismissible="false" style="max-width:400px;" class="ui-corner-all">
+			<div data-role="header" data-theme="a" class="ui-corner-top">
+			<h1>Confirm Shutdown</h1>
+			</div>
+			<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+			<h3 class="ui-title">Are you sure you want to shutdown?</h3>
+			<a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Cancel</a>
+			<a href="#" data-role="button" data-inline="true" data-rel="back" data-transition="flow" data-theme="b" id="ID_SHUTDOWN">OK</a>
+			</div>
+			</div>
+			
+			<p>Selected Motion: <span = id="msg_train"/></p>
+			<div id="blueimp-image-carousel" class="blueimp-gallery blueimp-gallery-controls blueimp-gallery-carousel">
+				<div class="slides"></div>
+				<h3 class="title"></h3>
+				<a class="prev">‹</a>
+				<a class="next">›</a>
+			</div>
 
-        <div data-role="popup" id="popupDialog" data-overlay-theme="a" data-theme="b" data-dismissible="false" style="max-width:400px;" class="ui-corner-all">
-        <div data-role="header" data-theme="a" class="ui-corner-top">
-        <h1>Confirm Shutdown</h1>
-        </div>
-        <div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
-        <h3 class="ui-title">Are you sure you want to shutdown?</h3>
-        <a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Cancel</a>
-        <a href="#" data-role="button" data-inline="true" data-rel="back" data-transition="flow" data-theme="b" id="ID_SHUTDOWN">OK</a>
-        </div>
-        </div>
-        
-        <p>Selected Motion: <span = id="msg_train"/></p>
-        <div id="blueimp-image-carousel" class="blueimp-gallery blueimp-gallery-controls blueimp-gallery-carousel">
-            <div class="slides"></div>
-            <h3 class="title"></h3>
-            <a class="prev">‹</a>
-            <a class="next">›</a>
-        </div>
+			<div data-role="controlgroup" data-type="horizontal">
+				<a href="#" class="ui-btn" id="ID_ADD">Add</a>
+				<a href="#" class="ui-btn" id="ID_STOP">Stop</a>
+				<a href="#" class="ui-btn" id="ID_CLEARCLASS">Clear</a>
+				<a href="#" class="ui-btn" id="ID_CLEARALL">Reset</a>
+				<a href="#" class="ui-btn" id="ID_SAVE">Save</a>
+				<!-- <a href="#" class="ui-btn" id="ID_TRAIN">Train</a> -->
+			</div>
 
-        <div data-role="controlgroup" data-type="horizontal">
-            <a href="#" class="ui-btn" id="ID_ADD">Add</a>
-            <a href="#" class="ui-btn" id="ID_STOP">Stop</a>
-            <a href="#" class="ui-btn" id="ID_CLEARCLASS">Clear</a>
-            <a href="#" class="ui-btn" id="ID_CLEARALL">Reset</a>
-            <a href="#" class="ui-btn" id="ID_SAVE">Save</a>
-            <!-- <a href="#" class="ui-btn" id="ID_TRAIN">Train</a> -->
-        </div>
+			<script src="blueimp-gallery/js/blueimp-helper.js"></script>
+			<script src="blueimp-gallery/js/blueimp-gallery.js"></script>
+			<script src="blueimp-gallery/js/blueimp-gallery-fullscreen.js"></script>
+			<script src="blueimp-gallery/js/blueimp-gallery-indicator.js"></script>
+			<script src="blueimp-gallery/js/vendor/jquery.js"></script>
+			<script src="blueimp-gallery/js/jquery.blueimp-gallery.js"></script>
+			<script src="gallery-links.js"></script>
 
-        <script src="blueimp-gallery/js/blueimp-helper.js"></script>
-        <script src="blueimp-gallery/js/blueimp-gallery.js"></script>
-        <script src="blueimp-gallery/js/blueimp-gallery-fullscreen.js"></script>
-        <script src="blueimp-gallery/js/blueimp-gallery-indicator.js"></script>
-        <script src="blueimp-gallery/js/vendor/jquery.js"></script>
-        <script src="blueimp-gallery/js/jquery.blueimp-gallery.js"></script>
-        <script src="gallery-links.js"></script>
+			<p>Classifying: <span = id="main_output"/></p>
+			<p>Status: <span = id="msg_status"/></p>
+			<p>Server: <span = id="statusMsg"/></p>
 
-        <p>Classifying: <span = id="msg_output"/></p>
-        <p>Status: <span = id="msg_status"/></p>
-        <p>Server: <span = id="statusMsg"/></p>
-
-        <!-- </div><!-- /content -->
-    </div>
-    <!-- /page -->
+        </div><!-- /content -->
+    </div><!-- /page -->
+	
+	<!-- Motion Tester Page -->
+	<div data-role="page" id="ID_MT_PAGE">
+        <div data-role="header" data-theme="b" >
+            <h1>Motion Tester</h1>
+			<a href="#ID_MAIN_PAGE" data-role="button" data-icon="arrow-l">Back</a>
+        </div><!-- /header -->
+		<div data-role="content">
+			<a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_ASSESSMENT_MT">Start Motion Tester</a>
+			<p>Status: <span = id="mt_status"/></p>
+			<p>Classifying: <span = id="mt_output"/></p>
+			<img src="img_arm_motions/No_Movement.png" id="ID_MT_IMAGE" alt="Motion Image" width="561" height="312">
+			<div id="mtProgressBackground">
+				<div id="mtProgressBar">
+					<div id="mtProgressLabel">0%</div>
+				 </div>
+			</div>
+		</div><!-- /content -->
+    </div><!-- /page -->
+	
+	<!-- TAC Page -->
+	<div data-role="page" id="ID_TAC_PAGE">
+        <div data-role="header" data-theme="b" >
+            <h1>Target Achievement Control</h1>
+			<a href="#ID_MAIN_PAGE" data-role="button" data-icon="arrow-l">Back</a>
+		</div><!-- /header -->
+		<div data-role="content">
+			<a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_ASSESSMENT_TAC1">Start TAC1</a>
+			<a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_ASSESSMENT_TAC3">Start TAC3</a>
+			<p>Status: <span = id="tac_status"/></p>
+			<p>Classifying: <span = id="tac_output"/></p>
+			<p><span = id="tacJoint1Name"/></p>
+            <div id="tacJoint1Background">
+				<div id="tacJoint1Target"></div>
+				<div id="tacJoint1Bar">
+					<div id="tacJoint1Label">0</div>
+				 </div>
+			</div>
+			<p><span = id="tacJoint2Name"/></p>
+            <div id="tacJoint2Background">
+				<div id="tacJoint2Target"></div>
+				<div id="tacJoint2Bar">
+					<div id="tacJoint2Label">0</div>
+				 </div>
+			</div>
+			<p><span = id="tacJoint3Name"/></p>
+            <div id="tacJoint3Background">
+				<div id="tacJoint3Target"></div>
+				<div id="tacJoint3Bar">
+					<div id="tacJoint3Label">0</div>
+				 </div>
+			</div>
+		</div><!-- /content -->
+    </div><!-- /page -->
 
 </body>
 

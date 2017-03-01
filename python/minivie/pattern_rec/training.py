@@ -21,7 +21,11 @@ class TrainingManagerSpacebrew(object):
         
         # store the last messages so we don't re-transmit a lot of repeated data
         self.last_msg = {'strStatus': '', 'strOutputMotion': '', 'strTrainingMotion': '', 'strMotionTester': '',
-                         'strTAC': ''}
+                         'strTAC': '', 'strMotionTesterProgress': '', 'strMotionTesterImage': '',
+                         'strTACJoint1Bar': '','strTACJoint1Target': '','strTACJoint1Error': '','strTACJoint1Name': '',
+                         'strTACJoint2Bar': '','strTACJoint2Target': '','strTACJoint2Error': '','strTACJoint2Name': '',
+                         'strTACJoint3Bar': '','strTACJoint3Target': '','strTACJoint3Error': '','strTACJoint3Name': '',
+                         }
         
         # keep count of skipped messages so we can send at some nominal rate
         self.msg_skip_count = 0

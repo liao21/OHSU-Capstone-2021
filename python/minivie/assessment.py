@@ -221,7 +221,7 @@ class MotionTester(object):
         g1.attrs['description'] = t + 'Motion Tester Data'
         encoded = [a.encode('utf8') for a in self.vie.TrainingData.motion_names]
         g1.create_dataset('AllClassNames', shape=(len(encoded), 1), data=encoded)
-        g1.create_dataset('ClassIdToTest', self.class_id_to_test)
+        g1.create_dataset('ClassIdToTest', data=self.class_id_to_test, shape=(len(self.class_id_to_test), 1))
 
         g2 = g1.create_group('Data')
 
@@ -233,6 +233,9 @@ class MotionTester(object):
 
         h5.close()
         self.send_status('Saved ' + self.filename)
+
+        # Clear data for next assessment
+        self.reset()
 
 
 class TargetAchievementControl(object):
@@ -269,7 +272,7 @@ class TargetAchievementControl(object):
         self.position_time_history = []  # Plant position
         self.intent_time_history = []  # Intent at each test during assessment
         self.time_history = []  # time list
-        self.completion_time = 0.0  # completion time
+        self.completion_time = []  # completion time
         self.lower_limit = []
         self.upper_limit = []
         self.data = []
@@ -474,6 +477,8 @@ class TargetAchievementControl(object):
         self.lower_limit = lower_limit_list
         self.upper_limit = upper_limit_list
         self.position_time_history = np.empty([0, len(joint_name_list)])  # Plant position
+        self.intent_time_history = []
+        self.completion_time = -1.0
         self.time_history = []  # time list
         position_row = np.empty([1, len(joint_name_list)])
 
@@ -559,6 +564,7 @@ class TargetAchievementControl(object):
         # Add data from current joint assessmet
         self.add_data()
 
+
         self.send_status(joint_name + 'Assessment Completed')
 
         return move_complete
@@ -611,16 +617,19 @@ class TargetAchievementControl(object):
         for i,d in enumerate(self.data):
             g2 = g1.create_group('Trial ' + str(i+1))
             encoded = [a.encode('utf8') for a in d['target_joint']] # Need to encode strings
-            g2.create_dataset('target_joint', shape=(1, len(encoded)), data=encoded)
-            g2.create_dataset('target_position', data=d['target_position'], shape=(1, len(d['target_position'])))
-            g2.create_dataset('target_error', data=d['target_error'], shape=(1, len(d['target_error'])))
+            g2.create_dataset('target_joint', shape=(len(encoded), 1), data=encoded)
+            g2.create_dataset('target_position', data=d['target_position'], shape=(len(d['target_position']), 1))
+            g2.create_dataset('target_error', data=d['target_error'], shape=(len(d['target_error']), 1))
             encoded = [a.encode('utf8') for a in d['intent_time_history']]
-            g2.create_dataset('intent_time_history', shape=(len(d['intent_time_history']), 1), data=encoded)
-            g2.create_dataset('position_time_history', shape=d['position_time_history'].shape,
-                              data=d['position_time_history'])
-            g2.create_dataset('time_history', shape=(len(d['time_history']), 1),
+            g2.create_dataset('intent_time_history', shape=(1, len(d['intent_time_history'])), data=encoded)
+            g2.create_dataset('position_time_history', shape=d['position_time_history'].shape[::-1],
+                              data=d['position_time_history'].transpose())
+            g2.create_dataset('time_history', shape=(1, len(d['time_history'])),
                               data=d['time_history'])
-            g2.create_dataset('completion_time', (d['completion_time'],))
+            g2.create_dataset('completion_time', data=[d['completion_time']], shape=(1,1))
 
         h5.close()
         self.send_status('Saved ' + self.filename)
+
+        # Clear data for next assessment
+        self.reset()

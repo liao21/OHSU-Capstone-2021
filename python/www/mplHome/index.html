@@ -198,7 +198,7 @@
 					 $("#tacJoint1Name").text(cmd_data);
 				 }
 				 if (cmd_type == "strTACJoint1Bar") {
-					 updateTACJointBar(cmd_data, "tacJoint1Bar");
+					 updateTACJointBar(cmd_data, "tacJoint1Bar", "tacJoint1Label");
 				 }
 				 if (cmd_type == "strTACJoint1Target") {
 					updateTACJointTarget(cmd_data, "tacJoint1Target");
@@ -210,7 +210,7 @@
 					 $("#tacJoint2Name").text(cmd_data);
 				 }
 				 if (cmd_type == "strTACJoint2Bar") {
-					 updateTACJointBar(cmd_data, "tacJoint2Bar");
+					 updateTACJointBar(cmd_data, "tacJoint2Bar", "tacJoint2Label");
 				 }
 				 if (cmd_type == "strTACJoint2Target") {
 					updateTACJointTarget(cmd_data, "tacJoint2Target");
@@ -222,7 +222,7 @@
 					 $("#tacJoint3Name").text(cmd_data);
 				 }
 				 if (cmd_type == "strTACJoint3Bar") {
-					 updateTACJointBar(cmd_data, "tacJoint3Bar");
+					 updateTACJointBar(cmd_data, "tacJoint3Bar", "tacJoint3Label");
 				 }
 				 if (cmd_type == "strTACJoint3Target") {
 					updateTACJointTarget(cmd_data, "tacJoint3Target");
@@ -246,10 +246,10 @@
 			document.getElementById("ID_MT_IMAGE").src=imageFile
 		}
 		
-		function updateTACJointBar(value, elementId) {
-			var elem = document.getElementById(elementId);   
+		function updateTACJointBar(value, barId, labelId) {
+			var elem = document.getElementById(barId);   
 			elem.style.marginLeft = value - 2.5 + '%'; // The 2.5 is to account for 5% width
-			document.getElementById("tacJoint1Label").innerHTML = Math.round(value * 1);
+			document.getElementById(labelId).innerHTML = Math.round(value * 1);
 		}
 		
 		function updateTACJointError(value, elementId) {

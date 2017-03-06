@@ -375,6 +375,25 @@
 		<div data-role="content">
 			<a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_ASSESSMENT_TAC1">Start TAC1</a>
 			<a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_ASSESSMENT_TAC3">Start TAC3</a>
+			
+			<div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
+				<h4>Options</h4>
+				<ul data-role="listview" data-inset="false">
+				<div class="ui-field-contain">
+				  <label for="name">Repetitions:</label>
+				  <input type="number" name="name" id="ID_REPETITIONS" value="1">
+				</div>
+				<div class="ui-field-contain">
+				  <label for="name">Error (Degrees):</label>
+				  <input type="number" name="name" id="ID_DEGREE_ERROR" value="5">
+				</div>
+				<div class="ui-field-contain">
+				  <label for="name">Error (Grasp %):</label>
+				  <input type="number" name="name" id="ID_GRASP_ERROR" value="5">
+				</div>
+				</ul>
+			</div>
+			
 			<p>Status: <span = id="tac_status"/></p>
 			<p>Classifying: <span = id="tac_output"/></p>
 			<p><span = id="tacJoint1Name"/></p>

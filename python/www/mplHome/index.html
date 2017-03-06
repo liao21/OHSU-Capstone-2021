@@ -138,11 +138,17 @@
             $("#ID_ASSESSMENT_MT").on("mousedown", function() {sendCmd("Cmd:StartMotionTester")} );
             $("#ID_ASSESSMENT_TAC1").on("mousedown", function() {sendCmd("Cmd:StartTAC1")} );
 			$("#ID_ASSESSMENT_TAC3").on("mousedown", function() {sendCmd("Cmd:StartTAC3")} );
+			
+			// listen for text changes
+			$("#ID_REPETITIONS").change(function() {sendCmd("Cmd:TACRepetitionsUpdate" + $("#ID_REPETITIONS").val())} );
+			$("#ID_DEGREE_ERROR").change(function() {sendCmd("Cmd:TACDegreeErrorUpdate" + $("#ID_DEGREE_ERROR").val())} );
+			$("#ID_GRASP_ERROR").change(function() {sendCmd("Cmd:TACGraspErrorUpdate" + $("#ID_GRASP_ERROR").val())} );
             
         };
         
         // global function called from index and galleryLinks.js
         function sendCmd(cmd) {
+		
             console.log('Send ' + cmd);
             sb.send("cmdString", "string", cmd);
         };

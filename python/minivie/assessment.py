@@ -252,6 +252,13 @@ class TargetAchievementControl(object):
         self.filename = 'TAC1_LOG'
         self.file_ext = '.hdf5'
 
+        # Default assessment parameters
+        self.target_error_degree = 5.0
+        self.target_error_percent = 5.0
+        self.repetitions = 1
+        self.timeout = 45.0
+        self.dwell_time = 2.0
+
         # Data storage
         self.target_joint = [] # Joint or grasp id
         self.target_position = [] # Target position in degrees (joints) or percentage (grasps)
@@ -303,10 +310,30 @@ class TargetAchievementControl(object):
                 self.thread.name = 'TAC1'
                 self.thread.start()
 
-            if cmd_data == 'StartTAC3':
+            elif cmd_data == 'StartTAC3':
                 self.thread = threading.Thread(target=self.start_assessment(condition=3))
                 self.thread.name = 'TAC3'
                 self.thread.start()
+
+            elif 'TACRepetitionsUpdate' in cmd_data:
+                new_value = cmd_data.split('Update')[1]
+                self.repetitions = int(round(float(new_value)))
+
+            elif 'TACDegreeErrorUpdate' in cmd_data:
+                new_value = cmd_data.split('Update')[1]
+                self.target_error_degree = float(new_value)
+
+            elif 'TACGraspErrorUpdate' in cmd_data:
+                new_value = cmd_data.split('Update')[1]
+                self.target_error_percent = float(new_value)
+
+            elif 'TACTimeoutUpdate' in cmd_data:
+                new_value = cmd_data.split('Update')[1]
+                self.timeout = float(new_value)
+
+            elif 'TACDwellTimeUpdate' in cmd_data:
+                new_value = cmd_data.split('Update')[1]
+                self.dwell_time = float(new_value)
 
     def start_assessment(self, condition=1):
         # condition should be
@@ -319,13 +346,10 @@ class TargetAchievementControl(object):
 
         # Set condition specific parameters
         if condition==1:
-            num_trials = 2
             self.filename='TAC1_LOG'
         elif condition==2:
-            num_trials = 2
             self.filename = 'TAC2_LOG'
         elif condition==3:
-            num_trials = 1
             self.filename = 'TAC3_LOG'
         else:
             print('Condition should be 1,2, or 3.\n')
@@ -408,7 +432,7 @@ class TargetAchievementControl(object):
                 return
 
         # Assess joints and grasps
-        for i_rep in range(num_trials):
+        for i_rep in range(self.repetitions):
             self.send_status('New TAC Assessment Trial')
 
             # For TAC1, assess one joint at a time
@@ -427,11 +451,9 @@ class TargetAchievementControl(object):
 
         # Set TAC parameters
         dt = 0.1 # Time between assessment queries
-        dwell_time = float(2) # Time in target before pass
+        dwell_time = self.dwell_time # Time in target before pass
+        timeout = self.timeout
         move_complete = False # Flag fo move completion
-        # Set timeout condition, longer for TAC3
-        if self._condition == 1 or self._condition == 2: timeout = float(15)
-        else: timeout = float(45)
 
         # Set joint-specific parameters
         target_error_list = [] # Error range allowed
@@ -442,7 +464,7 @@ class TargetAchievementControl(object):
         for i, joint_name in enumerate(joint_name_list):
             is_grasp = is_grasp_list[i]
             if is_grasp:
-                target_error_list.append(float(5))
+                target_error_list.append(float(self.target_error_percent))
                 min_start_difference_list.append(float(25))
                 lower_limit_list.append(float(0))
                 upper_limit_list.append(float(100))
@@ -456,7 +478,7 @@ class TargetAchievementControl(object):
                 target_position_list.append(target_position)
 
             else:
-                target_error_list.append(float(5))
+                target_error_list.append(float(self.target_error_degree))
                 min_start_difference_list.append(float(25))
                 mplId = getattr(MplId, joint_name)
                 lower_limit_list.append(self.vie.Plant.lowerLimit[mplId] * 180.0 / math.pi)
@@ -489,7 +511,7 @@ class TargetAchievementControl(object):
             self.update_gui_joint_target(3)
 
         # Start once user goes to no-movement, then first non- no movement classification is given
-        self.send_status('Testing Joint - ' + joint_name + ' - Return to "No Movement" and Begin')
+        self.send_status('Testing Joint(s) - ' + ', '.join(joint_name_list) + ' - Return to "No Movement" and Begin')
         entered_no_movement = False
         while True:
             current_class = self.vie.output['decision']
@@ -522,9 +544,11 @@ class TargetAchievementControl(object):
                 current_class = self.vie.output['decision']
 
                 # Output status
-                self.send_status('Testing Joint - ' + joint_name + ' - Current Position - ' + str(position) +
-                                 ' - Target Position - ' + str(target_position) +
-                                 ' - Time in Target - ' + str(time_in_target))
+                self.send_status('Testing Joint(s) - ' + ', '.join(joint_name_list) + '- Dwell Time - ' + "{0:0.1f}".format(time_in_target))
+                # Commented out, too cluttered for now, could potentially allow this output with verbose option
+                #self.send_status('Testing Joint - ' + joint_name + ' - Current Position - ' + str(position) +
+                #                 ' - Target Position - ' + str(target_position) +
+                #                 ' - Time in Target - ' + str(time_in_target))
 
                 # If within +- target_error of target_position, then flag this joint as within target
                 if (position < (target_position + target_error)) and (position > (target_position - target_error)):

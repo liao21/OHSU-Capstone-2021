@@ -135,16 +135,9 @@
             $("#ID_PAUSE").on("mousedown", function() {sendCmd("Cmd:Pause")} );
             $("#ID_PAUSE_HAND").on("mousedown", function() {sendCmd("Cmd:PauseHand")} );
             $("#ID_SHUTDOWN").on("mousedown", function() {sendCmd("Cmd:Shutdown")} );
-            $("#ID_ASSESSMENT_MT").on("mousedown", function() {sendCmd("Cmd:StartMotionTester")} );
-            $("#ID_ASSESSMENT_TAC1").on("mousedown", function() {sendCmd("Cmd:StartTAC1")} );
-			$("#ID_ASSESSMENT_TAC3").on("mousedown", function() {sendCmd("Cmd:StartTAC3")} );
-			
-			// listen for text changes
-			$("#ID_REPETITIONS").change(function() {sendCmd("Cmd:TACRepetitionsUpdate" + $("#ID_REPETITIONS").val())} );
-            $("#ID_TIMEOUT").change(function() {sendCmd("Cmd:TACTimeoutUpdate" + $("#ID_TIMEOUT").val())} );
-            $("#ID_DWELL_TIME").change(function() {sendCmd("Cmd:TACDwellTimeUpdate" + $("#ID_DWELL_TIME").val())} );
-			$("#ID_DEGREE_ERROR").change(function() {sendCmd("Cmd:TACDegreeErrorUpdate" + $("#ID_DEGREE_ERROR").val())} );
-			$("#ID_GRASP_ERROR").change(function() {sendCmd("Cmd:TACGraspErrorUpdate" + $("#ID_GRASP_ERROR").val())} );
+            $("#ID_ASSESSMENT_MT").on("mousedown", function() {startMT()} );
+            $("#ID_ASSESSMENT_TAC1").on("mousedown", function() {startTAC1()} );
+            $("#ID_ASSESSMENT_TAC3").on("mousedown", function() {startTAC2()} );
             
         };
         
@@ -240,7 +233,35 @@
 				 }
 			 }
          }   
-
+           
+         function startMT() {
+            // Gather parameters to send to motion tester
+            var repetitions = $("#ID_MT_REPETITIONS").val()
+            var timeout = $("#ID_MT_TIMEOUT").val()
+            var max_classifications = $("#ID_MT_MAX_CLASSIFICATIONS").val()
+            sendCmd("Cmd:StartMotionTester-" + repetitions + "-" + timeout + "-" + max_classifications)
+         }
+         
+         function startTAC1() {
+            // Gather parameters to send to TAC1
+            var repetitions = $("#ID_REPETITIONS").val()
+            var timeout = $("#ID_TIMEOUT").val()
+            var dwell_time = $("#ID_DWELL_TIME").val()
+            var degree_error = $("#ID_DEGREE_ERROR").val()
+            var grasp_error = $("#ID_GRASP_ERROR").val()
+            sendCmd("Cmd:StartTAC1-" + repetitions + "-" + timeout + "-" + dwell_time + "-" + degree_error + "-" + grasp_error)
+         }
+         
+         function startTAC3() {
+            // Gather parameters to send to TAC3
+            var repetitions = $("#ID_REPETITIONS").val()
+            var timeout = $("#ID_TIMEOUT").val()
+            var dwell_time = $("#ID_DWELL_TIME").val()
+            var degree_error = $("#ID_DEGREE_ERROR").val()
+            var grasp_error = $("#ID_GRASP_ERROR").val()
+            sendCmd("Cmd:StartTAC3-" + repetitions + "-" + timeout + "-" + dwell_time + "-" + degree_error + "-" + grasp_error)
+         }
+         
 		 // Function to update the motion tester progress bar based on user input
 		 // See http://www.w3schools.com/howto/howto_js_progressbar.asp for details
 		function updateMTProgressBar(percent) {
@@ -363,9 +384,26 @@
         </div><!-- /header -->
 		<div data-role="content">
 			<a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_ASSESSMENT_MT">Start Motion Tester</a>
+            <div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
+				<h4>Options</h4>
+				<ul data-role="listview" data-inset="false">
+				<div class="ui-field-contain">
+				  <label for="name">Repetitions:</label>
+				  <input type="number" name="name" id="ID_MT_REPETITIONS" value="3">
+				</div>
+                <div class="ui-field-contain">
+				  <label for="name">Timeout (s):</label>
+				  <input type="number" name="name" id="ID_MT_TIMEOUT" value="5">
+				</div>
+                <div class="ui-field-contain">
+				  <label for="name">Max Classifications:</label>
+				  <input type="number" name="name" id="ID_MT_MAX_CLASSIFICATIONS" value="10">
+				</div>
+				</ul>
+			</div>
 			<p>Status: <span = id="mt_status"/></p>
 			<p>Classifying: <span = id="mt_output"/></p>
-			<img src="img_arm_motions/No_Movement.png" id="ID_MT_IMAGE" alt="Motion Image" width="561" height="312">
+			<img style="max-width: 100%;" src="img_arm_motions/No_Movement.png" id="ID_MT_IMAGE" alt="Motion Image">
 			<div id="mtProgressBackground">
 				<div id="mtProgressBar">
 					<div id="mtProgressLabel">0%</div>

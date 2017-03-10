@@ -2,11 +2,11 @@ Motion Name,Image File
 No Movement,img_arm_motions/No_Movement.png
 Elbow Flexion,img_arm_motions/Elbow_Flexion.png
 Elbow Extension,img_arm_motions/Elbow_Extension.png
-Wrist Rotate In (Pronate),img_arm_motions/Wrist_Rotate_In.png
-Wrist Rotate Out (Supinate),img_arm_motions/Wrist_Rotate_Out.png
+Wrist Rotate In,img_arm_motions/Wrist_Rotate_In.png
+Wrist Rotate Out,img_arm_motions/Wrist_Rotate_Out.png
 Wrist Flex In,img_arm_motions/Wrist_Flexion.png
 Wrist Extend Out,img_arm_motions/Wrist_Extension.png
 Hand Open,img_grasps/Hand_Open.png
 Spherical Grasp,img_grasps/Spherical_Grasp.png
-Fine Pinch Grasp,img_grasps/Tip_Grasp.png
+Tip Grasp,img_grasps/Tip_Grasp.png
 Point Grasp,img_grasps/Trigger_Grasp.png

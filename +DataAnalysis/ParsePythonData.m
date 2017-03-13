@@ -8,13 +8,6 @@ classdef ParsePythonData
     methods (Static = true)
         function data = getTACLog(file)
             
-            if nargin < 1
-                p = '';
-                %f = '2017-02-28_14-50-02_TAC1_LOG.hdf5';
-                f = '2017-02-28_14-37-18_TAC3_LOG.hdf5';
-                file = fullfile(p,f);
-            end
-            
             % Get file info
             info = h5info(file);
             trialNames = {info.Groups.Groups(:).Name};

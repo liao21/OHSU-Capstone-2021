@@ -135,14 +135,15 @@
             $("#ID_PAUSE").on("mousedown", function() {sendCmd("Cmd:Pause")} );
             $("#ID_PAUSE_HAND").on("mousedown", function() {sendCmd("Cmd:PauseHand")} );
             $("#ID_SHUTDOWN").on("mousedown", function() {sendCmd("Cmd:Shutdown")} );
-            $("#ID_ASSESSMENT_MT").on("mousedown", function() {sendCmd("Cmd:StartMotionTester")} );
-            $("#ID_ASSESSMENT_TAC1").on("mousedown", function() {sendCmd("Cmd:StartTAC1")} );
-			$("#ID_ASSESSMENT_TAC3").on("mousedown", function() {sendCmd("Cmd:StartTAC3")} );
+            $("#ID_ASSESSMENT_MT").on("mousedown", function() {startMT()} );
+            $("#ID_ASSESSMENT_TAC1").on("mousedown", function() {startTAC1()} );
+            $("#ID_ASSESSMENT_TAC3").on("mousedown", function() {startTAC3()} );
             
         };
         
         // global function called from index and galleryLinks.js
         function sendCmd(cmd) {
+		
             console.log('Send ' + cmd);
             sb.send("cmdString", "string", cmd);
         };
@@ -198,7 +199,7 @@
 					 $("#tacJoint1Name").text(cmd_data);
 				 }
 				 if (cmd_type == "strTACJoint1Bar") {
-					 updateTACJointBar(cmd_data, "tacJoint1Bar");
+					 updateTACJointBar(cmd_data, "tacJoint1Bar", "tacJoint1Label");
 				 }
 				 if (cmd_type == "strTACJoint1Target") {
 					updateTACJointTarget(cmd_data, "tacJoint1Target");
@@ -210,7 +211,7 @@
 					 $("#tacJoint2Name").text(cmd_data);
 				 }
 				 if (cmd_type == "strTACJoint2Bar") {
-					 updateTACJointBar(cmd_data, "tacJoint2Bar");
+					 updateTACJointBar(cmd_data, "tacJoint2Bar", "tacJoint2Label");
 				 }
 				 if (cmd_type == "strTACJoint2Target") {
 					updateTACJointTarget(cmd_data, "tacJoint2Target");
@@ -222,7 +223,7 @@
 					 $("#tacJoint3Name").text(cmd_data);
 				 }
 				 if (cmd_type == "strTACJoint3Bar") {
-					 updateTACJointBar(cmd_data, "tacJoint3Bar");
+					 updateTACJointBar(cmd_data, "tacJoint3Bar", "tacJoint3Label");
 				 }
 				 if (cmd_type == "strTACJoint3Target") {
 					updateTACJointTarget(cmd_data, "tacJoint3Target");
@@ -232,7 +233,35 @@
 				 }
 			 }
          }   
-
+           
+         function startMT() {
+            // Gather parameters to send to motion tester
+            var repetitions = $("#ID_MT_REPETITIONS").val()
+            var timeout = $("#ID_MT_TIMEOUT").val()
+            var max_classifications = $("#ID_MT_MAX_CLASSIFICATIONS").val()
+            sendCmd("Cmd:StartMotionTester-" + repetitions + "-" + timeout + "-" + max_classifications)
+         }
+         
+         function startTAC1() {
+            // Gather parameters to send to TAC1
+            var repetitions = $("#ID_REPETITIONS").val()
+            var timeout = $("#ID_TIMEOUT").val()
+            var dwell_time = $("#ID_DWELL_TIME").val()
+            var degree_error = $("#ID_DEGREE_ERROR").val()
+            var grasp_error = $("#ID_GRASP_ERROR").val()
+            sendCmd("Cmd:StartTAC1-" + repetitions + "-" + timeout + "-" + dwell_time + "-" + degree_error + "-" + grasp_error)
+         }
+         
+         function startTAC3() {
+            // Gather parameters to send to TAC3
+            var repetitions = $("#ID_REPETITIONS").val()
+            var timeout = $("#ID_TIMEOUT").val()
+            var dwell_time = $("#ID_DWELL_TIME").val()
+            var degree_error = $("#ID_DEGREE_ERROR").val()
+            var grasp_error = $("#ID_GRASP_ERROR").val()
+            sendCmd("Cmd:StartTAC3-" + repetitions + "-" + timeout + "-" + dwell_time + "-" + degree_error + "-" + grasp_error)
+         }
+         
 		 // Function to update the motion tester progress bar based on user input
 		 // See http://www.w3schools.com/howto/howto_js_progressbar.asp for details
 		function updateMTProgressBar(percent) {
@@ -246,10 +275,10 @@
 			document.getElementById("ID_MT_IMAGE").src=imageFile
 		}
 		
-		function updateTACJointBar(value, elementId) {
-			var elem = document.getElementById(elementId);   
+		function updateTACJointBar(value, barId, labelId) {
+			var elem = document.getElementById(barId);   
 			elem.style.marginLeft = value - 2.5 + '%'; // The 2.5 is to account for 5% width
-			document.getElementById("tacJoint1Label").innerHTML = Math.round(value * 1);
+			document.getElementById(labelId).innerHTML = Math.round(value * 1);
 		}
 		
 		function updateTACJointError(value, elementId) {
@@ -355,9 +384,26 @@
         </div><!-- /header -->
 		<div data-role="content">
 			<a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_ASSESSMENT_MT">Start Motion Tester</a>
+            <div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
+				<h4>Options</h4>
+				<ul data-role="listview" data-inset="false">
+				<div class="ui-field-contain">
+				  <label for="name">Repetitions:</label>
+				  <input type="number" name="name" id="ID_MT_REPETITIONS" value="3">
+				</div>
+                <div class="ui-field-contain">
+				  <label for="name">Timeout (s):</label>
+				  <input type="number" name="name" id="ID_MT_TIMEOUT" value="5">
+				</div>
+                <div class="ui-field-contain">
+				  <label for="name">Max Classifications:</label>
+				  <input type="number" name="name" id="ID_MT_MAX_CLASSIFICATIONS" value="10">
+				</div>
+				</ul>
+			</div>
 			<p>Status: <span = id="mt_status"/></p>
 			<p>Classifying: <span = id="mt_output"/></p>
-			<img src="img_arm_motions/No_Movement.png" id="ID_MT_IMAGE" alt="Motion Image" width="561" height="312">
+			<img style="max-width: 100%;" src="img_arm_motions/No_Movement.png" id="ID_MT_IMAGE" alt="Motion Image">
 			<div id="mtProgressBackground">
 				<div id="mtProgressBar">
 					<div id="mtProgressLabel">0%</div>
@@ -375,6 +421,33 @@
 		<div data-role="content">
 			<a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_ASSESSMENT_TAC1">Start TAC1</a>
 			<a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_ASSESSMENT_TAC3">Start TAC3</a>
+			
+			<div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
+				<h4>Options</h4>
+				<ul data-role="listview" data-inset="false">
+				<div class="ui-field-contain">
+				  <label for="name">Repetitions:</label>
+				  <input type="number" name="name" id="ID_REPETITIONS" value="1">
+				</div>
+                <div class="ui-field-contain">
+				  <label for="name">Timeout (s):</label>
+				  <input type="number" name="name" id="ID_TIMEOUT" value="45">
+				</div>
+                <div class="ui-field-contain">
+				  <label for="name">Dwell Time (s):</label>
+				  <input type="number" name="name" id="ID_DWELL_TIME" value="2">
+				</div>
+				<div class="ui-field-contain">
+				  <label for="name">Error (Degrees):</label>
+				  <input type="number" name="name" id="ID_DEGREE_ERROR" value="5">
+				</div>
+				<div class="ui-field-contain">
+				  <label for="name">Error (Grasp %):</label>
+				  <input type="number" name="name" id="ID_GRASP_ERROR" value="5">
+				</div>
+				</ul>
+			</div>
+			
 			<p>Status: <span = id="tac_status"/></p>
 			<p>Classifying: <span = id="tac_output"/></p>
 			<p><span = id="tacJoint1Name"/></p>

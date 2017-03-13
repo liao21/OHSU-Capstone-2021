@@ -385,8 +385,9 @@ class TrainingData:
             return None
 
         # Parse motion name - image map file
-        pattern_rec_dir = os.path.dirname(os.path.abspath(__file__))
-        map_path = pattern_rec_dir + '\\..\\..\\www\\mplHome\\motion_name_image_map.csv'
+        #pattern_rec_dir = os.path.dirname(os.path.abspath(__file__))
+        #map_path = pattern_rec_dir + '\\..\\..\\www\\mplHome\\motion_name_image_map.csv'
+        map_path = os.path.join(os.path.dirname(__file__), '..', '..', 'www', 'mplHome', 'motion_name_image_map.csv')
         mapped_motion_names = []
         mapped_image_names = []
         with open(map_path, 'rb') as csvfile:

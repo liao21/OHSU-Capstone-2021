@@ -24,6 +24,11 @@ class MotionTester(object):
         self.file_ext = '.hdf5'
         self.reset()
 
+        # Assessment parameters
+        self.repetitions = 3  # Assessment repetitions
+        self.max_correct = 10  # Number of correct classifications required to complete assessment
+        self.timeout = 5.0  # Time before assessment times out
+
         # Initialize data storage lists
         self.target_class = []
         self.class_decision = []
@@ -63,14 +68,17 @@ class MotionTester(object):
             cmd_data = parsed[1]
 
         if cmd_type == 'Cmd':
-            if cmd_data == 'StartMotionTester':
+            if 'StartMotionTester' in cmd_data:
+                self.repetitions = int(round(float(cmd_data.split('-')[1])))
+                self.timeout = float(cmd_data.split('-')[2])
+                self.max_correct = int(round(float(cmd_data.split('-')[3])))
                 self.thread = threading.Thread(target=self.start_assessment)
                 self.thread.name = 'MotionTester'
                 self.thread.start()
             else:
                 logging.info('Unknown motion tester command: ' + cmd_data)
 
-    def start_assessment(self, num_trials=3):
+    def start_assessment(self):
         # Method to assess all trained classes
 
         # Clear assessment data from previous assessments
@@ -90,7 +98,7 @@ class MotionTester(object):
         self.vie.pause('All', True)
         self.send_status('Holdout')
 
-        for i_rep in range(num_trials):  # Right now, assessing each class 3 times
+        for i_rep in range(self.repetitions):  # Right now, assessing each class 3 times
             self.send_status('New Motion Tester Assessment Trial')
             for i,i_class in enumerate(trained_classes):
                 if i_rep == 0:
@@ -106,7 +114,7 @@ class MotionTester(object):
                     self.send_status('Motion Incomplete')
 
                 # Update progress bar
-                self.update_gui_progress(i + 1 + i_rep*len(trained_classes), num_trials*len(trained_classes))
+                self.update_gui_progress(i + 1 + i_rep*len(trained_classes), self.repetitions*len(trained_classes))
 
         # Reset GUI to no-motion image
         image_name = self.vie.TrainingData.get_motion_image('No Motion')
@@ -141,11 +149,12 @@ class MotionTester(object):
             current_class = self.vie.output['decision']
             if current_class == 'No Movement': entered_no_movement = True
             if (current_class != 'No Movement') and (current_class != 'None') and entered_no_movement: break
+            time.sleep(0.1) # Necessary to sleep, otherwise get output gets backlogged
 
         dt = 0.1  # 100ms RIC JAMA
-        timeout = 5.0
+        timeout = self.timeout
         time_begin = time.time()
-        max_correct = 10.0
+        max_correct = self.max_correct
         move_complete = False
         num_correct = 0.0
         num_wrong = 0.0
@@ -221,7 +230,7 @@ class MotionTester(object):
         g1.attrs['description'] = t + 'Motion Tester Data'
         encoded = [a.encode('utf8') for a in self.vie.TrainingData.motion_names]
         g1.create_dataset('AllClassNames', shape=(len(encoded), 1), data=encoded)
-        g1.create_dataset('ClassIdToTest', self.class_id_to_test)
+        g1.create_dataset('ClassIdToTest', data=self.class_id_to_test, shape=(len(self.class_id_to_test), 1))
 
         g2 = g1.create_group('Data')
 
@@ -233,6 +242,9 @@ class MotionTester(object):
 
         h5.close()
         self.send_status('Saved ' + self.filename)
+
+        # Clear data for next assessment
+        self.reset()
 
 
 class TargetAchievementControl(object):
@@ -248,6 +260,13 @@ class TargetAchievementControl(object):
         self.thread = None
         self.filename = 'TAC1_LOG'
         self.file_ext = '.hdf5'
+
+        # Default assessment parameters
+        self.target_error_degree = 5.0 # Allowable error for degree-based joints
+        self.target_error_percent = 5.0 # Allowable error for percent-based grasps (I.e., grasps)
+        self.repetitions = 2 # Repetitions per joint
+        self.timeout = 45.0 # Time before assessment failed
+        self.dwell_time = 2.0 # Time required within target position
 
         # Data storage
         self.target_joint = [] # Joint or grasp id
@@ -269,7 +288,7 @@ class TargetAchievementControl(object):
         self.position_time_history = []  # Plant position
         self.intent_time_history = []  # Intent at each test during assessment
         self.time_history = []  # time list
-        self.completion_time = 0.0  # completion time
+        self.completion_time = []  # completion time
         self.lower_limit = []
         self.upper_limit = []
         self.data = []
@@ -295,12 +314,22 @@ class TargetAchievementControl(object):
             cmd_data = parsed[1]
 
         if cmd_type == 'Cmd':
-            if cmd_data == 'StartTAC1':
+            if 'StartTAC1' in cmd_data:
+                self.repetitions = int(round(float(cmd_data.split('-')[1])))
+                self.timeout = float(cmd_data.split('-')[2])
+                self.dwell_time = float(cmd_data.split('-')[3])
+                self.target_error_degree = float(cmd_data.split('-')[4])
+                self.target_error_percent = float(cmd_data.split('-')[5])
                 self.thread = threading.Thread(target=self.start_assessment(condition=1))
                 self.thread.name = 'TAC1'
                 self.thread.start()
 
-            if cmd_data == 'StartTAC3':
+            elif 'StartTAC3' in cmd_data:
+                self.repetitions = int(round(float(cmd_data.split('-')[1])))
+                self.timeout = float(cmd_data.split('-')[2])
+                self.dwell_time = float(cmd_data.split('-')[3])
+                self.target_error_degree = float(cmd_data.split('-')[4])
+                self.target_error_percent = float(cmd_data.split('-')[5])
                 self.thread = threading.Thread(target=self.start_assessment(condition=3))
                 self.thread.name = 'TAC3'
                 self.thread.start()
@@ -316,13 +345,10 @@ class TargetAchievementControl(object):
 
         # Set condition specific parameters
         if condition==1:
-            num_trials = 2
             self.filename='TAC1_LOG'
         elif condition==2:
-            num_trials = 2
             self.filename = 'TAC2_LOG'
         elif condition==3:
-            num_trials = 1
             self.filename = 'TAC3_LOG'
         else:
             print('Condition should be 1,2, or 3.\n')
@@ -405,7 +431,7 @@ class TargetAchievementControl(object):
                 return
 
         # Assess joints and grasps
-        for i_rep in range(num_trials):
+        for i_rep in range(self.repetitions):
             self.send_status('New TAC Assessment Trial')
 
             # For TAC1, assess one joint at a time
@@ -424,47 +450,52 @@ class TargetAchievementControl(object):
 
         # Set TAC parameters
         dt = 0.1 # Time between assessment queries
-        dwell_time = float(2) # Time in target before pass
+        dwell_time = self.dwell_time # Time in target before pass
+        timeout = self.timeout
         move_complete = False # Flag fo move completion
-        # Set timeout condition, longer for TAC3
-        if self._condition == 1 or self._condition == 2: timeout = float(15)
-        else: timeout = float(45)
 
         # Set joint-specific parameters
         target_error_list = [] # Error range allowed
-        min_start_difference_list = [] # Minimum starting joint position required relative to current position
         lower_limit_list = [] # Lower limit for joint
         upper_limit_list = [] # Upper limit for joint
         target_position_list = [] # Target joint positions
         for i, joint_name in enumerate(joint_name_list):
             is_grasp = is_grasp_list[i]
             if is_grasp:
-                target_error_list.append(float(5))
-                min_start_difference_list.append(float(25))
+                target_error_list.append(float(self.target_error_percent))
                 lower_limit_list.append(float(0))
                 upper_limit_list.append(float(100))
                 # Set target joint angle
                 # TAC set an angle 75 degrees away from current position, for now we wil just pick random number within limits
-                # Will ensure this position is at least 25 degrees away from current position
+                # Will ensure this position is at least 25% of total range from current position, and not at edge of limit
                 current_position = self.vie.Plant.GraspPosition * 100.0
+                time_begin = time.time()
                 while True:
-                    target_position = float(random.randint(lower_limit_list[-1], upper_limit_list[-1]))
-                    if abs(current_position - target_position) > min_start_difference_list[-1]: break
+                    target_position = float(random.randint(int(round(lower_limit_list[-1])), int(round(upper_limit_list[-1]))))
+                    condition1 = abs(current_position - target_position) > 0.25*(float(upper_limit_list[-1]) - float(lower_limit_list[-1]))
+                    condition2 = abs(target_position - float(upper_limit_list[-1])) > target_error_list[-1]
+                    condition3 = abs(target_position - float(lower_limit_list[-1])) > target_error_list[-1]
+                    if (condition1 and condition2 and condition3) or ((time.time() - time_begin) > 5):
+                        break
                 target_position_list.append(target_position)
 
             else:
-                target_error_list.append(float(5))
-                min_start_difference_list.append(float(25))
+                target_error_list.append(float(self.target_error_degree))
                 mplId = getattr(MplId, joint_name)
-                lower_limit_list.append(self.vie.Plant.lowerLimit[mplId] * 180.0 / math.pi)
-                upper_limit_list.append(self.vie.Plant.upperLimit[mplId] * 180.0 / math.pi)
+                lower_limit_list.append(float(self.vie.Plant.lowerLimit[mplId] * 180.0 / math.pi))
+                upper_limit_list.append(float(self.vie.Plant.upperLimit[mplId] * 180.0 / math.pi))
                 # Set target joint angle
                 # TAC set an angle 75 degrees away from current position, for now we wil just pick random number within limits
-                # Will ensure this position is at least 25 degrees away from current position
+                # Will ensure this position is at least 25% of total range away from current position, and not at edge of limit
                 current_position = self.vie.Plant.JointPosition[mplId] * 180.0 / math.pi
+                time_begin = time.time()
                 while True:
-                    target_position = float(random.randint(lower_limit_list[-1], upper_limit_list[-1]))
-                    if abs(current_position - target_position) > min_start_difference_list[-1]: break
+                    target_position = float(random.randint(int(round(lower_limit_list[-1])), int(round(upper_limit_list[-1]))))
+                    condition1 = abs(current_position - target_position) > 0.25 * (float(upper_limit_list[-1]) - float(lower_limit_list[-1]))
+                    condition2 = abs(target_position - float(upper_limit_list[-1])) > target_error_list[-1]
+                    condition3 = abs(target_position - float(lower_limit_list[-1])) > target_error_list[-1]
+                    if (condition1 and condition2 and condition3) or ((time.time() - time_begin) > 5):
+                        break
                 target_position_list.append(target_position)
 
         # Set data storage properties
@@ -474,6 +505,8 @@ class TargetAchievementControl(object):
         self.lower_limit = lower_limit_list
         self.upper_limit = upper_limit_list
         self.position_time_history = np.empty([0, len(joint_name_list)])  # Plant position
+        self.intent_time_history = []
+        self.completion_time = -1.0
         self.time_history = []  # time list
         position_row = np.empty([1, len(joint_name_list)])
 
@@ -484,12 +517,13 @@ class TargetAchievementControl(object):
             self.update_gui_joint_target(3)
 
         # Start once user goes to no-movement, then first non- no movement classification is given
-        self.send_status('Testing Joint - ' + joint_name + ' - Return to "No Movement" and Begin')
+        self.send_status('Testing Joint(s) - ' + ', '.join(joint_name_list) + ' - Return to "No Movement" and Begin')
         entered_no_movement = False
         while True:
             current_class = self.vie.output['decision']
             if current_class == 'No Movement': entered_no_movement = True
             if (current_class != 'No Movement') and (current_class != 'None') and entered_no_movement: break
+            time.sleep(0.1)  # Necessary to sleep, otherwise get output gets backlogged
 
         # Start timer
         time_begin = time.time()
@@ -517,9 +551,11 @@ class TargetAchievementControl(object):
                 current_class = self.vie.output['decision']
 
                 # Output status
-                self.send_status('Testing Joint - ' + joint_name + ' - Current Position - ' + str(position) +
-                                 ' - Target Position - ' + str(target_position) +
-                                 ' - Time in Target - ' + str(time_in_target))
+                self.send_status('Testing Joint(s) - ' + ', '.join(joint_name_list) + '- Dwell Time - ' + "{0:0.1f}".format(time_in_target))
+                # Commented out, too cluttered for now, could potentially allow this output with verbose option
+                #self.send_status('Testing Joint - ' + joint_name + ' - Current Position - ' + str(position) +
+                #                 ' - Target Position - ' + str(target_position) +
+                #                 ' - Time in Target - ' + str(time_in_target))
 
                 # If within +- target_error of target_position, then flag this joint as within target
                 if (position < (target_position + target_error)) and (position > (target_position - target_error)):
@@ -559,7 +595,7 @@ class TargetAchievementControl(object):
         # Add data from current joint assessmet
         self.add_data()
 
-        self.send_status(joint_name + 'Assessment Completed')
+        self.send_status(', '.join(joint_name_list) + ' Assessment Completed')
 
         return move_complete
 
@@ -611,16 +647,19 @@ class TargetAchievementControl(object):
         for i,d in enumerate(self.data):
             g2 = g1.create_group('Trial ' + str(i+1))
             encoded = [a.encode('utf8') for a in d['target_joint']] # Need to encode strings
-            g2.create_dataset('target_joint', shape=(1, len(encoded)), data=encoded)
-            g2.create_dataset('target_position', data=d['target_position'], shape=(1, len(d['target_position'])))
-            g2.create_dataset('target_error', data=d['target_error'], shape=(1, len(d['target_error'])))
+            g2.create_dataset('target_joint', shape=(len(encoded), 1), data=encoded)
+            g2.create_dataset('target_position', data=d['target_position'], shape=(len(d['target_position']), 1))
+            g2.create_dataset('target_error', data=d['target_error'], shape=(len(d['target_error']), 1))
             encoded = [a.encode('utf8') for a in d['intent_time_history']]
-            g2.create_dataset('intent_time_history', shape=(len(d['intent_time_history']), 1), data=encoded)
-            g2.create_dataset('position_time_history', shape=d['position_time_history'].shape,
-                              data=d['position_time_history'])
-            g2.create_dataset('time_history', shape=(len(d['time_history']), 1),
+            g2.create_dataset('intent_time_history', shape=(1, len(d['intent_time_history'])), data=encoded)
+            g2.create_dataset('position_time_history', shape=d['position_time_history'].shape[::-1],
+                              data=d['position_time_history'].transpose())
+            g2.create_dataset('time_history', shape=(1, len(d['time_history'])),
                               data=d['time_history'])
-            g2.create_dataset('completion_time', (d['completion_time'],))
+            g2.create_dataset('completion_time', data=[d['completion_time']], shape=(1,1))
 
         h5.close()
         self.send_status('Saved ' + self.filename)
+
+        # Clear data for next assessment
+        self.reset()

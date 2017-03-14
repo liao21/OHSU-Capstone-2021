@@ -83,7 +83,7 @@ class NfuUdp:
         # returns a general purpose status message about the system state
         # e.g. ' 22.5V 72.6C'
 
-        return u'{0:4.1f}V {1:3.0f}\u2103'.format(self.mpl_status['bus_voltage'], self.get_temperature())
+        return u'{0:4.1f}V {1:3.0f}\u00b0C'.format(self.mpl_status['bus_voltage'], self.get_temperature())
 
     def connect(self):
         # open up the socket and bind to IP address
@@ -243,9 +243,10 @@ def decode_heartbeat_msg_v2(msg_bytes):
     # // flag - doubled messages per handle
 
     nfu_state_id = msg_bytes[0].view(np.uint8)
+
     # Lookup the state id from the enumeration
     try:
-        nfu_state_str = str(mpl.BOOTSTATE(nfu_state_id))
+        nfu_state_str = str(mpl.BOOTSTATE(nfu_state_id)).split('.')[1]
     except ValueError:
         nfu_state_str = 'BOOTSTATE_ENUM_ERROR={}'.format(nfu_state_id)
 
@@ -258,15 +259,5 @@ def decode_heartbeat_msg_v2(msg_bytes):
         'nfu_ms_per_CMDDOM': msg_bytes[13:17].view(np.float32)[0],
         'nfu_ms_per_ACTUATEMPL': msg_bytes[17:21].view(np.float32)[0],
     }
-    #msg = {
-    #    'nfu_state': str(mpl.NfuUdpMsgId(nfu_state_id)).split('.')[1],
-    #    'lc_software_state': str(mpl.LcSwState(lc_state_id)).split('.')[1],
-    #    'lmc_software_state': msg_bytes[2:9],
-    #    'bus_voltage': msg_bytes[9:13].view(np.float32)[0],
-    #    'nfu_ms_per_CMDDOM': msg_bytes[13:17].view(np.float32)[0],
-    #    'nfu_ms_per_ACTUATEMPL': msg_bytes[17:21].view(np.float32)[0],
-    #}
-
-    print(msg)
 
     return msg

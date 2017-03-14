@@ -29,16 +29,23 @@ class NfuUdp:
 
         self.udp = {'Hostname': hostname, 'TelemPort': udp_telem_port, 'CommandPort': udp_command_port}
         self.param = {'echoHeartbeat': 1, 'echoPercepts': 1, 'echoCpch': 1}
+
+        # Use this parameter to prevent limb commands from being transmitted by this
+        # class until valid UDP are received first.  I.e. wait for valid limb state to send data
+        self.wait_for_mpl = False
+
         self.__sock = None
 
-        # Create threadsafe lock
+        # Create thread-safe lock
         self.__lock = threading.Lock()
 
         # Create a receive thread
         self.__thread = threading.Thread(target=self.message_handler)
         self.__thread.name = 'NfuUdpRcv'
 
-        self.__active_connection = True
+        # This private variable is used to monitor data receipt from the limb.  If a timeout occurs then the parameter
+        # is false until new data is received
+        self.__active_connection = False
 
         # mpl_status updated by heartbeat messages
         self.mpl_status = {
@@ -50,14 +57,13 @@ class NfuUdp:
             'nfu_ms_per_ACTUATEMPL': 0.0,
         }
 
-
     def is_alive(self):
         with self.__lock:
             val = self.__active_connection
         return val
 
     def get_voltage(self):
-        # returns the battery voltage as a string
+        # returns the battery voltage as a string based on the last status message
         return '{:6.2f}'.format(self.mpl_status['bus_voltage'])
 
     def get_temperature(self):
@@ -77,7 +83,7 @@ class NfuUdp:
         # returns a general purpose status message about the system state
         # e.g. ' 22.5V 72.6C'
 
-        return '{0:4.1f}V {1:3.0f}C'.format(self.mpl_status['bus_voltage'],self.get_temperature())
+        return u'{0:4.1f}V {1:3.0f}\u2103'.format(self.mpl_status['bus_voltage'], self.get_temperature())
 
     def connect(self):
         # open up the socket and bind to IP address
@@ -237,10 +243,15 @@ def decode_heartbeat_msg_v2(msg_bytes):
     # // flag - doubled messages per handle
 
     nfu_state_id = msg_bytes[0].view(np.uint8)
-    print(nfu_state_id)
+    # Lookup the state id from the enumeration
+    try:
+        nfu_state_str = str(mpl.BOOTSTATE(nfu_state_id))
+    except ValueError:
+        nfu_state_str = 'BOOTSTATE_ENUM_ERROR={}'.format(nfu_state_id)
+
     lc_state_id = msg_bytes[1].view(np.uint8)
     msg = {
-        'nfu_state': nfu_state_id,
+        'nfu_state': nfu_state_str,
         'lc_software_state': lc_state_id,
         'lmc_software_state': msg_bytes[2:9],
         'bus_voltage': msg_bytes[9:13].view(np.float32)[0],

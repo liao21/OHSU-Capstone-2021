@@ -1,4 +1,12 @@
-from enum import IntEnum, unique
+from enum import Enum, IntEnum, unique
+
+
+class AutoNumber(Enum):
+    def __new__(cls):
+        value = len(cls.__members__) + 1
+        obj = object.__new__(cls)
+        obj._value_ = value
+        return obj
 
 @unique
 class JointEnum(IntEnum):
@@ -77,6 +85,26 @@ class NfuUdpMsgId(IntEnum):
     UDPMSGID_HEARTBEATV2 = 203,
     UDPMSGID_MPLERROR = 210,
 
+
+class BOOTSTATE(AutoNumber):
+    BOOTSTATE_UNKNOWN = ()
+    BOOTSTATE_INIT_REQ = ()
+    BOOTSTATE_INIT_ACK = ()
+    BOOTSTATE_NODELIST_REQ = ()
+    BOOTSTATE_NODELIST_ACK = ()
+    BOOTSTATE_NOS_DIAG_REQ = ()
+    BOOTSTATE_NOS_DIAG_ACK = ()
+    #BOOTSTATE_LMC_WARMUP = ()
+    #BOOTSTATE_LMC_READY = ()
+    BOOTSTATE_PERCEPT_REQ = ()
+    BOOTSTATE_PERCEPT_ACK = ()
+    BOOTSTATE_COMMAND_REQ = ()
+    BOOTSTATE_COMMAND_ACK = ()
+    BOOTSTATE_UP = ()
+    BOOTSTATE_IDLE_REQ = ()
+    BOOTSTATE_IDLE_ACK = ()
+    BOOTSTATE_ERR = ()
+    BOOTSTATE_DOWN = ()
 
 @unique
 class LcSwState(IntEnum):

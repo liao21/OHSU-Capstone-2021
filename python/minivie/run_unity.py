@@ -10,8 +10,7 @@
 # Python 2 and 3:
 from utilities import user_config
 import scenarios.mpl_nfu
-from pattern_rec.training import TrainingManagerSpacebrew
-import assessment
+from pattern_rec import training, assessment
 
 
 def main():
@@ -23,7 +22,7 @@ def main():
     vie = scenarios.mpl_nfu.setup()
 
     # setup web interface
-    vie.TrainingInterface = TrainingManagerSpacebrew()
+    vie.TrainingInterface = training.TrainingManagerSpacebrew()
     vie.TrainingInterface.setup(description="JHU/APL Embedded Controller", server="127.0.0.1", port=9000)
     vie.TrainingInterface.add_message_handler(vie.command_string)
 

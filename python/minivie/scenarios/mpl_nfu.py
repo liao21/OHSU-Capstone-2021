@@ -107,7 +107,6 @@ def run(vie):
 
             print('{0} dt={1:6.3f}'.format(output['decision'],time_elapsed))
 
-
         except KeyboardInterrupt:
             break
 

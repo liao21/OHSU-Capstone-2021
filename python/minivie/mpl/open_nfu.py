@@ -83,7 +83,12 @@ class NfuUdp:
         # returns a general purpose status message about the system state
         # e.g. ' 22.5V 72.6C'
 
-        return u'{0:4.1f}V {1:3.0f}\u00b0C'.format(self.mpl_status['bus_voltage'], self.get_temperature())
+        msg = u'{:4.1f}V '.format(self.mpl_status['bus_voltage'])
+        msg += u'{:3.0f}\u00b0C '.format(self.get_temperature())
+        msg += u'NFU:{} '.format(self.mpl_status['nfu_state'])
+        msg += u'LC:{} '.format(self.mpl_status['lc_software_state'])
+
+        return msg
 
     def connect(self):
         # open up the socket and bind to IP address
@@ -242,18 +247,23 @@ def decode_heartbeat_msg_v2(msg_bytes):
     # // messages per second
     # // flag - doubled messages per handle
 
-    nfu_state_id = msg_bytes[0].view(np.uint8)
 
-    # Lookup the state id from the enumeration
+    # Lookup NFU state id from the enumeration
+    nfu_state_id = msg_bytes[0].view(np.uint8)
     try:
         nfu_state_str = str(mpl.BOOTSTATE(nfu_state_id)).split('.')[1]
     except ValueError:
-        nfu_state_str = 'BOOTSTATE_ENUM_ERROR={}'.format(nfu_state_id)
+        nfu_state_str = 'NFUSTATE_ENUM_ERROR={}'.format(nfu_state_id)
 
+    # Lookup LC state id from the enumeration
     lc_state_id = msg_bytes[1].view(np.uint8)
+    try:
+        lc_state_str = str(mpl.LcSwState(lc_state_id)).split('.')[1]
+    except ValueError:
+        lc_state_str = 'LCSTATE_ENUM_ERROR={}'.format(nfu_state_id)
     msg = {
         'nfu_state': nfu_state_str,
-        'lc_software_state': lc_state_id,
+        'lc_software_state': lc_state_str,
         'lmc_software_state': msg_bytes[2:9],
         'bus_voltage': msg_bytes[9:13].view(np.float32)[0],
         'nfu_ms_per_CMDDOM': msg_bytes[13:17].view(np.float32)[0],

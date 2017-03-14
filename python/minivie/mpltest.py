@@ -30,6 +30,9 @@ print("4. MPL Heartbeats")
 print(30 * '-')
 print("0. Exit")
 print(30 * '-')
+print(30 * '-')
+print("NOTE: Ensure no other MPL control processes are running. E.g. sudo systemctl stop mpl_run_www.service")
+print(30 * '-')
 
 # Get input
 choice = input('Enter selection : ')
@@ -103,9 +106,6 @@ elif choice == 3:
             time.sleep(0.02)
     hSink.close()
 elif choice == 4:
-    print(60 * '-')
-    print("NOTE: NFU hostname must be properly configured on NFU: /fs/etfs/hostname (192.168.1.1)")
-    print(60 * '-')
     logging.basicConfig(level=logging.INFO)
     hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
     hSink.connect()

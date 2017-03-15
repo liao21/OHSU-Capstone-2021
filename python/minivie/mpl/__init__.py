@@ -4,7 +4,7 @@ from enum import Enum, IntEnum, unique
 class AutoNumber(Enum):
     # While Enum, IntEnum, IntFlag, and Flag are expected to cover the majority of use-cases,
     # they cannot cover them all. Here are recipes for some different types of enumerations
-    # that can be used directly, or as examples for creating one’s own.
+    # that can be used directly, or as examples for creating one's own.
     # https://docs.python.org/3/library/enum.html
     # 8.13.14.1.4. Using a custom __new__()
     # Using an auto-numbering __new__()

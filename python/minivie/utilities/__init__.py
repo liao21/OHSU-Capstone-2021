@@ -29,5 +29,9 @@ def get_address(url):
     return a.hostname, a.port
 
 
+def reboot():
+    os.system("sudo shutdown -r now")
+
+
 def shutdown():
     os.system("sudo shutdown -h now")

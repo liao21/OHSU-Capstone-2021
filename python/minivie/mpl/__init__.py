@@ -2,11 +2,18 @@ from enum import Enum, IntEnum, unique
 
 
 class AutoNumber(Enum):
+    # While Enum, IntEnum, IntFlag, and Flag are expected to cover the majority of use-cases,
+    # they cannot cover them all. Here are recipes for some different types of enumerations
+    # that can be used directly, or as examples for creating one’s own.
+    # https://docs.python.org/3/library/enum.html
+    # 8.13.14.1.4. Using a custom __new__()
+    # Using an auto-numbering __new__()
     def __new__(cls):
         value = len(cls.__members__) + 1
         obj = object.__new__(cls)
         obj._value_ = value
         return obj
+
 
 @unique
 class JointEnum(IntEnum):
@@ -106,17 +113,18 @@ class BOOTSTATE(AutoNumber):
     BOOTSTATE_ERR = ()
     BOOTSTATE_DOWN = ()
 
+
 @unique
 class LcSwState(IntEnum):
-    SWSTATE_INIT						= 0,
-    SWSTATE_PRG						    = 1,
-    SWSTATE_FS							= 2,
-    SWSTATE_NOS_CONTROL_STIMULATION	    = 3,
-    SWSTATE_NOS_IDLE					= 4,
-    SWSTATE_NOS_SLEEP					= 5,
-    SWSTATE_NOS_CONFIGURATION			= 6,
-    SWSTATE_NOS_HOMING                  = 7,
-    SWSTATE_NOS_DATA_ACQUISITION        = 8,
-    SWSTATE_NOS_DIAGNOSTICS             = 9,
-    #SWSTATE_NUM_STATES					= 10
-    SWSTATE_UNK                         = 15,
+    SWSTATE_INIT = 0,
+    SWSTATE_PRG = 1,
+    SWSTATE_FS = 2,
+    SWSTATE_NOS_CONTROL_STIMULATION = 3,
+    SWSTATE_NOS_IDLE = 4,
+    SWSTATE_NOS_SLEEP = 5,
+    SWSTATE_NOS_CONFIGURATION = 6,
+    SWSTATE_NOS_HOMING = 7,
+    SWSTATE_NOS_DATA_ACQUISITION = 8,
+    SWSTATE_NOS_DIAGNOSTICS = 9,
+    #SWSTATE_NUM_STATES = 10
+    SWSTATE_UNK = 15,

@@ -48,7 +48,7 @@ class NfuUdp:
         self.__active_connection = False
 
         # mpl_status updated by heartbeat messages
-        self.mpl_status = {
+        self.__mpl_status_default = {
             'nfu_state': 'NULL',
             'lc_software_state': 'NULL',
             'lmc_software_state': [0,0,0,0,0,0,0],
@@ -56,6 +56,7 @@ class NfuUdp:
             'nfu_ms_per_CMDDOM': 0.0,
             'nfu_ms_per_ACTUATEMPL': 0.0,
         }
+        self.mpl_status = self.__mpl_status_default
 
     def is_alive(self):
         with self.__lock:
@@ -144,6 +145,7 @@ class NfuUdp:
                 with self.__lock:
                     logging.info('MPL Connection is Lost')
                     self.__active_connection = False
+                    self.mpl_status = self.__mpl_status_default
                 continue
 
             except socket.error as e:

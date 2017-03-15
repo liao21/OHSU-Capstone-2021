@@ -556,6 +556,7 @@ def connect(mac_addr, stream_addr, hci_interface):
 
         These translate to setting the min, and max Connection Interval to 0x0006=6;6*1.25ms=7.5ms, with no slave
             latency, and a 0x0190=400; 400*10ms=4s timeout.
+        UPDATE: Added non-zero slave latency for robustness on DART board
 
         For more info, you can search for the OGF, OCF sections listed above in the Bluetooth Core 4.2 spec
 
@@ -594,7 +595,7 @@ def connect(mac_addr, stream_addr, hci_interface):
             logging.info('MAC: {} is handle {}'.format(mac_addr,handle))
 
     logging.info("Setting Update Rate")
-    cmd_str = "hcitool -i hci{} cmd 0x08 0x0013 {} {} 06 00 06 00 00 00 90 01 00 00 07 00".format(hci_interface, handle_hex[2:], handle_hex[:2])
+    cmd_str = "hcitool -i hci{} cmd 0x08 0x0013 {} {} 06 00 06 00 00 00 90 01 01 00 07 00".format(hci_interface, handle_hex[2:], handle_hex[:2])
     logging.info(cmd_str)
     subprocess.Popen(cmd_str, shell=True)
     logging.info("Done")

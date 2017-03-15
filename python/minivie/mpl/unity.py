@@ -85,9 +85,11 @@ class UnityUdp(object):
         self.sock.settimeout(3.0)
         self.is_connected = True
 
-    def get_voltage(self):
-        return 'vMPL'        
-        
+    def get_status_msg(self):
+        # returns a general purpose status message about the system state
+        # e.g. ' 22.5V 72.6C'
+        return 'vMPL'
+
     def send_joint_angles(self, values):
         """
 

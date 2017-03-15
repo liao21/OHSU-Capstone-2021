@@ -8,10 +8,6 @@ classdef ParsePythonData
     methods (Static = true)
         function data = getTACLog(file)
             
-            % Get file info
-            info = h5info(file);
-            trialNames = {info.Groups.Groups(:).Name};
-            
             % Initialize data storage struct
             data = struct(...
                           'completion_time', {},...
@@ -22,6 +18,10 @@ classdef ParsePythonData
                           'target_position', {},...
                           'time_history', {}...
                           );
+                      
+            % Get file info
+            info = h5info(file);
+            trialNames = {info.Groups.Groups(:).Name};
             
             % Loop through trials and pull data       
             for iTrial = 1:length(trialNames)
@@ -35,8 +35,40 @@ classdef ParsePythonData
                               'time_history', {h5read(file, [trialNames{iTrial}, '/time_history'])}...
                               );
             end
-            
         end
+        
+        function data = getMotionTesterLog(file)
+            
+            % Get file info
+            info = h5info(file);
+            
+            % Get first level data
+            allClassNames = h5read(file, '/TrialLog/AllClassNames');
+            classIdToTest = h5read(file, '/TrialLog/ClassIdToTest');
+            
+             % Initialize data storage struct
+             trial_data = struct(...
+                          'classDecision', {},...
+                          'targetClass', {} ...
+                          );
+             
+            data = struct(...
+                          'AllClassNames', {allClassNames},...
+                          'ClassIdToTest', {classIdToTest}, ...
+                          'Data', trial_data ...
+                          );   
+            
+            trialNames = {info.Groups.Groups.Groups(:).Name};
+            
+            % Loop through trials and pull data       
+            for iTrial = 1:length(trialNames)
+                data.Data(iTrial) = struct(...
+                              'classDecision', {h5read(file, [trialNames{iTrial}, '/classDecision'])},...
+                              'targetClass', {h5read(file, [trialNames{iTrial}, '/targetClass'])} ...
+                              );
+            end
+        end
+        
         function C = get_hci_log(file)
             % DataAnalysis.ParsePythonData.get_hci_log('hci0_myo.log')
             if nargin < 1

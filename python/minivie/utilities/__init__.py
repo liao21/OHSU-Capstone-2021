@@ -29,6 +29,13 @@ def get_address(url):
     return a.hostname, a.port
 
 
+def restart_myo(val):
+    if val == 1:
+        os.system("sudo systemctl restart mpl_myo1.service")
+    elif val == 2:
+        os.system("sudo systemctl restart mpl_myo2.service")
+
+
 def reboot():
     os.system("sudo shutdown -r now")
 

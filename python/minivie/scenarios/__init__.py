@@ -97,7 +97,7 @@ class Scenario(object):
         """
 
         import logging
-        from utilities import shutdown, reboot
+        from utilities import shutdown, reboot, restart_myo
 
         # Commands should come in with colon operator
         # e.g. Cmd:Add or Cls:Elbow Flexion
@@ -140,6 +140,10 @@ class Scenario(object):
                 self.pause('All')
             elif cmd_data == 'PauseHand':
                 self.pause('Hand')
+            elif cmd_data == 'RestartMyo1':
+                restart_myo(1)
+            elif cmd_data == 'RestartMyo2':
+                restart_myo(2)
             elif cmd_data == 'Reboot':
                 reboot()
             elif cmd_data == 'Shutdown':

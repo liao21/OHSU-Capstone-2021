@@ -97,13 +97,13 @@ class Scenario(object):
         """
 
         import logging
-        from utilities import shutdown
+        from utilities import shutdown, reboot, restart_myo
 
         # Commands should come in with colon operator
         # e.g. Cmd:Add or Cls:Elbow Flexion
         logging.info('Received new scenario command:' + value)
 
-        parsed = value.split(':')
+        parsed = value.split(':', 1)
         if not len(parsed) == 2:
             logging.warning('Invalid scenario command: ' + value)
             return
@@ -140,6 +140,12 @@ class Scenario(object):
                 self.pause('All')
             elif cmd_data == 'PauseHand':
                 self.pause('Hand')
+            elif cmd_data == 'RestartMyo1':
+                restart_myo(1)
+            elif cmd_data == 'RestartMyo2':
+                restart_myo(2)
+            elif cmd_data == 'Reboot':
+                reboot()
             elif cmd_data == 'Shutdown':
                 shutdown()
             elif cmd_data == 'SpeedUp':
@@ -169,7 +175,7 @@ class Scenario(object):
         This is the main step for the vie consisting of the following steps:
 
             Get data from signal sources
-                - If the data is to be used for traning purposes, label it
+                - If the data is to be used for training purposes, label it
             Filter data / extract features
             Classify signals
             Use class decision to determine limb motion
@@ -233,7 +239,7 @@ class Scenario(object):
         self.Plant.update()
 
         # transmit output
-        if self.DataSink != None:
+        if self.DataSink is not None:
             self.DataSink.send_joint_angles(self.Plant.JointPosition)
 
         return self.output

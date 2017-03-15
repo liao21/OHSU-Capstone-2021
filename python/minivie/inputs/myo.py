@@ -6,10 +6,10 @@ This module contains all the functions for interface with the Thalmic Labs Myo A
 There are multiple use cases for talking to a myo armband.  The basic paradigm is to abstract
 the low-level bluetooth communication in favor of a network based broadcast approach.  This allows
 one class to talk over bluetooth but publish or forward the information over a network layer that can 
-be used by multiple local or remote clients.  Bluetooth messages are sent via userdatagram (UDP) 
+be used by multiple local or remote clients.  Bluetooth messages are sent via user datagram (UDP)
 network messages.  Additionally, there is a receiver class designed to run on clients to read udp 
 messages and make them accessible in a buffer for use in emg based control.  Finally, two variants 
-of simulators exist for virtuall streaming [random] data for testing when a physical armband isn;t present
+of simulators exist for virtual streaming [random] data for testing when a physical armband isn;t present
 
 usage: myo.py [-h] [-e] [-u] [-rx] [-tx] [-i IFACE] [-m MAC] [-a ADDRESS]
 
@@ -230,11 +230,11 @@ def emulate_myo_unix(destination='//127.0.0.1:15001'):
     print('Running MyoUdp.exe Emulator to ' + destination)
     try:
         while True:
+            t_start = time.time()
             # generate random bytes matching the size of MyoUdp.exe streaming
             # Future: generate orientation data in valid range
             vals = np.random.randint(255, size=16).astype('uint8')
             sock.sendto(vals.tostring(), utilities.get_address(destination))
-            time.sleep(0.005)  # 200Hz
             vals = np.random.randint(255, size=16).astype('uint8')
             sock.sendto(vals.tostring(), utilities.get_address(destination))
 
@@ -244,10 +244,11 @@ def emulate_myo_unix(destination='//127.0.0.1:15001'):
             # q = [1.0, 0.0, 0.0, 0.0] * MYOHW_ORIENTATION_SCALE
 
             # np.array(q, dtype=int16).tostring
-
             vals = np.random.randint(255, size=20).astype('uint8')
             sock.sendto(vals.tostring(), utilities.get_address(destination))
-            time.sleep(0.005)  # 200Hz
+            t_elapsed = time.time() - t_start
+
+            time.sleep(0.018)  # 200Hz
 
     except KeyError:
         pass
@@ -287,6 +288,12 @@ class MyoUdp(object):
         # UDP Port setup
         self.addr = utilities.get_address(source)
 
+        # Internal values
+        self.__battery_level = -1  # initial value is unknown
+        self.__count_emg = 0
+        self.__time_emg = 0.0
+        self.__rate_emg = 0.0
+
         # Initialize connection parameters
         self.__sock = None
         self.__lock = None
@@ -302,7 +309,7 @@ class MyoUdp(object):
         self.__sock.bind(self.addr)
         self.__sock.settimeout(3.0)
 
-        # Create threadsafe lock so that user based reading of values and thread-based
+        # Create thread-safe lock so that user based reading of values and thread-based
         # writing of values do not conflict
         self.__lock = threading.Lock()
 
@@ -320,12 +327,15 @@ class MyoUdp(object):
             try:
                 # recv call will error if socket closed on exit
                 data, address = self.__sock.recvfrom(1024)
-                #print('Got Packet')
+                # print('Got Packet')
             except socket.timeout:
                 # the data stream has stopped.  don't break the thread, just continue to wait
                 msg = "MyoUdp timed out during recvfrom() on IP={} Port={}. Error: {}".format(
                     self.addr[0], self.addr[1], socket.timeout)
                 logging.warning(msg)
+                # data rate goes to zero
+                self.__count_emg = 0
+                self.__rate_emg = 0.0
                 continue
             except socket.error:
                 msg = "MyoUdp Socket Error during recvfrom() on IP={} Port={}. Error: {}".format(
@@ -383,6 +393,21 @@ class MyoUdp(object):
                     self.__dataEMG = np.roll(self.__dataEMG, 1, axis=0)
                     self.__dataEMG[:1, :] = output[8:16]  # insert in first buffer entry
 
+                    # compute data rate
+                    if self.__count_emg == 0:
+                        # mark time
+                        self.__time_emg = time.time()
+                    self.__count_emg += 2  # 2 data points per packet
+
+                    t_now = time.time()
+                    t_elapsed = t_now - self.__time_emg
+
+                    if t_elapsed > 3.0:
+                        # compute rate (every second)
+                        self.__rate_emg = self.__count_emg / t_elapsed
+                        print(self.__rate_emg)
+                        self.__count_emg = 0  #reset counter
+
             elif len(data) == 20:  # IMU data only
                 with self.__lock:
                     # create array of 10 int16
@@ -397,8 +422,7 @@ class MyoUdp(object):
 
             elif len(data) == 1:  # BATT Value
                 with self.__lock:
-                    msg = 'Battery Level: {}'.format(ord(data))
-                    logging.info(msg)
+                    self.__battery_level = ord(data)
 
             else:
                 # incoming data is not of length = 8, 20, 40, or 48
@@ -414,6 +438,19 @@ class MyoUdp(object):
         # convert the stored quaternions to angles
         with self.__lock:
             return quat2euler(self.__quat)
+
+    def get_battery(self):
+        # Return the battery value (0-100)
+        with self.__lock:
+            battery = self.__battery_level
+        msg = 'Battery Level: {}'.format(battery)
+        logging.info(msg)
+        return battery
+
+    def get_data_rate_emg(self):
+        # Return the emg data rate
+        with self.__lock:
+            return self.__rate_emg
 
     def close(self):
         """ Cleanup socket """
@@ -520,6 +557,7 @@ def connect(mac_addr, stream_addr, hci_interface):
 
         These translate to setting the min, and max Connection Interval to 0x0006=6;6*1.25ms=7.5ms, with no slave
             latency, and a 0x0190=400; 400*10ms=4s timeout.
+        UPDATE: Added non-zero slave latency for robustness on DART board
 
         For more info, you can search for the OGF, OCF sections listed above in the Bluetooth Core 4.2 spec
 
@@ -558,7 +596,7 @@ def connect(mac_addr, stream_addr, hci_interface):
             logging.info('MAC: {} is handle {}'.format(mac_addr,handle))
 
     logging.info("Setting Update Rate")
-    cmd_str = "hcitool -i hci{} cmd 0x08 0x0013 {} {} 06 00 06 00 00 00 90 01 00 00 07 00".format(hci_interface, handle_hex[2:], handle_hex[:2])
+    cmd_str = "hcitool -i hci{} cmd 0x08 0x0013 {} {} 06 00 06 00 00 00 90 01 01 00 07 00".format(hci_interface, handle_hex[2:], handle_hex[:2])
     logging.info(cmd_str)
     subprocess.Popen(cmd_str, shell=True)
     logging.info("Done")
@@ -728,6 +766,11 @@ def main():
     else:
         # No Action
         print(sys.argv[0] + " Version: " + __version__)
+
+        h = MyoUdp(args.ADDRESS)
+        l = inputs.DataLogger()
+        h.log_handlers = l.add_sample
+        h.connect()
 
     logging.info(sys.argv[0] + " Version: " + __version__)
 

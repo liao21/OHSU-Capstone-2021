@@ -8,12 +8,10 @@
 # 2016OCT05 Armiger: Created
 
 # Python 2 and 3:
-import threading
 from utilities import user_config
 from scenarios import mpl_nfu
 from mpl.open_nfu import NfuUdp
-from pattern_rec.training import TrainingManagerSpacebrew
-import assessment
+from pattern_rec import training, assessment
 
 
 def main():
@@ -23,18 +21,15 @@ def main():
 
     # Setup MPL scenario
     vie = mpl_nfu.setup()
-    vie.DataSink.close() # close default unity sink
+    vie.DataSink.close()  # close default unity sink
 
     # Replace sink with actual arm
-    hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
-    hSink.connect()
-    #t = threading.Thread(name='MPLNFU', target=connection_manager, args=(hSink,))
-    #t.setDaemon(True)
-    #t.start()
-    vie.DataSink = hSink
+    sink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
+    sink.connect()
+    vie.DataSink = sink
 
     # setup web interface
-    vie.TrainingInterface = TrainingManagerSpacebrew()
+    vie.TrainingInterface = training.TrainingManagerSpacebrew()
     vie.TrainingInterface.setup(description="JHU/APL Embedded Controller", server="127.0.0.1", port=9000)
     vie.TrainingInterface.add_message_handler(vie.command_string)
 

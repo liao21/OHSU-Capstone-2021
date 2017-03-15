@@ -29,19 +29,26 @@ class NfuUdp:
 
         self.udp = {'Hostname': hostname, 'TelemPort': udp_telem_port, 'CommandPort': udp_command_port}
         self.param = {'echoHeartbeat': 1, 'echoPercepts': 1, 'echoCpch': 1}
+
+        # Use this parameter to prevent limb commands from being transmitted by this
+        # class until valid UDP are received first.  I.e. wait for valid limb state to send data
+        self.wait_for_mpl = False
+
         self.__sock = None
 
-        # Create threadsafe lock
+        # Create thread-safe lock
         self.__lock = threading.Lock()
 
         # Create a receive thread
         self.__thread = threading.Thread(target=self.message_handler)
         self.__thread.name = 'NfuUdpRcv'
 
-        self.__active_connection = True
+        # This private variable is used to monitor data receipt from the limb.  If a timeout occurs then the parameter
+        # is false until new data is received
+        self.__active_connection = False
 
         # mpl_status updated by heartbeat messages
-        self.mpl_status = {
+        self.__mpl_status_default = {
             'nfu_state': 'NULL',
             'lc_software_state': 'NULL',
             'lmc_software_state': [0,0,0,0,0,0,0],
@@ -49,7 +56,7 @@ class NfuUdp:
             'nfu_ms_per_CMDDOM': 0.0,
             'nfu_ms_per_ACTUATEMPL': 0.0,
         }
-
+        self.mpl_status = self.__mpl_status_default
 
     def is_alive(self):
         with self.__lock:
@@ -57,7 +64,7 @@ class NfuUdp:
         return val
 
     def get_voltage(self):
-        # returns the battery voltage as a string
+        # returns the battery voltage as a string based on the last status message
         return '{:6.2f}'.format(self.mpl_status['bus_voltage'])
 
     def get_temperature(self):
@@ -77,7 +84,13 @@ class NfuUdp:
         # returns a general purpose status message about the system state
         # e.g. ' 22.5V 72.6C'
 
-        return '{0:4.1f}V {1:3.0f}C'.format(self.mpl_status['bus_voltage'],self.get_temperature())
+        msg = u'{:4.1f}V '.format(self.mpl_status['bus_voltage'])
+        msg += u'{:3.0f}\u00b0C '.format(self.get_temperature())
+        msg += 'NFU:{} '.format(self.mpl_status['nfu_state'])
+        msg += 'LC:{} '.format(self.mpl_status['lc_software_state'])
+        msg += 'dt:{:.1f}ms '.format(self.mpl_status['nfu_ms_per_ACTUATEMPL'])
+
+        return msg
 
     def connect(self):
         # open up the socket and bind to IP address
@@ -133,6 +146,7 @@ class NfuUdp:
                 with self.__lock:
                     logging.info('MPL Connection is Lost')
                     self.__active_connection = False
+                    self.mpl_status = self.__mpl_status_default
                 continue
 
             except socket.error as e:
@@ -236,26 +250,28 @@ def decode_heartbeat_msg_v2(msg_bytes):
     # // messages per second
     # // flag - doubled messages per handle
 
+
+    # Lookup NFU state id from the enumeration
     nfu_state_id = msg_bytes[0].view(np.uint8)
-    print(nfu_state_id)
+    try:
+        nfu_state_str = str(mpl.BOOTSTATE(nfu_state_id)).split('.')[1]
+    except ValueError:
+        nfu_state_str = 'NFUSTATE_ENUM_ERROR={}'.format(nfu_state_id)
+
+    # Lookup LC state id from the enumeration
     lc_state_id = msg_bytes[1].view(np.uint8)
+    try:
+        lc_state_str = str(mpl.LcSwState(lc_state_id)).split('.')[1]
+    except ValueError:
+        lc_state_str = 'LCSTATE_ENUM_ERROR={}'.format(nfu_state_id)
+
     msg = {
-        'nfu_state': nfu_state_id,
-        'lc_software_state': lc_state_id,
+        'nfu_state': nfu_state_str,
+        'lc_software_state': lc_state_str,
         'lmc_software_state': msg_bytes[2:9],
         'bus_voltage': msg_bytes[9:13].view(np.float32)[0],
         'nfu_ms_per_CMDDOM': msg_bytes[13:17].view(np.float32)[0],
         'nfu_ms_per_ACTUATEMPL': msg_bytes[17:21].view(np.float32)[0],
     }
-    #msg = {
-    #    'nfu_state': str(mpl.NfuUdpMsgId(nfu_state_id)).split('.')[1],
-    #    'lc_software_state': str(mpl.LcSwState(lc_state_id)).split('.')[1],
-    #    'lmc_software_state': msg_bytes[2:9],
-    #    'bus_voltage': msg_bytes[9:13].view(np.float32)[0],
-    #    'nfu_ms_per_CMDDOM': msg_bytes[13:17].view(np.float32)[0],
-    #    'nfu_ms_per_ACTUATEMPL': msg_bytes[17:21].view(np.float32)[0],
-    #}
-
-    print(msg)
 
     return msg

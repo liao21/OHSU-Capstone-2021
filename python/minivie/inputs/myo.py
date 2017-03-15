@@ -442,9 +442,10 @@ class MyoUdp(object):
     def get_battery(self):
         # Return the battery value (0-100)
         with self.__lock:
-            return self.__battery_level
-        msg = 'Battery Level: {}'.format()
+            battery = self.__battery_level
+        msg = 'Battery Level: {}'.format(battery)
         logging.info(msg)
+        return battery
 
     def get_data_rate_emg(self):
         # Return the emg data rate

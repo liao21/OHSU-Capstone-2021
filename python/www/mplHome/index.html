@@ -134,6 +134,7 @@
             $("#ID_HAND_SPEED_DOWN").on("mousedown", function() {sendCmd("Cmd:HandSpeedDown")} );
             $("#ID_PAUSE").on("mousedown", function() {sendCmd("Cmd:Pause")} );
             $("#ID_PAUSE_HAND").on("mousedown", function() {sendCmd("Cmd:PauseHand")} );
+            $("#ID_REBOOT").on("mousedown", function() {sendCmd("Cmd:Reboot")} );
             $("#ID_SHUTDOWN").on("mousedown", function() {sendCmd("Cmd:Shutdown")} );
             $("#ID_ASSESSMENT_MT").on("mousedown", function() {startMT()} );
             $("#ID_ASSESSMENT_TAC1").on("mousedown", function() {startTAC1()} );
@@ -167,9 +168,9 @@
          */
          function onStringMessage( name, value ){
              console.log("[onStringMessage] string message received ", value);
-			 var parts = value.split(':');
-			 var cmd_type = parts[0];
-			 var cmd_data = parts[1];
+                         var split_id = value.indexOf(":")
+			 var cmd_type = value.slice(0,split_id);
+			 var cmd_data = value.slice(split_id+1);
 			 
              if (name == "statusString") {
 				 if (cmd_type == "strStatus") {

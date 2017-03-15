@@ -94,8 +94,8 @@ def run(vie):
             if vie.TrainingInterface is not None:
                 msg = vie.DataSink.get_status_msg()  # limb status
                 msg += ' ' + output['status']  #Classifier Status
-                msg += ' MYO1-{:.0f}Hz {:.0f}%'.format(vie.SignalSource[0].get_data_rate_emg(),vie.SignalSource[0].get_battery())
-                msg += ' MYO2-{:.0f}Hz {:.0f}%'.format(vie.SignalSource[1].get_data_rate_emg(),vie.SignalSource[1].get_battery())
+                msg += ' MYO1:{:.0f}Hz {:.0f}%'.format(vie.SignalSource[0].get_data_rate_emg(),vie.SignalSource[0].get_battery())
+                msg += ' MYO2:{:.0f}Hz {:.0f}%'.format(vie.SignalSource[1].get_data_rate_emg(),vie.SignalSource[1].get_battery())
 
                 vie.TrainingInterface.send_message("strStatus", msg)
                 vie.TrainingInterface.send_message("strOutputMotion", output['decision'])
@@ -110,7 +110,7 @@ def run(vie):
                 # print("Timing Overload: {}".format(time_elapsed))
                 pass
 
-            print('{0} dt={1:6.3f}'.format(output['decision'],time_elapsed))
+            #print('{0} dt={1:6.3f}'.format(output['decision'],time_elapsed))
 
         except KeyboardInterrupt:
             break

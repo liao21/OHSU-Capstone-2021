@@ -9,7 +9,7 @@ class AutoNumber(Enum):
     # 8.13.14.1.4. Using a custom __new__()
     # Using an auto-numbering __new__()
     def __new__(cls):
-        value = len(cls.__members__) + 1
+        value = len(cls.__members__)  # + 1 Note the starts autonumbering at 0
         obj = object.__new__(cls)
         obj._value_ = value
         return obj

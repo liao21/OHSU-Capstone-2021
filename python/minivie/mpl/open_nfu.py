@@ -86,8 +86,9 @@ class NfuUdp:
 
         msg = u'{:4.1f}V '.format(self.mpl_status['bus_voltage'])
         msg += u'{:3.0f}\u00b0C '.format(self.get_temperature())
-        msg += 'NFU-' + self.mpl_status['nfu_state']
-        msg += ' LC-' + self.mpl_status['lc_software_state']
+        msg += 'NFU:{} '.format(self.mpl_status['nfu_state'])
+        msg += 'LC:{} '.format(self.mpl_status['lc_software_state'])
+        msg += 'dt:{:.1f}ms '.format(self.mpl_status['nfu_ms_per_ACTUATEMPL'])
 
         return msg
 

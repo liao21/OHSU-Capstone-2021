@@ -86,8 +86,8 @@ class NfuUdp:
 
         msg = u'{:4.1f}V '.format(self.mpl_status['bus_voltage'])
         msg += u'{:3.0f}\u00b0C '.format(self.get_temperature())
-        msg += u'NFU:{} '.format(self.mpl_status['nfu_state'])
-        msg += u'LC:{} '.format(self.mpl_status['lc_software_state'])
+        msg += 'NFU-' + self.mpl_status['nfu_state']
+        msg += ' LC-' + self.mpl_status['lc_software_state']
 
         return msg
 
@@ -263,6 +263,7 @@ def decode_heartbeat_msg_v2(msg_bytes):
         lc_state_str = str(mpl.LcSwState(lc_state_id)).split('.')[1]
     except ValueError:
         lc_state_str = 'LCSTATE_ENUM_ERROR={}'.format(nfu_state_id)
+
     msg = {
         'nfu_state': nfu_state_str,
         'lc_software_state': lc_state_str,

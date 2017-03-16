@@ -230,13 +230,14 @@ def emulate_myo_unix(destination='//127.0.0.1:15001'):
     print('Running MyoUdp.exe Emulator to ' + destination)
     try:
         while True:
-            t_start = time.time()
             # generate random bytes matching the size of MyoUdp.exe streaming
             # Future: generate orientation data in valid range
             vals = np.random.randint(255, size=16).astype('uint8')
             sock.sendto(vals.tostring(), utilities.get_address(destination))
             vals = np.random.randint(255, size=16).astype('uint8')
             sock.sendto(vals.tostring(), utilities.get_address(destination))
+            # simulate a battery level
+            sock.sendto("c".encode(), utilities.get_address(destination))
 
             # create synthetic orientation data
             # rpy = np.random.rand(90, size=3)
@@ -246,9 +247,8 @@ def emulate_myo_unix(destination='//127.0.0.1:15001'):
             # np.array(q, dtype=int16).tostring
             vals = np.random.randint(255, size=20).astype('uint8')
             sock.sendto(vals.tostring(), utilities.get_address(destination))
-            t_elapsed = time.time() - t_start
 
-            time.sleep(0.018)  # 200Hz
+            time.sleep(0.02)  # 200Hz
 
     except KeyError:
         pass
@@ -405,7 +405,6 @@ class MyoUdp(object):
                     if t_elapsed > 3.0:
                         # compute rate (every second)
                         self.__rate_emg = self.__count_emg / t_elapsed
-                        print(self.__rate_emg)
                         self.__count_emg = 0  #reset counter
 
             elif len(data) == 20:  # IMU data only
@@ -451,6 +450,15 @@ class MyoUdp(object):
         # Return the emg data rate
         with self.__lock:
             return self.__rate_emg
+
+    def get_status_msg(self):
+        # return string formatted status message
+        # with data rate and battery percentage
+        # E.g. 200Hz 99%
+        battery = self.get_battery()
+        if battery < 0:
+            battery = '--'
+        return '{:.0f}Hz {}%'.format(self.get_data_rate_emg(),battery)
 
     def close(self):
         """ Cleanup socket """

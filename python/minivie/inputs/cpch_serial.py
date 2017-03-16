@@ -57,9 +57,8 @@ class CpchSerial(CpcHeadstage):
     
     def __init__(self, comPort='COM1', bioampMask=int('0xFFFF', 16), gpiMask=int('0x0000', 16)):
         """
-        
+
         """
-        
         
         assert type(comPort) is str
         assert bioampMask.bit_length() <= 16 and bioampMask >= 0    #check if 16-bit int and unsigned
@@ -68,21 +67,18 @@ class CpchSerial(CpcHeadstage):
         #Initialize superclass
         super(CpchSerial, self).__init__()
         
-        
-        #Class Data
-        
         #public access variables
-        self.SerialPort = comPort                    # Port must be capable of 921600 baud
+        self.SerialPort = comPort # Port must be capable of 921600 baud
         self.BioampMask = bioampMask
         self.GPIMask = gpiMask
         
-        self.EnableDataLogging = 0                  # Enables logging data stream to disk
+        self.EnableDataLogging = 0  # Enables logging data stream to disk
         
         # Gain values form normalized values
         self.GainSingleEnded = 10
         self.GainDifferential = 0.00489
         
-        #private set access variables
+        # private set access variables
         self.CountTotalMessages = 0
         self.CountBadLength = 0
         self.CountBadChecksum = 0
@@ -90,38 +86,38 @@ class CpchSerial(CpcHeadstage):
         self.CountBadSequence = 0
         self.CountAdcError = 0
         
-        #private access variables        
-        self.hLogFile = None                              # Handle to optional log file
+        # private access variables
+        self.hLogFile = None  # Handle to optional log file
         self.SerialObj = []
-        self.DataBuffer = [] #double([])
-        self.SerialBuffer = [] #uint8([])
+        self.DataBuffer = []  #list of bytearrays
+        self.SerialBuffer = bytearray([])  #bytearray
         self.PrevDataFrameID = -1
         self.BioampCnt = 0
         self.GPICnt = 0
         self.ChannelMask = []
-        #self.T = tic #use time package for timing
+        self.StartTime = time.time()
         self.IsRunning = False
 
         self.ChannelIds = list(range(32))
         self.SampleFrequency = 1000
-        
+        self.NumSamples = 3000
+        self.NumChannels = 32
+
+    def initialize(self):
         #Initialize the serial object
         
-        
         bits = self.BioampMask.bit_length
-        #max_bits = 8 if (bits > 0 and bits <= 8) else 16 if (bits > 8 and bits <= 16) else None
+        # max_bits = 8 if (bits > 0 and bits <= 8) else 16 if (bits > 8 and bits <= 16) else None
         max_bits = 16
         self.BioampCnt = bin(self.BioampMask).count("1")
         
         bits = self.GPIMask.bit_length
-        #max_bits = 8 if (bits > 0 and bits <= 8) else 16 if (bits > 8 and bits <= 16) else None
+        # max_bits = 8 if (bits > 0 and bits <= 8) else 16 if (bits > 8 and bits <= 16) else None
         max_bits = 16
         self.GPICnt = bin(self.GPIMask).count("1")
         
-        
-        #buffer to hold collected data
+        # buffer to hold collected data
         self.DataBuffer = np.empty([3000, 32], dtype=np.double)
-        
         
         try:
             self.SerialObj = serial.Serial(
@@ -136,31 +132,23 @@ class CpchSerial(CpcHeadstage):
                 dsrdtr = False,      #disable hardware (DSR/DTR) flow control
                 writeTimeout = 1,    #timeout for write
             )
-            
             print('[%s] Port Opened: %s' % (__file__, self.SerialPort.upper()))
+
         except Exception as exp:
             print('[%s] Port FAILED' % __file__)
             raise exp
             
         # Transmit STOP message in case data is flowing so the system can sanely start
         msg = self.EncodeStopMsg()
-
-        
-        ####DEBUG####
-        #print('StopMsg: ' + str([int(i) for i in msg]))
-       
-        self.SerialObj.write(msg)         #fwrite(obj.SerialObj, msg, 'uint8');
+        self.SerialObj.write(msg)
         
         while True:
-            time.sleep(0.1)         # delay here to ensure all bytes have time for receipt
+            time.sleep(0.1) # delay here to ensure all bytes have time for receipt
             bytesAvailable = self.SerialObj.in_waiting
             if bytesAvailable:
-                #print('num bytes available: ' + str(bytesAvailable))####DEBUG####
-                #print('bytes: "' + str(self.SerialObj.read(bytesAvailable)) + '"') ####DEBUG####
-                self.SerialObj.read(bytesAvailable)    #either this or print lines above, not both
+                self.SerialObj.read(bytesAvailable)
             else:
                 break
-        
 
         # Get CPCH ID
         # Read param to verify the message.  Note that this must be
@@ -168,30 +156,20 @@ class CpchSerial(CpcHeadstage):
         # not all channels can (or will) return data.  Unrequested channels
         # are unreturned by the system.
         msg = self.EncodeConfigReadMsg(1)
-        
-        ####DEBUG####
-        #print('ConfigReadMessage: ' + str([int(i) for i in msg]))
-        
         self.SerialObj.write(msg)
         # Check response
         r = bytearray(self.SerialObj.read(7))   #cast string to more portable bytearray
         rcnt = len(r)
-        
-        
-        ####DEBUG####
-        #print(r)
-        #print('response: ' + str([int(i) for i in bytearray(r)]))
-        
 
         # Do this after the first read so that we can establish if any
         # response was given
-        #assert(rcnt > 0,'No response from CPCH. Check power, check connections');
+        assert rcnt > 0, 'No response from CPCH. Check power, check connections'
         
         msgId = self.msgIdConfigurationReadResponse
         assert rcnt == 7, 'Wrong number of bytes returned. Expected [%r], received [%r]' % (rcnt , 7)
         assert r[0] == msgId, 'Bad response message id.  Expected [%r], received [%r]' % (msgId, r[0])
         assert r[1] == 1, 'Bad parameter id. Expected [%r], received [%r]'% (1, r[1])
-        assert self.XorChksum(r) == 0, 'Bad checksum'
+        assert self.XorChksum(r)[0] == 0, 'Bad checksum'
         u32Parameter = 0
         for i in reversed(r[2:5]):
             u32Parameter = (u32Parameter << 8) + i
@@ -208,12 +186,8 @@ class CpchSerial(CpcHeadstage):
         self.SerialObj.write(msg)#fwrite(obj.SerialObj, msg, 'uint8');
         
         # Check response
-        
         r = bytearray(self.SerialObj.read(3))   #[r, rcnt] = fread(obj.SerialObj, 3, 'uint8');
         rcnt = len(r)
-        
-        ####DEBUG####
-        #print('response: ' + str([int(i) for i in bytearray(r)]))
         
         msgId = self.msgIdConfigurationWriteResponse
         assert rcnt == 3, 'Wrong number of bytes returned'
@@ -230,69 +204,113 @@ class CpchSerial(CpcHeadstage):
         r = bytearray(self.SerialObj.read(7)) #[r, rcnt] = fread(obj.SerialObj, 7, 'uint8');
         rcnt = len(r)
         
-        ####DEBUG####
-        #print('response: ' + str([int(i) for i in bytearray(r)]))
-        
         msgId = self.msgIdConfigurationReadResponse
         assert rcnt == 7, 'Wrong number of bytes returned'
         assert r[0] == msgId, 'Bad response message id'
         
         frameB = self.DecodeMsg(r, self.BioampCnt, self.GPICnt)
         
-        # # Apply a workaround to a noted problem that the CPCH doesn;t
-        # # reply with the correct mask.  It appears that on the seData
-        # # mask needs to be circshifted by 2 bits
-        # circShiftMask = frameB.Mask;
-        # for bitIn = 17:32
-        #     bitOut = bitIn+2;
-        #     if bitOut > 32
-        #         bitOut = bitOut-16;
-        #     end
-        #     circShiftMask = bitset(circShiftMask,bitOut,bitget(frameB.Mask,bitIn));
-        # end
-        # frameB.Mask = circShiftMask;
-        
-        #Debug
-        #reshape(dec2binvec(double(frameB.Mask),32),16,[])';
-        #reshape(dec2binvec(double(channel_config),32),16,[])';
-        
-        
         assert frameB.Mask == channel_config ,'Defined channel mask does not match returned mask. Expected: uint32[%d] Got:uint32[%d]' % (channel_config, frameB.Mask)
         
         self.ChannelMask = [int(i) for i in format(frameB.Mask, '0' + str(self.DataBuffer.shape[1]) + 'b')]
-        
-        ####DEBUG####
-        #print(self.ChannelMask)
-        #print(self.DataBuffer.shape[1])
-        #print(len(self.ChannelMask))
-        #fclose(obj.SerialObj);  % not clear why we are closing here (RSA)
         
         pass
         
     def start(self):
         '''
-
         Start the data streaming
-
-        :return:
         '''
+        self.StartTime = time.time()
+        print('[%s] Starting CPCH with %d differential and %d single-ended inputs...' % (__file__, self.BioampCnt, self.GPICnt))
 
-        msg = self.EncodeStartMsg()
-        self.SerialObj.write(msg)
+        if self.SerialObj.closed:
+            self.SerialObj.open()
+
+        if not self.SerialObj.closed:
+            msg = self.EncodeStartMsg()
+
+            bytesAvailable = self.SerialObj.in_waiting
+            if bytesAvailable:
+                self.SerialObj.read(bytesAvailable)
+
+            self.SerialObj.write(msg)
+            self.IsRunning = True
 
         pass
-        
 
-    def getData(self, numSamples, idxChannel):
+    def getData(self, numSamples=None, idxChannel=None):
+        numSamples = numSamples or self.NumSamples
+        idxChannel = idxChannel or self.ChannelIds
 
+        # Start device if not already running
+        if self.SerialObj.closed or not self.IsRunning:
+            self.start()
 
+        # Check for new data
+        numAvailable = self.SerialObj.in_waiting
+        if numAvailable == 0:
+            data = self.DataBuffer[-self.NumSamples:, :]
+            return data
 
+        # Read samples from serial buffer and place in internal bufer
+        # (potentially with leftover remaining bytes)
+        r = bytearray(self.SerialObj.read(numAvailable))
+        rawBytes = self.SerialBuffer + r
 
+        payloadSize = 2*(self.BioampCnt + self.GPICnt)
+        msgSize = payloadSize + 6
+
+        # Align the data bytes. If all's well the first byte of the
+        # remainder should be a start char which is saved for the next
+        # time the buffer is read
+        d = self.AlignDataBytes(rawBytes, msgSize)
+        alignedData = d['dataAligned']
+        remainderBytes = d['remainderBytes']
+
+        # Store remaining bytes for the next read
+        self.SerialBuffer = remainderBytes
+
+        # No new data
+        if not alignedData:
+            data = self.DataBuffer[-self.NumSamples:, :]
+            return data
+
+        # Check validation parameters(chksum, etc)
+        d = self.ValidateMessages(alignedData, payloadSize)
+        validData = d['validData']
+        errorStats = d['errorStats']
+
+        self.CountTotalMessages = self.CountTotalMessages + len(alignedData)
+        self.CountBadChecksum = self.CountBadChecksum + errorStats['sumBadChecksum']
+        self.CountBadStatus = self.CountBadStatus + errorStats['sumBadStatus']
+        self.CountBadSequence = self.CountBadSequence + errorStats['sumBadSequence']
+        self.CountAdcError = self.CountAdcError + errorStats['sumAdcError']
+
+        numValidSamples = len(validData)
+        numBytes = len(validData[0])
+
+        assert msgSize == numBytes
+
+        # Extract the signals
+        d = self.GetSignalData(validData, self.BioampCnt, self.GPICnt)
+        diffDataI16 = d['diffDataInt16']
+        seDataU16 = d['seDataU16']
+
+        # Perform scaling
+        deDataNormalized = []
+        for tup in diffDataI16:
+            deDataNormalized.append([float(x)*self.GainDifferential for x in tup])
+
+        seDataNormalized = []
+        for tup in seDataU16:
+            seDataNormalized.append([float(x)/1024.0*self.GainSingleEnded for x in tup])
+
+        # Send sequence data as last single ended channel
+
+        # Log data
+
+        # Update internal formatted data buffer
+
+        # Return the most recently requested data
 
         pass
-        
-    ###TODO## translate the rest of the methods from matlab to python
-        
-        
-        
-        

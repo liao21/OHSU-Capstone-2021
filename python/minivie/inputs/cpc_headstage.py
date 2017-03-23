@@ -4,6 +4,7 @@ Created on Tue Jan 26 2017
 Python translation of CpcHeadstage.m in MATLAB minivie
 
 @author: D. Samson
+Updated 3-21-17 by Connor Pyles
 """
 
 import struct
@@ -22,36 +23,37 @@ class CpcHeadstage(object):
     """
     
     def __init__(self):
-        self.msgIdStartStreaming = 1
-        self.msgIdStopStreaming  = 2
-        self.msgIdStatusRequest  = 3
-        self.msgIdConfigurationWrite = 4
-        self.msgIdConfigurationRead = 5
-        self.msgIdCpcData = 128
-        self.msgIdStopStreamingResponse = 129
-        self.msgIdStatusData = 130
-        self.msgIdConfigurationReadResponse = 131
-        self.msgIdConfigurationWriteResponse = 132
+        self.msg_id_start_streaming = 1
+        self.msg_id_stop_streaming = 2
+        self.msg_id_status_request = 3
+        self.msg_id_configuration_write = 4
+        self.msg_id_configuration_read = 5
+        self.msg_id_cpc_data = 128
+        self.msg_id_stop_streaming_response = 129
+        self.msg_id_status_data = 130
+        self.msg_id_configuration_read_response = 131
+        self.msg_id_configuration_write_response = 132
     
-    def EncodeStartMsg(self):
+    def encode_start_msg(self):
         msg = bytearray()
         msg += struct.pack('B', 1)
-        msg += struct.pack('B', self.XorChksum(msg)[0])
+        msg += struct.pack('B', self.xor_chksum(msg)[0])
         return msg
 
-    def EncodeStopMsg(self):
+    def encode_stop_msg(self):
         msg = bytearray()
         msg += struct.pack('B', 2)
-        msg += struct.pack('B', self.XorChksum(msg)[0])
+        msg += struct.pack('B', self.xor_chksum(msg)[0])
         return msg
 
-    def EncodeStatusMsg(self):
+    def encode_status_msg(self):
         msg = bytearray()
         msg += struct.pack('B', 3)
-        msg += struct.pack('B', self.XorChksum(msg)[0])
+        msg += struct.pack('B', self.xor_chksum(msg)[0])
         return msg
 
-    def XorChksum(self, msg, poly=0b101001101):
+    @staticmethod
+    def xor_chksum(msg, poly=0b101001101):
         """
         XOR checksum of msg using 0xA6 default polynomial
         
@@ -81,27 +83,27 @@ class CpcHeadstage(object):
             for byte in this_msg:
                 val = (val << 8) + byte
 
-            pBits = poly.bit_length()
+            p_bits = poly.bit_length()
 
-            val <<= pBits - 1   # pad input with a byte for the remainder
+            val <<= p_bits - 1   # pad input with a byte for the remainder
 
-            vBits = val.bit_length()
+            v_bits = val.bit_length()
 
-            for i in reversed(list(range(pBits - 1, vBits))):
+            for i in reversed(list(range(p_bits - 1, v_bits))):
                 if val >> i == 1:
-                    val ^= poly << ((i + 1) - pBits)
+                    val ^= poly << ((i + 1) - p_bits)
 
             vals.append(int(val))
         return vals
         
-    def EncodeConfigReadMsg(self, indx):
+    def encode_config_read_msg(self, indx):
         msg = bytearray()
         msg = msg + struct.pack('B',5)
         msg = msg + struct.pack('B',indx)
-        msg = msg + struct.pack('B',self.XorChksum(msg)[0])
+        msg = msg + struct.pack('B', self.xor_chksum(msg)[0])
         return msg
     
-    def EncodeConfigWriteMsg(self, indx, payload):
+    def encode_config_write_msg(self, indx, payload):
             endian = sys.byteorder  #[~, ~, endian] = computer()
             
             msg = bytearray()
@@ -113,10 +115,11 @@ class CpcHeadstage(object):
             else:
                 msg = msg + struct.pack('I', payload)   #msg(3:6) = typecast(uint32(payload), 'uint8')
             
-            msg = msg + struct.pack('B',self.XorChksum(msg)[0])
+            msg = msg + struct.pack('B', self.xor_chksum(msg)[0])
             return msg
-    
-    def DecodeMsg(self, msg, diffCnt, seCnt):
+
+    @staticmethod
+    def decode_msg(msg, diff_cnt, se_cnt):
             endian = sys.byteorder  #[~, ~, endian] = computer();
             
             msgx = bytearray(msg)
@@ -126,11 +129,11 @@ class CpcHeadstage(object):
             frame.Type = msgx[0]
             
             if msg[0] == 128:       # 1KHz CPCH Data Stream
-                frame.Status.CommErrCnt = msgx[1]
-                frame.Status.MsgIDErr   = ((msgx[2] >> 0) & 1) != 0
-                frame.Status.ChksumErr  = ((msgx[2] >> 1) & 1) != 0
-                frame.Status.LengthErr  = ((msgx[2] >> 3) & 1) != 0
-                frame.Status.ADCErr     = ((msgx[2] >> 7) & 1) != 0
+                frame.Status.Comm_Err_Cnt = msgx[1]
+                frame.Status.Msd_ID_Err = ((msgx[2] >> 0) & 1) != 0
+                frame.Status.Chksum_Err = ((msgx[2] >> 1) & 1) != 0
+                frame.Status.Length_Err = ((msgx[2] >> 3) & 1) != 0
+                frame.Status.ADC_Err = ((msgx[2] >> 7) & 1) != 0
                 
                 frame.Sequence = msg[3]
                 frame.DataBytes = msg[4]
@@ -151,11 +154,11 @@ class CpcHeadstage(object):
                 frame = []  # Contains no data, only ID & Chksum
                 
             elif msg[0] == 130:        # Async. Status Response
-                frame.Status.CommErrCnt = msgx[1]
-                frame.Status.MsgIDErr   = ((msgx[2] >> 0) & 1) != 0 #(bitget(msgx(3), 1)) ~= 0
-                frame.Status.ChksumErr  = ((msgx[2] >> 1) & 1) != 0 #(bitget(msgx(3), 2)) ~= 0
-                frame.Status.LengthErr  = ((msgx[2] >> 2) & 1) != 0 #(bitget(msgx(3), 3)) ~= 0
-                frame.Status.ADCErr     = ((msgx[2] >> 3) & 1) != 0 #(bitget(msgx(3), 4)) ~= 0
+                frame.Status.Comm_Err_Cnt = msgx[1]
+                frame.Status.Msd_ID_Err = ((msgx[2] >> 0) & 1) != 0 #(bitget(msgx(3), 1)) ~= 0
+                frame.Status.Chksum_Err = ((msgx[2] >> 1) & 1) != 0 #(bitget(msgx(3), 2)) ~= 0
+                frame.Status.Length_Err = ((msgx[2] >> 2) & 1) != 0 #(bitget(msgx(3), 3)) ~= 0
+                frame.Status.ADC_Err = ((msgx[2] >> 3) & 1) != 0 #(bitget(msgx(3), 4)) ~= 0
                 
             elif msg[0] == 131:        # Async. Config Read Response
                 frame.ID = msgx[1]
@@ -180,41 +183,42 @@ class CpcHeadstage(object):
             
             return frame
 
-    def AlignDataBytes(self, dataStream, msgSize):
-        d = self.ByteAlignFast(dataStream, msgSize)
+    def align_data_bytes(self, data_stream, msg_size):
+        d = self.byte_align_fast(data_stream, msg_size)
         return d
 
-    def ByteAlignFast(self, dataStream, msgSize):
+    @staticmethod
+    def byte_align_fast(data_stream, msg_size):
 
         # Find all start chars ('128') and index the next set of bytes
         # off of these starts.  This could lead to overlapping data
         # but valid data will be verified using the checksum
-        bytePattern = [128, 0, 0]
-        idxStartBytes = [i for i, x in enumerate(dataStream) if x == 128]
+        byte_pattern = [128, 0, 0]
+        idx_start_bytes = [i for i, x in enumerate(data_stream) if x == 128]
 
-        if not idxStartBytes:
-            print('No start sequence [' + ' '.join(str(x) for x in bytePattern) + '] found in data stream of length %d.  Try resetting CPCH' % (len(dataStream)))
+        if not idx_start_bytes:
+            print('No start sequence [' + ' '.join(str(x) for x in byte_pattern) + '] found in data stream of length %d.  Try resetting CPCH' % (len(data_stream)))
 
         # Check if there are too few bytes between the last start
         # character and the end of the buffer
-        idxStartBytesInRange = [x for x in idxStartBytes if x <= len(dataStream) - msgSize]
-        if not idxStartBytesInRange:
+        idx_start_bytes_in_range = [x for x in idx_start_bytes if x <= len(data_stream) - msg_size]
+        if not idx_start_bytes_in_range:
             # No full messages found
-            d = {'dataAligned':  [], 'remainderBytes': dataStream}
+            d = {'data_aligned':  [], 'remainder_bytes': data_stream}
             return d
 
-        remainderBytes = dataStream[idxStartBytesInRange[-1] + msgSize:]
+        remainder_bytes = data_stream[idx_start_bytes_in_range[-1] + msg_size:]
 
         # Align the data based on the validated start characters
-        dataAligned = []
-        for i in idxStartBytesInRange:
-            dataAligned.append(dataStream[i: i + msgSize])
+        data_aligned = []
+        for i in idx_start_bytes_in_range:
+            data_aligned.append(data_stream[i: i + msg_size])
 
         # Return data
-        d = {'dataAligned': dataAligned, 'remainderBytes': remainderBytes}
+        d = {'data_aligned': data_aligned, 'remainder_bytes': remainder_bytes}
         return d
 
-    def ValidateMessages(self, alignedData, expectedLength):
+    def validate_messages(self, aligned_data, expected_length):
         """
         Validate a matrix of messages using a criteria of checksum,
         appropriate message length, and status bytes
@@ -224,55 +228,56 @@ class CpcHeadstage(object):
         """
 
         # Compute CRC
-        computedChecksum = self.XorChksum(alignedData)
+        computed_checksum = self.xor_chksum(aligned_data)
 
         # Find validated data by ensuring it is the correct length and has correct checksum
         # Status byte upper four bits are set to zero
-        isValidStatusByte = [not(x[2] & 240) for x in alignedData]
-        isAdcError = [bool(int('{0:08b}'.format(x[2])[3])) for x in alignedData]
-        isValidLength = [x[4] == expectedLength for x in alignedData]
-        isValidChecksum = [not bool(x) for x in computedChecksum]
-        isValidData = isValidChecksum and isValidLength and isValidStatusByte
+        is_valid_status_byte = [not(x[2] & 240) for x in aligned_data]
+        is_adc_error = [bool(int('{0:08b}'.format(x[2])[3])) for x in aligned_data]
+        is_valid_length = [x[4] == expected_length for x in aligned_data]
+        is_valid_checksum = [not bool(x) for x in computed_checksum]
+        is_valid_data = is_valid_checksum and is_valid_length and is_valid_status_byte
 
-        validData = [x for i, x in enumerate(alignedData) if isValidData[i]]
+        valid_data = [x for i, x in enumerate(aligned_data) if is_valid_data[i]]
 
         # No valid data in packet
-        if not validData:
+        if not valid_data:
             return
 
         # Check sequence bytes in batch operation
-        sequenceRow = [float(x[3]) for x in validData]
-        sequenceExpected = [(x + sequenceRow[0]) % 256 for x in range(len(validData))]
-        isValidSequence = [(sequenceExpected[i] - sequenceRow[i]) == 0.0 for i, x in enumerate(sequenceRow)]
+        sequence_row = [float(x[3]) for x in valid_data]
+        sequence_expected = [(x + sequence_row[0]) % 256 for x in range(len(valid_data))]
+        is_valid_sequence = [(sequence_expected[i] - sequence_row[i]) == 0.0 for i, x in enumerate(sequence_row)]
 
-        sumBadStatus = isValidStatusByte.count(False)
-        sumBadLength = isValidLength.count(False)
-        sumBadChecksum = isValidChecksum.count(False)
-        sumBadSequence = isValidSequence.count(False)
-        sumAdcError = isAdcError.count(False)
+        sum_bad_status = is_valid_status_byte.count(False)
+        sum_bad_length = is_valid_length.count(False)
+        sum_bad_checksum = is_valid_checksum.count(False)
+        sum_bad_sequence = is_valid_sequence.count(False)
+        sum_adc_error = is_adc_error.count(False)
 
-        errorStats = {'sumBadStatus': sumBadStatus, 'sumBadLength': sumBadLength, 'sumBadChecksum': sumBadChecksum, 'sumBadSequence': sumBadSequence, 'sumAdcError': sumAdcError}
-        d = {'validData': validData, 'errorStats': errorStats}
+        error_stats = {'sum_bad_status': sum_bad_status, 'sum_bad_length': sum_bad_length, 'sum_bad_checksum': sum_bad_checksum, 'sum_bad_sequence': sum_bad_sequence, 'sum_adc_error': sum_adc_error}
+        d = {'valid_data': valid_data, 'error_stats': error_stats}
         return d
 
-    def GetSignalData(self, validData, diffCnt, seCnt):
+    @staticmethod
+    def get_signal_data(valid_data, diff_cnt, se_cnt):
         # Typecast the data to the appropriate data size
 
         # Get data size
-        num_valid_samples = len(validData)
+        num_valid_samples = len(valid_data)
 
         # Convert the valid data to Int16int
-        payloadIdxStart = 5
-        payloadIdxEnd = payloadIdxStart + 2*diffCnt # Diff data starts after header
-        deDataU8 = [x[payloadIdxStart:payloadIdxEnd] for x in validData]
-        string_num_int16 = str((payloadIdxEnd - payloadIdxStart)/2)
-        diffDataInt16 = [struct.unpack(string_num_int16 + 'h', x) for x in deDataU8]
+        payload_idx_start = 5
+        payload_idx_end = payload_idx_start + 2 * diff_cnt # Diff data starts after header
+        de_data_u8 = [x[payload_idx_start:payload_idx_end] for x in valid_data]
+        string_num_int16 = str((payload_idx_end - payload_idx_start)/2)
+        diff_data_int16 = [struct.unpack(string_num_int16 + 'h', x) for x in de_data_u8]
 
-        payloadIdxStart = 5 + 2 * diffCnt  # se data starts after diff data
-        payloadIdxEnd = payloadIdxStart + 2 * seCnt
-        seDataU8 = [x[payloadIdxStart:payloadIdxEnd] for x in validData]
-        string_num_uint16 = str((payloadIdxEnd - payloadIdxStart) / 2)
-        seDataU16 = [struct.unpack(string_num_uint16 + 'H', x) for x in seDataU8]
+        payload_idx_start = 5 + 2 * diff_cnt  # se data starts after diff data
+        payload_idx_end = payload_idx_start + 2 * se_cnt
+        se_data_u8 = [x[payload_idx_start:payload_idx_end] for x in valid_data]
+        string_num_uint16 = str((payload_idx_end - payload_idx_start) / 2)
+        se_data_u16 = [struct.unpack(string_num_uint16 + 'H', x) for x in se_data_u8]
 
-        d = {'diffDataInt16': diffDataInt16, 'seDataU16': seDataU16}
+        d = {'diff_data_int16': diff_data_int16, 'se_data_u16': se_data_u16}
         return d

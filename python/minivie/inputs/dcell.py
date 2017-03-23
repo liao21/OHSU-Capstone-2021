@@ -169,6 +169,9 @@ class DCellSerial(object):
         if self.__thread is not None:
             self.__thread.join()
 
+    def stop(self):
+        self.close()
+
 
 def interactive_testing(port='/dev/ttyUSB0'):
     # Method so interactively send commands and receive output

@@ -7,6 +7,7 @@ import datetime as dt
 import time
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 import csv
+import logging
 
 import numpy as np
 
@@ -285,6 +286,8 @@ class TrainingData:
             return False
         
     def add_data(self, data_, id_, name_):
+        # New Data marked with:
+        # time_stamp, name, id, data
         self.time_stamp.append(time.time())
         self.name.append(name_)
         self.id.append(id_)
@@ -299,12 +302,15 @@ class TrainingData:
             total = [0] * num_motions
             for c_ in range(num_motions):
                 total[c_] = self.id.count(c_)
+                logging.debug('{} [{}]'.format(self.motion_names[c_],total[c_]))
         else:
             total = self.id.count(motion_id)
 
         return total
 
     def load(self):
+        # Data loaded with:
+        # time_stamp, name, id, data
 
         if not os.path.isfile(self.filename + self.file_ext):
             print('File Not Found: ' + self.filename + self.file_ext)
@@ -326,6 +332,7 @@ class TrainingData:
             motion_name[idx_] = val_.decode('utf-8')
         self.name = motion_name
         self.data = h5['/data/data'][:].tolist()
+        self.time_stamp = h5['/data/time_stamp'][:].tolist()
         h5.close()
 
         self.num_samples = len(self.id)

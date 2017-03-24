@@ -257,6 +257,7 @@ class TrainingData:
         self.num_samples = 0
 
     def reset(self):
+        # Clear all data and reset the data store
         self.data = []  # List of all feature extracted samples
         self.id = []  # List of class indices that each sample belongs to
         self.name = []  # Name of each class
@@ -265,6 +266,10 @@ class TrainingData:
 
     def clear(self, motion_id):
         # Remove the class data for the matching index
+        # Example:
+        #     self.clear(0)
+        #
+        # Note to clear all data use the reset() method
         indices = [i for i, x in enumerate(self.id) if x == motion_id]
 
         for rev in indices[::-1]:
@@ -296,6 +301,9 @@ class TrainingData:
 
     def get_totals(self, motion_id=None):
         # Return a list of the total sample counts for each class
+        # Example:
+        #     a.get_totals(10)
+        #     a.get_totals()
         num_motions = len(self.motion_names)
 
         if motion_id is None:

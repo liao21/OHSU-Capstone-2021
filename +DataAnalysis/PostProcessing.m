@@ -344,5 +344,108 @@ classdef PostProcessing
             hPpt.close();
             
         end
+        function fileData = processTacBatchPython(dataPath,subjectId)
+            
+            % Output file (PPTX)
+            outDir = pwd;
+            outputFile = fullfile(outDir,[subjectId '_TAC.pptx']);
+            
+            if ischar(dataPath)
+                % treat input as a path and load the data
+                s = rdir(fullfile(dataPath,'*TAC*LOG*.hdf5'));
+                
+                if isempty(s)
+                    error('No files found: %s\n',fullfile(dataPath,'*TAC*LOG*.hdf5'))
+                end
+                
+                % sort by date
+                [~,idx] = sort([s.datenum]);
+                s = s(idx);
+                
+                for i = 1:length(s)
+                    try
+                        newData = DataAnalysis.ParsePythonData.getTACLog(s(i).name);
+                    catch loadError
+                        newData = [];
+                        warning(loadError.message);
+                    end
+                    
+                    % Load whatever is in the file
+                    fileData{i} = newData; %#ok<AGROW>
+                end
+                
+            else
+                error('Expected a data path to *.hdf5 files');
+            end
+            
+            hPpt = PptMaker;
+            hPpt.Title = 'TAC Results';
+            hPpt.Author = 'RSA';
+            hPpt.SubTitle = {subjectId; datestr(now)};
+            hPpt.OutputFile = outputFile;
+            hPpt.initialize();
+            
+            for i = 1:length(fileData)
+                [pname,fname,~] = fileparts(s(i).name);
+                [~,basedir,~] = fileparts(pname);
+                
+                fname = fullfile(basedir,fname);
+                
+                thisAssessment = fileData{i};
+                
+                % handle case where loaded file is empty (corrupt?)
+                if isempty(thisAssessment)
+                    continue
+                end
+                
+                nJoints = length(thisAssessment(1).target_joint);
+                switch nJoints
+                    case 3
+                        fprintf(' %s is a TAC-3\n',s(i).name);
+                    case 1
+                        fprintf(' %s is a TAC-1\n',s(i).name);
+                end
+                
+                [completionPct, cellSummary, cellHistory, pathEfficiency] = DataAnalysis.Assessments.parseTacPython(fileData{i});
+                
+                % convert precision
+                for iCell = 1:numel(cellSummary)
+                    cellVal = cellSummary{iCell};
+                    if isnumeric(cellVal) && ~isempty(strfind(num2str(cellVal),'.'))
+                        cellSummary{iCell} = num2str(cellVal,'%4.1f');
+                    end
+                end
+                
+                % convert precision
+                for iCell = 1:numel(cellHistory)
+                    cellVal = cellHistory{iCell};
+                    if isnumeric(cellVal) && ~isempty(strfind(num2str(cellVal),'.'))
+                        cellHistory{iCell} = num2str(cellVal,'%4.1f');
+                    end
+                end
+                
+                overall = {'Completion Pct',num2str(completionPct,'%4.1f'); ...
+                    'Path Efficiency',num2str(pathEfficiency,'%4.1f');...
+                    'Num Classes',size(cellSummary,1)-1};
+                
+                % Add content
+                hPpt.SlideNames = cat(1,hPpt.SlideNames,fname);
+                exportToPPTX('addslide');
+                exportToPPTX('addtext',fname); %,'Position','Title 1');
+                
+                exportToPPTX('addtable',cellHistory,...
+                    'Position',[0.05 0.5 4.95 size(cellHistory,1) * 0.10 ],...
+                    'FontSize',10)
+                exportToPPTX('addtable',overall,...
+                    'Position',[6.05 0.5 3 0.25 ],...
+                    'FontSize',10)
+                exportToPPTX('addtable',cellSummary,...
+                    'Position',[5.05 1.5 4.9 size(cellSummary,1) * 0.25 ],...
+                    'FontSize',10)
+            end
+            
+            hPpt.close();
+            
+        end
     end
 end

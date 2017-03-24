@@ -195,8 +195,12 @@ class NfuUdp:
             # TODO: consider keeping hand in current position
             values = np.append(values, 20 * [0.0])
 
-        logging.info('Joint Command:')
-        logging.info(["{0:0.2f}".format(i) for i in values[0:27]])
+        # 3/24/2017 RSA: Updated angle formatting
+        # 'Joint Angles: [0.00 1.20 3.14 ... ]'
+        logging.info('Joint Angles: ' +
+                     np.array2string(np.array(values),
+                                     formatter={'float_kind': lambda x: "%.2f" % x}, max_line_width=None,
+                                     suppress_small=True))
 
         # TEMP fix to lock middle finger and prevent drift
         # values[mpl.JointEnum.MIDDLE_MCP] = 0.35

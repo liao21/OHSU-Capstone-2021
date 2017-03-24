@@ -422,6 +422,8 @@ class MyoUdp(object):
             elif len(data) == 1:  # BATT Value
                 with self.__lock:
                     self.__battery_level = ord(data)
+                msg = 'Socket {} Battery Level: {}'.format(self.addr, self.__battery_level)
+                logging.info(msg)
 
             else:
                 # incoming data is not of length = 8, 20, 40, or 48
@@ -442,8 +444,6 @@ class MyoUdp(object):
         # Return the battery value (0-100)
         with self.__lock:
             battery = self.__battery_level
-        msg = 'Battery Level: {}'.format(battery)
-        logging.info(msg)
         return battery
 
     def get_data_rate_emg(self):

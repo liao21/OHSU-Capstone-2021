@@ -246,15 +246,15 @@ classdef PostProcessing
             hPpt.close();
             
         end
-        function fileData = processTac1Batch(dataPath,subjectId)
+        function fileData = processTacBatch(dataPath,subjectId)
             
             % Output file (PPTX)
             outDir = pwd;
-            outputFile = fullfile(outDir,[subjectId '_Tac1.pptx']);
+            outputFile = fullfile(outDir,[subjectId '_TAC.pptx']);
             
             if ischar(dataPath)
                 % treat input as a path and load the data
-                s = rdir(fullfile(dataPath,'*.tacAssessment'));
+                s = [rdir(fullfile(dataPath,'*.tacAssessment')); rdir(fullfile(dataPath,'*TAC*LOG*.hdf5'))];
                 
                 if isempty(s)
                     error('No files found: %s\n',fullfile(dataPath,'*.tacAssessment'))
@@ -265,19 +265,18 @@ classdef PostProcessing
                 s = s(idx);
                 
                 for i = 1:length(s)
-                    try
+                    if any(strfind(s(i).name, '.tacAssessment'))
                         newData = load(s(i).name,'-mat');
-                    catch loadError
-                        newData = [];
-                        warning(loadError.message);
+                    elseif any(strfind(s(i).name, '.hdf5'))
+                        newData = DataAnalysis.ParsePythonData.getTACLog(s(i).name);
                     end
-                    
+
                     % Load whatever is in the file
-                    fileData{i} = newData; %#ok<AGROW>
+                    fileData{i}.structTrialLog = newData; %#ok<AGROW>
                 end
                 
             else
-                error('Expected a data path to *.tacAssessment files');
+                error('Expected a data path to *.tacAssessment or *.hdf5 files');
             end
             
             hPpt = PptMaker;
@@ -300,14 +299,20 @@ classdef PostProcessing
                     continue
                 end
                 
-                if isfield(thisAssessment.structTrialLog(1),'targetClass') && isnumeric(fileData{i}.structTrialLog(1).targetClass)
-                    fprintf(' %s is a TAC-3\n',s(i).name);
-                    continue
+                if isfield(fileData{i}.structTrialLog, 'completion_time')  % Python data
+                    nJoints = length(fileData{i}.structTrialLog(1).target_joint);
                 else
-                    fprintf(' %s is a TAC-1\n',s(i).name);
+                    nJoints = 1;  % TODO: Update this logic
                 end
                 
-                [completionPct, cellSummary, cellHistory, pathEfficiency] = DataAnalysis.Assessments.parseTac1(fileData{i}.structTrialLog);
+                switch nJoints
+                    case 3
+                        fprintf(' %s is a TAC-3\n',s(i).name);
+                    case 1
+                        fprintf(' %s is a TAC-1\n',s(i).name);
+                end
+                
+                [completionPct, cellSummary, cellHistory, pathEfficiency] = DataAnalysis.Assessments.parseTac(fileData{i}.structTrialLog);
                 
                 % convert precision
                 for iCell = 1:numel(cellSummary)
@@ -325,9 +330,19 @@ classdef PostProcessing
                     end
                 end
                 
-                overall = {'Completion Pct',num2str(completionPct,'%4.1f'); ...
-                    'Path Efficiency',num2str(pathEfficiency,'%4.1f');...
-                    'Num Classes',size(cellSummary,1)-1};
+                switch nJoints
+                    case 1
+                        overall = {'Completion Pct',num2str(completionPct,'%4.1f'); ...
+                            'Path Efficiency',num2str(pathEfficiency,'%4.1f');...
+                            'Num Classes',size(cellSummary,1)-1};
+                    case 3
+                        overall = {'Completion Pct',num2str(completionPct,'%4.1f'); ...
+                            'Path Efficiency (Joint1)',num2str(pathEfficiency(1),'%4.1f');...
+                            'Path Efficiency (Joint2)',num2str(pathEfficiency(2),'%4.1f');...
+                            'Path Efficiency (Joint3)',num2str(pathEfficiency(3),'%4.1f');...
+                            'Num Classes',size(cellSummary,1)-1};
+                end
+                
                 
                 % Add content
                 hPpt.SlideNames = cat(1,hPpt.SlideNames,fname);
@@ -341,7 +356,7 @@ classdef PostProcessing
                     'Position',[6.05 0.5 3 0.25 ],...
                     'FontSize',10)
                 exportToPPTX('addtable',cellSummary,...
-                    'Position',[5.05 1.5 4.9 size(cellSummary,1) * 0.25 ],...
+                    'Position',[5.05 2.0 4.9 size(cellSummary,1) * 0.25 ],...
                     'FontSize',10)
             end
             

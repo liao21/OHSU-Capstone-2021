@@ -67,7 +67,7 @@ classdef Assessments
             motionAccuracy = mean(diag(normMat)) .* 100;
             
         end
-        function [completionAccuracy, cellSummary, cellHistory, meanEfficiency] = parseTac1(structTrialLog)
+        function [completionAccuracy, cellSummary, cellHistory, meanEfficiency] = parseTac(structTrialLog)
             % [completionAccuracy, cellSummary, cellHistory, meanEfficiency] = DataAnalysis.Assessments.parseTac1(structTrialLog)
             % Parse the TAC 1 trial data.  return the scalar accuracy of
             % number of successful trials, as well as cell array tables of

@@ -52,7 +52,7 @@ classdef ParsePythonData
             info = h5info(file);
             
             % Get first level data
-            allClassNames = h5read(file, '/TrialLog/AllClassNames');
+            allClassNames = DataAnalysis.ParsePythonData.removeNullCharacters(h5read(file, '/TrialLog/AllClassNames'));
             classIdToTest = h5read(file, '/TrialLog/ClassIdToTest');
             
              % Initialize data storage struct
@@ -63,7 +63,7 @@ classdef ParsePythonData
              
             data = struct(...
                           'AllClassNames', {allClassNames'},...
-                          'ClassIdToTest', {classIdToTest'}, ...
+                          'ClassIdToTest', {classIdToTest'+1}, ...  % Convert from Python indexing
                           'Data', trial_data ...
                           );   
             
@@ -72,13 +72,18 @@ classdef ParsePythonData
             % Loop through trials and pull data       
             for iTrial = 1:length(trialNames)
                 classDecision = h5read(file, [trialNames{iTrial}, '/classDecision']);
-                classDecision = double(classDecision);
-                targetClass = h5read(file, [trialNames{iTrial}, '/targetClass']);
+                classDecision = double(classDecision) + 1;
+                targetClass = DataAnalysis.ParsePythonData.removeNullCharacters(h5read(file, [trialNames{iTrial}, '/targetClass']));
                 targetClass = targetClass{1};
                 data.Data(iTrial) = struct(...
                               'classDecision', {classDecision},...
                               'targetClass', {targetClass} ...
                               );
+                          
+                % Fix class id to test 
+                % TODO: Figure out why not exported correctly from Python
+                data.ClassIdToTest(iTrial) = strfndw(allClassNames, targetClass);
+                
             end
         end
         

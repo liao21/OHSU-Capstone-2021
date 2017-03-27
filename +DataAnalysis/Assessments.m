@@ -227,7 +227,8 @@ classdef Assessments
             % Compute summary stats by grouping classes
             allTrials = cell(1, nTrials);
             for i = 1:nTrials
-               allTrials{i} = strjoin(structTrialLog(i).target_joint, ':'); 
+               %allTrials{i}(isletter(allTrials{i})==0) = [];
+               allTrials{i} = strjoin(structTrialLog(i).target_joint, '-'); 
             end
             testedClasses = unique(allTrials);
             nUnique = length(testedClasses);

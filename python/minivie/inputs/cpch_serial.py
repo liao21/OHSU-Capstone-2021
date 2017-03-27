@@ -35,7 +35,7 @@ class CpchSerial(CpcHeadstage):
     Typical Baud rate for the device is 921600 bps
     """
     
-    def __init__(self, port='COM1', bioamp_mask=int('0xFFFF', 16), gpi_mask=int('0x0000', 16)):
+    def __init__(self, port='COM24', bioamp_mask=int('0xFFFF', 16), gpi_mask=int('0x0000', 16)):
         """
 
         """
@@ -283,25 +283,21 @@ class CpchSerial(CpcHeadstage):
         se_data_u16 = d['se_data_u16']
 
         # Perform scaling
-        de_data_normalized = []
-        for tup in diff_data_i16:
-            de_data_normalized.append([float(x) * self.gain_differential for x in tup])
-
-        se_data_normalized = []
-        for tup in se_data_u16:
-            se_data_normalized.append([float(x) / 1024.0 * self.gain_single_ended for x in tup])
-
         # Convert to numpy ndarrays
-        # TODO: Try doing this earlier to see if it can help speed things up
-        de_data_normalized = np.array(de_data_normalized)
-        se_data_normalized = np.array(se_data_normalized)
+        de_data_normalized = np.array(diff_data_i16, dtype='float') * self.gain_differential
+        se_data_normalized = np.array(se_data_u16, dtype='float') / 1024.0 * self.gain_single_ended
+        #se_data_normalized = []
+        #for tup in se_data_u16:
+        #    se_data_normalized.append([float(x) / 1024.0 * self.gain_single_ended for x in tup])
 
         # Send sequence data as last single ended channel
         # TODO : Need to debug with seDatacoming in. Is this only for debug purposes?
 
         # Log data
         if self.enable_data_logging:
-            logging.info('Raw Bytes: ' + str(float(raw_bytes[:])))
+            # TODO: Make Py3 compatible
+            # logging.info('Raw Bytes: ' + str(float(raw_bytes[:])))
+            pass
 
         # Update internal formatted data buffer
         # These channel mappings are updated based on the channel mask
@@ -353,11 +349,13 @@ class CpchSerial(CpcHeadstage):
 def main():
 
     import argparse
+    from datetime import datetime
+    import time
 
     # Parameters:
     parser = argparse.ArgumentParser(description='CPCH: Read from CPCH and log.')
     parser.add_argument('-p', '--PORT', help='Serial Port Name (e.g. /dev/ttyUSB0)',
-                        default='/dev/ttyUSB0')
+                        default='COM24')
     args = parser.parse_args()
 
     # Logging
@@ -369,6 +367,12 @@ def main():
     obj.enable_data_logging = True
     # Connect and start streaming
     obj.connect()
+
+    for i in range(100):
+        time.sleep(0.005)
+        d = obj.get_data()
+        # print(d)
+
 
 if __name__ == '__main__':
     main()

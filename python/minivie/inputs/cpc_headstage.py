@@ -265,19 +265,33 @@ class CpcHeadstage(object):
 
         # Get data size
         num_valid_samples = len(valid_data)
+        print('Num New Samples:' + str(num_valid_samples))
 
         # Convert the valid data to Int16int
         payload_idx_start = 5
         payload_idx_end = payload_idx_start + 2 * diff_cnt # Diff data starts after header
         de_data_u8 = [x[payload_idx_start:payload_idx_end] for x in valid_data]
-        string_num_int16 = str((payload_idx_end - payload_idx_start)/2)
-        diff_data_int16 = [struct.unpack(string_num_int16 + 'h', x) for x in de_data_u8]
+        string_num_int16 = str(int((payload_idx_end - payload_idx_start)/2))
+
+        diff_data_int16 = []
+        for x in de_data_u8:
+            # print('DE Message: ' + str(x))
+            new_val = struct.unpack(string_num_int16 + 'h', x)
+            # print('DE Converted: ' + str(new_val))
+            diff_data_int16.append(new_val)
 
         payload_idx_start = 5 + 2 * diff_cnt  # se data starts after diff data
         payload_idx_end = payload_idx_start + 2 * se_cnt
+
         se_data_u8 = [x[payload_idx_start:payload_idx_end] for x in valid_data]
-        string_num_uint16 = str((payload_idx_end - payload_idx_start) / 2)
-        se_data_u16 = [struct.unpack(string_num_uint16 + 'H', x) for x in se_data_u8]
+        string_num_uint16 = str(int((payload_idx_end - payload_idx_start) / 2))
+        # se_data_u16 = [struct.unpack(string_num_uint16 + 'H', x) for x in se_data_u8]
+        se_data_u16 = []
+        for x in se_data_u8:
+            # print('SE Message: ' + str(x))
+            new_val = struct.unpack(string_num_uint16 + 'H', x)
+            # print('SE Converted: ' + str(new_val))
+            se_data_u16.append(new_val)
 
         d = {'diff_data_int16': diff_data_int16, 'se_data_u16': se_data_u16}
         return d

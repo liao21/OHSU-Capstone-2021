@@ -13,6 +13,7 @@ import collections
 import random
 from controls.plant import class_map
 
+
 class MotionTester(object):
 # Method to perform motion tester assessments, communicate results to user
 
@@ -101,10 +102,9 @@ class MotionTester(object):
         for i_rep in range(self.repetitions):  # Right now, assessing each class 3 times
             self.send_status('New Motion Tester Assessment Trial')
             for i,i_class in enumerate(trained_classes):
-                if i_rep == 0:
-                    # Initiate new class storage "struct"
-                    self.class_id_to_test.append(all_class_names.index(i_class))
-                    self.data.append({'targetClass': [], 'classDecision': [], 'voteDecision': [], 'emgFrames': []})
+                # Initiate new class storage "struct"
+                self.class_id_to_test.append(all_class_names.index(i_class))
+                self.data.append({'targetClass': [], 'classDecision': [], 'voteDecision': [], 'emgFrames': []})
 
                 # Assess class
                 is_complete = self.assess_class(i_class)
@@ -209,13 +209,13 @@ class MotionTester(object):
             current_class = 'No Movement'
 
         # Find ids
-        class_id_to_test = self.vie.TrainingData.motion_names.index(class_name_to_test)
-        dict_id = self.class_id_to_test.index(class_id_to_test)
+        # class_id_to_test = self.vie.TrainingData.motion_names.index(class_name_to_test)
+        # dict_id = self.class_id_to_test.index(class_id_to_test)
         current_class_id = self.vie.TrainingData.motion_names.index(current_class)
 
         # Append to data dicts
-        self.data[dict_id]['targetClass'].append(class_name_to_test)
-        self.data[dict_id]['classDecision'].append(current_class_id)
+        self.data[-1]['targetClass'].append(class_name_to_test)
+        self.data[-1]['classDecision'].append(current_class_id)
         # TODO: Update the following metadata
         #self.data[class_id_to_test]['voteDecision'].append([])
         #self.data[class_id_to_test]['emgFrames'].append([])
@@ -231,6 +231,8 @@ class MotionTester(object):
         encoded = [a.encode('utf8') for a in self.vie.TrainingData.motion_names]
         g1.create_dataset('AllClassNames', shape=(len(encoded), 1), data=encoded)
         g1.create_dataset('ClassIdToTest', data=self.class_id_to_test, shape=(len(self.class_id_to_test), 1))
+        g1.create_dataset('MaxCorrect', data=self.max_correct, shape=(len(self.max_correct), 1))
+        g1.create_dataset('Timeout', data=self.timeout, shape=(len(self.timeout), 1))
 
         g2 = g1.create_group('Data')
 

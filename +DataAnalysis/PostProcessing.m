@@ -195,18 +195,22 @@ classdef PostProcessing
             
             if ischar(dataPath)
                 % treat input as a path and load the data
-                s = rdir(fullfile(dataPath,'*.assessmentLog'));
+                s = [rdir(fullfile(dataPath,'*.assessmentLog')); rdir(fullfile(dataPath,'*MOTION_TESTER_LOG.hdf5'))];
                 
                 % sort by date
                 [~,idx] = sort([s.datenum]);
                 s = s(idx);
                 
                 for i = 1:length(s)
-                    structData(i) = load(s(i).name,'-mat');  %#ok<AGROW>
+                    if any(strfind(s(i).name, '.assessmentLog'))
+                        structData(i) = load(s(i).name,'-mat');  %#ok<AGROW>
+                    elseif any(strfind(s(i).name, '.hdf5'))
+                        structData(i).structTrialLog = DataAnalysis.ParsePythonData.getMotionTesterLog(s(i).name);  %#ok<AGROW>
+                    end
                 end
                 
             else
-                error('Expected a data path to *.assessmentLog files');
+                error('Expected a data path to *.assessmentLog or *.hdf5 files');
             end
             
             hPpt = PptMaker;

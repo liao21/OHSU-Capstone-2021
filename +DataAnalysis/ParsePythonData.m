@@ -71,7 +71,7 @@ classdef ParsePythonData
             
             % Loop through trials and pull data       
             for iTrial = 1:length(trialNames)
-                classDecision = h5read(file, [trialNames{iTrial}, '/classDecision'])
+                classDecision = h5read(file, [trialNames{iTrial}, '/classDecision']);
                 classDecision = double(classDecision);
                 targetClass = h5read(file, [trialNames{iTrial}, '/targetClass']);
                 targetClass = targetClass{1};

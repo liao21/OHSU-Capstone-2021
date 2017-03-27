@@ -270,7 +270,7 @@ classdef Assessments
                     cellSummary = [{'Class Name' 'Num Trials' 'Num Completed' 'Mean Completion' 'Mean Efficiency (Joint 1)' 'Mean Efficiency (Joint 2)' 'Mean Efficiency (Joint 3)'}; ...
                         [testedClasses' num2cell(motionTrials') num2cell(motionCompleted') num2cell(motionAccuracy') num2cell(motionEfficiency')]];
 
-                    meanEfficiency = mean(pathEfficiency);
+                    meanEfficiency = mean(pathEfficiency, 1);
             end
         end
     end

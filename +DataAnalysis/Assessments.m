@@ -39,32 +39,47 @@ classdef Assessments
             end
             
             numClasses = length(sLog.AllClassNames);
-            testedClasses = sLog.AllClassNames(sLog.ClassIdToTest);
-
+            testedClasses = sLog.AllClassNames(unique(sLog.ClassIdToTest));
             
-            confuseMat = zeros(numClasses);
+            % Updated to account for repeat tests. Confusion matrix should
+            % be based on all repeats, but success rate must be calculated
+            % on a per-repeat basis.
+            
+            confuseMatOverall = zeros(numClasses);
+            completed = zeros(length(sLog.Data), 1);
             for iClass = 1:length(sLog.Data)
                 testClassId = sLog.ClassIdToTest(iClass);
                 row = accumarray(sLog.Data(iClass).classDecision(:),1,[numClasses 1])';
-                confuseMat(testClassId,:) = row;
+                confuseMatOverall(testClassId,:) = confuseMatOverall(testClassId,:) + row;
+                % Now need to calculate completionAccuracy on a per trial basis
+                if isfield(sLog, 'MaxCorrect') % Newer versions
+                    if row(testClassId) == sLog.MaxCorrect
+                       completed(iClass) = 1; 
+                    end
+                    
+                else 
+                    if row(testClassId) == 10
+                       completed(iClass) = 1; 
+                    end
+                end
             end
             
-            reducedMat = confuseMat(sLog.ClassIdToTest,sLog.ClassIdToTest);
+            reducedMatOverall = confuseMatOverall(unique(sLog.ClassIdToTest), unique(sLog.ClassIdToTest));
+            
+            % plot
+            PlotUtils.confusionMatrix(reducedMatOverall,testedClasses,hAxes)
             
             % compute confusion as percentage
             % Compute the total number of examples
-            classSum = sum(reducedMat,2);
+            classSum = sum(reducedMatOverall,2);
             % Normalize based on the number of examples
-            normMat = reducedMat ./ repmat(classSum,1,size(reducedMat,1));
+            normMat = reducedMatOverall ./ repmat(classSum,1,size(reducedMatOverall,1));
             % should not occur, but if divided by zero, set to zero
             normMat(isnan(normMat)) = 0;
-
-            % plot
-            PlotUtils.confusionMatrix(reducedMat,testedClasses,hAxes)
-            
-            completed = diag(reducedMat) == 10;
-            completionAccuracy = sum(completed) ./ length(completed) .* 100;
             motionAccuracy = mean(diag(normMat)) .* 100;
+
+            completionAccuracy = sum(completed) ./ length(completed) .* 100;
+
             
         end
         function [completionAccuracy, cellSummary, cellHistory, meanEfficiency] = parseTac(structTrialLog)

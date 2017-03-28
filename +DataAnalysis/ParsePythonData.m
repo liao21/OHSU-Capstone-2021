@@ -54,6 +54,14 @@ classdef ParsePythonData
             % Get first level data
             allClassNames = DataAnalysis.ParsePythonData.removeNullCharacters(h5read(file, '/TrialLog/AllClassNames'));
             classIdToTest = h5read(file, '/TrialLog/ClassIdToTest');
+            try
+                % Newer versions have these datasets
+                maxCorrect = h5read(file, '/TrialLog/MaxCorrect');
+                timeout = h5read(file, '/TrialLog/Timeout');
+            catch
+                maxCorrect = NaN;
+                timeout = NaN;
+            end
             
              % Initialize data storage struct
              trial_data = struct(...
@@ -64,6 +72,8 @@ classdef ParsePythonData
             data = struct(...
                           'AllClassNames', {allClassNames'},...
                           'ClassIdToTest', {classIdToTest'+1}, ...  % Convert from Python indexing
+                          'MaxCorrect', {maxCorrect},...
+                          'Timeout', {timeout},...
                           'Data', trial_data ...
                           );   
             

@@ -231,13 +231,13 @@ class MotionTester(object):
         encoded = [a.encode('utf8') for a in self.vie.TrainingData.motion_names]
         g1.create_dataset('AllClassNames', shape=(len(encoded), 1), data=encoded)
         g1.create_dataset('ClassIdToTest', data=self.class_id_to_test, shape=(len(self.class_id_to_test), 1))
-        g1.create_dataset('MaxCorrect', data=self.max_correct, shape=(len(self.max_correct), 1))
-        g1.create_dataset('Timeout', data=self.timeout, shape=(len(self.timeout), 1))
+        g1.create_dataset('MaxCorrect', data=[self.max_correct], shape=(1, 1))
+        g1.create_dataset('Timeout', data=[self.timeout], shape=(1, 1))
 
         g2 = g1.create_group('Data')
 
-        for d in self.data:
-            g3 = g2.create_group(d['targetClass'][0])
+        for i,d in enumerate(self.data):
+            g3 = g2.create_group(str(i))
             encoded = [a.encode('utf8') for a in d['targetClass']]
             g3.create_dataset('targetClass', shape=(len(encoded), 1), data=encoded)
             g3.create_dataset('classDecision', shape=(len(d['classDecision']), 1), data=d['classDecision'])

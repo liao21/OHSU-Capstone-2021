@@ -253,7 +253,7 @@ class CpcHeadstage(object):
         sum_bad_length = is_valid_length.count(False)
         sum_bad_checksum = is_valid_checksum.count(False)
         sum_bad_sequence = is_valid_sequence.count(False)
-        sum_adc_error = is_adc_error.count(False)
+        sum_adc_error = is_adc_error.count(True)
 
         error_stats = {'sum_bad_status': sum_bad_status, 'sum_bad_length': sum_bad_length, 'sum_bad_checksum': sum_bad_checksum, 'sum_bad_sequence': sum_bad_sequence, 'sum_adc_error': sum_adc_error}
         d = {'valid_data': valid_data, 'error_stats': error_stats}
@@ -265,7 +265,6 @@ class CpcHeadstage(object):
 
         # Get data size
         num_valid_samples = len(valid_data)
-        print('Num New Samples:' + str(num_valid_samples))
 
         # Convert the valid data to Int16int
         payload_idx_start = 5

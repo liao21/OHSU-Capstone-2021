@@ -19,7 +19,7 @@ import serial
 from inputs.cpc_headstage import CpcHeadstage
 import time
 import logging
-import struct
+import threading
 
 
 class CpchSerial(CpcHeadstage):
@@ -35,7 +35,7 @@ class CpchSerial(CpcHeadstage):
     Typical Baud rate for the device is 921600 bps
     """
     
-    def __init__(self, port='COM24', bioamp_mask=int('0xFFFF', 16), gpi_mask=int('0x0000', 16)):
+    def __init__(self, port='COM5', bioamp_mask=int('0xFFFF', 16), gpi_mask=int('0x0000', 16)):
         """
 
         """
@@ -80,9 +80,21 @@ class CpchSerial(CpcHeadstage):
         self._channel_mask = []
         self._start_time = time.time()
         self._is_running = False
-        self.__count_cpc = 0
-        self.__time_cpc = 0.0
-        self.__rate_cpc = 0.0
+        self.__valid_message_count = 0
+        self.__valid_byte_count = 0
+        self.__byte_count = 0
+        self.__byte_available_count = 0
+        self.__aligned_byte_count = 0
+        self.__valid_message_rate = 0.0
+        self.__valid_byte_rate = 0.0
+        self.__byte_rate = 0.0
+        self.__byte_available_rate = 0.0
+        self.__aligned_byte_rate = 0.0
+        self.__time_stream_reference = time.time()
+
+        # Initialize threading parameters
+        self.__lock = None
+        self.__thread = None
 
     def connect(self):
         # Initialize the serial object
@@ -122,7 +134,7 @@ class CpchSerial(CpcHeadstage):
         # Transmit STOP message in case data is flowing so the system can sanely start
         msg = self.encode_stop_msg()
         self._serial_obj.write(msg)
-        
+
         while True:
             time.sleep(0.1) # delay here to ensure all bytes have time for receipt
             bytes_available = self._serial_obj.in_waiting
@@ -194,13 +206,9 @@ class CpchSerial(CpcHeadstage):
         assert frameframe_b.Mask == channel_config ,'Defined channel mask does not match returned mask. Expected: uint32[%d] Got:uint32[%d]' % (channel_config, frameframe_b.Mask)
         
         self._channel_mask = [int(i) for i in format(frameframe_b.Mask, '0' + str(self._data_buffer.shape[1]) + 'b')]
-        
-        pass
-        
+
     def start(self):
-        '''
-        Start the data streaming
-        '''
+        # Start the data streaming
 
         self._start_time = time.time()
         print('[%s] Starting CPCH with %d differential and %d single-ended inputs...' % (__file__, self._bioamp_cnt, self._gpi_cnt))
@@ -218,9 +226,18 @@ class CpchSerial(CpcHeadstage):
             self._serial_obj.write(msg)
             self._is_running = True
 
-        pass
+        # Create thread-safe lock so that user based reading of values and thread-based
+        # writing of values do not conflict
+        self.__lock = threading.Lock()
+
+        # Create a thread for processing new incoming data
+        self.__thread = threading.Thread(target=self._stream_data)
+        self.__thread.name = 'CPCHSerial'
+        self.__thread.start()
 
     def get_data(self, num_samples=None, idx_channel=None):
+        # Return data from internal buffer
+
         num_samples = num_samples or self.num_samples
         idx_channel = idx_channel or self.channel_ids
 
@@ -228,114 +245,149 @@ class CpchSerial(CpcHeadstage):
         if self._serial_obj.closed or not self._is_running:
             self.start()
 
-        # Check for new data
-        num_available = self._serial_obj.in_waiting
-        if num_available == 0:
-            data = self._data_buffer[-self.num_samples:, :]
-            self.__count_cpc = 0
-            self.__rate_cpc = 0.0
-            return data
-
-        # Read samples from serial buffer and place in internal bufer
-        # (potentially with leftover remaining bytes)
-        r = bytearray(self._serial_obj.read(num_available))
-        raw_bytes = self._serial_buffer + r
-
-        payload_size = 2*(self._bioamp_cnt + self._gpi_cnt)
-        msg_size = payload_size + 6
-
-        # Align the data bytes. If all's well the first byte of the
-        # remainder should be a start char which is saved for the next
-        # time the buffer is read
-        d = self.align_data_bytes(raw_bytes, msg_size)
-        aligned_data = d['data_aligned']
-        remainder_bytes = d['remainder_bytes']
-
-        # Store remaining bytes for the next read
-        self._serial_buffer = remainder_bytes
-
-        # No new data
-        if not aligned_data:
-            data = self._data_buffer[-self.num_samples:, :]
-            self.__count_cpc = 0
-            self.__rate_cpc = 0.0
-            return data
-
-        # Check validation parameters(chksum, etc)
-        d = self.validate_messages(aligned_data, payload_size)
-        valid_data = d['valid_data']
-        error_stats = d['error_stats']
-
-        self._count_total_messages = self._count_total_messages + len(aligned_data)
-        self._count_bad_checksum = self._count_bad_checksum + error_stats['sum_bad_checksum']
-        self._count_bad_status = self._count_bad_status + error_stats['sum_bad_status']
-        self._count_bad_sequence = self._count_bad_sequence + error_stats['sum_bad_sequence']
-        self._count_adc_error = self._count_adc_error + error_stats['sum_adc_error']
-
-        num_valid_samples = len(valid_data)
-        num_bytes = len(valid_data[0])
-
-        assert msg_size == num_bytes
-
-        # Extract the signals
-        d = self.get_signal_data(valid_data, self._bioamp_cnt, self._gpi_cnt)
-        diff_data_i16 = d['diff_data_int16']
-        se_data_u16 = d['se_data_u16']
-
-        # Perform scaling
-        # Convert to numpy ndarrays
-        de_data_normalized = np.array(diff_data_i16, dtype='float') * self.gain_differential
-        se_data_normalized = np.array(se_data_u16, dtype='float') / 1024.0 * self.gain_single_ended
-        #se_data_normalized = []
-        #for tup in se_data_u16:
-        #    se_data_normalized.append([float(x) / 1024.0 * self.gain_single_ended for x in tup])
-
-        # Send sequence data as last single ended channel
-        # TODO : Need to debug with seDatacoming in. Is this only for debug purposes?
-
-        # Log data
-        if self.enable_data_logging:
-            # TODO: Make Py3 compatible
-            # logging.info('Raw Bytes: ' + str(float(raw_bytes[:])))
-            pass
-
-        # Update internal formatted data buffer
-        # These channel mappings are updated based on the channel mask
-        de_channel_idx = [int(x) for x in '{0:016b}'.format(self.bioamp_mask)] + [0]*16
-        de_channel_idx = [i for i, x in enumerate(de_channel_idx) if bool(x)]
-        se_channel_idx = [0]*16 + [int(x) for x in '{0:016b}'.format(self.gpi_mask)]
-        se_channel_idx = [i for i, x in enumerate(se_channel_idx) if bool(x)]
-
-        if num_valid_samples > self._data_buffer.shape[0]:
-            # Replace entire buffer
-            self._data_buffer[:, de_channel_idx] = de_data_normalized[:, -self._data_buffer.shape[0]:]
-            self._data_buffer[:, se_channel_idx] = se_data_normalized[:, -self._data_buffer.shape[0]:]
-        else:
-            # Check for buffer overrun
-            self._data_buffer = np.roll(self._data_buffer, -1*num_valid_samples, axis=0)
-            buffer_sample_idx = range(self._data_buffer.shape[0] - num_valid_samples, self._data_buffer.shape[0])
-            for i, buffer_channel_idx in enumerate(de_channel_idx):
-                self._data_buffer[buffer_sample_idx, buffer_channel_idx] = de_data_normalized[:, i]
-            for i, buffer_channel_idx in enumerate(se_channel_idx):
-                self._data_buffer[buffer_sample_idx, buffer_channel_idx] = se_data_normalized[:, i]
-
-        # Compute data rate
-        if self.__count_cpc == 0:
-            # mark time
-            self.__time_cpc = time.time()
-        self.__count_cpc += 1  # right now just counting number of times data has been retrieved TODO: Update this
-
-        t_now = time.time()
-        t_elapsed = t_now - self.__time_cpc
-
-        if t_elapsed > 3.0:
-            # compute rate (every second)
-            self.__rate_cpc = self.__count_cpc / t_elapsed
-            self.__count_cpc = 0  # reset counter
-
-        # Return the most recently requested data
+        # Return data from buffer
         data = self._data_buffer[-1*num_samples:, idx_channel]
         return data
+
+    def _stream_data(self):
+        # Loop forever to receive data
+        while True:
+            # Every 20 ms should be roughly 20 messages
+            time.sleep(0.02)
+
+            # Check for new data
+            num_available = self._serial_obj.in_waiting
+
+            if num_available == 0:
+                #print('No data available from serial buffer, internal buffer not updated.')
+                pass
+            else:
+                with self.__lock:
+                    # Read samples from serial buffer and place in internal bufer
+                    # (potentially with leftover remaining bytes)
+                    r = bytearray(self._serial_obj.read(num_available))
+                    raw_bytes = self._serial_buffer + r
+
+                    payload_size = 2 * (self._bioamp_cnt + self._gpi_cnt)
+                    msg_size = payload_size + 6
+
+                    # Align the data bytes. If all's well the first byte of the
+                    # remainder should be a start char which is saved for the next
+                    # time the buffer is read
+                    d = self.align_data_bytes(raw_bytes, msg_size)
+                    aligned_data = d['data_aligned']
+                    remainder_bytes = d['remainder_bytes']
+
+                    num_aligned_bytes = sum([len(x) for x in aligned_data])
+                    num_remainder_bytes = len(remainder_bytes)
+                    print('Byte Align Fast Debug:')
+                    print('Num Bytes In: ' + str(len(raw_bytes)))
+                    print('Num Aligned Bytes Out: ' + str(num_aligned_bytes))
+                    print('Num Remainder Bytes Out: ' + str(num_remainder_bytes))
+                    print('Num Total Bytes Out: ' + str(num_aligned_bytes + num_remainder_bytes))
+
+                    # Store remaining bytes for the next read
+                    self._serial_buffer = remainder_bytes
+
+                    # No new data
+                    if not aligned_data:
+                        print('No aligned data available from serial buffer, internal buffer not updated.')
+                        break
+
+                    # Check validation parameters(chksum, etc)
+                    d = self.validate_messages(aligned_data, payload_size)
+                    valid_data = d['valid_data']
+                    error_stats = d['error_stats']
+
+                    self._count_total_messages += len(aligned_data)
+                    self._count_bad_checksum += error_stats['sum_bad_checksum']
+                    self._count_bad_status += error_stats['sum_bad_status']
+                    self._count_bad_sequence += error_stats['sum_bad_sequence']
+                    self._count_adc_error += error_stats['sum_adc_error']
+
+                    num_valid_samples = len(valid_data)
+                    num_valid_bytes_per_message = [len(x) for x in valid_data]
+                    num_valid_bytes = sum(num_valid_bytes_per_message)
+                    num_aligned_bytes = sum([len(x) for x in aligned_data])
+                    num_bytes = len(raw_bytes)
+
+                    for this_num in num_valid_bytes_per_message:
+                        assert msg_size == this_num
+
+                    # Extract the signals
+                    d = self.get_signal_data(valid_data, self._bioamp_cnt, self._gpi_cnt)
+                    diff_data_i16 = d['diff_data_int16']
+                    se_data_u16 = d['se_data_u16']
+
+                    # Perform scaling
+                    # Convert to numpy ndarrays
+                    de_data_normalized = np.array(diff_data_i16, dtype='float') * self.gain_differential
+                    se_data_normalized = np.array(se_data_u16, dtype='float') / 1024.0 * self.gain_single_ended
+
+                    # Send sequence data as last single ended channel
+                    # TODO : Need to debug with seDatacoming in. Is this only for debug purposes?
+
+                    # Log data
+                    if self.enable_data_logging:
+                        # TODO: Make Py3 compatible
+                        # logging.info('Raw Bytes: ' + str(float(raw_bytes[:])))
+                        pass
+
+                    # Update internal formatted data buffer
+                    # These channel mappings are updated based on the channel mask
+                    de_channel_idx = [int(x) for x in '{0:016b}'.format(self.bioamp_mask)] + [0] * 16
+                    de_channel_idx = [i for i, x in enumerate(de_channel_idx) if bool(x)]
+                    se_channel_idx = [0] * 16 + [int(x) for x in '{0:016b}'.format(self.gpi_mask)]
+                    se_channel_idx = [i for i, x in enumerate(se_channel_idx) if bool(x)]
+
+                    if num_valid_samples > self._data_buffer.shape[0]:
+                        # Replace entire buffer
+                        self._data_buffer[:, de_channel_idx] = de_data_normalized[:, -self._data_buffer.shape[0]:]
+                        self._data_buffer[:, se_channel_idx] = se_data_normalized[:, -self._data_buffer.shape[0]:]
+                    else:
+                        # Check for buffer overrun
+                        self._data_buffer = np.roll(self._data_buffer, -1 * num_valid_samples, axis=0)
+                        buffer_sample_idx = range(self._data_buffer.shape[0] - num_valid_samples, self._data_buffer.shape[0])
+                        for i, buffer_channel_idx in enumerate(de_channel_idx):
+                            self._data_buffer[buffer_sample_idx, buffer_channel_idx] = de_data_normalized[:, i]
+                        for i, buffer_channel_idx in enumerate(se_channel_idx):
+                            self._data_buffer[buffer_sample_idx, buffer_channel_idx] = se_data_normalized[:, i]
+
+                    # Compute data rate
+                    if self.__valid_message_count == 0:
+                        # mark time
+                        self.__time_stream_reference = time.time()  # Should this be from beginning of loop
+
+                    self.__valid_message_count += num_valid_samples
+                    self.__valid_byte_count += num_valid_bytes
+                    self.__byte_count += num_bytes
+                    self.__byte_available_count += num_available
+                    self.__aligned_byte_count += num_aligned_bytes
+
+                    t_now = time.time()
+                    t_elapsed = t_now - self.__time_stream_reference
+
+                    if t_elapsed > 1.0:
+                        # compute rate (every second)
+                        self.__valid_message_rate = self.__valid_message_count / t_elapsed
+                        self.__valid_byte_rate = self.__valid_byte_count / t_elapsed
+                        self.__byte_rate = self.__byte_count / t_elapsed
+                        self.__byte_available_rate = self.__byte_available_count / t_elapsed
+                        self.__aligned_byte_rate = self.__aligned_byte_count / t_elapsed
+
+                        self.__valid_message_count = 0
+                        self.__valid_byte_count = 0
+                        self.__byte_count = 0
+                        self.__byte_available_count = 0
+                        self.__aligned_byte_count = 0
+
+                        print('Valid Message Rate: ' + str(self.__valid_message_rate) + '/s')
+                        print('Available Byte Rate: ' + str(self.__byte_available_rate) + '/s')
+                        print('Raw Byte Rate: ' + str(self.__byte_rate) + '/s')
+                        print('Aligned Byte Rate: ' + str(self.__aligned_byte_rate) + '/s')
+                        print('Valid Byte Rate: ' + str(self.__valid_byte_rate) + '/s')
+
+
 
     def close(self):
         # Method to disconnect object
@@ -355,7 +407,7 @@ def main():
     # Parameters:
     parser = argparse.ArgumentParser(description='CPCH: Read from CPCH and log.')
     parser.add_argument('-p', '--PORT', help='Serial Port Name (e.g. /dev/ttyUSB0)',
-                        default='COM24')
+                        default='COM5')
     args = parser.parse_args()
 
     # Logging
@@ -367,11 +419,13 @@ def main():
     obj.enable_data_logging = True
     # Connect and start streaming
     obj.connect()
+    obj.start()
 
-    for i in range(100):
-        time.sleep(0.005)
-        d = obj.get_data()
-        # print(d)
+    #for i in range(100):
+        #time.sleep(0.1)
+        #d = obj.get_data()
+        #print('New Data')
+        #print(d)
 
 
 if __name__ == '__main__':

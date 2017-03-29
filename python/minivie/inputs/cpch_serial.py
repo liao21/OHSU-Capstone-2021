@@ -280,11 +280,12 @@ class CpchSerial(CpcHeadstage):
 
                     num_aligned_bytes = sum([len(x) for x in aligned_data])
                     num_remainder_bytes = len(remainder_bytes)
-                    print('Byte Align Fast Debug:')
-                    print('Num Bytes In: ' + str(len(raw_bytes)))
-                    print('Num Aligned Bytes Out: ' + str(num_aligned_bytes))
-                    print('Num Remainder Bytes Out: ' + str(num_remainder_bytes))
-                    print('Num Total Bytes Out: ' + str(num_aligned_bytes + num_remainder_bytes))
+                    # DEBUG
+                    # print('Byte Align Fast Debug:')
+                    # print('Num Bytes In: ' + str(len(raw_bytes)))
+                    # print('Num Aligned Bytes Out: ' + str(num_aligned_bytes))
+                    # print('Num Remainder Bytes Out: ' + str(num_remainder_bytes))
+                    # print('Num Total Bytes Out: ' + str(num_aligned_bytes + num_remainder_bytes))
 
                     # Store remaining bytes for the next read
                     self._serial_buffer = remainder_bytes
@@ -381,13 +382,11 @@ class CpchSerial(CpcHeadstage):
                         self.__byte_available_count = 0
                         self.__aligned_byte_count = 0
 
-                        print('Valid Message Rate: ' + str(self.__valid_message_rate) + '/s')
-                        print('Available Byte Rate: ' + str(self.__byte_available_rate) + '/s')
-                        print('Raw Byte Rate: ' + str(self.__byte_rate) + '/s')
-                        print('Aligned Byte Rate: ' + str(self.__aligned_byte_rate) + '/s')
-                        print('Valid Byte Rate: ' + str(self.__valid_byte_rate) + '/s')
-
-
+                        print('Valid Message Rate: {0:.2f} kHz, (Expected:  1.00 kHz)'.format(self.__valid_message_rate/1000.0))
+                        # print('Available Message Rate: {0:.2f} kHz'.format(self.__byte_available_rate / 1000.0))
+                        # print('Raw Byte Rate: {0:.2f} kHz'.format(self.__byte_rate / 1000.0))
+                        # print('Aligned Raw Byte Rate: {0:.2f} kHz'.format(self.__aligned_byte_rate / 1000.0))
+                        print('Valid Byte Rate:   {0:.2f} kHz, (Expected: 38.00 kHz)'.format(self.__valid_byte_rate / 1000.0))
 
     def close(self):
         # Method to disconnect object
@@ -421,11 +420,11 @@ def main():
     obj.connect()
     obj.start()
 
-    #for i in range(100):
-        #time.sleep(0.1)
-        #d = obj.get_data()
-        #print('New Data')
-        #print(d)
+    for i in range(50):
+        time.sleep(0.1)
+        d = obj.get_data()
+        print('New Data')
+        print(d)
 
 
 if __name__ == '__main__':

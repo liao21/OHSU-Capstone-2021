@@ -207,6 +207,17 @@ class CpcHeadstage(object):
             d = {'data_aligned':  [], 'remainder_bytes': data_stream}
             return d
 
+        # Check start bytes to make sure they are separated by correct message size
+        check_msg_sizes = True
+        while check_msg_sizes:
+            for i, this_start_idx in enumerate(idx_start_bytes_in_range):
+                if i == len(idx_start_bytes_in_range) - 1:
+                    check_msg_sizes = False  # All msg sizes checked
+                    continue
+                if not (idx_start_bytes_in_range[i+1] - this_start_idx) == msg_size:
+                    del idx_start_bytes_in_range[i+1]
+                    break  # break for loop to re-enter again now that start byte list has been modified
+
         remainder_bytes = data_stream[idx_start_bytes_in_range[-1] + msg_size:]
 
         # Align the data based on the validated start characters

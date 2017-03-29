@@ -257,6 +257,7 @@ class CpcHeadstage(object):
 
         # Check sequence bytes in batch operation
         sequence_row = [float(x[3]) for x in valid_data]
+        # print(sequence_row)
         sequence_expected = [(x + sequence_row[0]) % 256 for x in range(len(valid_data))]
         is_valid_sequence = [(sequence_expected[i] - sequence_row[i]) == 0.0 for i, x in enumerate(sequence_row)]
 

@@ -91,6 +91,7 @@ class CpchSerial(CpcHeadstage):
         self.__byte_available_rate = 0.0
         self.__aligned_byte_rate = 0.0
         self.__time_stream_reference = time.time()
+        self.__stream_sleep_time = 0.02
 
         # Initialize threading parameters
         self.__lock = None
@@ -253,7 +254,10 @@ class CpchSerial(CpcHeadstage):
         # Loop forever to receive data
         while True:
             # Every 20 ms should be roughly 20 messages
-            time.sleep(0.02)
+            time.sleep(self.__stream_sleep_time)
+
+            # Record start time of this loop
+            stream_loop_start_time = time.time()
 
             # Check for new data
             num_available = self._serial_obj.in_waiting
@@ -382,11 +386,19 @@ class CpchSerial(CpcHeadstage):
                         self.__byte_available_count = 0
                         self.__aligned_byte_count = 0
 
-                        print('Valid Message Rate: {0:.2f} kHz, (Expected:  1.00 kHz)'.format(self.__valid_message_rate/1000.0))
+                        print('CPC Valid Message Rate: {0:.2f} kHz, (Expected:  1.00 kHz)'.format(self.__valid_message_rate/1000.0))
                         # print('Available Message Rate: {0:.2f} kHz'.format(self.__byte_available_rate / 1000.0))
                         # print('Raw Byte Rate: {0:.2f} kHz'.format(self.__byte_rate / 1000.0))
                         # print('Aligned Raw Byte Rate: {0:.2f} kHz'.format(self.__aligned_byte_rate / 1000.0))
-                        print('Valid Byte Rate:   {0:.2f} kHz, (Expected: 38.00 kHz)'.format(self.__valid_byte_rate / 1000.0))
+                        print('CPC Valid Byte Rate:   {0:.2f} kHz, (Expected: 38.00 kHz)'.format(self.__valid_byte_rate / 1000.0))
+
+                    # Update loop sleep time to account for processing time
+                    stream_loop_time_elapsed = time.time() - stream_loop_start_time
+                    if stream_loop_time_elapsed < 0.02:
+                        self.__stream_sleep_time = 0.02 - stream_loop_time_elapsed
+                    else:
+                        self.__stream_sleep_time = 0.0
+                        print('CPC Running Behind 50kHz')
 
     def close(self):
         # Method to disconnect object
@@ -420,11 +432,11 @@ def main():
     obj.connect()
     obj.start()
 
-    for i in range(50):
-        time.sleep(0.1)
-        d = obj.get_data()
-        print('New Data')
-        print(d)
+    # for i in range(50):
+    #     time.sleep(0.1)
+    #     d = obj.get_data()
+    #     print('New Data')
+    #     print(d)
 
 
 if __name__ == '__main__':

@@ -16,7 +16,7 @@ Updated 3-21-17 by Connor Pyles
 
 import numpy as np
 import serial
-from inputs.cpc_headstage import CpcHeadstage
+from cpc_headstage import CpcHeadstage
 import time
 import logging
 import threading
@@ -311,12 +311,17 @@ class CpchSerial(CpcHeadstage):
 
         # No new data
         if not aligned_data:
-            print('No aligned data available from serial buffer, internal buffer not updated.')
+            print('No aligned data available from CPC serial buffer, internal buffer not updated.')
             self._set_stream_sleep_time(stream_loop_start_time, 0.02)
             return
 
         # Check validation parameters(chksum, etc)
         d = self.validate_messages(aligned_data, payload_size)
+        if not valid_data:  # Sometimes this is empty
+            print('No valid data available from CPC serial buffer, internal buffer not updated.')
+            self._set_stream_sleep_time(stream_loop_start_time, 0.02)
+            return
+        
         valid_data = d['valid_data']
         error_stats = d['error_stats']
 

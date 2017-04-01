@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 
 This module contains all the functions for interface with the Thalmic Labs Myo Armband.
@@ -647,7 +647,9 @@ def manage_connection(mac_addr='C3:0A:EA:14:14:D9', stream_addr=('127.0.0.1', 15
         logging.debug('Running subprocess command: hcitool dev')
         hci = 'hci' + str(hci_interface)
 
-        if hci in subprocess.check_output(["hcitool", "dev"]):
+        #if hci in subprocess.check_output(["hcitool", "dev"]):
+        output = subprocess.check_output(["hcitool", "dev"])
+        if hci in output.decode('utf-8'):
             logging.info('Found device: ' + hci)
             device_ok = True
         else:

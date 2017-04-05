@@ -26,6 +26,10 @@
             }
         }
 		
+        p {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 18;
+        }
 		#mtProgressBackground {
 		  width: 100%;
 		  height: 30px;
@@ -121,8 +125,8 @@
             sb.connect();
             
             // listen to button clicks
-            $("#ID_ADD").on("mousedown", function() {sendCmd("Cmd:Add")} );
-            $("#ID_STOP").on("mousedown", function() {sendCmd("Cmd:Stop")} );
+            $("#ID_ADD").on("mousedown", function() {sendCmd("Cmd:Add")} );  // 4/5/2017 RSA: Moved to slider switch
+            $("#ID_STOP").on("mousedown", function() {sendCmd("Cmd:Stop")} );  // 4/5/2017 RSA: Moved to slider switch
             $("#ID_CLEARCLASS").on("mousedown", function() {sendCmd("Cmd:ClearClass")} );
             $("#ID_CLEARALL").on("mousedown", function() {sendCmd("Cmd:ClearAll")} );
             $("#ID_TRAIN").on("mousedown", function() {sendCmd("Cmd:Train")} );
@@ -132,8 +136,8 @@
             $("#ID_SPEEDDOWN").on("mousedown", function() {sendCmd("Cmd:SpeedDown")} );
             $("#ID_HAND_SPEED_UP").on("mousedown", function() {sendCmd("Cmd:HandSpeedUp")} );
             $("#ID_HAND_SPEED_DOWN").on("mousedown", function() {sendCmd("Cmd:HandSpeedDown")} );
-            $("#ID_PAUSE").on("mousedown", function() {sendCmd("Cmd:Pause")} );
-            $("#ID_PAUSE_HAND").on("mousedown", function() {sendCmd("Cmd:PauseHand")} );
+            $("#ID_PAUSE").on("mousedown", function() {sendCmd("Cmd:Pause")} );  // 4/5/2017 RSA: Moved to slider switch
+            $("#ID_PAUSE_HAND").on("mousedown", function() {sendCmd("Cmd:PauseHand")} );  // 4/5/2017 RSA: Moved to slider switch
             $("#ID_MYO1").on("mousedown", function() {sendCmd("Cmd:RestartMyo1")} );
             $("#ID_MYO2").on("mousedown", function() {sendCmd("Cmd:RestartMyo2")} );
             $("#ID_REBOOT").on("mousedown", function() {sendCmd("Cmd:Reboot")} );
@@ -141,6 +145,32 @@
             $("#ID_ASSESSMENT_MT").on("mousedown", function() {startMT()} );
             $("#ID_ASSESSMENT_TAC1").on("mousedown", function() {startTAC1()} );
             $("#ID_ASSESSMENT_TAC3").on("mousedown", function() {startTAC3()} );
+            
+            // Callbacks for state-based (slider) switches
+            $('#trainSwitch').change(function() {
+                if (this.checked) {
+                    sendCmd("Cmd:AddDataOn")
+                } else {
+                    sendCmd("Cmd:AddDataOff")
+                }
+            });
+            $('#pauseHand').change(function() {
+                if (this.checked) {
+                    sendCmd("Cmd:PauseHandOn")
+                } else {
+                    sendCmd("Cmd:PauseHandOff")
+                }
+            });
+            $('#pauseAll').change(function() {
+                if (this.checked) {
+                    sendCmd("Cmd:PauseAllOn")
+                } else {
+                    sendCmd("Cmd:PauseAllOff")
+                }
+            });
+
+        };
+
             
         };
         
@@ -299,7 +329,7 @@
 			newMarginPercent = newMargin * 1 + '%'
 			elem.style.marginLeft = newMarginPercent;
 		}
-		
+                
     </script>
 
 </head>
@@ -320,17 +350,32 @@
 			<li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_SPEEDDOWN">Decrease Arm Speed</a></li>
 			<li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_HAND_SPEED_UP">Increase Hand Speed</a></li>
 			<li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_HAND_SPEED_DOWN">Decrease Hand Speed</a></li>
+            <li>
+            <div class="ui-field-contain">
+                <label for="pauseAll">Pause All:</label>
+                <select name="pauseAll" id="pauseAll" data-role="flipswitch">
+                    <option value="off">Off</option>
+                    <option value="on">On</option>
+                </select>
+            </div>
+            </li>
+            <li>
+            <div class="ui-field-contain">
+                <label for="pauseHand">Pause Hand:</label>
+                <select name="pauseHand" id="pauseHand" data-role="flipswitch">
+                    <option value="off">Off</option>
+                    <option value="on">On</option>
+                </select>
+            </div>
+            </li>
 			</ul>
 			</div>
 			
 			<div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
 			<h4>Options</h4>
 			<ul data-role="listview" data-inset="false">
-			<li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-forbidden" id="ID_PAUSE">Pause All Motion</a></li>
-			<li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-forbidden" id="ID_PAUSE_HAND">Pause Hand</a></li>
-			<li></li>
-			<li><a href="#ID_TAC_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-star">TAC Assessment</a></li>
-			<li><a href="#ID_MT_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-star">Motion Tester</a></li>                
+			<li><a href="#ID_TAC_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-star">TAC Assessment...</a></li>
+			<li><a href="#ID_MT_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-star">Motion Tester...</a></li>                
 			<li></li>
 			<li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_MYO1">Restart MYO #1</a></li>
 			<li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_MYO2">Restart MYO #2</a></li>
@@ -370,15 +415,24 @@
 				<a class="next">›</a>
 			</div>
 
+            <!-- Training Switch -->
+            <div class="ui-field-contain">
+                <label for="trainSwitch">Add Data:</label>
+                <select name="trainSwitch" id="trainSwitch" data-role="flipswitch">
+                    <option value="off">Add</option>
+                    <option value="on">Done</option>
+                </select>
+            </div>
+            
+            <!-- Training Buttons -->
+            <br>            
 			<div data-role="controlgroup" data-type="horizontal">
-				<a href="#" class="ui-btn" id="ID_ADD">Add</a>
-				<a href="#" class="ui-btn" id="ID_STOP">Stop</a>
 				<a href="#" class="ui-btn" id="ID_CLEARCLASS">Clear</a>
 				<a href="#" class="ui-btn" id="ID_CLEARALL">Reset</a>
 				<a href="#" class="ui-btn" id="ID_SAVE">Save</a>
-				<!-- <a href="#" class="ui-btn" id="ID_TRAIN">Train</a> -->
 			</div>
-
+            
+            <!-- Helper Scripts for Image Carousel -->
 			<script src="blueimp-gallery/js/blueimp-helper.js"></script>
 			<script src="blueimp-gallery/js/blueimp-gallery.js"></script>
 			<script src="blueimp-gallery/js/blueimp-gallery-fullscreen.js"></script>
@@ -387,8 +441,11 @@
 			<script src="blueimp-gallery/js/jquery.blueimp-gallery.js"></script>
 			<script src="gallery-links.js"></script>
 
-			<p>Classifying: <span = id="main_output"/></p>
-			<p>Status: <span = id="msg_status"/></p>
+            <!-- Status Messages -->
+            <br>
+			<p><b>Status:</b></p>
+			<p>Classification: <span = id="main_output"/></p>
+			<p>Devices: <span = id="msg_status"/></p>
 			<p>Server: <span = id="statusMsg"/></p>
 
         </div><!-- /content -->

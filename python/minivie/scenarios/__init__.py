@@ -140,6 +140,14 @@ class Scenario(object):
                 self.pause('All')
             elif cmd_data == 'PauseHand':
                 self.pause('Hand')
+            elif cmd_data == 'PauseAllOn':
+                self.pause('All', True)
+            elif cmd_data == 'PauseAllOff':
+                self.pause('All', False)
+            elif cmd_data == 'PauseHandOn':
+                self.pause('Hand', True)
+            elif cmd_data == 'PauseHandOff':
+                self.pause('Hand', False)
             elif cmd_data == 'RestartMyo1':
                 restart_myo(1)
             elif cmd_data == 'RestartMyo2':

@@ -90,11 +90,39 @@
         var sb, app_name = "MPL Control",
             values = {};
 
+        // when page loads setup callbacks 
+        //$(window).on("load", cbSwitch);
+
         // when page loads call spacebrew setup function 
         $(window).on("load", setupSpacebrew);
 
         // when the jquery mobile is ready to initialize the UI call the setUI function 
         $(document).bind("pageinit", setupUI);
+
+
+            function flipChanged(e) {
+		console.log("!!!! Changed !!!!");
+		}
+
+   	     $("#trainSwitch").on("change", flipChanged);
+
+
+        function cbSwitch() {
+            console.log("[Switch Callback Defined]");
+
+            // Callbacks for state-based (slider) switches
+            $('#trainSwitch').change(function() {
+		console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Got an event');
+                if (this.checked) {
+                    sb.send("cmdString", "string", "Cmd:AddDataOn")
+                    //sendCmd("Cmd:AddDataOn")
+                } else {
+                    sb.send("cmdString", "string", "Cmd:AddDataOn")
+//                    sendCmd("Cmd:AddDataOff")
+                }
+            });            
+
+        }
 
 
         /**
@@ -146,31 +174,16 @@
             $("#ID_ASSESSMENT_TAC1").on("mousedown", function() {startTAC1()} );
             $("#ID_ASSESSMENT_TAC3").on("mousedown", function() {startTAC3()} );
             
-            // Callbacks for state-based (slider) switches
             $('#trainSwitch').change(function() {
+		console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Got an event');
                 if (this.checked) {
-                    sendCmd("Cmd:AddDataOn")
+                    sb.send("cmdString", "string", "Cmd:AddDataOn");
+                    //sendCmd("Cmd:AddDataOn")
                 } else {
-                    sendCmd("Cmd:AddDataOff")
+                    sb.send("cmdString", "string", "Cmd:AddDataOn");
+//                    sendCmd("Cmd:AddDataOff")
                 }
-            });
-            $('#pauseHand').change(function() {
-                if (this.checked) {
-                    sendCmd("Cmd:PauseHandOn")
-                } else {
-                    sendCmd("Cmd:PauseHandOff")
-                }
-            });
-            $('#pauseAll').change(function() {
-                if (this.checked) {
-                    sendCmd("Cmd:PauseAllOn")
-                } else {
-                    sendCmd("Cmd:PauseAllOff")
-                }
-            });
-
-        };
-
+            }); 
             
         };
         
@@ -419,8 +432,8 @@
             <div class="ui-field-contain">
                 <label for="trainSwitch">Add Data:</label>
                 <select name="trainSwitch" id="trainSwitch" data-role="flipswitch">
-                    <option value="off">Add</option>
-                    <option value="on">Done</option>
+                    <option value="off">Off</option>
+                    <option value="on">On</option>
                 </select>
             </div>
             

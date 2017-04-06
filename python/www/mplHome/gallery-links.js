@@ -1,5 +1,3 @@
-
-
 /* global blueimp, $ */
 
 $(function () {
@@ -94,5 +92,4 @@ $(function () {
                 }        
         }
     });
-
 }); // function

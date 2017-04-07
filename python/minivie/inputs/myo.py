@@ -150,6 +150,9 @@ if os.path.split(os.getcwd())[1] == 'inputs':
 import inputs
 import utilities
 
+
+logger = logging.getLogger(__name__)
+
 __version__ = "2.0.0"
 
 # Scaling constants for MYO IMU Data
@@ -269,7 +272,7 @@ class MyoUdp(object):
 
     def __init__(self, source='//127.0.0.1:10001', num_samples=50):
 
-        # logging
+        # logger
         self.log_handlers = None
 
         # 8 channel max for myo armband
@@ -304,7 +307,7 @@ class MyoUdp(object):
             Connect to the udp server and receive Myo Packets
 
         """
-        logging.info("Setting up MyoUdp socket {}".format(self.addr))
+        logger.info("Setting up MyoUdp socket {}".format(self.addr))
         self.__sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Internet, UDP
         self.__sock.bind(self.addr)
         self.__sock.settimeout(3.0)
@@ -332,7 +335,7 @@ class MyoUdp(object):
                 # the data stream has stopped.  don't break the thread, just continue to wait
                 msg = "MyoUdp timed out during recvfrom() on IP={} Port={}. Error: {}".format(
                     self.addr[0], self.addr[1], socket.timeout)
-                logging.warning(msg)
+                logger.warning(msg)
                 # data rate goes to zero
                 self.__count_emg = 0
                 self.__rate_emg = 0.0
@@ -340,7 +343,7 @@ class MyoUdp(object):
             except socket.error:
                 msg = "MyoUdp Socket Error during recvfrom() on IP={} Port={}. Error: {}".format(
                     self.addr[0], self.addr[1], socket.error)
-                logging.warning(msg)
+                logger.warning(msg)
                 return
 
             if len(data) == 48:  # NOTE: This is the packet size for MyoUdp.exe
@@ -385,13 +388,14 @@ class MyoUdp(object):
                 #            accelerometer = dataInt16(5:7) ./ MYOHW_ACCELEROMETER_SCALE
                 #            gyroscope = dataInt16(8:10) ./ MYOHW_GYROSCOPE_SCALE
                 with self.__lock:
-                    # print(['{}'.format(i) for i in data])
                     output = struct.unpack('16b', data)
                     # Populate EMG Data Buffer (newest on top)
                     self.__dataEMG = np.roll(self.__dataEMG, 1, axis=0)
                     self.__dataEMG[:1, :] = output[0:8]  # insert in first buffer entry
                     self.__dataEMG = np.roll(self.__dataEMG, 1, axis=0)
                     self.__dataEMG[:1, :] = output[8:16]  # insert in first buffer entry
+
+                    logger.debug('E:{}'.format(output))
 
                     # compute data rate
                     if self.__count_emg == 0:
@@ -417,17 +421,20 @@ class MyoUdp(object):
                     self.__accel = np.array(unscaled[4:7], np.float) / MYOHW_ACCELEROMETER_SCALE
                     self.__gyro = np.array(unscaled[7:10], np.float) / MYOHW_GYROSCOPE_SCALE
 
-                    # print(self.__quat)
+                    logger.debug('Q:{} {} {} {}A:{} {} {} G:{} {} {}',
+                                 self.__quat[0], self.__quat[1], self.__quat[2], self.__quat[3],
+                                 self.__accel[0], self.__accel[1], self.__accel[2],
+                                 self.__gyro[0], self.__gyro[1], self.__gyro[2])
 
             elif len(data) == 1:  # BATT Value
                 with self.__lock:
                     self.__battery_level = ord(data)
                 msg = 'Socket {} Battery Level: {}'.format(self.addr, self.__battery_level)
-                logging.info(msg)
+                logger.info(msg)
 
             else:
                 # incoming data is not of length = 8, 20, 40, or 48
-                logging.warning('MyoUdp: Unexpected packet size. len=({})'.format(len(data)))
+                logger.warning('MyoUdp: Unexpected packet size. len=({})'.format(len(data)))
 
     def get_data(self):
         """ Return data buffer [nSamples][nChannels] """
@@ -462,7 +469,7 @@ class MyoUdp(object):
 
     def close(self):
         """ Cleanup socket """
-        logging.info("\n\nClosing MyoUdp Socket @ {}".format(self.addr))
+        logger.info("\n\nClosing MyoUdp Socket @ {}".format(self.addr))
         if self.__sock is not None:
             self.__sock.close()
         if self.__thread is not None:
@@ -487,7 +494,7 @@ class MyoDelegate(btleDefaultDelegate):
     def handleNotification(self, cHandle, data):
         if cHandle == 0x2b:  # EmgData0Characteristic
             self.sock.sendto(data, self.addr)
-            # logging.info('EMG: ' + data)
+            # logger.info('EMG: ' + data)
             self.pCount += 2
         elif cHandle == 0x2e:  # EmgData1Characteristic
             self.sock.sendto(data, self.addr)
@@ -500,14 +507,14 @@ class MyoDelegate(btleDefaultDelegate):
             self.pCount += 2
         elif cHandle == 0x1c:  # IMUCharacteristic
             self.sock.sendto(data, self.addr)
-            # logging.info('IMU: ' + data)
+            # logger.info('IMU: ' + data)
             self.imuCount += 1
         elif cHandle == 0x11:  # BatteryCharacteristic
             self.sock.sendto(data, self.addr)
-            logging.info('Battery Level: {}'.format(ord(data)))
+            logger.info('Battery Level: {}'.format(ord(data)))
             self.battCount += 1
         else:
-            logging.info('Got Unknown Notification: %d' % cHandle)
+            logger.info('Got Unknown Notification: %d' % cHandle)
 
         return
 
@@ -585,9 +592,9 @@ def connect(mac_addr, stream_addr, hci_interface):
     '''
 
     # This blocks until device is awake and connection established
-    logging.info("Connecting to: " + mac_addr)
+    logger.info("Connecting to: " + mac_addr)
     p = btlePeripheral(mac_addr, addrType=btleADDR_TYPE_PUBLIC, iface=hci_interface)
-    logging.info("Done")
+    logger.info("Done")
 
     time.sleep(1.0)
 
@@ -601,13 +608,13 @@ def connect(mac_addr, stream_addr, hci_interface):
             end = 'state'
             handle = int(conn.split(start)[1].split(end)[0])
             handle_hex = '{:04x}'.format(handle)
-            logging.info('MAC: {} is handle {}'.format(mac_addr,handle))
+            logger.info('MAC: {} is handle {}'.format(mac_addr,handle))
 
-    logging.info("Setting Update Rate")
+    logger.info("Setting Update Rate")
     cmd_str = "hcitool -i hci{} cmd 0x08 0x0013 {} {} 06 00 06 00 00 00 90 01 01 00 07 00".format(hci_interface, handle_hex[2:], handle_hex[:2])
-    logging.info(cmd_str)
+    logger.info(cmd_str)
     subprocess.Popen(cmd_str, shell=True)
-    logging.info("Done")
+    logger.info("Done")
     time.sleep(1.0)
 
     set_parameters(p)
@@ -629,13 +636,13 @@ def connect(mac_addr, stream_addr, hci_interface):
             if t_elapsed > 2.0:
                 rate1 = h_delegate.pCount / t_elapsed
                 rate2 = h_delegate.imuCount / t_elapsed
-                logging.info("MAC: %s Port: %d EMG: %4.1f Hz IMU: %4.1f Hz BattEvts: %d" % (
+                logger.info("MAC: %s Port: %d EMG: %4.1f Hz IMU: %4.1f Hz BattEvts: %d" % (
                     mac_addr,stream_addr[1], rate1, rate2, h_delegate.battCount))
                 t_start = t_now
                 h_delegate.pCount = 0
                 h_delegate.imuCount = 0
         except:
-            logging.info('Caught error. Closing UDP Connection')
+            logger.info('Caught error. Closing UDP Connection')
             s.close()
             raise
 
@@ -644,32 +651,32 @@ def manage_connection(mac_addr='C3:0A:EA:14:14:D9', stream_addr=('127.0.0.1', 15
 
     while True:
 
-        logging.debug('Running subprocess command: hcitool dev')
+        logger.debug('Running subprocess command: hcitool dev')
         hci = 'hci' + str(hci_interface)
 
         #if hci in subprocess.check_output(["hcitool", "dev"]):
         output = subprocess.check_output(["hcitool", "dev"])
         if hci in output.decode('utf-8'):
-            logging.info('Found device: ' + hci)
+            logger.info('Found device: ' + hci)
             device_ok = True
         else:
-            logging.info('Device not found: ' + hci)
+            logger.info('Device not found: ' + hci)
             device_ok = False
 
         while device_ok:
             try:
-                logging.info('Starting connection to ' + hci)
+                logger.info('Starting connection to ' + hci)
                 connect(mac_addr, stream_addr, hci_interface)
             except KeyboardInterrupt:
-                logging.info('Got Keyboard Interrupt')
+                logger.info('Got Keyboard Interrupt')
                 break
             except btleBTLEException:
-                logging.info('Device Disconnected')
+                logger.info('Device Disconnected')
                 break
 
         time.sleep(1.0)
 
-    logging.info('Done')
+    logger.info('Done')
 
 
 def interactive_startup():
@@ -768,10 +775,22 @@ def main():
         h.log_handlers = l.add_sample
         h.connect()
     elif args.TX_MODE:
-        # TODO: make this file date stamped
-        f = 'hci' + str(args.IFACE) + '_myo.log'
-        #logging.basicConfig(filename=f, level=logging.DEBUG, format='%(asctime)s %(message)s')
-        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)s %(message)s')
+        # Create a log for raw packet receipt
+        #
+        # in TX mode then basic connection and rate messages should go to std.out (picked up by systemctl)
+        # in TX mode raw EMG messages should go to dedicated file
+        logger.setLevel(logging.INFO)
+
+        file_handler = logging.FileHandler('hci' + str(args.IFACE) + '_myo.log')
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(logging.Formatter('%(asctime)s:%(name)s:%(message)s'))
+
+        stream_handler = logging.StreamHandler(stream=sys.stdout)
+        stream_handler.setFormatter('%(asctime)s %(message)s')
+
+        logger.addHandler(file_handler)
+        logger.addHandler(stream_handler)
+
         manage_connection(args.MAC, utilities.get_address(args.ADDRESS), args.IFACE)
     else:
         # No Action
@@ -782,7 +801,7 @@ def main():
         h.log_handlers = l.add_sample
         h.connect()
 
-    logging.info(sys.argv[0] + " Version: " + __version__)
+    logger.info(sys.argv[0] + " Version: " + __version__)
 
 if __name__ == '__main__':
     main()

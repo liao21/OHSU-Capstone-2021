@@ -130,7 +130,8 @@ class NfuUdp:
             # Blocking call until data received
             try:
                 # receive call will error if socket closed externally (i.e. on exit)
-                data, address = self.__sock.recvfrom(8192)  # blocks until timeout or socket closed
+                raw_chars, address = self.__sock.recvfrom(8192)  # blocks until timeout or socket closed
+                data = bytearray(raw_chars)
 
                 # if the above function returns (without error) it means we have a connection
                 if not self.is_alive():
@@ -162,7 +163,8 @@ class NfuUdp:
                 logging.warning('Message received was too small. Minimum message size is 3 bytes')
                 continue
             else:
-                msg_id = ord(data[2])
+                #print(data)
+                msg_id = data[2]
                 #print('Got NFU MSG ID = {} LEN = {}\n'.format(msg_id,len(data)))
 
             if msg_id == mpl.NfuUdpMsgId.UDPMSGID_HEARTBEATV2:

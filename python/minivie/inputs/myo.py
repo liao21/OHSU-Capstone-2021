@@ -5,10 +5,10 @@ This module contains all the functions for interface with the Thalmic Labs Myo A
 
 There are multiple use cases for talking to a myo armband.  The basic paradigm is to abstract
 the low-level bluetooth communication in favor of a network based broadcast approach.  This allows
-one class to talk over bluetooth but publish or forward the information over a network layer that can 
+one class to talk over bluetooth but publish or forward the information over a network layer that can
 be used by multiple local or remote clients.  Bluetooth messages are sent via user datagram (UDP)
-network messages.  Additionally, there is a receiver class designed to run on clients to read udp 
-messages and make them accessible in a buffer for use in emg based control.  Finally, two variants 
+network messages.  Additionally, there is a receiver class designed to run on clients to read udp
+messages and make them accessible in a buffer for use in emg based control.  Finally, two variants
 of simulators exist for virtual streaming [random] data for testing when a physical armband isn;t present
 
 usage: myo.py [-h] [-e] [-u] [-rx] [-tx] [-i IFACE] [-m MAC] [-a ADDRESS]
@@ -395,8 +395,6 @@ class MyoUdp(object):
                     self.__dataEMG = np.roll(self.__dataEMG, 1, axis=0)
                     self.__dataEMG[:1, :] = output[8:16]  # insert in first buffer entry
 
-                    logger.debug('E:{}'.format(output))
-
                     # compute data rate
                     if self.__count_emg == 0:
                         # mark time
@@ -420,11 +418,6 @@ class MyoUdp(object):
                     self.__quat = np.array(unscaled[0:4], np.float) / MYOHW_ORIENTATION_SCALE
                     self.__accel = np.array(unscaled[4:7], np.float) / MYOHW_ACCELEROMETER_SCALE
                     self.__gyro = np.array(unscaled[7:10], np.float) / MYOHW_GYROSCOPE_SCALE
-
-                    logger.debug('Q:{} {} {} {}A:{} {} {} G:{} {} {}',
-                                 self.__quat[0], self.__quat[1], self.__quat[2], self.__quat[3],
-                                 self.__accel[0], self.__accel[1], self.__accel[2],
-                                 self.__gyro[0], self.__gyro[1], self.__gyro[2])
 
             elif len(data) == 1:  # BATT Value
                 with self.__lock:
@@ -494,27 +487,31 @@ class MyoDelegate(btleDefaultDelegate):
     def handleNotification(self, cHandle, data):
         if cHandle == 0x2b:  # EmgData0Characteristic
             self.sock.sendto(data, self.addr)
-            # logger.info('EMG: ' + data)
+            logger.debug('E0: ' + ''.join('{:02x}'.format(x) for x in data))
             self.pCount += 2
         elif cHandle == 0x2e:  # EmgData1Characteristic
             self.sock.sendto(data, self.addr)
+            logger.debug('E1: ' + ''.join('{:02x}'.format(x) for x in data))
             self.pCount += 2
         elif cHandle == 0x31:  # EmgData2Characteristic
             self.sock.sendto(data, self.addr)
+            logger.debug('E2: ' + ''.join('{:02x}'.format(x) for x in data))
             self.pCount += 2
         elif cHandle == 0x34:  # EmgData3Characteristic
             self.sock.sendto(data, self.addr)
+            logger.debug('E3: ' + ''.join('{:02x}'.format(x) for x in data))
             self.pCount += 2
         elif cHandle == 0x1c:  # IMUCharacteristic
             self.sock.sendto(data, self.addr)
-            # logger.info('IMU: ' + data)
+            s = ''.join('{:02x}'.format(x) for x in data)
+            logger.debug('IMU: ' + s)
             self.imuCount += 1
         elif cHandle == 0x11:  # BatteryCharacteristic
             self.sock.sendto(data, self.addr)
             logger.info('Battery Level: {}'.format(ord(data)))
             self.battCount += 1
         else:
-            logger.info('Got Unknown Notification: %d' % cHandle)
+            logger.warning('Got Unknown Notification: %d' % cHandle)
 
         return
 
@@ -594,7 +591,6 @@ def connect(mac_addr, stream_addr, hci_interface):
     # This blocks until device is awake and connection established
     logger.info("Connecting to: " + mac_addr)
     p = btlePeripheral(mac_addr, addrType=btleADDR_TYPE_PUBLIC, iface=hci_interface)
-    logger.info("Done")
 
     time.sleep(1.0)
 
@@ -610,11 +606,9 @@ def connect(mac_addr, stream_addr, hci_interface):
             handle_hex = '{:04x}'.format(handle)
             logger.info('MAC: {} is handle {}'.format(mac_addr,handle))
 
-    logger.info("Setting Update Rate")
     cmd_str = "hcitool -i hci{} cmd 0x08 0x0013 {} {} 06 00 06 00 00 00 90 01 01 00 07 00".format(hci_interface, handle_hex[2:], handle_hex[:2])
-    logger.info(cmd_str)
+    logger.info("Setting Update Rate: " + cmd_str)
     subprocess.Popen(cmd_str, shell=True)
-    logger.info("Done")
     time.sleep(1.0)
 
     set_parameters(p)
@@ -654,7 +648,6 @@ def manage_connection(mac_addr='C3:0A:EA:14:14:D9', stream_addr=('127.0.0.1', 15
         logger.debug('Running subprocess command: hcitool dev')
         hci = 'hci' + str(hci_interface)
 
-        #if hci in subprocess.check_output(["hcitool", "dev"]):
         output = subprocess.check_output(["hcitool", "dev"])
         if hci in output.decode('utf-8'):
             logger.info('Found device: ' + hci)
@@ -779,19 +772,22 @@ def main():
         #
         # in TX mode then basic connection and rate messages should go to std.out (picked up by systemctl)
         # in TX mode raw EMG messages should go to dedicated file
-        logger.setLevel(logging.INFO)
 
-        file_handler = logging.FileHandler('hci' + str(args.IFACE) + '_myo.log')
+        address = utilities.get_address(args.ADDRESS)
+        logger.setLevel(logging.DEBUG)
+
+        file_handler = logging.FileHandler('EMG_MAC_{}_PORT_{}.log'.format(args.MAC.replace(':',''),address[1]))
         file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(logging.Formatter('%(asctime)s:%(name)s:%(message)s'))
+        file_handler.setFormatter(logging.Formatter('%(created)f %(message)s'))
 
         stream_handler = logging.StreamHandler(stream=sys.stdout)
-        stream_handler.setFormatter('%(asctime)s %(message)s')
+        stream_handler.setLevel(logging.INFO)
+        stream_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
 
         logger.addHandler(file_handler)
         logger.addHandler(stream_handler)
 
-        manage_connection(args.MAC, utilities.get_address(args.ADDRESS), args.IFACE)
+        manage_connection(args.MAC, address, args.IFACE)
     else:
         # No Action
         print(sys.argv[0] + " Version: " + __version__)

@@ -9,6 +9,8 @@ Updated 3-21-17 by Connor Pyles
 
 import struct
 import sys
+import numpy as np
+from operator import xor
 
 
 class CpcHeadstage(object):
@@ -33,6 +35,7 @@ class CpcHeadstage(object):
         self.msg_id_status_data = 130
         self.msg_id_configuration_read_response = 131
         self.msg_id_configuration_write_response = 132
+        self.crc_table = self._cpch_crc_gen()
     
     def encode_start_msg(self):
         msg = bytearray()
@@ -52,49 +55,67 @@ class CpcHeadstage(object):
         msg += struct.pack('B', self.xor_chksum(msg)[0])
         return msg
 
-    @staticmethod
-    def xor_chksum(msg, poly=0b101001101):
+    def xor_chksum(self, msg):
         """
-        XOR checksum of msg using 0xA6 default polynomial
+        XOR checksum of msg (using 0xA6 default polynomial?)
         
         Input Arguments:
-        self -- reference to this object
         msg -- bytearray to be checksummed
         poly -- integer of taps in the polynomial
         
         Return Arguments:
-        check -- checksum result byte
+        r -- 0 when good checksum
 
         Modified 3/15/17 by COP to handle lists of messages
         """
         
         assert type(msg) is bytearray or type(msg) is list
-        assert type(poly) is int
-        assert (poly.bit_length() - 1) % 8 == 0  # must be an multiple-of-8-bit polynomial
 
         # Put msg into list if passed as bytearray
         if type(msg) is bytearray:
             msg = [msg]
+        # Let's convert to ndarray to speed things up
+        msg = np.transpose(np.array(msg, dtype = np.uint8))
 
-        vals = []
-        for this_msg in msg:
-            # convert msg from bytearray to single int
-            val = 0
-            for byte in this_msg:
-                val = (val << 8) + byte
+        r = np.array([0]*msg.shape[1], dtype=np.uint8)
+        for byte_idx in range(msg.shape[0]):
+            msg_row = msg[byte_idx, :]
+            xor_result = np.bitwise_xor(r, msg_row)
+            r_new = [self.crc_table[int(x)] for x in xor_result]
+            r[:] = r_new
 
-            p_bits = poly.bit_length()
+        return r
 
-            val <<= p_bits - 1   # pad input with a byte for the remainder
+    @staticmethod
+    def _cpch_crc_gen():
+        t = [CpcHeadstage._p_cpch_crc_gen(k) for k in range(256)]
+        return t
 
-            v_bits = val.bit_length()
+    @staticmethod
+    def _p_cpch_crc_gen(package, poly='101001101'):
+        # Convert package from integer to bytes
+        x = "{0:08b}".format(package)
+        # Add 1s
+        x += '1'*8
+        # Put in lists so they are mutable
+        x = list(x)
+        poly = list(poly)
 
-            for i in reversed(list(range(p_bits - 1, v_bits))):
-                if val >> i == 1:
-                    val ^= poly << ((i + 1) - p_bits)
+        # Calculate xr
+        xr = x[0:9]
+        for k in range(len(x)-8):
+            if xr[0] == poly[0]:
+                xr = [str(xor(int(xr[idx]), int(poly[idx]))) for idx, bit in enumerate(xr)]
 
-            vals.append(int(val))
-        return vals
+            xr[0:8] = xr[1:9]
+
+            if k < len(x) - 9:
+                xr[8] = x[k+9]
+
+        not_xr = [not int(x) for x in xr]
+        not_xr = [str(int(x)) for x in not_xr]
+        r = int(''.join(not_xr[0:8]), 2)
+        return r
         
     def encode_config_read_msg(self, indx):
         msg = bytearray()
@@ -247,7 +268,8 @@ class CpcHeadstage(object):
         is_adc_error = [bool(int('{0:08b}'.format(x[2])[3])) for x in aligned_data]
         is_valid_length = [x[4] == expected_length for x in aligned_data]
         is_valid_checksum = [not bool(x) for x in computed_checksum]
-        is_valid_data = is_valid_checksum and is_valid_length and is_valid_status_byte
+        is_valid_data = [a and b and c for a, b, c in zip(is_valid_checksum, is_valid_length, is_valid_status_byte)]
+        #is_valid_data = is_valid_checksum and is_valid_length and is_valid_status_byte
 
         valid_data = [x for i, x in enumerate(aligned_data) if is_valid_data[i]]
 

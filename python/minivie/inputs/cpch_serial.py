@@ -317,11 +317,11 @@ class CpchSerial(CpcHeadstage):
 
         # Check validation parameters(chksum, etc)
         d = self.validate_messages(aligned_data, payload_size)
-        if not valid_data:  # Sometimes this is empty
+        if 'valid_data' not in d.keys():  # Sometimes this is empty
             print('No valid data available from CPC serial buffer, internal buffer not updated.')
             self._set_stream_sleep_time(stream_loop_start_time, 0.02)
             return
-        
+
         valid_data = d['valid_data']
         error_stats = d['error_stats']
 

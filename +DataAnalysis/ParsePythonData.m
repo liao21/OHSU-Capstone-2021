@@ -97,6 +97,27 @@ classdef ParsePythonData
             end
         end
         
+        function data = getCPCHBytes(file)
+            
+            % Initialize data storage struct
+            data = struct(...
+                          'raw_bytes', {}, ...
+                          'timestamp', {} ...
+                          );
+                      
+            % Get file info
+            info = h5info(file);
+            byteReads = {info.Groups(:).Name};  % This is simply each time bytes were read down from serial buffer
+            
+            % Loop through trials and pull data       
+            for iRead = 1:length(byteReads)
+                data(iRead) = struct(...
+                              'raw_bytes', {h5read(file, [byteReads{iRead}, '/rawbytes'])}, ...
+                              'timestamp', {h5read(file, [byteReads{iRead}, '/timestamp'])} ...
+                              );
+            end
+        end
+        
         function [batt_vals, time_stamp] = get_hci_log(file)
             % DataAnalysis.ParsePythonData.get_hci_log('hci0_myo.log')
             if nargin < 1

@@ -20,6 +20,8 @@ from cpc_headstage import CpcHeadstage
 import time
 import logging
 import threading
+from datetime import datetime
+import h5py
 
 
 class CpchSerial(CpcHeadstage):
@@ -35,7 +37,7 @@ class CpchSerial(CpcHeadstage):
     Typical Baud rate for the device is 921600 bps
     """
     
-    def __init__(self, port='COM5', bioamp_mask=int('0xFFFF', 16), gpi_mask=int('0x0000', 16)):
+    def __init__(self, port='/dev/ttyUSB0', bioamp_mask=int('0xFFFF', 16), gpi_mask=int('0x0000', 16)):
         """
 
         """
@@ -55,8 +57,14 @@ class CpchSerial(CpcHeadstage):
         self.sample_frequency = 1000
         self.num_samples = 3000
         self.num_channels = 32
-        
+
+        # Set up logging
         self.enable_data_logging = False  # Enables logging data stream to disk
+        t = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self._h5filename = t + '_CPCH_RAWBYTES.hdf5'
+        self._h5file = h5py.File(self._h5filename, 'w')
+        self._h5file.close()
+        self._rawbytes_log_counter = 1
         
         # Gain values form normalized values
         self.gain_single_ended = 10
@@ -350,14 +358,8 @@ class CpchSerial(CpcHeadstage):
         de_data_normalized = np.array(diff_data_i16, dtype='float') * self.gain_differential
         se_data_normalized = np.array(se_data_u16, dtype='float') / 1024.0 * self.gain_single_ended
 
-        # Send sequence data as last single ended channel
-        # TODO : Need to debug with seDatacoming in. Is this only for debug purposes?
-
         # Log data
-        if self.enable_data_logging:
-            # TODO: Make Py3 compatible
-            # logging.info('Raw Bytes: ' + str(float(raw_bytes[:])))
-            pass
+        self._log_data(raw_bytes)
 
         # Update internal formatted data buffer
         # These channel mappings are updated based on the channel mask
@@ -407,12 +409,9 @@ class CpchSerial(CpcHeadstage):
             self.__byte_available_count = 0
             self.__aligned_byte_count = 0
 
-            print(
-            'CPC Valid Message Rate: {0:.2f} kHz, (Expected:  1.00 kHz)'.format(self.__valid_message_rate / 1000.0))
-            # print('Available Message Rate: {0:.2f} kHz'.format(self.__byte_available_rate / 1000.0))
-            # print('Raw Byte Rate: {0:.2f} kHz'.format(self.__byte_rate / 1000.0))
-            # print('Aligned Raw Byte Rate: {0:.2f} kHz'.format(self.__aligned_byte_rate / 1000.0))
-            # print('CPC Valid Byte Rate:   {0:.2f} kHz, (Expected: 38.00 kHz)'.format(self.__valid_byte_rate / 1000.0))
+            s = 'CPC Valid Message Rate: {0:.2f} kHz, (Expected:  1.00 kHz)'.format(self.__valid_message_rate / 1000.0)
+            print(s)
+            logging.info(s)
 
         # Update sleep time
         self._set_stream_sleep_time(stream_loop_start_time, 0.02)
@@ -425,7 +424,20 @@ class CpchSerial(CpcHeadstage):
         else:
             self.__stream_sleep_time = 0.0
             rate = 1.0/target_dt
-            print('CPC Running Behind {0:.2f} Hz'.format(rate))
+            logging.info('CPC Running Behind {0:.2f} Hz'.format(rate))
+
+    def _log_data(self, raw_bytes):
+        # Method to log all raw bytes as hdf5
+        # Should append to file each time
+        if self.enable_data_logging:
+            self._h5file = h5py.File(self._h5filename, 'r+')
+            t = datetime.now()
+            g1 = self._h5file.create_group('ByteRead_{0:05d}'.format(self._rawbytes_log_counter))
+            g1.create_dataset('rawbytes', data=[x for x in raw_bytes], shape=(len(raw_bytes), 1), dtype='uint8')
+            encoded = [a.encode('utf8') for a in str(t)]  # Need to encode strings
+            g1.create_dataset('timestamp', data=encoded, shape=(len(encoded), 1))
+            self._rawbytes_log_counter += 1
+            self._h5file.close()
 
     def close(self):
         # Method to disconnect object
@@ -439,7 +451,6 @@ class CpchSerial(CpcHeadstage):
 def run_stream_profile():
     # Method to run profile on data streaming to determine slowest function calls
     import cProfile
-    import pstats
 
     # Initialize object
     obj = CpchSerial()
@@ -463,13 +474,11 @@ def run_stream_profile():
 def main():
 
     import argparse
-    from datetime import datetime
-    import time
 
     # Parameters:
     parser = argparse.ArgumentParser(description='CPCH: Read from CPCH and log.')
     parser.add_argument('-p', '--PORT', help='Serial Port Name (e.g. /dev/ttyUSB0)',
-                        default='COM5')
+                        default='/dev/ttyUSB0')
     args = parser.parse_args()
 
     # Logging

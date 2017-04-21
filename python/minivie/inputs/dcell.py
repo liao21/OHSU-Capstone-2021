@@ -52,15 +52,22 @@ import threading
 import logging
 import numpy as np
 from datetime import datetime
+from inputs.signal_input import SignalInput
 
-class DCellSerial(object):
+
+class DCellSerial(SignalInput):
     """
 
         Class for receiving DCell strain data via RS485 serial connection
 
 
     """
+
     def __init__(self, port='/dev/ttyUSB0', num_samples=50):
+
+        # Initialize superclass
+        super(DCellSerial, self).__init__()
+
         # Initialize object properties, does not actually connect to port
         self.port = port  # port name ex: 'COM4' for windows
         self.ser = None  # placeholder for pySerial object

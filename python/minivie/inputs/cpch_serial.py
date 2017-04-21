@@ -22,9 +22,10 @@ import logging
 import threading
 from datetime import datetime
 import h5py
+from inputs.signal_input import SignalInput
 
 
-class CpchSerial(CpcHeadstage):
+class CpchSerial(CpcHeadstage, SignalInput):
     """
     Class for interfacing CPCH via serial port
     
@@ -46,9 +47,9 @@ class CpchSerial(CpcHeadstage):
         assert bioamp_mask.bit_length() <= 16 and bioamp_mask >= 0  # check if 16-bit int and unsigned
         assert gpi_mask.bit_length() <= 16 and gpi_mask >= 0  # check if 16-bit int and unsigned
         
-        #Initialize superclass
+        # Initialize superclass
         super(CpchSerial, self).__init__()
-        
+
         #public access variables
         self.serial_port = port  # Port must be capable of 921600 baud
         self.bioamp_mask = bioamp_mask
@@ -147,7 +148,7 @@ class CpchSerial(CpcHeadstage):
         self._serial_obj.write(msg)
 
         while True:
-            time.sleep(0.1) # delay here to ensure all bytes have time for receipt
+            time.sleep(0.1)  # delay here to ensure all bytes have time for receipt
             bytes_available = self._serial_obj.in_waiting
             if bytes_available:
                 self._serial_obj.read(bytes_available)

@@ -148,6 +148,7 @@ if os.path.split(os.getcwd())[1] == 'inputs':
     import sys
     sys.path.insert(0, os.path.abspath('..'))
 import inputs
+from inputs.signal_input import SignalInput
 import utilities
 
 
@@ -259,7 +260,7 @@ def emulate_myo_unix(destination='//127.0.0.1:15001'):
     sock.close()
 
 
-class MyoUdp(object):
+class MyoUdp(SignalInput):
     """
 
         Class for receiving Myo Armband data via UDP
@@ -271,6 +272,9 @@ class MyoUdp(object):
     """
 
     def __init__(self, source='//127.0.0.1:10001', num_samples=50):
+
+        # Initialize superclass
+        super(MyoUdp, self).__init__()
 
         # logger
         self.log_handlers = None

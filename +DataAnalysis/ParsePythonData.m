@@ -111,9 +111,36 @@ classdef ParsePythonData
             
             % Loop through trials and pull data       
             for iRead = 1:length(byteReads)
+                b = h5read(file, [byteReads{iRead}, '/rawbytes']);
+                t = h5read(file, [logs{iLog}, '/timestamp']);
+                t = [t{:}];
                 data(iRead) = struct(...
-                              'raw_bytes', {h5read(file, [byteReads{iRead}, '/rawbytes'])}, ...
-                              'timestamp', {h5read(file, [byteReads{iRead}, '/timestamp'])} ...
+                              'raw_bytes', {b}, ...
+                              'timestamp', {t} ...
+                              );
+            end
+        end
+        
+        function data = getDCellLog(file)
+            
+            % Initialize data storage struct
+            data = struct(...
+                          'strain', {}, ...
+                          'timestamp', {} ...
+                          );
+                      
+            % Get file info
+            info = h5info(file);
+            logs = {info.Groups(:).Name};  % This is simply each time bytes were read down from serial buffer
+            
+            % Loop through trials and pull data       
+            for iLog = 1:length(logs)
+                s = h5read(file, [logs{iLog}, '/strain']);
+                t = h5read(file, [logs{iLog}, '/timestamp']);
+                t = [t{:}];
+                data(iLog) = struct(...
+                              'strain', {s}, ...
+                              'timestamp', {t} ...
                               );
             end
         end

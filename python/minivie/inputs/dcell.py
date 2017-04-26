@@ -53,6 +53,7 @@ import logging
 import numpy as np
 from datetime import datetime
 from inputs.signal_input import SignalInput
+import h5py
 
 
 class DCellSerial(SignalInput):
@@ -74,6 +75,15 @@ class DCellSerial(SignalInput):
         self.__lock = None  # thread lock
         self.__thread = None  # thread
         self.__dataStrain = np.zeros((num_samples, 1))  # strain data buffer
+        self.__stream_sleep_time = 0.1
+
+        # Set up logging
+        self.enable_data_logging = False  # Enables logging data stream to disk
+        t = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self._h5filename = t + '_DCELL_LOG.hdf5'
+        self._h5file = h5py.File(self._h5filename, 'w')
+        self._h5file.close()
+        self._log_counter = 1
 
     def connect(self, start_streaming=True):
         # Method to connect to serial port and optionally start streaming
@@ -152,21 +162,49 @@ class DCellSerial(SignalInput):
     def _stream_data(self):
         # Loop forever to receive data
         while True:
-            # Ask for current strain
-            time.sleep(0.1)
+            # Sleep
+            time.sleep(self.__stream_sleep_time)
+            # Record start time of this loop
+            stream_loop_start_time = time.time()
+            # Ask for strain
             data = self.send_command('SYS?')
             with self.__lock:
                 if data != '':  # Returns nothing if serial stream times out
                     # Populate Strain Data Buffer (newest on top)
                     self.__dataStrain = np.roll(self.__dataStrain, 1, axis=0)
-                    self.__dataStrain[0] = float(data)  # insert in first buffer entry
-                    # Logging
-                    logging.info('Strain: ' + str(float(data)))
+                    data = float(data)
+                    self.__dataStrain[0] = data  # insert in first buffer entry
+                    self._log_data(data)
+            # Update sleep time
+            self._set_stream_sleep_time(stream_loop_start_time, 0.1)
+
+    def _set_stream_sleep_time(self, stream_loop_start_time, target_dt):
+        # Update loop sleep time to account for processing time
+        stream_loop_time_elapsed = time.time() - stream_loop_start_time
+        if stream_loop_time_elapsed < target_dt:
+            self.__stream_sleep_time = target_dt - stream_loop_time_elapsed
+        else:
+            self.__stream_sleep_time = 0.0
+            rate = 1.0/target_dt
+            logging.info('DCell Running Behind {0:.2f} Hz'.format(rate))
 
     def get_data(self):
         # Method to return current strain buffer
         with self.__lock:
             return self.__dataStrain
+
+    def _log_data(self, data):
+        # Method to log all data values as hdf5
+        # Should append to file each time
+        if self.enable_data_logging:
+            self._h5file = h5py.File(self._h5filename, 'r+')
+            t = datetime.now()
+            g1 = self._h5file.create_group('Log_{0:05d}'.format(self._log_counter))
+            g1.create_dataset('strain', data=[data], shape=(1, 1))
+            encoded = [a.encode('utf8') for a in str(t)]  # Need to encode strings
+            g1.create_dataset('timestamp', data=encoded, shape=(len(encoded), 1))
+            self._log_counter += 1
+            self._h5file.close()
 
     def close(self):
         # Method to disconnect object
@@ -219,6 +257,7 @@ def main():
     # Initialize object
     dcell = DCellSerial(port=args.PORT)
     # Connect and start streaming
+    dcell.enable_data_logging = True
     dcell.connect()
 
 if __name__ == '__main__':

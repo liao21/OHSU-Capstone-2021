@@ -68,7 +68,7 @@ classdef PnetClass < handle
             % [dataBytes, numReads] = getData(obj)
             % read down buffer and return only the latest packet
             
-            assert(~isempty(obj.hSocket),'[%s] PnetClass not initialized\n');
+            assert(~isempty(obj.hSocket),'[%s] PnetClass not initialized',mfilename);
 
             % initialize return arguments
             dataBytes = [];

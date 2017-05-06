@@ -362,7 +362,7 @@ classdef MyoUdp < Inputs.SignalInput
             q = obj.Orientation;
             R = LinAlg.quaternionToRMatrix(q(:));
             [U, ~, V] = svd(R);
-            R = U*V'; % Square up the rotaiton matrix
+            R = U*V'; % Square up the rotation matrix
             
             if nargout > 1
                 % get matrix for second myo

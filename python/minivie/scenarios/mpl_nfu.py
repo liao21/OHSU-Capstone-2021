@@ -38,17 +38,6 @@ def setup():
     vie.TrainingData = pr.TrainingData()
     vie.TrainingData.load()
     vie.TrainingData.num_channels = vie.num_channels
-    vie.TrainingData.motion_names = (
-        'Elbow Flexion', 'Elbow Extension',
-        'Wrist Rotate In', 'Wrist Rotate Out',
-        'Wrist Flex In', 'Wrist Extend Out',
-        'Hand Open',
-        'Spherical Grasp',
-        'Tip Grasp',
-        'Point Grasp',
-        'No Movement',
-    )
-
     vie.FeatureExtract = pr.FeatureExtract(zc_thresh=0.05, ssc_thresh=0.05, sample_rate=200)
 
     # Classifier parameters

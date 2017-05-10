@@ -86,7 +86,7 @@
     <add key="HUMERAL_ROT_LIMITS"     value=" -35, 80" />
     <add key="ELBOW_LIMITS"           value="  10, 130" />
 
-    <add key="WRIST_ROT_LIMITS"       value=" -90, 90" />
+    <add key="WRIST_ROT_LIMITS"       value=" -85, 85" />
     <add key="WRIST_AB_AD_LIMITS"     value=" -45, 45" />
     <add key="WRIST_FE_LIMITS"        value=" -60, 60" />
 

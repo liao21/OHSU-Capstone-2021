@@ -67,7 +67,7 @@ $(function () {
         },
         {
         title: 'Three Finger Pinch',
-        href:  'img_grasps/ThreeFingerPinch.png',
+        href:  'img_grasps/Tripod_Grasp.bmp',
         },
         {
         title: 'Lateral Grasp',
@@ -102,12 +102,8 @@ $(function () {
                 case 11: sendCmd("Cls:Lateral Grasp"); break;
                 case 12: sendCmd("Cls:Cylindrical Grasp"); break;
                 case 13: sendCmd("Cls:Point Grasp"); break;
-                case 99: sendCmd("Cls:Index Grasp"); break;
-                case 99: sendCmd("Cls:Middle Grasp"); break;
-                case 99: sendCmd("Cls:Ring Grasp"); break;
-                case 99: sendCmd("Cls:Little Grasp"); break;
                 default: break;
-                }        
+                }
         }
     });
 }); // function

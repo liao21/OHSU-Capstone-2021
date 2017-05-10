@@ -70,7 +70,13 @@ def class_map(class_name):
         'Hand Open': [True, None, -1, None],
         'Spherical Grasp': [True, None, +1, 'Spherical'],
         'Tip Grasp': [True, None, +1, 'ThreeFingerPinch'],
+        'Lateral Grasp': [True, None, +1, 'Lateral'],
         'Point Grasp': [True, None, +1, 'Trigger(Drill)'],
+        'Index Grasp': [True, None, +1, 'Index Only'],
+        'Middle Grasp': [True, None, +1, 'Middle Only'],
+        'Ring Grasp': [True, None, +1, 'Ring Only'],
+        'Little Grasp': [True, None, +1, 'Little Only'],
+        
     }
 
     if class_name in class_lookup:

@@ -60,16 +60,34 @@ $(function () {
         thumbnail: 'img_grasps/Spherical_Grasp.png'
         },
         {
-        title: 'Fine Pinch Grasp',
+        title: 'Tip Grasp',
         href:  'img_grasps/Tip_Grasp.png',
         type: 'image/png',
         thumbnail: 'img_grasps/Tip_Grasp.png'
         },
         {
+        title: 'Lateral Grasp',
+        href:  'img_grasps/Hook_Grasp.bmp',
+        },
+        {
         title: 'Point Grasp',
         href:  'img_grasps/Trigger_Grasp.png',
-        type: 'image/png',
-        thumbnail: 'img_grasps/Trigger_Grasp.png'
+        },
+        {
+        title: 'Index Grasp',
+        href:  'img_grasps/Index_Grasp.bmp',
+        },
+        {
+        title: 'Middle Grasp',
+        href:  'img_grasps/Middle_Grasp.bmp',
+        },
+        {
+        title: 'Ring Grasp',
+        href:  'img_grasps/Ring_Grasp.bmp',
+        },
+        {
+        title: 'Little Grasp',
+        href:  'img_grasps/Little_Grasp.bmp',
         }
     ], {
         container: '#blueimp-image-carousel',
@@ -87,7 +105,12 @@ $(function () {
                 case  7: sendCmd("Cls:Hand Open"); break;
                 case  8: sendCmd("Cls:Spherical Grasp"); break;
                 case  9: sendCmd("Cls:Tip Grasp"); break;
-                case 10: sendCmd("Cls:Point Grasp"); break;
+                case 10: sendCmd("Cls:Lateral Grasp"); break;
+                case 11: sendCmd("Cls:Point Grasp"); break;
+                case 12: sendCmd("Cls:Index Grasp"); break;
+                case 13: sendCmd("Cls:Middle Grasp"); break;
+                case 14: sendCmd("Cls:Ring Grasp"); break;
+                case 15: sendCmd("Cls:Little Grasp"); break;
                 default: break;
                 }        
         }

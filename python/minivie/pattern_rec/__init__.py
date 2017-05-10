@@ -240,15 +240,25 @@ class TrainingData:
 
         # Names of potentially trained classes
         self.motion_names = (
+            'Shoulder Flexion', 'Shoulder Extension',
+            'Shoulder Adduction','Shoulder Abduction',
+            'Humeral Internal Rotation','Humeral External Rotation',
             'Elbow Flexion', 'Elbow Extension',
             'Wrist Rotate In', 'Wrist Rotate Out',
+            'Wrist Adduction','Wrist Abduction',
             'Wrist Flex In', 'Wrist Extend Out',
             'Hand Open',
             'Spherical Grasp',
             'Tip Grasp',
+            'Lateral Grasp',
             'Point Grasp',
+            'Index Grasp',
+            'Middle Grasp',
+            'Ring Grasp',
+            'Little Grasp',
             'No Movement',
         )
+            
         self.data = []  # List of all feature extracted samples
         self.id = []  # List of class indices that each sample belongs to
         self.name = []  # Name of each class

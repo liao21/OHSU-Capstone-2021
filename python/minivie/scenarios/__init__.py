@@ -18,7 +18,7 @@ class Scenario(object):
 
         self.add_data = False
         self.training_motion = 'No Movement'
-        self.training_id = 10
+        self.training_id = 0
 
         self.num_channels = 0
 

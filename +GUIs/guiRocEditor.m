@@ -275,7 +275,16 @@ classdef guiRocEditor < handle
                         hSink.initialize();
                     case 'VulcanX'
                         hSink = MPL.MplVulcanXSink();
-                        hSink.setPortDefaults( strcmp(armLabel,'Left Arm') );
+                        
+                        if strcmp(armLabel,'Custom')
+                            fprintf('Getting VulcanX port parameters from xml config file\n');
+                            hSink.MplAddress = UserConfig.getUserConfigVar('mplVulcanXIpAddress','127.0.0.1');
+                            hSink.MplCmdPort = UserConfig.getUserConfigVar('mplVulcanXCommandPort',9024);
+                            hSink.MplLocalPort = UserConfig.getUserConfigVar('mplVulcanXSensoryPort',9026);
+                        else % Left or Right
+                            hSink.setPortDefaults( strcmp(armLabel,'Left Arm') );
+                        end
+                        
                         hSink.initialize();
                     case 'MPL-NFU'
                         hSink = MPL.MplNfuSink();

@@ -241,21 +241,25 @@ class TrainingData:
         # Names of potentially trained classes
         self.motion_names = (
             'Shoulder Flexion', 'Shoulder Extension',
-            'Shoulder Adduction','Shoulder Abduction',
-            'Humeral Internal Rotation','Humeral External Rotation',
+            'Shoulder Adduction', 'Shoulder Abduction',
+            'Humeral Internal Rotation', 'Humeral External Rotation',
             'Elbow Flexion', 'Elbow Extension',
             'Wrist Rotate In', 'Wrist Rotate Out',
-            'Wrist Adduction','Wrist Abduction',
+            'Wrist Adduction', 'Wrist Abduction',
             'Wrist Flex In', 'Wrist Extend Out',
             'Hand Open',
             'Spherical Grasp',
             'Tip Grasp',
+            'Three Finger Pinch Grasp',
             'Lateral Grasp',
+            'Cylindrical Grasp',
+            'Power Grasp',
             'Point Grasp',
             'Index Grasp',
             'Middle Grasp',
             'Ring Grasp',
             'Little Grasp',
+            'Thumb Grasp'
             'No Movement',
         )
             

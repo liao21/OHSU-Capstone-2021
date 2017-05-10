@@ -66,34 +66,27 @@ $(function () {
         thumbnail: 'img_grasps/Tip_Grasp.png'
         },
         {
+        title: 'Three Finger Pinch',
+        href:  'img_grasps/ThreeFingerPinch.png',
+        },
+        {
         title: 'Lateral Grasp',
+        href:  'img_grasps/Hook_Grasp.bmp',
+        },
+        {
+        title: 'Cylindrical Grasp',
         href:  'img_grasps/Hook_Grasp.bmp',
         },
         {
         title: 'Point Grasp',
         href:  'img_grasps/Trigger_Grasp.png',
-        },
-        {
-        title: 'Index Grasp',
-        href:  'img_grasps/Index_Grasp.bmp',
-        },
-        {
-        title: 'Middle Grasp',
-        href:  'img_grasps/Middle_Grasp.bmp',
-        },
-        {
-        title: 'Ring Grasp',
-        href:  'img_grasps/Ring_Grasp.bmp',
-        },
-        {
-        title: 'Little Grasp',
-        href:  'img_grasps/Little_Grasp.bmp',
         }
     ], {
         container: '#blueimp-image-carousel',
         carousel: true,
         onslide: function (index, slide) {
                 // Callback function executed on slide change.
+                // Note these class commands must match those listed in pattern_rec\__init__.py class TrainingData
                 switch(index) {
                 case  0: sendCmd("Cls:No Movement"); break;
                 case  1: sendCmd("Cls:Elbow Flexion"); break;
@@ -105,12 +98,14 @@ $(function () {
                 case  7: sendCmd("Cls:Hand Open"); break;
                 case  8: sendCmd("Cls:Spherical Grasp"); break;
                 case  9: sendCmd("Cls:Tip Grasp"); break;
-                case 10: sendCmd("Cls:Lateral Grasp"); break;
-                case 11: sendCmd("Cls:Point Grasp"); break;
-                case 12: sendCmd("Cls:Index Grasp"); break;
-                case 13: sendCmd("Cls:Middle Grasp"); break;
-                case 14: sendCmd("Cls:Ring Grasp"); break;
-                case 15: sendCmd("Cls:Little Grasp"); break;
+                case 10: sendCmd("Cls:Three Finger Pinch Grasp"); break;
+                case 11: sendCmd("Cls:Lateral Grasp"); break;
+                case 12: sendCmd("Cls:Cylindrical Grasp"); break;
+                case 13: sendCmd("Cls:Point Grasp"); break;
+                case 99: sendCmd("Cls:Index Grasp"); break;
+                case 99: sendCmd("Cls:Middle Grasp"); break;
+                case 99: sendCmd("Cls:Ring Grasp"); break;
+                case 99: sendCmd("Cls:Little Grasp"); break;
                 default: break;
                 }        
         }

@@ -12,4 +12,7 @@ rocId = 6;
 fprintf('Hand Shape: "%s" %d%%\n',structRoc(rocId).name,rocValue*100);
 mplAngles(structRoc(rocId).joints) = interp1(structRoc(rocId).waypoint,structRoc(rocId).angles,rocValue);
 msg = mce.AllJointsPosVelCmd(mplAngles(1:7), zeros(1,7), mplAngles(8:27), zeros(1,20));
+
+%stiffnessCmd = [5 5 5 5 65 5 25 2.3*ones(1,20)]; % 16 Nm/rad Upper Arm  0.1-1 Hand
+%msg = mce.AllJointsPosVelImpCmd(mplAngles(1:7), zeros(1,7), mplAngles(8:27), zeros(1,20),stiffnessCmd);
 hSink.putData(msg)

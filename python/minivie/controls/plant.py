@@ -69,14 +69,17 @@ def class_map(class_name):
         'Wrist Extend Out': [False, MplId.WRIST_FE, -1, None],
         'Hand Open': [True, None, -1, None],
         'Spherical Grasp': [True, None, +1, 'Spherical'],
-        'Tip Grasp': [True, None, +1, 'ThreeFingerPinch'],
+        'Tip Grasp': [True, None, +1, 'FinePinch(American)'],
+        'Three Finger Pinch Grasp': [True, None, +1, 'ThreeFingerPinch'],
         'Lateral Grasp': [True, None, +1, 'Lateral'],
+        'Cylindrical Grasp': [True, None, +1, 'Cylindrical'],
+        'Power Grasp': [True, None, +1, 'Cylindrical'],
         'Point Grasp': [True, None, +1, 'Trigger(Drill)'],
         'Index Grasp': [True, None, +1, 'Index Only'],
         'Middle Grasp': [True, None, +1, 'Middle Only'],
         'Ring Grasp': [True, None, +1, 'Ring Only'],
         'Little Grasp': [True, None, +1, 'Little Only'],
-        
+        'Thumb Grasp': [True, None, +1, 'Thumb Only'],
     }
 
     if class_name in class_lookup:

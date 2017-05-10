@@ -118,7 +118,7 @@ class Scenario(object):
             self.add_data = False
 
         elif cmd_type == 'Cmd':
-            print(cmd_data);
+            print(cmd_data)
             if cmd_data == 'Add':
                 self.add_data = True
             elif cmd_data == 'Stop':

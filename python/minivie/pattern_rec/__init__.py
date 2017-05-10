@@ -218,7 +218,7 @@ class Classifier:
             return decision_id, status_msg
 
         try:
-            # run sklearn prediciton, returns array, but with one sample in we just want the first value
+            # run sklearn prediction, returns array, but with one sample in we just want the first value
             prediction = self.classifier.predict(features)
             status_msg = 'RUNNING'
             decision_id = prediction[0]
@@ -240,6 +240,7 @@ class TrainingData:
 
         # Names of potentially trained classes
         self.motion_names = (
+            'No Movement'
             'Shoulder Flexion', 'Shoulder Extension',
             'Shoulder Adduction', 'Shoulder Abduction',
             'Humeral Internal Rotation', 'Humeral External Rotation',
@@ -259,8 +260,7 @@ class TrainingData:
             'Middle Grasp',
             'Ring Grasp',
             'Little Grasp',
-            'Thumb Grasp'
-            'No Movement',
+            'Thumb Grasp',
         )
             
         self.data = []  # List of all feature extracted samples

@@ -1,6 +1,20 @@
 classdef ParsePythonData
     %PARSEPYTHONDATA Summary of this class goes here
     %   Detailed explanation goes here
+    %
+    %
+    %
+    % OpenNFU Based parsing
+    %
+    %
+    % Multiple logs are created usingthe python version of the MiniVIE
+    %
+    % TAC assessments:  These can be loaded and parsed directly in a batch
+    %   process using the following:
+    %   s = DataAnalysis.PostProcessing.processTacBatch('c:\path_to_files','MPL19')
+    %   As a result, all TAC1_LOG.hdf5 files will be read and processed and
+    %   written to a pptx file for results viewing
+    % 
     
     properties
     end
@@ -205,10 +219,12 @@ classdef ParsePythonData
                 f = 'hci0_myo.log';
                 %f = 'MPL_WWW_1999-12-31_19-00-25.log';
                 file = fullfile(p,f);
+            else
+                p = file
             end
             
             %%
-            p = 'C:\tmp\';
+            %p = 'C:\tmp\';
             s = rdir(fullfile(p,'*.log'));
             % Sort by date
             [~, id] = sort([s(:).datenum]);

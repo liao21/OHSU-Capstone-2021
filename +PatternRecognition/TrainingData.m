@@ -699,12 +699,19 @@ classdef TrainingData < handle
                 % print contents
                 h5disp(fullFile)
                 
-                desc = h5readatt(fullFile,'/data','description')
-                numchannels = h5readatt(fullFile,'/data','num_channels')
-                features = h5read(fullFile,'/data/data');
-                class_labels = double(h5read(fullFile,'/data/id'));
-                names = h5read(fullFile,'/data/name');
-                classnames = deblank(unique(names));
+                desc = h5readatt(fullFile,'/data','description');
+                numchannels = double(h5readatt(fullFile,'/data','num_channels'));
+                features = double(h5read(fullFile,'/data/data'));
+                class_labels = double(h5read(fullFile,'/data/id')) + 1;  % one based indexing
+                names = deblank(h5read(fullFile,'/data/name'));
+                classnames = unique(names);
+                
+                % rewrite the class label ids based on the name
+                for i = 1:length(classnames)
+                    class_labels(strcmp(classnames{i},names)) = i;
+                end
+                class_labels = class_labels(:)';
+                
             catch ME
                 msg = { 'Error loading file', fullFile , ...
                     'Error was: ' ME.message};
@@ -713,7 +720,8 @@ classdef TrainingData < handle
             end
             
             % load features
-            obj.SignalFeatures3D = reshape(features,16,4,[]);
+            obj.SignalFeatures3D = reshape(features(:),4,16,[]);
+            obj.SignalFeatures3D = permute(obj.SignalFeatures3D,[2 1 3]);
             obj.MaxChannels = double(numchannels);
             
             % load labels
@@ -772,6 +780,13 @@ classdef TrainingData < handle
             end
             
             % Load data
+            % check for h5 files
+            [~,strName,strExt] = fileparts(fullFile);
+            if strcmpi(strExt,'.hdf5') && strncmpi(strName,'TRAINING_DATA',13)
+                [success, fullFile] = loadTrainingDataH5(obj,fullFile);
+                return
+            end
+            
             try
                 fprintf('[%s] Loading file: "%s"\n',mfilename,fullFile);
                 S = load(fullFile,'-mat');

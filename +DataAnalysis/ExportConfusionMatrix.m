@@ -12,7 +12,7 @@ classdef ExportConfusionMatrix
             outputFile = 'c:\tmp\test.xlsx';
             
             %%
-            for i = 1:length(d);
+            for i = 1:length(d)
                 hTraining = TrainingDataAnalysis(d(i).name)
                 
                 [pathstr,name,ext] = fileparts(d(i).name);

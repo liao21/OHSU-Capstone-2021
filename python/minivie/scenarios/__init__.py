@@ -21,7 +21,7 @@ class Scenario(object):
         self.DataSink = None
 
         # Debug socket for streaming Features
-        self.DebugSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        #self.DebugSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         self.add_data = False
         self.training_motion = 'No Movement'
@@ -211,11 +211,11 @@ class Scenario(object):
         self.output['features'], f = self.FeatureExtract.get_features(self.SignalSource)
 
         # Debug stream:
-        values = self.output['features']
-        print(values)
-        packer = struct.Struct('64f')
-        packed_data = packer.pack(*values)
-        self.DebugSock.sendto(packed_data, ('192.168.7.1', 23456))
+        #values = self.output['features']
+        #print(values)
+        #packer = struct.Struct('64f')
+        #packed_data = packer.pack(*values)
+        #self.DebugSock.sendto(packed_data, ('192.168.7.1', 23456))
 
         # if simultaneously training the system, add the current results to the data buffer
         if self.add_data:

@@ -201,7 +201,7 @@ class NfuUdp:
         # 'Joint Angles: [0.00 1.20 3.14 ... ]'
         logging.info('Joint Angles: ' +
                      np.array2string(np.array(values),
-                                     formatter={'float_kind': lambda x: "%.2f" % x}, max_line_width=None,
+                                     formatter={'float_kind': lambda x: "%.2f" % x}, max_line_width=250,
                                      suppress_small=True))
 
         # TEMP fix to lock middle finger and prevent drift

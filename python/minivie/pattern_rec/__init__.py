@@ -50,26 +50,35 @@ class FeatureExtract(object):
 
         if data_input is None:
             # Can't get features
-            return None, None
+            return None, None, None
         elif isinstance(data_input, np.ndarray):
             # Extract features from the data provided
             f = feature_extract(data_input, self.zc_thresh, self.ssc_thresh, self.sample_rate)
+            imu = None
         else:
             # input is a data source so call it's get_data method
 
             # Get features from emg data
             f = np.array([])
             for s in data_input:
-                new_data = s.get_data() * 0.01
-                features = feature_extract(new_data, self.zc_thresh, self.ssc_thresh, self.sample_rate)
-                f = np.append(f, features)
+                f = np.append(f,feature_extract(s.get_data()*0.01, self.zc_thresh, self.ssc_thresh, self.sample_rate))
+
+            imu = np.array([])
+            for s in data_input:
+                result = s.get_imu()
+                imu = np.append(imu, result['quat'])
+                imu = np.append(imu, result['accel'])
+                imu = np.append(imu, result['gyro'])
+                # add imu to features
+                #f = np.append(f, imu)
+
         feature_list = f.tolist()
 
         # format the data in a way that sklearn wants it
         f = np.squeeze(f)
         feature_learn = f.reshape(1, -1)
 
-        return feature_list, feature_learn
+        return feature_list, feature_learn, imu
 
 
 def feature_extract(y, zc_thresh=0.15, ssc_thresh=0.15, sample_rate=200):
@@ -274,6 +283,7 @@ class TrainingData:
         # Clear all data and reset the data store
         self.data = []  # List of all feature extracted samples
         self.id = []  # List of class indices that each sample belongs to
+        self.imu = []
         self.name = []  # Name of each class
         self.time_stamp = []
         self.num_samples = 0
@@ -290,6 +300,7 @@ class TrainingData:
             del(self.time_stamp[rev])
             del(self.name[rev])
             del(self.id[rev])
+            del(self.imu[rev])
             del(self.data[rev])
             self.num_samples -= 1
 
@@ -304,13 +315,14 @@ class TrainingData:
             print('Error, "' + new_class + '" already contained in class list.')
             return False
         
-    def add_data(self, data_, id_, name_):
+    def add_data(self, data_, id_, name_, imu_=-1):
         # New Data marked with:
         # time_stamp, name, id, data
         self.time_stamp.append(time.time())
         self.name.append(name_)
         self.id.append(id_)
         self.data.append(data_)
+        self.imu.append(imu_)
         self.num_samples += 1
 
     def get_totals(self, motion_id=None):
@@ -381,6 +393,8 @@ class TrainingData:
         encoded = [a.encode('utf8') for a in self.name]
         group.create_dataset('name', data=encoded)
         group.create_dataset('data', data=self.data)
+        group.create_dataset('imu', data=self.imu)
+        group.create_dataset('motion_names', data=[a.encode('utf8') for a in self.motion_names]) #utf-8
         h5.close()
         print('Saved ' + self.filename)
 

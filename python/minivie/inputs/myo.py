@@ -113,7 +113,7 @@ Revisions:
 1.0.0 RSA: Added emulator, test code and verified function with linux and windows
 2.0.0 RSA: Added myo transmission code to this as a single file
 
-Note __variable signifies private variable which are acccessible to getData and getAngles.
+Note __variable signifies private variable which are accessible to getData and getAngles.
 A call to the class methods (getData, getAngles) allows external modules to read streaming data
 that is buffered in the private variables.
 
@@ -444,6 +444,15 @@ class MyoUdp(SignalInput):
         with self.__lock:
             return quat2euler(self.__quat)
 
+    def get_imu(self):
+        """ Return IMU data as a dictionary 
+        result['quat'] = (qw qx qy qz)
+        result['accel'] = (ax ay az)
+        result['gyro'] = (rx ry rz)
+        """
+        with self.__lock:
+            return {'quat': self.__quat , 'accel': self.__accel, 'gyro': self.__gyro}
+
     def get_battery(self):
         # Return the battery value (0-100)
         with self.__lock:
@@ -672,9 +681,6 @@ def manage_connection(mac_addr='C3:0A:EA:14:14:D9', stream_addr=('127.0.0.1', 15
                 break
 
         time.sleep(1.0)
-
-    logger.info('Done')
-
 
 def interactive_startup():
     """

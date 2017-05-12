@@ -208,7 +208,7 @@ class Scenario(object):
         self.output = {'status': 'RUNNING', 'features': None, 'decision': 'None', 'vote': None}
 
         # get data / features
-        self.output['features'], f = self.FeatureExtract.get_features(self.SignalSource)
+        self.output['features'], f, imu = self.FeatureExtract.get_features(self.SignalSource)
 
         # Debug stream:
         #values = self.output['features']
@@ -219,7 +219,7 @@ class Scenario(object):
 
         # if simultaneously training the system, add the current results to the data buffer
         if self.add_data:
-            self.TrainingData.add_data(self.output['features'], self.training_id, self.training_motion)
+            self.TrainingData.add_data(self.output['features'], self.training_id, self.training_motion, imu)
 
         # classify
         decision_id, self.output['status'] = self.SignalClassifier.predict(f)

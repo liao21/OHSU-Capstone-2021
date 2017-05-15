@@ -697,14 +697,25 @@ classdef TrainingData < handle
             try
                 % Load data
                 % print contents
-                h5disp(fullFile)
+                %h5disp(fullFile)
+                h = h5info(fullFile);
                 
                 desc = h5readatt(fullFile,'/data','description');
                 numchannels = double(h5readatt(fullFile,'/data','num_channels'));
+                unix_time = double(h5read(fullFile,'/data/time_stamp')); %posix time
+                tz = java.util.Date(); % The date string display
+                tz_val = -tz.getTimezoneOffset()/60; % the timezone offset from UTC
+                matlab_time = datetime(unix_time+(tz_val*60*60),'ConvertFrom','posixtime');
+
                 features = double(h5read(fullFile,'/data/data'));
                 class_labels = double(h5read(fullFile,'/data/id')) + 1;  % one based indexing
                 names = deblank(h5read(fullFile,'/data/name'));
                 classnames = unique(names);
+                
+                if any(strcmp({h.Groups.Datasets.Name},'imu'))
+                    imu = double(h5read(fullFile,'/data/imu'));
+                end
+                
                 
                 % rewrite the class label ids based on the name
                 for i = 1:length(classnames)

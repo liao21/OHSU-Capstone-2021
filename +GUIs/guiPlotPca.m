@@ -45,6 +45,7 @@ classLabelId = hData.getClassLabels;
 uniqueLabels = unique(classLabelId);
 numClasses = length(uniqueLabels);
 
+classLabelId = classLabelId(:)';
 
 % Sub-sample PC Inputs:
 targetNum = 500;

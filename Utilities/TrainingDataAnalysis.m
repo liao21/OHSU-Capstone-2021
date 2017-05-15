@@ -344,6 +344,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             % find transitions in data set for class labeling
             %l = obj.getAllClassLabels;
             l = obj.getClassLabels;
+            l = l(:)';
             [l, sortOrder] = sort(l);
             classChange = [find(diff(l) ~= 0) length(l)];
             
@@ -609,7 +610,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             %filteredData = NF.apply(filteredData);
         end
         
-        function hData = batchLoadTrainingData(dataPath)
+        function hData = batchLoadTrainingData(dataPath,filter)
             % Load all training data in directory and return an array of
             % TrainingData Objects
             %
@@ -619,7 +620,11 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             % Usage:
             %   TrainingDataAnalysis.batchLoadTrainingData('c:\data\Myo_01\')
             
-            s = rdir(fullfile(dataPath,'*.trainingData'));
+            if nargin < 2
+                filter = '*.trainingData';
+            end
+                
+            s = rdir(fullfile(dataPath,filter));
 
             % sort by date
             [~,idx] = sort([s.datenum]);

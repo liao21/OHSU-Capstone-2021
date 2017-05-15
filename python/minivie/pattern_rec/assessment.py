@@ -604,15 +604,19 @@ class TargetAchievementControl(object):
     def update_gui_joint(self, joint_num):
         # Will set joint bar display on web interface
         normalized_joint_position = (self.position_time_history[-1, joint_num-1] - self.lower_limit[joint_num-1])/(self.upper_limit[joint_num-1] - self.lower_limit[joint_num-1]) * 100
+        print("strTACJoint" + str(joint_num) + "Bar", str(normalized_joint_position))
         self.trainer.send_message("strTACJoint" + str(joint_num) + "Bar", str(normalized_joint_position))
 
     def update_gui_joint_target(self, joint_num):
         # Will set joint bar display on web interface
+        print("strTACJoint" + str(joint_num) + "Name", self.target_joint[joint_num-1])
         self.trainer.send_message("strTACJoint" + str(joint_num) + "Name", self.target_joint[joint_num-1])
         normalized_target_position = (self.target_position[joint_num-1] - self.lower_limit[joint_num-1]) / (
         self.upper_limit[joint_num-1] - self.lower_limit[joint_num-1]) * 100.0
         normalized_target_error = (self.target_error[joint_num-1]) / (
         self.upper_limit[joint_num-1] - self.lower_limit[joint_num-1]) * 100.0
+        print("strTACJoint" + str(joint_num) + "Error", str(normalized_target_error))
+        print("strTACJoint" + str(joint_num) + "Target", str(normalized_target_position))
         self.trainer.send_message("strTACJoint" + str(joint_num) + "Error", str(normalized_target_error))
         self.trainer.send_message("strTACJoint" + str(joint_num) + "Target", str(normalized_target_position))
 

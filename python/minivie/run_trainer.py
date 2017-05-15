@@ -116,13 +116,23 @@ while True:
 
         for i in range(100):
             time.sleep(dt)
+
+            # Get features from emg data
             f = np.array([])
+            imu = np.array([])
             for s in vie.SignalSource:
                 new_data = s.get_data()*0.01
                 features = pr.feature_extract(new_data, zc_thresh, ssc_thresh, sample_rate)
                 f = np.append(f, features)
+            for s in vie.SignalSource:
+                result = s.get_imu()
+                imu = np.append(imu, result['quat'])
+                imu = np.append(imu, result['accel'])
+                imu = np.append(imu, result['gyro'])
+                # add imu to features
+                #f = np.append(f, imu)
             f = f.tolist()
-            vie.TrainingData.add_data(f, choice - 1, vie.TrainingData.motion_names[choice - 1])
+            vie.TrainingData.add_data(f, choice - 1, vie.TrainingData.motion_names[choice - 1],imu)
 
             print(vie.TrainingData.motion_names[choice - 1] + ''.join(format(x, "6.2f") for x in f[0::4]))
 

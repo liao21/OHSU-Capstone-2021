@@ -1,6 +1,20 @@
 classdef ParsePythonData
     %PARSEPYTHONDATA Summary of this class goes here
     %   Detailed explanation goes here
+    %
+    %
+    %
+    % OpenNFU Based parsing
+    %
+    %
+    % Multiple logs are created usingthe python version of the MiniVIE
+    %
+    % TAC assessments:  These can be loaded and parsed directly in a batch
+    %   process using the following:
+    %   s = DataAnalysis.PostProcessing.processTacBatch('c:\path_to_files','MPL19')
+    %   As a result, all TAC1_LOG.hdf5 files will be read and processed and
+    %   written to a pptx file for results viewing
+    % 
     
     properties
     end
@@ -205,10 +219,12 @@ classdef ParsePythonData
                 f = 'hci0_myo.log';
                 %f = 'MPL_WWW_1999-12-31_19-00-25.log';
                 file = fullfile(p,f);
+            else
+                p = file
             end
             
             %%
-            p = 'C:\tmp\';
+            %p = 'C:\tmp\';
             s = rdir(fullfile(p,'*.log'));
             % Sort by date
             [~, id] = sort([s(:).datenum]);
@@ -462,21 +478,32 @@ classdef ParsePythonData
             
             tString = cat(1,time0,time1,time2,time3);
             emgString = cat(1,emg0, emg1, emg2, emg3);
-
-            timeEMG = DataAnalysis.ParsePythonData.unix_time_to_matlab(str2double(tString));
             
+            % sort by date
+            tNum = str2double(tString);
+            [tSorted, idxSorted] = sort(tNum);
+            emgString = emgString(idxSorted);
+            
+            % check all the 
             isValid = strlength(emgString) == 32;            
-            fprintf('Omitting %d bad EMG lines\n',sum(~isValid))
+            fprintf('Omitting %d bad EMG lines (of %d)\n',sum(~isValid),length(isValid))
             
             emgString = emgString(isValid);
-            timeEMG  = timeEMG(isValid);
+            tSorted  = tSorted(isValid);
             
+            % note each converted data line has 2 samples
             dataEMG = reshape(typecast(uint8(hex2dec(reshape([emgString{:}],2,[])')),'int8'),16,[])';
+            dataEMG = reshape(dataEMG',8,[])';
+            % double the time vector to reflect two samples per message
+            tDoubled = [tSorted(:) tSorted(:) + 0.005]';
+            tDoubled = tDoubled(:);
 
-            % resport interleaved samples
-            [tSorted, idxSorted] = sort(timeEMG);
-            timeEMG = tSorted;
-            dataEMG = dataEMG(idxSorted,:);
+            timeEMG = DataAnalysis.ParsePythonData.unix_time_to_matlab(tDoubled);
+            
+            % resort interleaved samples
+%             [tSorted, idxSorted] = sort(timeEMG);
+%             timeEMG = tSorted;
+%             dataEMG = dataEMG(idxSorted,:);
 
             
             %% Parse IMU Blocks
@@ -543,20 +570,22 @@ classdef ParsePythonData
             if nargout < 1
             close all
             figure
-            DataAnalysis.ParsePythonData.plot_myo_data(timeEMG, dataEMG)
+            DataAnalysis.ParsePythonData.plot_myo_data(timeEMG, dataEMG, 'RAW EMG')
             figure
-            DataAnalysis.ParsePythonData.plot_myo_data(timeIMU, Rxyz)
+            DataAnalysis.ParsePythonData.plot_myo_data(timeIMU, Rxyz, 'Rxyz')
             figure
-            DataAnalysis.ParsePythonData.plot_myo_data(timeBatt, dataBatt)
+            DataAnalysis.ParsePythonData.plot_myo_data(timeBatt, dataBatt, 'Myo Batt %')
             figure
-            DataAnalysis.ParsePythonData.plot_myo_data(timeStatus, [rateEMG rateIMU])
+            DataAnalysis.ParsePythonData.plot_myo_data(timeStatus, [rateEMG rateIMU], 'Stream Rate')
             end
         end
         
-        function plot_myo_data(time, data)
+        function plot_myo_data(time, data, strTitle)
             % Helper function that breaks data time history into subplots
             % find breaks:
-            breaks = [0; find(diff(time) > 0.01); length(time)];
+            break_duration = 0.01;
+            
+            breaks = [0; find(diff(time) > break_duration); length(time)];
             
             cellTime = {};
             for i = 1:length(breaks)-1
@@ -571,14 +600,16 @@ classdef ParsePythonData
                 %set(gca,'XTick',linspace(d2(1),d2(end),20))
                 xtickangle(25)
                 %ylim([18 26])
+                if i == 1
+                    title(strTitle)
+                end
             end
             
         end
         function matlab_time = unix_time_to_matlab(unix_time)
             % Convert unix time (epoc 1970) to matlab time
-            zone = 0*60*60;
-            unix_epoch = datenum(1970,1,1,0,0,0);
-            matlab_time = (unix_time+zone)./86400 + unix_epoch;
+            zone = -4*60*60;
+            matlab_time = datetime(unix_time+zone,'ConvertFrom','posixtime');
         end
         
     end

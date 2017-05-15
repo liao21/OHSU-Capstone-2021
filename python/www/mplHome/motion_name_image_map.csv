@@ -1,12 +1,25 @@
 Motion Name,Image File 
 No Movement,img_arm_motions/No_Movement.png
+Shoulder Flexion,img_arm_motions/Shoulder_Flexion.png
+Shoulder Extension,img_arm_motions/Shoulder_Extension.png
+Shoulder Adduction,img_arm_motions/Shoulder_Adduction.png
+Shoulder Abduction,img_arm_motions/Shoulder_Abduction.png
+Humeral Internal Rotation,img_arm_motions/Elbow_Flexion.png
+Humeral External Rotation',img_arm_motions/Elbow_Flexion.png
 Elbow Flexion,img_arm_motions/Elbow_Flexion.png
 Elbow Extension,img_arm_motions/Elbow_Extension.png
 Wrist Rotate In,img_arm_motions/Wrist_Rotate_In.png
 Wrist Rotate Out,img_arm_motions/Wrist_Rotate_Out.png
+Wrist Adduction,img_arm_motions/Wrist_Adduction.png
+Wrist Abduction,img_arm_motions/Wrist_Abduction.png
 Wrist Flex In,img_arm_motions/Wrist_Flexion.png
 Wrist Extend Out,img_arm_motions/Wrist_Extension.png
 Hand Open,img_grasps/Hand_Open.png
+Index Grasp,img_grasps/Index_Grasp.bmp
+Middle Grasp,img_grasps/Middle_Grasp.bmp
+Ring Grasp,img_grasps/Ring_Grasp.bmp
+Little Grasp,img_grasps/Little_Grasp.bmp
 Spherical Grasp,img_grasps/Spherical_Grasp.png
 Tip Grasp,img_grasps/Tip_Grasp.png
 Point Grasp,img_grasps/Trigger_Grasp.png
+

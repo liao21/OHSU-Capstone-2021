@@ -1,5 +1,62 @@
 classdef PostProcessing
     methods (Static = true)
+        function hData = processFeaturesBatch(dataPath,subjectId)
+            % Show all training data EMG FEATURE reports
+            %
+            % Inputs:
+            %   dataPath - Full path to directory containing *.trainingData files
+            %   subjectId - Short Identifier for subject
+            %
+            % Usage:
+            %   DataAnalysis.PostProcessing.processEmgBatch('c:\data\Myo_01\','MYO_01')
+            
+            % subjectId = 'MYO_01';
+                        
+            % Output file (PPTX)
+            outDir = pwd;
+            outputFile = fullfile(outDir,[subjectId '_FeatureData.pptx']);
+            
+            if isempty(dataPath)
+                hData = [];
+                return
+            elseif ischar(dataPath)
+                % treat input as a path and load the data
+                hData = TrainingDataAnalysis.batchLoadTrainingData(dataPath);
+            else
+                % treat input as data
+                hData = dataPath;
+            end
+            
+            hPpt = PptMaker;
+            hPpt.Title = 'EMG Features';
+            hPpt.Author = 'RSA';
+            hPpt.SubTitle = {subjectId; datestr(now)};
+            hPpt.OutputFile = outputFile;
+            hPpt.initialize();
+            
+            f = figure(255);
+            f.Position = [50 50 1600 900];
+            
+            for i = 1:length(hData)
+                % setup figure named with filename
+                [pname,fname,~] = fileparts(hData(i).fullFileName);
+                [~,lastFolder,~] = fileparts(pname);
+                
+                f.Name = fullfile(lastFolder,fname);
+                
+                if hData(i).SampleCount > 0
+                    [~] = hData(i).plot_features_sorted_class(); % output arg disables image export
+                end
+                
+                drawnow
+                
+                hPpt.addslide(f);
+                
+            end
+            
+            hPpt.close();
+            
+        end
         function hData = processEmgBatch(dataPath,subjectId,doFilter)
             % Show all training data EMG reports
             %

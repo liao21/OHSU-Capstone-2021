@@ -60,22 +60,33 @@ $(function () {
         thumbnail: 'img_grasps/Spherical_Grasp.png'
         },
         {
-        title: 'Fine Pinch Grasp',
+        title: 'Tip Grasp',
         href:  'img_grasps/Tip_Grasp.png',
         type: 'image/png',
         thumbnail: 'img_grasps/Tip_Grasp.png'
         },
         {
+        title: 'Three Finger Pinch',
+        href:  'img_grasps/Tripod_Grasp.bmp',
+        },
+        {
+        title: 'Lateral Grasp',
+        href:  'img_grasps/Hook_Grasp.bmp',
+        },
+        {
+        title: 'Cylindrical Grasp',
+        href:  'img_grasps/Hook_Grasp.bmp',
+        },
+        {
         title: 'Point Grasp',
         href:  'img_grasps/Trigger_Grasp.png',
-        type: 'image/png',
-        thumbnail: 'img_grasps/Trigger_Grasp.png'
         }
     ], {
         container: '#blueimp-image-carousel',
         carousel: true,
         onslide: function (index, slide) {
                 // Callback function executed on slide change.
+                // Note these class commands must match those listed in pattern_rec\__init__.py class TrainingData
                 switch(index) {
                 case  0: sendCmd("Cls:No Movement"); break;
                 case  1: sendCmd("Cls:Elbow Flexion"); break;
@@ -87,9 +98,12 @@ $(function () {
                 case  7: sendCmd("Cls:Hand Open"); break;
                 case  8: sendCmd("Cls:Spherical Grasp"); break;
                 case  9: sendCmd("Cls:Tip Grasp"); break;
-                case 10: sendCmd("Cls:Point Grasp"); break;
+                case 10: sendCmd("Cls:Three Finger Pinch Grasp"); break;
+                case 11: sendCmd("Cls:Lateral Grasp"); break;
+                case 12: sendCmd("Cls:Cylindrical Grasp"); break;
+                case 13: sendCmd("Cls:Point Grasp"); break;
                 default: break;
-                }        
+                }
         }
     });
 }); // function

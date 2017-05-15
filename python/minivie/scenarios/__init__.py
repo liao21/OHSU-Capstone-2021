@@ -1,3 +1,5 @@
+import struct
+
 class Scenario(object):
     """
     Define the building blocks of the MiniVIE
@@ -7,7 +9,9 @@ class Scenario(object):
         Plant - Perform forward integration and apply joint limits
         DataSink - output destination of command signals (e.g. real or virtual arm)
     """
+
     def __init__(self):
+        import socket
         self.SignalSource = None
         self.SignalClassifier = None
         self.FeatureExtract = None
@@ -16,9 +20,12 @@ class Scenario(object):
         self.Plant = None
         self.DataSink = None
 
+        # Debug socket for streaming Features
+        #self.DebugSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
         self.add_data = False
         self.training_motion = 'No Movement'
-        self.training_id = 10
+        self.training_id = 0
 
         self.num_channels = 0
 
@@ -118,7 +125,7 @@ class Scenario(object):
             self.add_data = False
 
         elif cmd_type == 'Cmd':
-            print(cmd_data);
+            print(cmd_data)
             if cmd_data == 'Add':
                 self.add_data = True
             elif cmd_data == 'Stop':
@@ -201,11 +208,18 @@ class Scenario(object):
         self.output = {'status': 'RUNNING', 'features': None, 'decision': 'None', 'vote': None}
 
         # get data / features
-        self.output['features'], f = self.FeatureExtract.get_features(self.SignalSource)
+        self.output['features'], f, imu = self.FeatureExtract.get_features(self.SignalSource)
+
+        # Debug stream:
+        #values = self.output['features']
+        #print(values)
+        #packer = struct.Struct('64f')
+        #packed_data = packer.pack(*values)
+        #self.DebugSock.sendto(packed_data, ('192.168.7.1', 23456))
 
         # if simultaneously training the system, add the current results to the data buffer
         if self.add_data:
-            self.TrainingData.add_data(self.output['features'], self.training_id, self.training_motion)
+            self.TrainingData.add_data(self.output['features'], self.training_id, self.training_motion, imu)
 
         # classify
         decision_id, self.output['status'] = self.SignalClassifier.predict(f)

@@ -53,7 +53,9 @@ classdef ParsePythonData
                 % Completion time not always available
                 try
                     data(iTrial).completion_time = h5read(file, [trialNames{iTrial}, '/completion_time']);
-                    data(iTrial).move_complete = 1; % Will only get set if completion_time is set
+                    if data(iTrial).completion_time > 0
+                        data(iTrial).move_complete = 1; % Will only get set if completion_time is non-negative (is set to -1 in python by default)
+                    end
                 catch
                     continue
                 end

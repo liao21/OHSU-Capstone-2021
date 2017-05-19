@@ -433,7 +433,7 @@ class TrainingData:
         map_path = os.path.join(os.path.dirname(__file__), '..', '..', 'www', 'mplHome', 'motion_name_image_map.csv')
         mapped_motion_names = []
         mapped_image_names = []
-        with open(map_path, 'rb') as csvfile:
+        with open(map_path, 'rt', encoding='ascii') as csvfile:
             rows = csv.reader(csvfile, delimiter=',')
             for row in rows:
                 mapped_motion_names.append(row[0])

@@ -172,6 +172,8 @@ class Scenario(object):
                 self.hand_gain(1.2)
             elif cmd_data == 'HandSpeedDown':
                 self.hand_gain(0.8)
+            elif cmd_data == 'ReloadRoc':
+                self.Plant.reload_roc('../../WrRocDefaults.xml')
             else:
                 logging.info('Unknown scenario command: ' + cmd_data)
 

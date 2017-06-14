@@ -130,6 +130,9 @@ import numpy as np
 import subprocess
 import logging
 import time
+import binascii
+from builtins import bytes
+
 
 from transforms3d.euler import quat2euler
 
@@ -487,9 +490,6 @@ class MyoDelegate(btleDefaultDelegate):
     Callback function for handling incoming data from bluetooth connection
 
     """
-    import binascii
-    from builtins import bytes
-    
     # TODO: Currently this only supports udp streaming.  consider internal buffer for udp-free mode (local)
 
     def __init__(self, myo, sock, addr):
@@ -503,23 +503,23 @@ class MyoDelegate(btleDefaultDelegate):
     def handleNotification(self, cHandle, data):
         if cHandle == 0x2b:  # EmgData0Characteristic
             self.sock.sendto(data, self.addr)
-            logger.debug('E0: ' + binascii.hexlify(bytes(data)).decode('utf-8))
+            logger.debug('E0: ' + binascii.hexlify(bytes(data)).decode('utf-8'))
             self.pCount += 2
         elif cHandle == 0x2e:  # EmgData1Characteristic
             self.sock.sendto(data, self.addr)
-            logger.debug('E1: ' + binascii.hexlify(bytes(data)).decode('utf-8))
+            logger.debug('E1: ' + binascii.hexlify(bytes(data)).decode('utf-8'))
             self.pCount += 2
         elif cHandle == 0x31:  # EmgData2Characteristic
             self.sock.sendto(data, self.addr)
-            logger.debug('E2: ' + binascii.hexlify(bytes(data)).decode('utf-8))
+            logger.debug('E2: ' + binascii.hexlify(bytes(data)).decode('utf-8'))
             self.pCount += 2
         elif cHandle == 0x34:  # EmgData3Characteristic
             self.sock.sendto(data, self.addr)
-            logger.debug('E3: ' + binascii.hexlify(bytes(data)).decode('utf-8))
+            logger.debug('E3: ' + binascii.hexlify(bytes(data)).decode('utf-8'))
             self.pCount += 2
         elif cHandle == 0x1c:  # IMUCharacteristic
             self.sock.sendto(data, self.addr)
-            logger.debug('IMU: ' + binascii.hexlify(bytes(data)).decode('utf-8))
+            logger.debug('IMU: ' + binascii.hexlify(bytes(data)).decode('utf-8'))
             self.imuCount += 1
         elif cHandle == 0x11:  # BatteryCharacteristic
             self.sock.sendto(data, self.addr)
@@ -612,7 +612,7 @@ def connect(mac_addr, stream_addr, hci_interface):
     p.connect(mac_addr)
 
     # set security level
-    p.setSecurityLevel()
+    #p.setSecurityLevel(2)
 
     time.sleep(1.0)
 

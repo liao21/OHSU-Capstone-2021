@@ -503,23 +503,23 @@ class MyoDelegate(btleDefaultDelegate):
     def handleNotification(self, cHandle, data):
         if cHandle == 0x2b:  # EmgData0Characteristic
             self.sock.sendto(data, self.addr)
-            logger.debug('E0: ' + binascii.hexlify(bytes(data)).decode('utf-8'))
+            logger.debug('E0: ' + binascii.hexlify(data).decode('utf-8'))
             self.pCount += 2
         elif cHandle == 0x2e:  # EmgData1Characteristic
             self.sock.sendto(data, self.addr)
-            logger.debug('E1: ' + binascii.hexlify(bytes(data)).decode('utf-8'))
+            logger.debug('E1: ' + binascii.hexlify(data).decode('utf-8'))
             self.pCount += 2
         elif cHandle == 0x31:  # EmgData2Characteristic
             self.sock.sendto(data, self.addr)
-            logger.debug('E2: ' + binascii.hexlify(bytes(data)).decode('utf-8'))
+            logger.debug('E2: ' + binascii.hexlify(data).decode('utf-8'))
             self.pCount += 2
         elif cHandle == 0x34:  # EmgData3Characteristic
             self.sock.sendto(data, self.addr)
-            logger.debug('E3: ' + binascii.hexlify(bytes(data)).decode('utf-8'))
+            logger.debug('E3: ' + binascii.hexlify(data).decode('utf-8'))
             self.pCount += 2
         elif cHandle == 0x1c:  # IMUCharacteristic
             self.sock.sendto(data, self.addr)
-            logger.debug('IMU: ' + binascii.hexlify(bytes(data)).decode('utf-8'))
+            logger.debug('IMU: ' + binascii.hexlify(data).decode('utf-8'))
             self.imuCount += 1
         elif cHandle == 0x11:  # BatteryCharacteristic
             self.sock.sendto(data, self.addr)

@@ -417,6 +417,24 @@ class TrainingData:
         except IOError:
             print('Failed to create file backup')
 
+    def delete(self):
+        # if a training file exists, delete it
+
+        f = self.filename + self.file_ext
+        if not os.path.isfile(f):
+            print('File Not Found: ' + f)
+            return
+
+        if not os.access(f, os.R_OK):
+            print('File Not Readable: ' + f)
+            return
+
+        try:
+            os.remove(f)
+            print('Deleted ' + self.filename)
+        except IOError:
+            print('Failed to delete file: ' + f)
+
     def get_motion_image(self, motion_name):
         # Method to return motion image filename relative to www/mplHome directoy
 

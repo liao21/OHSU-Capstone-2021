@@ -52,6 +52,9 @@ function setupSpacebrew() {
     $("#ID_ASSESSMENT_MT").on("mousedown", function() {startMT()} );
     $("#ID_ASSESSMENT_TAC1").on("mousedown", function() {startTAC1()} );
     $("#ID_ASSESSMENT_TAC3").on("mousedown", function() {startTAC3()} );
+    $("#ID_SPEED_DEFAULT").on("mousedown", function() {sendCmd("Cmd:SpeedDefault")} );
+    $("#ID_SPEED_PRECISION").on("mousedown", function() {sendCmd("Cmd:SpeedPrecision")} );
+    
 
     // Create switch listeners:
     $('#trainSwitch').on("change", function() {
@@ -73,6 +76,14 @@ function setupSpacebrew() {
             sendCmd("Cmd:PauseHandOn");
         } else {
             sendCmd("Cmd:PauseHandOff");
+        }
+    });
+    $('#autoSave').on("change", function() {
+        var val = this.value;
+        if (val=="On") {
+            sendCmd("Cmd:AutoSaveOn");
+        } else {
+            sendCmd("Cmd:AutoSaveOff");
         }
     });
 

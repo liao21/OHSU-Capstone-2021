@@ -104,6 +104,8 @@
             <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_SPEEDDOWN">Decrease Arm Speed</a></li>
             <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_HAND_SPEED_UP">Increase Hand Speed</a></li>
             <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_HAND_SPEED_DOWN">Decrease Hand Speed</a></li>
+            <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-star" id="ID_SPEED_DEFAULT">Default Speeds</a></li>
+            <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-star" id="ID_SPEED_PRECISION">Precision Speeds</a></li>
             <li>
             <div class="ui-field-contain">
                 <label for="pauseAll">Pause All:</label>
@@ -114,6 +116,15 @@
             <div class="ui-field-contain">
                 <label for="pauseHand">Pause Hand:</label>
                 <input type="checkbox" id="pauseHand" data-role="flipswitch" />
+            </div>
+            </li>
+            <li>
+            <div class="ui-field-contain">
+                <label for="autoSave">Autosave:</label>
+                <select type="checkbox" id="autoSave" data-role="flipswitch" value="On">
+                     <option value="Off">Off</option>
+                    <option value="On">On</option>
+                </select>
             </div>
             </li>
             </ul>

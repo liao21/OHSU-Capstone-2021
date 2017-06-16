@@ -23,7 +23,10 @@ class Scenario(object):
         # Debug socket for streaming Features
         #self.DebugSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+        # Training parameters
         self.add_data = False
+        self.add_data_previous = False  # Tracks whether data was added on previous update, necessary to know when to autosave
+        self.auto_save = True  # Boolean, if true, will save out training data every time new data finished beind added
         self.training_motion = 'No Movement'
         self.training_id = 0
 
@@ -33,7 +36,11 @@ class Scenario(object):
 
         self.__pause = {'All': False, 'Arm': False, 'Hand': False}
         self.__gain_value = 1.0
+        self.__gain_value_default = 1.0
+        self.__gain_value_precision = 0.1
         self.__hand_gain_value = 1.0
+        self.__hand_gain_value_default = 1.0
+        self.__hand_gain_value_precision = 0.1
 
     def is_paused(self, scope='All'):
         # return the pause value for the given context ['All' 'Arm' 'Hand']
@@ -44,6 +51,18 @@ class Scenario(object):
 
     def get_hand_gain_value(self):
         return self.__hand_gain_value
+
+    def set_gain_default(self):
+        self.__gain_value = self.__gain_value_default
+
+    def set_gain_precision(self):
+        self.__gain_value = self.__gain_value_precision
+
+    def set_hand_gain_default(self):
+        self.__hand_gain_value = self.__gain_value_default
+
+    def set_hand_gain_precision(self):
+        self.__hand_gain_value = self.__hand_gain_value_precision
 
     def pause(self, scope='All', state=None):
         # Toggles pause state which suspends motion of arm
@@ -97,6 +116,10 @@ class Scenario(object):
                 SpeedDown - Decrease speed of all arm joints
                 HandSpeedUp - Increase speed of hand motions
                 HandSpeedDown - Decrease speed of hand motions
+                SpeedDefault - Reset hand and arm speed to default values
+                SpeedPrecision - Set hand and arm speed to precision values
+                AutoSaveOn - Automatically save training data when new data added
+                AutoSaveOff - Turn off autosave feature
 
         TODO: add classifier options to train and switch between LDA, QDA, SVM, etc
         TODO: add majority voting
@@ -144,6 +167,10 @@ class Scenario(object):
                 self.TrainingData.save()
             elif cmd_data == 'Backup':
                 self.TrainingData.copy()
+            elif cmd_data == 'AutoSaveOn':
+                self.auto_save = True
+            elif cmd_data == 'AutoSaveOff':
+                self.auto_save = False
             elif cmd_data == 'Pause':
                 self.pause('All')
             elif cmd_data == 'PauseHand':
@@ -164,6 +191,12 @@ class Scenario(object):
                 reboot()
             elif cmd_data == 'Shutdown':
                 shutdown()
+            elif cmd_data == 'SpeedDefault':
+                self.set_gain_default()
+                self.set_hand_gain_default()
+            elif cmd_data == 'SpeedPrecision':
+                self.set_gain_precision()
+                self.set_hand_gain_precision()
             elif cmd_data == 'SpeedUp':
                 self.gain(1.2)
             elif cmd_data == 'SpeedDown':
@@ -222,6 +255,13 @@ class Scenario(object):
         # if simultaneously training the system, add the current results to the data buffer
         if self.add_data:
             self.TrainingData.add_data(self.output['features'], self.training_id, self.training_motion, imu)
+
+        # save out training data if auto_save is on, data just finished being added
+        if self.auto_save and self.add_data_previous and not self.add_data:
+            self.TrainingData.delete()  # Lets delete so we have a clean file to write to
+            self.TrainingData.save()
+        # track previous add_data state
+        self.add_data_previous = self.add_data
 
         # classify
         decision_id, self.output['status'] = self.SignalClassifier.predict(f)

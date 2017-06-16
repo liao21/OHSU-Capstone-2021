@@ -35,6 +35,7 @@ class Scenario(object):
         self.output = None  # Will contain latest status message
 
         self.__pause = {'All': False, 'Arm': False, 'Hand': False}
+        self.precision_mode = False
         self.__gain_value = 1.0
         self.__gain_value_default = 1.0
         self.__gain_value_precision = 0.1
@@ -52,17 +53,34 @@ class Scenario(object):
     def get_hand_gain_value(self):
         return self.__hand_gain_value
 
-    def set_gain_default(self):
-        self.__gain_value = self.__gain_value_default
+    def set_precision_mode(self, boolean):
+        # Select between precision mode or default mode.
+        # When switching, gain values for alternate mode will be preserved.
 
-    def set_gain_precision(self):
-        self.__gain_value = self.__gain_value_precision
+        assert isinstance(boolean, bool), 'boolean should be a bool'
 
-    def set_hand_gain_default(self):
-        self.__hand_gain_value = self.__gain_value_default
+        if bool == self.precision_mode:
+            return  # No need to do anything if we are already in correct mode
+        else:
+            self.precision_mode = boolean
+            if boolean == True:
+                print('Switching to precision gain mode')
+                # Arm gain
+                self.__gain_value_default = self.__gain_value  # preserve this for later
+                self.__gain_value = self.__gain_value_precision
+                # Hand gain
+                self.__hand_gain_value_default = self.__hand_gain_value  # preserve this for later
+                self.__hand_gain_value = self.__hand_gain_value_precision
 
-    def set_hand_gain_precision(self):
-        self.__hand_gain_value = self.__hand_gain_value_precision
+            elif boolean == False:
+                print('Switching to default gain mode')
+                # Arm gain
+                self.__gain_value_precision = self.__gain_value  # preserve this for later
+                self.__gain_value = self.__gain_value_default
+                # Hand gain
+                self.__hand_gain_value_precision = self.__hand_gain_value  # preserve this for later
+                self.__hand_gain_value = self.__hand_gain_value_default
+
 
     def pause(self, scope='All', state=None):
         # Toggles pause state which suspends motion of arm
@@ -116,8 +134,8 @@ class Scenario(object):
                 SpeedDown - Decrease speed of all arm joints
                 HandSpeedUp - Increase speed of hand motions
                 HandSpeedDown - Decrease speed of hand motions
-                SpeedDefault - Reset hand and arm speed to default values
-                SpeedPrecision - Set hand and arm speed to precision values
+                PrecisionModeOff - Reset hand and arm speed to default values
+                PrecisionModeOn - Set hand and arm speed to precision values
                 AutoSaveOn - Automatically save training data when new data added
                 AutoSaveOff - Turn off autosave feature
 
@@ -191,12 +209,10 @@ class Scenario(object):
                 reboot()
             elif cmd_data == 'Shutdown':
                 shutdown()
-            elif cmd_data == 'SpeedDefault':
-                self.set_gain_default()
-                self.set_hand_gain_default()
-            elif cmd_data == 'SpeedPrecision':
-                self.set_gain_precision()
-                self.set_hand_gain_precision()
+            elif cmd_data == 'PrecisionModeOff':
+                self.set_precision_mode(False)
+            elif cmd_data == 'PrecisionModeOn':
+                self.set_precision_mode(True)
             elif cmd_data == 'SpeedUp':
                 self.gain(1.2)
             elif cmd_data == 'SpeedDown':

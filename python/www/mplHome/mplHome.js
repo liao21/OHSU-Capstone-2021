@@ -46,11 +46,13 @@ function setupSpacebrew() {
     $("#ID_PAUSE_HAND").on("mousedown", function() {sendCmd("Cmd:PauseHand")} );  // 4/5/2017 RSA: Moved to slider switch
     $("#ID_MYO1").on("mousedown", function() {sendCmd("Cmd:RestartMyo1")} );
     $("#ID_MYO2").on("mousedown", function() {sendCmd("Cmd:RestartMyo2")} );
+    $("#ID_RELOAD_ROC").on("mousedown", function() {sendCmd("Cmd:ReloadRoc")} );
     $("#ID_REBOOT").on("mousedown", function() {sendCmd("Cmd:Reboot")} );
     $("#ID_SHUTDOWN").on("mousedown", function() {sendCmd("Cmd:Shutdown")} );
     $("#ID_ASSESSMENT_MT").on("mousedown", function() {startMT()} );
     $("#ID_ASSESSMENT_TAC1").on("mousedown", function() {startTAC1()} );
     $("#ID_ASSESSMENT_TAC3").on("mousedown", function() {startTAC3()} );
+    
 
     // Create switch listeners:
     $('#trainSwitch').on("change", function() {
@@ -58,6 +60,13 @@ function setupSpacebrew() {
             sendCmd("Cmd:Add");
         } else {
             sendCmd("Cmd:Stop");
+        }
+    });
+    $('#precisionMode').on("change", function() {
+        if (this.checked) {
+            sendCmd("Cmd:PrecisionModeOn");
+        } else {
+            sendCmd("Cmd:PrecisionModeOff");
         }
     });
     $('#pauseAll').on("change", function() {
@@ -74,6 +83,15 @@ function setupSpacebrew() {
             sendCmd("Cmd:PauseHandOff");
         }
     });
+    $('#autoSave').on("change", function() {
+        var val = this.value;
+        if (val=="On") {
+            sendCmd("Cmd:AutoSaveOn");
+        } else {
+            sendCmd("Cmd:AutoSaveOff");
+        }
+    });
+    
 
 } // setupSpacebrew
 

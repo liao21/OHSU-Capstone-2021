@@ -106,6 +106,13 @@
             <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_HAND_SPEED_DOWN">Decrease Hand Speed</a></li>
             <li>
             <div class="ui-field-contain">
+                <label for="precisionMode">Precision Mode:</label>
+                <input type="checkbox" id="precisionMode" data-role="flipswitch" />
+            </div>
+            </li>
+            <li>
+            <li>
+            <div class="ui-field-contain">
                 <label for="pauseAll">Pause All:</label>
                 <input type="checkbox" id="pauseAll" data-role="flipswitch" />
             </div>
@@ -114,6 +121,15 @@
             <div class="ui-field-contain">
                 <label for="pauseHand">Pause Hand:</label>
                 <input type="checkbox" id="pauseHand" data-role="flipswitch" />
+            </div>
+            </li>
+            <li>
+            <div class="ui-field-contain">
+                <label for="autoSave">Autosave:</label>
+                <select type="checkbox" id="autoSave" data-role="flipswitch">
+                     <option value="Off">Off</option>
+                    <option value="On" selected="selected">On</option>
+                </select>
             </div>
             </li>
             </ul>
@@ -128,6 +144,7 @@
             <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_MYO1">Restart MYO #1</a></li>
             <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_MYO2">Restart MYO #2</a></li>
             <li></li>
+            <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_RELOAD_ROC">Reload ROC Table</a></li>
             <li><a href="#popupReboot" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-icon="refresh" data-theme="a" data-iconpos="right">Reboot MPL</a></li>
             <li><a href="#popupShutdown" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-icon="power" data-theme="a" data-iconpos="right">Shutdown MPL</a></li>
             </ul>

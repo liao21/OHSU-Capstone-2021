@@ -130,6 +130,9 @@ import numpy as np
 import subprocess
 import logging
 import time
+import binascii
+from builtins import bytes
+
 
 from transforms3d.euler import quat2euler
 
@@ -500,24 +503,23 @@ class MyoDelegate(btleDefaultDelegate):
     def handleNotification(self, cHandle, data):
         if cHandle == 0x2b:  # EmgData0Characteristic
             self.sock.sendto(data, self.addr)
-            logger.debug('E0: ' + ''.join('{:02x}'.format(x) for x in data))
+            logger.debug('E0: ' + binascii.hexlify(data).decode('utf-8'))
             self.pCount += 2
         elif cHandle == 0x2e:  # EmgData1Characteristic
             self.sock.sendto(data, self.addr)
-            logger.debug('E1: ' + ''.join('{:02x}'.format(x) for x in data))
+            logger.debug('E1: ' + binascii.hexlify(data).decode('utf-8'))
             self.pCount += 2
         elif cHandle == 0x31:  # EmgData2Characteristic
             self.sock.sendto(data, self.addr)
-            logger.debug('E2: ' + ''.join('{:02x}'.format(x) for x in data))
+            logger.debug('E2: ' + binascii.hexlify(data).decode('utf-8'))
             self.pCount += 2
         elif cHandle == 0x34:  # EmgData3Characteristic
             self.sock.sendto(data, self.addr)
-            logger.debug('E3: ' + ''.join('{:02x}'.format(x) for x in data))
+            logger.debug('E3: ' + binascii.hexlify(data).decode('utf-8'))
             self.pCount += 2
         elif cHandle == 0x1c:  # IMUCharacteristic
             self.sock.sendto(data, self.addr)
-            s = ''.join('{:02x}'.format(x) for x in data)
-            logger.debug('IMU: ' + s)
+            logger.debug('IMU: ' + binascii.hexlify(data).decode('utf-8'))
             self.imuCount += 1
         elif cHandle == 0x11:  # BatteryCharacteristic
             self.sock.sendto(data, self.addr)
@@ -603,7 +605,13 @@ def connect(mac_addr, stream_addr, hci_interface):
 
     # This blocks until device is awake and connection established
     logger.info("Connecting to: " + mac_addr)
-    p = btlePeripheral(mac_addr, addrType=btleADDR_TYPE_PUBLIC, iface=hci_interface)
+
+    # create unconnected peripheral
+    p = btlePeripheral(None, addrType=btleADDR_TYPE_PUBLIC, iface=hci_interface)
+    p.connect(mac_addr)
+
+    # set security level
+    #p.setSecurityLevel(2)
 
     time.sleep(1.0)
 

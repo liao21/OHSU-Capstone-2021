@@ -150,6 +150,11 @@ class Plant(object):
         if joint_id is not None:
             self.JointVelocity[joint_id] = joint_velocity
 
+    def reload_roc(self, roc_filename):
+        # method to reload the roc table once plant is already initiated
+        logging.info('Reloading ROC table {}'.format(roc_filename))
+        self.rocTable = roc.read_roc_table(roc_filename)
+
     def update(self):
         # perform time integration based on elapsed time, dt
 

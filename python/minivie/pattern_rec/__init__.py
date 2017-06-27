@@ -417,6 +417,24 @@ class TrainingData:
         except IOError:
             print('Failed to create file backup')
 
+    def delete(self):
+        # if a training file exists, delete it
+
+        f = self.filename + self.file_ext
+        if not os.path.isfile(f):
+            print('File Not Found: ' + f)
+            return
+
+        if not os.access(f, os.R_OK):
+            print('File Not Readable: ' + f)
+            return
+
+        try:
+            os.remove(f)
+            print('Deleted ' + self.filename)
+        except IOError:
+            print('Failed to delete file: ' + f)
+
     def get_motion_image(self, motion_name):
         # Method to return motion image filename relative to www/mplHome directoy
 
@@ -433,7 +451,7 @@ class TrainingData:
         map_path = os.path.join(os.path.dirname(__file__), '..', '..', 'www', 'mplHome', 'motion_name_image_map.csv')
         mapped_motion_names = []
         mapped_image_names = []
-        with open(map_path, 'rb') as csvfile:
+        with open(map_path, 'rt', encoding='ascii') as csvfile:
             rows = csv.reader(csvfile, delimiter=',')
             for row in rows:
                 mapped_motion_names.append(row[0])

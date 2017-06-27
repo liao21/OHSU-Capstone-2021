@@ -594,7 +594,9 @@ def connect(mac_addr, stream_addr, hci_interface):
 
     # This blocks until device is awake and connection established
     logger.info("Connecting to: " + mac_addr)
-    p = btlePeripheral(mac_addr, addrType=btleADDR_TYPE_PUBLIC, iface=hci_interface)
+    p = btlePeripheral(None, addrType=btleADDR_TYPE_PUBLIC, iface=hci_interface)
+    p.connect(mac_addr)
+    p.setSecurityLevel('high')
 
     time.sleep(1.0)
 

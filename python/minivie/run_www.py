@@ -17,7 +17,7 @@ from pattern_rec import training, assessment
 def main():
 
     # setup logging
-    user_config.setup_file_logging(prefix='MPL_WWW_')
+    user_config.setup_file_logging(prefix='MPL18_')
 
     # Setup MPL scenario
     vie = mpl_nfu.setup()

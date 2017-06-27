@@ -31,7 +31,8 @@ def setup():
     vie = Scenario()
 
     # attach inputs
-    vie.attach_source([myo.MyoUdp(source='//0.0.0.0:15001'), myo.MyoUdp(source='//0.0.0.0:15002')])
+    #vie.attach_source([myo.MyoUdp(source='//0.0.0.0:15001'), myo.MyoUdp(source='//0.0.0.0:15002')])
+    vie.attach_source([myo.MyoUdp(source='//0.0.0.0:15001')])
 
     # Training Data holds data labels
     # training data manager
@@ -84,7 +85,7 @@ def run(vie):
                 msg = '<br>' + vie.DataSink.get_status_msg()  # Limb Status
                 msg += ' ' + output['status']  # Classifier Status
                 msg += '<br>MYO1:' + vie.SignalSource[0].get_status_msg()
-                msg += '<br>MYO2:' + vie.SignalSource[1].get_status_msg()
+                #msg += '<br>MYO2:' + vie.SignalSource[1].get_status_msg()
                 msg += '<br>' + time.strftime("%c")
 
                 vie.TrainingInterface.send_message("strStatus", msg)

@@ -82,7 +82,7 @@ classdef Assessments
 
             
         end
-        function [completionAccuracy, cellSummary, cellHistory, meanEfficiency] = parseTac(structTrialLog)
+        function [completionAccuracy, cellSummary, cellHistory, meanEfficiency, nUniqueClasses, nUniqueDOF] = parseTac(structTrialLog)
             % [completionAccuracy, cellSummary, cellHistory, meanEfficiency] = DataAnalysis.Assessments.parseTac1(structTrialLog)
             % Parse the TAC 1 trial data.  return the scalar accuracy of
             % number of successful trials, as well as cell array tables of
@@ -91,14 +91,17 @@ classdef Assessments
             % Catch for python TAC struct or hdf5 file
             if ischar(structTrialLog)
                 if any(strfind(structTrialLog, 'hdf5'))
-                    [completionAccuracy, cellSummary, cellHistory, meanEfficiency] = DataAnalysis.Assessments.parseTacPython(structTrialLog);
+                    [completionAccuracy, cellSummary, cellHistory, meanEfficiency, nUniqueClasses, nUniqueDOF] = DataAnalysis.Assessments.parseTacPython(structTrialLog);
                     return
                 end
             end
-            if isfield(structTrialLog, 'completion_time')
-                [completionAccuracy, cellSummary, cellHistory, meanEfficiency] = DataAnalysis.Assessments.parseTacPython(structTrialLog);
+            if isfield(structTrialLog, 'is_python_data')
+                [completionAccuracy, cellSummary, cellHistory, meanEfficiency, nUniqueClasses, nUniqueDOF] = DataAnalysis.Assessments.parseTacPython(structTrialLog);
                 return
             end
+            
+            % TODO: Compute number of DOF for MATLAB based TAC
+            nUniqueDOF = 0;
             
             % get the number of completions over the total trials
             completed = [structTrialLog.moveComplete];
@@ -173,8 +176,9 @@ classdef Assessments
                 [testedClasses' num2cell(motionTrials') num2cell(motionCompleted') num2cell(motionAccuracy') num2cell(motionEfficiency')]];
 
             meanEfficiency = mean(pathEfficiency);
+            nUniqueClasses = size(cellSummary,1)-1;
         end
-        function [completionAccuracy, cellSummary, cellHistory, meanEfficiency] = parseTacPython(hdf5)
+        function [completionAccuracy, cellSummary, cellHistory, meanEfficiency, nUniqueClasses, nUniqueDOF] = parseTacPython(hdf5)
             % Parse the TAC 1 trial data.  return the scalar accuracy of
             % number of successful trials, as well as cell array tables of
             % the summary statistics and tiral history
@@ -239,20 +243,44 @@ classdef Assessments
             % complete without fully making it to the final value
             pathEfficiency(pathEfficiency > 100) = 100;            
             
+            % Compute total number of classes involved, for normalization
+            % Should be number of arm degrees of freedom*2 + number
+            % of grasps + 1 (for hand open)
+            allDOF = {};
+            for i = 1:nTrials
+                allDOF = [allDOF; structTrialLog(i).target_joint];
+            end
+            uniqueDOF = unique(allDOF);
+            nUniqueDOF = length(uniqueDOF);
+            nArmDOF = 0;
+            nGrasps = 0;
+            for i = 1:length(uniqueDOF)
+                try
+                    MPL.EnumArm.(uniqueDOF{i}); % This will only work if dof is an arm joint
+                    nArmDOF = nArmDOF + 1;
+                catch
+                    nGrasps = nGrasps + 1;
+                end
+            end
+            nUniqueClasses = 2*nArmDOF + nGrasps;
+            if nGrasps > 0
+                nUniqueClasses = nUniqueClasses + 1; % Hand open
+            end
+            
             % Compute summary stats by grouping classes
             allTrials = cell(1, nTrials);
             for i = 1:nTrials
                %allTrials{i}(isletter(allTrials{i})==0) = [];
                allTrials{i} = strjoin(structTrialLog(i).target_joint, '-'); 
             end
-            testedClasses = unique(allTrials);
-            nUnique = length(testedClasses);
+            testedCases = unique(allTrials);
+            nUnique = length(testedCases);
             motionTrials = nan(1,nUnique);
             motionCompleted = nan(1,nUnique);
             motionEfficiency = nan(nJoints,nUnique);  % Uncomment for separate efficiencies
             %motionEfficiency = nan(1,nUnique);
             for i = 1:nUnique
-                thisClass = strcmp(testedClasses(i),allTrials);
+                thisClass = strcmp(testedCases(i),allTrials);
                 motionCompleted(i) = sum(thisClass & moveComplete);
                 motionTrials(i) = sum(thisClass);
                 motionEfficiency(:,i) = mean(pathEfficiency(thisClass, :), 1);  % Uncomment for separate efficiencies
@@ -269,21 +297,21 @@ classdef Assessments
             % print by trial
             switch nJoints
                 case 1  % TAC1
-                    cellHistory = [{'Class Name' 'Elapsed Time' 'Completed' 'Path Efficiency'}; ...
+                    cellHistory = [{'DOF Name' 'Elapsed Time' 'Completed' 'Path Efficiency'}; ...
                         allTrials' num2cell(elapsedTime) num2cell([structTrialLog.move_complete]') num2cell(pathEfficiency)];
 
                     % print summary
-                    cellSummary = [{'Class Name' 'Num Trials' 'Num Completed' 'Mean Completion' 'Mean Efficiency'}; ...
-                        [testedClasses' num2cell(motionTrials') num2cell(motionCompleted') num2cell(motionAccuracy') num2cell(motionEfficiency')]];
+                    cellSummary = [{'DOF Name' 'Num Trials' 'Num Completed' 'Mean Completion' 'Mean Efficiency'}; ...
+                        [testedCases' num2cell(motionTrials') num2cell(motionCompleted') num2cell(motionAccuracy') num2cell(motionEfficiency')]];
 
                     meanEfficiency = mean(pathEfficiency);
                 case 3 % TAC3
-                    cellHistory = [{'Class Name' 'Elapsed Time' 'Completed' 'Path Efficiency (Joint 1)' 'Path Efficiency (Joint 2)' 'Path Efficiency (Joint 3)'}; ...
+                    cellHistory = [{'DOF Names' 'Elapsed Time' 'Completed' 'Path Efficiency (Joint 1)' 'Path Efficiency (Joint 2)' 'Path Efficiency (Joint 3)'}; ...
                         allTrials' num2cell(elapsedTime) num2cell([structTrialLog.move_complete]') num2cell(pathEfficiency)];
 
                     % print summary
-                    cellSummary = [{'Class Name' 'Num Trials' 'Num Completed' 'Mean Completion' 'Mean Efficiency (Joint 1)' 'Mean Efficiency (Joint 2)' 'Mean Efficiency (Joint 3)'}; ...
-                        [testedClasses' num2cell(motionTrials') num2cell(motionCompleted') num2cell(motionAccuracy') num2cell(motionEfficiency')]];
+                    cellSummary = [{'DOF Names' 'Num Trials' 'Num Completed' 'Mean Completion' 'Mean Efficiency (Joint 1)' 'Mean Efficiency (Joint 2)' 'Mean Efficiency (Joint 3)'}; ...
+                        [testedCases' num2cell(motionTrials') num2cell(motionCompleted') num2cell(motionAccuracy') num2cell(motionEfficiency')]];
 
                     meanEfficiency = mean(pathEfficiency, 1);
             end

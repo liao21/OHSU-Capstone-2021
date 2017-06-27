@@ -160,10 +160,10 @@ classdef PostProcessing
                 [~,fname,~] = fileparts(hData(i).fullFileName);
                 f.Name = fname ;
                 
-                if hData(i).SampleCount > 0
-                    hAxes = GUIs.guiPlotPca(hData(i),f);
+                if ~(hData(i).SampleCount > 0)
+                    continue
                 end
-                
+                hAxes = GUIs.guiPlotPca(hData(i),f);
                 titleTxt = sprintf('%s Total=%d Active=%d',f.Name,...
                     length(hData(i).getClassLabels),length(hData(i).getAllClassLabels));
                 title(hAxes(1),titleTxt,'Interpreter','None');
@@ -355,10 +355,10 @@ classdef PostProcessing
                     continue
                 end
                 
-                if isfield(fileData{i}.structTrialLog, 'completion_time')  % Python data
+                if isfield(fileData{i}.structTrialLog, 'is_python_data')  % Python data
                     nJoints = length(fileData{i}.structTrialLog(1).target_joint);
                 else
-                    nJoints = 1;  % TODO: Update this logic
+                    nJoints  = 1;  % TODO: Update this logic
                 end
                 
                 switch nJoints
@@ -368,7 +368,7 @@ classdef PostProcessing
                         fprintf(' %s is a TAC-1\n',s(i).name);
                 end
                 
-                [completionPct, cellSummary, cellHistory, pathEfficiency] = DataAnalysis.Assessments.parseTac(fileData{i}.structTrialLog);
+                [completionPct, cellSummary, cellHistory, pathEfficiency, nUniqueClasses, nUniqueDOF] = DataAnalysis.Assessments.parseTac(fileData{i}.structTrialLog);
                 
                 % convert precision
                 for iCell = 1:numel(cellSummary)
@@ -390,15 +390,20 @@ classdef PostProcessing
                     case 1
                         overall = {'Completion Pct',num2str(completionPct,'%4.1f'); ...
                             'Path Efficiency',num2str(pathEfficiency,'%4.1f');...
-                            'Num Classes',size(cellSummary,1)-1};
+                            'Num Classes', nUniqueClasses};
                     case 3
                         overall = {'Completion Pct',num2str(completionPct,'%4.1f'); ...
                             'Path Efficiency (Joint1)',num2str(pathEfficiency(1),'%4.1f');...
                             'Path Efficiency (Joint2)',num2str(pathEfficiency(2),'%4.1f');...
                             'Path Efficiency (Joint3)',num2str(pathEfficiency(3),'%4.1f');...
-                            'Num Classes',size(cellSummary,1)-1};
+                            'Num Classes', nUniqueClasses};
                 end
                 
+                % Add new Num DOF for Python
+                if isfield(fileData{i}.structTrialLog, 'is_python_data')
+                    overall = [overall;...
+                        {'Num DOF', nUniqueDOF}];
+                end
                 
                 % Add content
                 hPpt.SlideNames = cat(1,hPpt.SlideNames,fname);
@@ -414,6 +419,7 @@ classdef PostProcessing
                 exportToPPTX('addtable',cellSummary,...
                     'Position',[5.05 2.0 4.9 size(cellSummary,1) * 0.25 ],...
                     'FontSize',10)
+                
             end
             
             hPpt.close();

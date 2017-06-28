@@ -1,13 +1,14 @@
 {
   "name": "MyoNodeBluetoothAPL",
   "version": "0.1.0",
-  "description": "Myo bluetooth library for Node.JS using Noble",
+  "description": "Myo bluetooth library for Node.JS using Noble -- modified for UDP rebroadcast",
   "main": "index.js",
   "dependencies": {
     "bluebird": "^2.9.25",
     "debug": "^2.1.3",
     "noble": "1.8.1",
-    "promiseq": "^0.1.0"
+    "promiseq": "^0.1.0",
+    "usb": "^1.2.0"
   },
   "repository": {
     "type": "git",

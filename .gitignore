@@ -13,3 +13,4 @@
 *.hdf5
 *.pyc
 spacebrew_server
+node_modules

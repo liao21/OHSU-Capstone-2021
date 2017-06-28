@@ -130,8 +130,8 @@ classdef MyoUdp < Inputs.SignalInput
             end
             
             % Open a udp port to receive streaming data on
-            obj.UdpPortNum8 = str2double(UserConfig.getUserConfigVar('myoUdpPort1','10001'));
-            obj.UdpPortNum16 = str2double(UserConfig.getUserConfigVar('myoUdpPort2','10002'));            
+            obj.UdpPortNum8 = str2double(UserConfig.getUserConfigVar('myoUdpPort1',num2str(obj.UdpPortNum8)));
+            obj.UdpPortNum16 = str2double(UserConfig.getUserConfigVar('myoUdpPort2',num2str(obj.UdpPortNum16)));
             obj.UdpSocket8 = PnetClass(obj.UdpPortNum8);
             obj.UdpSocket16 = PnetClass(obj.UdpPortNum16);
             if ~obj.UdpSocket8.initialize()
@@ -388,8 +388,8 @@ classdef MyoUdp < Inputs.SignalInput
         function a = TestDongleless
             %%
             a = Inputs.MyoUdp.getInstance()
-            a.UdpPortNum8 = 15001
-            a.UdpPortNum16 = 15002
+            a.UdpPortNum8 = 15001;
+            a.UdpPortNum16 = 15002;
             a.initialize
             %%
             a.getData
@@ -494,6 +494,7 @@ classdef MyoUdp < Inputs.SignalInput
             
             % compute number of valid packets
             packetSize = 48;
+            %cellDataBytes
             isCorrectSize = cellfun(@length,cellDataBytes) == packetSize;
             nValidPackets = sum(isCorrectSize);
             

@@ -269,7 +269,7 @@ class Scenario(object):
         #self.DebugSock.sendto(packed_data, ('192.168.7.1', 23456))
 
         # if simultaneously training the system, add the current results to the data buffer
-        if self.add_data:
+        if self.add_data and f.any():
             self.TrainingData.add_data(self.output['features'], self.training_id, self.training_motion, imu)
 
         # save out training data if auto_save is on, data just finished being added

@@ -8,7 +8,7 @@ import time
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 import csv
 import logging
-
+import threading
 import numpy as np
 
 
@@ -245,7 +245,6 @@ class TrainingData:
     def __init__(self):
         self.filename = 'TRAINING_DATA'
         self.file_ext = '.hdf5'
-        self.reset()
 
         # Names of potentially trained classes
         self.motion_names = (
@@ -272,21 +271,29 @@ class TrainingData:
             'Thumb Grasp',
         )
 
+        # Create lock to control write access to training data
+        self.__lock = threading.Lock()
+
+        self.num_channels = 0
+
         self.data = []  # List of all feature extracted samples
         self.id = []  # List of class indices that each sample belongs to
         self.name = []  # Name of each class
         self.time_stamp = []
-        self.num_channels = 0
         self.num_samples = 0
+
+        self.reset()
 
     def reset(self):
         # Clear all data and reset the data store
-        self.data = []  # List of all feature extracted samples
-        self.id = []  # List of class indices that each sample belongs to
-        self.imu = []
-        self.name = []  # Name of each class
-        self.time_stamp = []
-        self.num_samples = 0
+
+        with self.__lock:
+            self.data = []  # List of all feature extracted samples
+            self.id = []  # List of class indices that each sample belongs to
+            self.imu = []
+            self.name = []  # Name of each class
+            self.time_stamp = []
+            self.num_samples = 0
 
     def clear(self, motion_id):
         # Remove the class data for the matching index
@@ -296,13 +303,14 @@ class TrainingData:
         # Note to clear all data use the reset() method
         indices = [i for i, x in enumerate(self.id) if x == motion_id]
 
-        for rev in indices[::-1]:
-            del(self.time_stamp[rev])
-            del(self.name[rev])
-            del(self.id[rev])
-            del(self.imu[rev])
-            del(self.data[rev])
-            self.num_samples -= 1
+        with self.__lock:
+            for rev in indices[::-1]:
+                del(self.time_stamp[rev])
+                del(self.name[rev])
+                del(self.id[rev])
+                del(self.imu[rev])
+                del(self.data[rev])
+                self.num_samples -= 1
 
         if self.num_samples == 0:
             self.reset()
@@ -318,12 +326,13 @@ class TrainingData:
     def add_data(self, data_, id_, name_, imu_=-1):
         # New Data marked with:
         # time_stamp, name, id, data
-        self.time_stamp.append(time.time())
-        self.name.append(name_)
-        self.id.append(id_)
-        self.data.append(data_)
-        self.imu.append(imu_)
-        self.num_samples += 1
+        with self.__lock:
+            self.time_stamp.append(time.time())
+            self.name.append(name_)
+            self.id.append(id_)
+            self.data.append(data_)
+            self.imu.append(imu_)
+            self.num_samples += 1
 
     def get_totals(self, motion_id=None):
         # Return a list of the total sample counts for each class
@@ -360,16 +369,28 @@ class TrainingData:
             print('Error Loading file: ' + self.filename + self.file_ext)
             return
 
-        self.id = h5['/data/id'][:].tolist()
+        # Extract info from hdf5, but don't update object until we verify it's OK data
+
+        id = h5['/data/id'][:].tolist()
         motion_name = h5['/data/name'][:].tolist()
         for idx_, val_ in enumerate(motion_name):
             motion_name[idx_] = val_.decode('utf-8')
-        self.name = motion_name
-        self.data = h5['/data/data'][:].tolist()
-        self.time_stamp = h5['/data/time_stamp'][:].tolist()
+        data = h5['/data/data'][:].tolist()
+        time_stamp = h5['/data/time_stamp'][:].tolist()
+        num_samples = len(id)
+        # Done with file
         h5.close()
 
-        self.num_samples = len(self.id)
+        # check values.  most common issue would be if labels don't match data
+        if num_samples == len(data) and num_samples == len(motion_name) and num_samples == len(time_stamp):
+            with self.__lock:
+                self.id = id
+                self.name = motion_name
+                self.data = data
+                self.time_stamp = time_stamp
+                self.num_samples = num_samples
+        else:
+            logging.error('Invalid training data with mismatched data lengths')
 
     def file_saved(self):
         if not os.path.isfile(self.filename + self.file_ext):

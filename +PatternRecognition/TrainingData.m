@@ -695,7 +695,7 @@ classdef TrainingData < handle
             end
             
             try
-                % Load data
+                %% Load data
                 % print contents
                 %h5disp(fullFile)
                 h = h5info(fullFile);

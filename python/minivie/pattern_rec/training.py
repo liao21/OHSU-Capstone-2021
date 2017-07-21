@@ -7,14 +7,18 @@ This class is designed to receive training commands. Training commands can be fo
 @author: R. Armiger
 """
 
+from pattern_rec.training_interface import TrainingInterface
 
-class TrainingManagerSpacebrew(object):
+class TrainingManagerSpacebrew(TrainingManager):
     """
     This Training manager uses websockets provided through the spacebrew interface to manager training commands
 
     """
 
     def __init__(self):
+
+        # Initialize superclass
+        super(TrainingInterface, self).__init__()
         
         # handle to spacebrew websocket interface
         self.brew = None

@@ -14,9 +14,10 @@ import logging
 import os
 import struct
 import numpy as np
+from mpl.data_sink import DataSink
 
 
-class NfuUdp:
+class NfuUdp(DataSink):
     """ 
     Python Class for NFU connections 
 
@@ -33,6 +34,9 @@ class NfuUdp:
     """
 
     def __init__(self, hostname="192.168.1.111", udp_telem_port=6300, udp_command_port=6201):
+
+        # Initialize superclass
+        super(NfuUdp, self).__init__()
 
         self.udp = {'Hostname': hostname, 'TelemPort': udp_telem_port, 'CommandPort': udp_command_port}
         self.param = {'echoHeartbeat': 1, 'echoPercepts': 1, 'echoCpch': 1}

@@ -1,9 +1,57 @@
 var MyoBluetooth  = require('MyoNodeBluetoothAPL');
 var MyoAgent = new MyoBluetooth();
-var maacAddress = process.argv[2].toLowerCase();
-MyoAgent.setAddress(maacAddress);
-console.log(MyoAgent.MAACaddress);
+var maacAddress = ["f01ccda72c85"];
+var port = [15001];
+var ipAdd = ["127.0.0.1"];
+console.log("Number of arguments:" + process.argv.length);
+var numBands = 1;
 
+for(var i = 0; i<process.argv.length; i++){
+//looping through args
+//command format
+/*
+node myo_udp --n(optional) numBands --option1 value1 value2 ... --option2 value1 value2 ...
+
+OPTIONS:
+--n 	number of armbands. 
+
+	Default 1 armband. Takes one value determining number of armbands. If used, must be first option.
+
+--ADD 	MAAC address. 
+	 Default for 1 armband can be set above. Value is armband maac address without ':' characters. Can include as many as necessary.
+
+--PORT	Destination port to send to. 
+		Default is 15001. Include values as necessary in same order as maac address.
+		
+--IP 	Destination IP.
+		Default is localhost. Include values as necessary in same order as maac address.
+*/
+	if(process.argv[i] == "--ADD"){ //maac addresses
+		for(var j = 1; j<=numBands;j++){
+			maacAddress[j-1] = process.argv[i+j];
+		}	}
+	else if(process.argv[i] == "--PORT"){ //ports
+		for(var k = 1; k<=numBands;k++){
+			port[k-1] = process.argv[i+k];
+		}
+	}
+	else if(process.argv[i] == "--IP"){ //ip addresses
+		for(var m = 1; m<=numBands;m++){
+			ipAdd[m-1] = process.argv[i+m];
+		}	
+	}
+	else if(process.argv[i] == "--n"){ //number of armbands
+		numBands = process.argv[i+1];
+	}
+}
+MyoAgent.setAddress(maacAddress);
+MyoAgent.setPort(port);
+MyoAgent.setIP(ipAdd);
+//Comment this out to remove logging. Logs MAAC addresses, ports, and IP addresses******
+console.log("Agent MAAC address:" + MyoAgent.MAACaddress);
+console.log("Port:" + MyoAgent.port);
+console.log("IP Addresses:" + MyoAgent.ipAdd);
+/*************************************************************/
 MyoAgent.on('discovered', function(armband){
 	armband.on('connect', function(connected){
     
@@ -32,11 +80,10 @@ MyoAgent.on('discovered', function(armband){
         armband.readBatteryInfo();
 		armband.setMode();
 		armband.on('emg', function(data1){
+			//Comment the next line out to remove logging of EMG data
 			console.log("EMG DATA: " + data1.emgData.sample2);
 			process.stdout.clearLine();
 			process.stdout.cursorTo(0);
-			//console.log('EMG Data: ',data2.sample1);
-			//console.log('EMG Data: ',data2.sample2);
 		});	
     });
 	

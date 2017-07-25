@@ -30,6 +30,8 @@ class Communicator{
         // Create a new queue for reading/writing Characteristics sequentially
         var workerCount = 1;
         this.queue = new PromiseQueue(workerCount);
+		this.port = 1;
+		this.ipAdd = "localhost";
     }
 
     /**
@@ -124,7 +126,9 @@ class Communicator{
 							console.log("IMU Sending data UDP...");
 							var mess = Buffer.from('some bytes');
 							try{
-								client.send(data, 15001, 'localhost');
+							console.log("IMU send to port " + this.port);
+								console.log("Sending to IP" + this.ipAdd);
+								client.send(data, this.port, this.ipAdd)
 							}
 							catch(err){
 							}
@@ -158,7 +162,9 @@ class Communicator{
                         this.classifierChar.on('read', function (data, isNotification) {
 								console.log("HERE (EMG Communicator)");
 							try{
-								client.send(data, 15001, 'localhost');
+								console.log("Classifier send to port" + this.port);
+								console.log("Sending to IP" + this.ipAdd);
+								client.send(data, this.port, this.ipAdd)
 							}
 							catch(err){
 							}
@@ -190,10 +196,11 @@ class Communicator{
                                 }
                             });
                             emgChar1.on('read', function (data, isNotification) {
-							console.log("EMG Sending data UDP...");
+							console.log("EMG Sending data UDP..." + this.port);
 							var mess = Buffer.from('some bytes');
 							try{
-								client.send(data, 15001, 'localhost');
+								console.log("Sending to IP" + this.ipAdd);
+								client.send(data, this.port, this.ipAdd);
 							}
 							catch(err){
 							}
@@ -522,7 +529,9 @@ class Communicator{
                     });
                     this.batteryChar.on('read', function(data, isNotification) {
 						try{
-								client.send(data, 15001, 'localhost');
+								console.log("Sending to port " + this.port);
+								console.log("Sending to IP" + this.ipAdd);
+								client.send(data, this.port, this.ipAdd);
 							}
 							catch(err){
 							}                        
@@ -540,6 +549,14 @@ class Communicator{
             callback(results)
         });
     }
+	
+	setPort(num){
+		this.port = num;
+	}
+	
+	setIP(add){
+		this.ipAdd = add;
+	}
 
 }
 

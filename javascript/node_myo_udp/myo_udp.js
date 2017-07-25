@@ -28,7 +28,7 @@ OPTIONS:
 */
 	if(process.argv[i] == "--ADD"){ //maac addresses
 		for(var j = 1; j<=numBands;j++){
-			maacAddress[j-1] = process.argv[i+j];
+			maacAddress[j-1] = process.argv[i+j].toLowerCase();
 		}	}
 	else if(process.argv[i] == "--PORT"){ //ports
 		for(var k = 1; k<=numBands;k++){

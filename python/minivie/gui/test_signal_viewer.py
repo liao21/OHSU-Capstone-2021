@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath('..'))
+
 from inputs import myo
 from gui import signal_viewer
 import threading

@@ -71,3 +71,8 @@ Example: node myo_udp --n 4 --ADD address1 address2 address3 address4 --PORT 150
 MAAC addresses: address1 address2 address3 address4
 PORTS for each respective address: 15001 15002 15003 15004
 IP Addresses: localhost localhost localhost localhost
+
+After running, data from the Myo armbands will be streaming over bluetooth to the IP addresses and ports set from the command line. 
+
+IMPORTANT NOTE: Since noble cannot create multiple connections at once, although it search and connect to various devices simultaneously, only one instance of this program can be running from a device. 
+Either list all devices in the single command, or end the program, and write a new command when adding new devices. 

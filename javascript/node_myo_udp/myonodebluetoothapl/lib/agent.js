@@ -26,6 +26,7 @@ class Agent extends EventEmitter{
         this.startDiscover();
 		this.port = 1;
 		this.ipAdd = "localhost";
+		this.debug = 0;
     }
 
     /**
@@ -58,8 +59,10 @@ class Agent extends EventEmitter{
      */
     discover(addr){
         console.log('start scanning for MYO devices');
-		console.log(addr);
-		console.log(noble.state);
+		if(this.debug >= 1){
+			console.log("In discovery: " + addr);
+			console.log("Noble connection state: " + noble.state);
+		}
 		noble.startScanning("d5060001a904deb947482c7f4a124842",false);
         noble.on('discover', function (peripheral) {
             console.log("Discovered an armband");
@@ -71,8 +74,11 @@ class Agent extends EventEmitter{
 					//Set port and IP for armband, indexed based on arrays
 					armband.setPort(this.port[i]);
 					armband.setIP(this.ipAdd[i]);
+					armband.setDebug(this.debug);
 					//Log this specific armband
-					console.log(peripheral.id + " " + armband.port + " " + armband.ipAdd);					
+					if(this.debug >= 1){
+						console.log("Peripheral ID: " + peripheral.id + " PORT: " + armband.port + " IP ADDRESS: " + armband.ipAdd);					
+					}
 					this._armbands.push(armband);				
 					this.emit('discovered', armband);
 				}
@@ -100,6 +106,11 @@ class Agent extends EventEmitter{
 	//Set IP. Array of all ip addresses used. 
 	setIP(add){
 		this.ipAdd = add;
+	}
+	
+	//Set debug level
+	setDebug(debug){
+		this.debug = debug;
 	}
 }
 

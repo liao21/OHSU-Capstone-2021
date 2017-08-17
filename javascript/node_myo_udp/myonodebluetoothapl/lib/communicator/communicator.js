@@ -32,6 +32,7 @@ class Communicator{
         this.queue = new PromiseQueue(workerCount);
 		this.port = 1;
 		this.ipAdd = "localhost";
+		this.debug = 0;
     }
 
     /**
@@ -123,11 +124,15 @@ class Communicator{
                         });
 
                         this.imuChar.on('read', function (data, isNotification) {
-							console.log("IMU Sending data UDP...");
+							if(this.debug == 2){
+								console.log("IMU Sending data UDP...");
+							}
 							var mess = Buffer.from('some bytes');
 							try{
-							console.log("IMU send to port " + this.port);
-								console.log("Sending to IP" + this.ipAdd);
+								if(this.debug == 2){
+									console.log("IMU send to port " + this.port);
+									console.log("Sending to IP" + this.ipAdd);
+								}
 								client.send(data, this.port, this.ipAdd)
 							}
 							catch(err){
@@ -162,8 +167,10 @@ class Communicator{
                         this.classifierChar.on('read', function (data, isNotification) {
 								console.log("HERE (EMG Communicator)");
 							try{
-								console.log("Classifier send to port" + this.port);
-								console.log("Sending to IP" + this.ipAdd);
+								if(this.debug == 2){
+									console.log("Classifier send to port" + this.port);
+									console.log("Sending to IP" + this.ipAdd);
+								}
 								client.send(data, this.port, this.ipAdd)
 							}
 							catch(err){
@@ -184,7 +191,7 @@ class Communicator{
 				if(characteristics.length  == 4) {
                         // TODO check UUID's
                         for(var index = 0; index < 4; index++ /*in characteristics*/){
-							console.log(index);
+							//console.log(index);
                             //let emgChar1 = characteristics[index];
 							//console.log(characteristics[index]);
 							//let emgChar1 = characteristics[index];
@@ -196,10 +203,14 @@ class Communicator{
                                 }
                             });
                             emgChar1.on('read', function (data, isNotification) {
-							console.log("EMG Sending data UDP..." + this.port);
+							if (this.debug == 2){
+								console.log("EMG Sending data UDP..." + this.port);
+							}
 							var mess = Buffer.from('some bytes');
 							try{
-								console.log("Sending to IP" + this.ipAdd);
+								if(this.debug == 2){
+									console.log("Sending to IP" + this.ipAdd);
+								}
 								client.send(data, this.port, this.ipAdd);
 							}
 							catch(err){
@@ -529,8 +540,10 @@ class Communicator{
                     });
                     this.batteryChar.on('read', function(data, isNotification) {
 						try{
-								console.log("Sending to port " + this.port);
-								console.log("Sending to IP" + this.ipAdd);
+								if(this.debug == 2){
+									console.log("Sending to port " + this.port);
+									console.log("Sending to IP" + this.ipAdd);
+								}
 								client.send(data, this.port, this.ipAdd);
 							}
 							catch(err){
@@ -556,6 +569,11 @@ class Communicator{
 	
 	setIP(add){
 		this.ipAdd = add;
+	}
+	
+		//Set debug level
+	setDebug(debug){
+		this.debug = debug;
 	}
 
 }

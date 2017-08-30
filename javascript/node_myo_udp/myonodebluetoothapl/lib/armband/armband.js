@@ -30,6 +30,7 @@ class Armband extends EventEmitter {
         this._communicator = new Communicator(peripheral);
 		this.port = 1;
 		this.ipAdd = "localhost";
+		this.debug = 0;
     }
 
     /**
@@ -57,10 +58,17 @@ class Armband extends EventEmitter {
      */
     initStart(){
         if(this.isConnected()){
-			console.log("Is connected");
+			if(this.debug >= 1){
+				console.log("Is connected");
+			}
+			
 			this.communicator.setPort(this.port);
 			this.communicator.setIP(this.ipAdd);
-			console.log("Comm Port:" + this.communicator.port);
+			this.communicator.setDebug(this.debug);
+			if (this.debug >= 1){
+				console.log("Comm Port:" + this.communicator.port);
+			}
+			
             this.communicator.initStart(function(eventData){
                 if(eventData.ready != undefined){
                   this.setReady(eventData.ready);
@@ -289,7 +297,10 @@ class Armband extends EventEmitter {
 		this.IP = add;
 	}
 	
-	
+	//Set debug level
+	setDebug(debug){
+		this.debug = debug;
+	}
 
 }
 

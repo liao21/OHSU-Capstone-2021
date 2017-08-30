@@ -17,7 +17,15 @@ classdef PnetClass < handle
         remotePort = 45001;     %Remote Destination port for sending data
         remoteIP = '127.0.0.1'; %Remote Destination IP for sending data
         
-        hSocket;            % Handle from pnet.  These look like integers
+        hSocket;                % Handle to pnet connection. These look like integers
+
+        % Logging parameters including send/receive timestamp and cell
+        % array data
+        enableLogging = false;  %When set to true, each udp transaction will be recorded
+        rcvLog = {};
+        rcvTime = {};
+        sendLog = {};
+        sendTime = {};
     end
     
     methods
@@ -94,6 +102,11 @@ classdef PnetClass < handle
                 if len > 0
                     try
                         dataBytes = pnet(obj.hSocket,'read',len,'uint8','noblock');
+
+                        if obj.enableLogging
+                            obj.rcvLog = cat(1,obj.rcvLog,{dataBytes});
+                        end
+                        
                         numReads = numReads + 1;
                     catch ME
                         fprintf(2,'[%s.m] Caught pnet error during read: "%s"\n',mfilename,ME.message);
@@ -152,7 +165,12 @@ classdef PnetClass < handle
             if numReads < maxReads
                 cellDataBytes(numReads+1:end) = [];
             end
-            
+
+            if obj.enableLogging && ~isempty(cellDataBytes)
+                obj.rcvLog = cat(1,obj.rcvLog,{cellDataBytes});
+                obj.rcvTime = cat(1,obj.rcvTime,now);
+            end
+
         end %getAllData        
         function putData(obj,dataBytes,destinationHostname,destinationPortNumber)
             % putData(obj,dataBytes)
@@ -174,6 +192,12 @@ classdef PnetClass < handle
                 return
             end
                         
+            if obj.enableLogging
+                obj.sendLog = cat(1,obj.sendLog,{dataBytes});
+                obj.sendTime = cat(1,obj.sendTime,now);
+            end
+            
+            
             pnet( obj.hSocket, 'write', dataBytes );
             pnet( obj.hSocket, 'writepacket', destinationHostname, destinationPortNumber );
         end
@@ -183,6 +207,17 @@ classdef PnetClass < handle
                 mfilename,obj.hSocket,obj.localPort);
             obj.hSocket = [];
         end
+        function saveLog(obj, filename) 
+            % saveLog(obj, filename) 
+            %
+            % Inputs:
+            %   filename - mat file name for writing transaction log
+            rcvLog = obj.rcvLog;   %#ok<NASGU,PROPLC>
+            rcvTime = obj.rcvTime; %#ok<NASGU,PROPLC>
+            sendLog = obj.sendLog; %#ok<NASGU,PROPLC>
+            sendTime = obj.sendTime; %#ok<NASGU,PROPLC>
+            save(filename,'rcvLog','rcvTime','sendLog','sendTime') 
+
+        end
     end
 end
-

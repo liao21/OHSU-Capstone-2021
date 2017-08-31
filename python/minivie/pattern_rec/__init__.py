@@ -280,6 +280,7 @@ class TrainingData:
         self.id = []  # List of class indices that each sample belongs to
         self.name = []  # Name of each class
         self.time_stamp = []
+        self.imu = []
         self.num_samples = 0
 
         self.reset()
@@ -290,7 +291,7 @@ class TrainingData:
         with self.__lock:
             self.data = []  # List of all feature extracted samples
             self.id = []  # List of class indices that each sample belongs to
-            self.imu = []
+            self.imu = []  # IMU data as applicable to data source
             self.name = []  # Name of each class
             self.time_stamp = []
             self.num_samples = 0
@@ -326,6 +327,7 @@ class TrainingData:
     def add_data(self, data_, id_, name_, imu_=-1):
         # New Data marked with:
         # time_stamp, name, id, data
+        # optionally add IMU data
         with self.__lock:
             self.time_stamp.append(time.time())
             self.name.append(name_)
@@ -353,7 +355,7 @@ class TrainingData:
 
     def load(self):
         # Data loaded with:
-        # time_stamp, name, id, data
+        # time_stamp, name, id, data, imu
 
         if not os.path.isfile(self.filename + self.file_ext):
             print('File Not Found: ' + self.filename + self.file_ext)
@@ -376,6 +378,7 @@ class TrainingData:
         for idx_, val_ in enumerate(motion_name):
             motion_name[idx_] = val_.decode('utf-8')
         data = h5['/data/data'][:].tolist()
+        imu = h5['/data/imu'][:].tolist()
         time_stamp = h5['/data/time_stamp'][:].tolist()
         num_samples = len(id)
         # Done with file
@@ -388,6 +391,7 @@ class TrainingData:
                 self.name = motion_name
                 self.data = data
                 self.time_stamp = time_stamp
+                self.imu = imu
                 self.num_samples = num_samples
         else:
             logging.error('Invalid training data with mismatched data lengths')

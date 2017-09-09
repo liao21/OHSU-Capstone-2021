@@ -1,8 +1,13 @@
 # open_nfu.py
 # Interface class for the JHU/APL openNFU
 #
-# Interface is via UDP messages send and receive data
+# Interface is via UDP messages to send and receive data
 #
+#
+#
+# Revisions:
+#   08SEP2017 Armiger: added limb state commands
+
 
 import time
 import threading

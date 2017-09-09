@@ -30,9 +30,9 @@ class Communicator{
         // Create a new queue for reading/writing Characteristics sequentially
         var workerCount = 1;
         this.queue = new PromiseQueue(workerCount);
-		this.port = 1;
-		this.ipAdd = "localhost";
-		this.debug = 0;
+        this.port = 1;
+        this.ipAdd = "localhost";
+        this.debug = 0;
     }
 
     /**
@@ -57,7 +57,7 @@ class Communicator{
             this.imuService = services[2];
             this.classifierService = services[3];
             this.emgService = services[4];
-			//console.log(this.emgService);
+            //console.log(this.emgService);
 
 
             /* Write CommandService to enable IMU/Classifier events */
@@ -124,21 +124,21 @@ class Communicator{
                         });
 
                         this.imuChar.on('read', function (data, isNotification) {
-							if(this.debug == 2){
-								console.log("IMU Sending data UDP...");
-							}
-							var mess = Buffer.from('some bytes');
-							try{
-								if(this.debug == 2){
-									console.log("IMU send to port " + this.port);
-									console.log("Sending to IP" + this.ipAdd);
-								}
-								client.send(data, this.port, this.ipAdd)
-							}
-							catch(err){
-							}
-					//		client.close();
-							data = this.deserialise.imu_data_t(data);
+                            if(this.debug == 2){
+                                console.log("IMU Sending data UDP...");
+                            }
+                            var mess = Buffer.from('some bytes');
+                            try{
+                                if(this.debug == 2){
+                                    console.log("IMU send to port " + this.port);
+                                    console.log("Sending to IP" + this.ipAdd);
+                                }
+                                client.send(data, this.port, this.ipAdd)
+                            }
+                            catch(err){
+                            }
+                    //      client.close();
+                            data = this.deserialise.imu_data_t(data);
                             callback(data);
                         }.bind(this));
 
@@ -165,17 +165,17 @@ class Communicator{
                             }
                         });
                         this.classifierChar.on('read', function (data, isNotification) {
-								console.log("HERE (EMG Communicator)");
-							try{
-								if(this.debug == 2){
-									console.log("Classifier send to port" + this.port);
-									console.log("Sending to IP" + this.ipAdd);
-								}
-								client.send(data, this.port, this.ipAdd)
-							}
-							catch(err){
-							}
-							let eventData = this.deserialise.classifier_event_t(data);
+                                console.log("HERE (EMG Communicator)");
+                            try{
+                                if(this.debug == 2){
+                                    console.log("Classifier send to port" + this.port);
+                                    console.log("Sending to IP" + this.ipAdd);
+                                }
+                                client.send(data, this.port, this.ipAdd)
+                            }
+                            catch(err){
+                            }
+                            let eventData = this.deserialise.classifier_event_t(data);
                             callback(eventData);
                         }.bind(this));
 
@@ -186,37 +186,37 @@ class Communicator{
             }.bind(this), 4000);
 
             setTimeout(function () {
-				this.emgService.discoverCharacteristics([], function (error, characteristics) {
+                this.emgService.discoverCharacteristics([], function (error, characteristics) {
 
-				if(characteristics.length  == 4) {
+                if(characteristics.length  == 4) {
                         // TODO check UUID's
                         for(var index = 0; index < 4; index++ /*in characteristics*/){
-							//console.log(index);
+                            //console.log(index);
                             //let emgChar1 = characteristics[index];
-							//console.log(characteristics[index]);
-							//let emgChar1 = characteristics[index];
-							let emgChar1 = characteristics[index];
+                            //console.log(characteristics[index]);
+                            //let emgChar1 = characteristics[index];
+                            let emgChar1 = characteristics[index];
                             emgChar1.notify(true, function (error) {
 
-							if(error){
+                            if(error){
                                     throw new Error('emgChar: ', error);
                                 }
                             });
                             emgChar1.on('read', function (data, isNotification) {
-							if (this.debug == 2){
-								console.log("EMG Sending data UDP..." + this.port);
-							}
-							var mess = Buffer.from('some bytes');
-							try{
-								if(this.debug == 2){
-									console.log("Sending to IP" + this.ipAdd);
-								}
-								client.send(data, this.port, this.ipAdd);
-							}
-							catch(err){
-							}
-						//		client.close();
-								let emgData = this.deserialise.emg_data_t(data);
+                            if (this.debug == 2){
+                                console.log("EMG Sending data UDP..." + this.port);
+                            }
+                            var mess = Buffer.from('some bytes');
+                            try{
+                                if(this.debug == 2){
+                                    console.log("Sending to IP" + this.ipAdd);
+                                }
+                                client.send(data, this.port, this.ipAdd);
+                            }
+                            catch(err){
+                            }
+                        //      client.close();
+                                let emgData = this.deserialise.emg_data_t(data);
                                 callback({id: index, emgData: emgData});
                             }.bind(this));
                         }
@@ -539,16 +539,16 @@ class Communicator{
                         }
                     });
                     this.batteryChar.on('read', function(data, isNotification) {
-						try{
-								if(this.debug == 2){
-									console.log("Sending to port " + this.port);
-									console.log("Sending to IP" + this.ipAdd);
-								}
-								client.send(data, this.port, this.ipAdd);
-							}
-							catch(err){
-							}                        
-						data = this.deserialise.battery_t(data);
+                        try{
+                                if(this.debug == 2){
+                                    console.log("Sending to port " + this.port);
+                                    console.log("Sending to IP" + this.ipAdd);
+                                }
+                                client.send(data, this.port, this.ipAdd);
+                            }
+                            catch(err){
+                            }                        
+                        data = this.deserialise.battery_t(data);
                         resolve(data);
                     }.bind(this));
                 } else {
@@ -562,19 +562,19 @@ class Communicator{
             callback(results)
         });
     }
-	
-	setPort(num){
-		this.port = num;
-	}
-	
-	setIP(add){
-		this.ipAdd = add;
-	}
-	
-		//Set debug level
-	setDebug(debug){
-		this.debug = debug;
-	}
+    
+    setPort(num){
+        this.port = num;
+    }
+    
+    setIP(add){
+        this.ipAdd = add;
+    }
+    
+        //Set debug level
+    setDebug(debug){
+        this.debug = debug;
+    }
 
 }
 

@@ -21,12 +21,12 @@ class Agent extends EventEmitter{
     constructor(){
         super();
         this.myoProtocol = new MyoProtocol();
-		this.MAACaddress = "111111111";
+        this.MAACaddress = "111111111";
         this._armbands = [];
         this.startDiscover();
-		this.port = 1;
-		this.ipAdd = "localhost";
-		this.debug = 0;
+        this.port = 1;
+        this.ipAdd = "localhost";
+        this.debug = 0;
     }
 
     /**
@@ -59,30 +59,30 @@ class Agent extends EventEmitter{
      */
     discover(addr){
         console.log('start scanning for MYO devices');
-		if(this.debug >= 1){
-			console.log("In discovery: " + addr);
-			console.log("Noble connection state: " + noble.state);
-		}
-		noble.startScanning("d5060001a904deb947482c7f4a124842",false);
+        if(this.debug >= 1){
+            console.log("In discovery: " + addr);
+            console.log("Noble connection state: " + noble.state);
+        }
+        noble.startScanning("d5060001a904deb947482c7f4a124842",false);
         noble.on('discover', function (peripheral) {
-            console.log("Discovered an armband");
-			for(var i = 0; i<addr.length;i++){
-				//Loop through array and look for appropriate MAAC address
-				if(peripheral.id == addr[i]){
-					console.log("Correct armband found");
-					let armband = new Armband(peripheral);
-					//Set port and IP for armband, indexed based on arrays
-					armband.setPort(this.port[i]);
-					armband.setIP(this.ipAdd[i]);
-					armband.setDebug(this.debug);
-					//Log this specific armband
-					if(this.debug >= 1){
-						console.log("Peripheral ID: " + peripheral.id + " PORT: " + armband.port + " IP ADDRESS: " + armband.ipAdd);					
-					}
-					this._armbands.push(armband);				
-					this.emit('discovered', armband);
-				}
-			}	
+            console.log("Discovered an armband with ID: " + peripheral.id);
+            for(var i = 0; i<addr.length;i++){
+                //Loop through array and look for appropriate MAAC address
+                if(peripheral.id == addr[i]){
+                    console.log("Correct armband found");
+                    let armband = new Armband(peripheral);
+                    //Set port and IP for armband, indexed based on arrays
+                    armband.setPort(this.port[i]);
+                    armband.setIP(this.ipAdd[i]);
+                    armband.setDebug(this.debug);
+                    //Log this specific armband
+                    if(this.debug >= 1){
+                        console.log("Peripheral ID: " + peripheral.id + " PORT: " + armband.port + " IP ADDRESS: " + armband.ipAdd);                    
+                    }
+                    this._armbands.push(armband);               
+                    this.emit('discovered', armband);
+                }
+            }   
         }.bind(this));
     }
 
@@ -92,26 +92,26 @@ class Agent extends EventEmitter{
     stopScanning(){
         noble.stopScanning();
     }
-	
-	//Set MAAC address for the agent.
-	setAddress(addr){
-		this.MAACaddress = addr;
-	}
-	
-	//Set port. num is an array of ports used
-	setPort(num){
-		this.port = num;
-	}
-	
-	//Set IP. Array of all ip addresses used. 
-	setIP(add){
-		this.ipAdd = add;
-	}
-	
-	//Set debug level
-	setDebug(debug){
-		this.debug = debug;
-	}
+    
+    //Set MAAC address for the agent.
+    setAddress(addr){
+        this.MAACaddress = addr;
+    }
+    
+    //Set port. num is an array of ports used
+    setPort(num){
+        this.port = num;
+    }
+    
+    //Set IP. Array of all ip addresses used. 
+    setIP(add){
+        this.ipAdd = add;
+    }
+    
+    //Set debug level
+    setDebug(debug){
+        this.debug = debug;
+    }
 }
 
 module.exports = Agent;

@@ -185,14 +185,14 @@ class Deserialise {
      */
     emg_data_t(Buffer){
 
-		if(Buffer.length < 16){
+        if(Buffer.length < 16){
             //error
             return null;
         }
 
         return {
             sample1: [
-				Buffer.readInt8(0),
+                Buffer.readInt8(0),
                 Buffer.readInt8(1),
                 Buffer.readInt8(2),
                 Buffer.readInt8(3),

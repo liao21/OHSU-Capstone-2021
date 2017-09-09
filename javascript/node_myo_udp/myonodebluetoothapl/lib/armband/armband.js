@@ -28,9 +28,9 @@ class Armband extends EventEmitter {
         super();
         this._peripheral = peripheral;
         this._communicator = new Communicator(peripheral);
-		this.port = 1;
-		this.ipAdd = "localhost";
-		this.debug = 0;
+        this.port = 1;
+        this.ipAdd = "localhost";
+        this.debug = 0;
     }
 
     /**
@@ -58,25 +58,25 @@ class Armband extends EventEmitter {
      */
     initStart(){
         if(this.isConnected()){
-			if(this.debug >= 1){
-				console.log("Is connected");
-			}
-			
-			this.communicator.setPort(this.port);
-			this.communicator.setIP(this.ipAdd);
-			this.communicator.setDebug(this.debug);
-			if (this.debug >= 1){
-				console.log("Comm Port:" + this.communicator.port);
-			}
-			
+            if(this.debug >= 1){
+                console.log("Is connected");
+            }
+            
+            this.communicator.setPort(this.port);
+            this.communicator.setIP(this.ipAdd);
+            this.communicator.setDebug(this.debug);
+            if (this.debug >= 1){
+                console.log("Comm Port:" + this.communicator.port);
+            }
+            
             this.communicator.initStart(function(eventData){
                 if(eventData.ready != undefined){
                   this.setReady(eventData.ready);
                 }
 
                 if(eventData.emgData){
-					//console.log("Receiving EMG Data");
-					this.emit('emg', eventData);
+                    //console.log("Receiving EMG Data");
+                    this.emit('emg', eventData);
                 }
 
                 // IMU data
@@ -275,8 +275,8 @@ class Armband extends EventEmitter {
         return this.connected;
     }
 
-	//Setters
-	
+    //Setters
+    
     setConnected(boolean){
         this.connected = boolean;
         this.emit('connect',boolean);
@@ -286,21 +286,21 @@ class Armband extends EventEmitter {
         this.ready = boolean;
         this.emit('ready', boolean);
     }
-	
-	//Set Port for this armband. Single port number
-	setPort(num){
-		this.port = num;
-	}
+    
+    //Set Port for this armband. Single port number
+    setPort(num){
+        this.port = num;
+    }
 
-	//Set IP for this armband. Single IP address. 
-	setIP(add){
-		this.IP = add;
-	}
-	
-	//Set debug level
-	setDebug(debug){
-		this.debug = debug;
-	}
+    //Set IP for this armband. Single IP address. 
+    setIP(add){
+        this.IP = add;
+    }
+    
+    //Set debug level
+    setDebug(debug){
+        this.debug = debug;
+    }
 
 }
 

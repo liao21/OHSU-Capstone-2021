@@ -45,6 +45,7 @@ class Agent extends EventEmitter{
 
                 /* Set all armbands to not connected */
                 for(let armband of this.armbands){
+                    console.log("Disconnecting Armbands");
                     armband.setConnected(false);
                 }
                 throw new Error('Bluetooth Adapter not found');
@@ -58,7 +59,7 @@ class Agent extends EventEmitter{
      * @param UUID
      */
     discover(addr){
-        console.log('start scanning for MYO devices');
+        console.log('Starting to scan for MYO devices');
         if(this.debug >= 1){
             console.log("In discovery: " + addr);
             console.log("Noble connection state: " + noble.state);
@@ -66,23 +67,24 @@ class Agent extends EventEmitter{
         noble.startScanning("d5060001a904deb947482c7f4a124842",false);
         noble.on('discover', function (peripheral) {
             console.log("Discovered an armband with ID: " + peripheral.id);
-            for(var i = 0; i<addr.length;i++){
-                //Loop through array and look for appropriate MAAC address
-                if(peripheral.id == addr[i]){
-                    console.log("Correct armband found");
-                    let armband = new Armband(peripheral);
-                    //Set port and IP for armband, indexed based on arrays
-                    armband.setPort(this.port[i]);
-                    armband.setIP(this.ipAdd[i]);
-                    armband.setDebug(this.debug);
-                    //Log this specific armband
-                    if(this.debug >= 1){
-                        console.log("Peripheral ID: " + peripheral.id + " PORT: " + armband.port + " IP ADDRESS: " + armband.ipAdd);                    
-                    }
-                    this._armbands.push(armband);               
-                    this.emit('discovered', armband);
+            return;
+
+            var idMatch = addr.indexOf(peripheral.id);  // -1 if no match
+
+            console.log("Element match: " + idMatch );
+            if(idMatch != -1){
+                let armband = new Armband(peripheral);
+                //Set port and IP for armband, indexed based on arrays
+                armband.setPort(this.port[idMatch]);
+                armband.setIP(this.ipAdd[idMatch]);
+                armband.setDebug(this.debug);
+                //Log this specific armband
+                if(this.debug >= 1){
+                    console.log("Peripheral ID: " + peripheral.id + " PORT: " + armband.port + " IP ADDRESS: " + armband.ipAdd);
                 }
-            }   
+                this._armbands.push(armband);
+                this.emit('discovered', armband);
+            }
         }.bind(this));
     }
 
@@ -92,22 +94,22 @@ class Agent extends EventEmitter{
     stopScanning(){
         noble.stopScanning();
     }
-    
+
     //Set MAAC address for the agent.
     setAddress(addr){
         this.MAACaddress = addr;
     }
-    
+
     //Set port. num is an array of ports used
     setPort(num){
         this.port = num;
     }
-    
-    //Set IP. Array of all ip addresses used. 
+
+    //Set IP. Array of all ip addresses used.
     setIP(add){
         this.ipAdd = add;
     }
-    
+
     //Set debug level
     setDebug(debug){
         this.debug = debug;

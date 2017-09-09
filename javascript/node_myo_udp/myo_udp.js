@@ -3,7 +3,7 @@ var MyoAgent = new MyoBluetooth();
 var maacAddress = ["f01ccda72c85"];
 var port = [15001];
 var ipAdd = ["127.0.0.1"];
-console.log("Number of arguments:" + process.argv.length);
+console.log("Number of arguments : " + process.argv.length);
 var numBands = 1;
 var debug = 0
 
@@ -14,14 +14,14 @@ for(var i = 0; i<process.argv.length; i++){
 node myo_udp --n(optional) numBands --option1 value1 value2 ... --option2 value1 value2 ...
 
 OPTIONS:
---n 	number of armbands. 
+--n 	number of armbands.
 
 	Default 1 armband. Takes one value determining number of armbands. If used, must be first option.
 
---ADD 	MAAC address. 
+--ADD 	MAAC address.
 	 Default for 1 armband can be set above. Value is armband maac address without ':' characters. Can include as many as necessary.
 
---PORT	Destination port to send to. 
+--PORT	Destination port to send to.
 		Default is 15001. Include values as necessary in same order as maac address.
 		
 --IP 	Destination IP.

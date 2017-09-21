@@ -1,12 +1,26 @@
+# Simple plot function for showing the EMG stream
+# Requires matplotlib
+#
+# To run from command line:
+# > python -m gui.test_live_plot.py
+#
+# Test function can also be 'double-clicked' to start
+
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import style
+
+# Ensure that the minivie specific modules can be found on path allowing execution from the 'inputs' folder
+import os
+if os.path.split(os.getcwd())[1] == 'gui':
+    import sys
+    sys.path.insert(0, os.path.abspath('..'))
 from inputs import myo
 
-# Simple plot function for showing the EMG stream
+
 
 # Setup Data Source
-m = myo.MyoUdp(source='//127.0.0.1:10001', num_samples=600)
+m = myo.MyoUdp(source='//127.0.0.1:15001', num_samples=600)
 m.connect()
 
 style.use('dark_background')

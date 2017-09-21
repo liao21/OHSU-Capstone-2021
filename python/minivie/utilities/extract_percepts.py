@@ -1,5 +1,6 @@
 import struct
 import numpy
+import logging
 
 # one function, takes a string of bytes 
 # e.g. from numpy.array.tobytes()
@@ -21,6 +22,11 @@ def extract(packet):
 	# first two bytes are length as uint16
 	packetLength = struct.unpack("H", packet[0:2])[0]
 	
+	# if packet length is not correct, log the error, return empty dictionary
+	if packetLength != len(packet)-2:
+		logging.error("[extract_percepts.py] invalid packet length in message: (expected)" + str(packetLength) + ", (actual)" + str(len(packet) - 2 ))
+		return dict()
+	
 	# next byte is the streaming ID of the message
 	MplStreamingMessageId = struct.unpack("B", packet[2])[0]
 	ind = 0
@@ -37,7 +43,7 @@ def extract(packet):
 		if LimbPerceptsType == NONE:
 			ind += 1
 		else:
-			print("Warning: invalid LimbPerceptsType", LimbPerceptsType)
+			logging.warning("[extract_percepts.py] invalid LimbPerceptsType: " + str(LimbPerceptsType))
 		
 		# next byte is a joint percepts type
 		JointPerceptsType = struct.unpack("B", packet[ind])[0]
@@ -62,9 +68,9 @@ def extract(packet):
 			feedbackData["jointPercepts"]["temperature"] = temp[NUM_JOINTS*3:NUM_JOINTS*4]
 			ind += 4 * numFloats
 		
-		# TODO: elevate something more formal?
+		# log the warning
 		else:
-			print("Warning: invalid JointPerceptsType", JointPerceptsType)
+			logging.warning("[extract_percepts.py] invalid JointPerceptsType: " + str(JointPerceptsType))
 		
 		# next set of bytes is a ROC percepts type.  this is untested at the moment
 		ROCPerceptsType = struct.unpack("B", packet[ind])[0]
@@ -93,9 +99,9 @@ def extract(packet):
 				feedbackData["rocs"][tableInd+1,:] = struct.unpack(endian + "BBfff")
 				ind += SIZE_OF_ROC_TABLE
 		
-		# TODO: elevate something more formal?
+		# log the warning
 		else:
-			print("Warning: invalid ROCPerceptsType", ROCPerceptsType)
+			logging.warning("[extract_percepts.py] invalid ROCPerceptsType: " + str(ROCPerceptsType))
 		
 		# next byte is a segment percepts type
 		SegmentPerceptsType = struct.unpack("B", packet[ind])[0]
@@ -186,34 +192,35 @@ def extract(packet):
 					ind += 4
 					feedbackData["segmentPercepts"]["ftsnTemp"][segmentId] = temp_temp
 					
-		# TODO: elevate something more formal?
+		# log the warning
 		else:
-			print("Warning: invalid SegmentPerceptsType", SegmentPerceptsType)
+			logging.warning("[extract_percepts.py] invalid SegmentPerceptsType: " + str(SegmentPerceptsType))
 	
-	# TODO: elevate something more formal?
+	# log the warning
 	else:
-		print("Warning: invalid MplStreamingMessageId", MplStreamingMessageId)
+		logging.warning("[extract_percepts.py] invalid MplStreamingMessageId: " + str(MplStreamingMessageId))
 
 	
 	# double-check that we parsed something
 	if ind != 0:
 		checksum = struct.unpack("B", packet[ind])[0]
 	
-	# otherwise, print warning
-	# TODO: elevate something more formal?
+	# log the warning
 	else:
 		checksum = 0
-		print("Warning: ind is 0, packet not parsed!")
+		logging.warning("[extract_percepts.py] ind is 0, packet not parsed!")
 	
 	# double-check checksum
-	# TODO: elevate something more formal?
+	# log the error, return empty dictionary
 	if checksum != sum(struct.unpack("B" * (len(packet)-1), packet[:-1])) % 256:
-		print("Warning: invalid checksum in MPL percepts message")
+		logging.error("[extract_percepts.py] invalid checksum in MPL percepts message")
+		return dict()
 	
 	# verify that the value for ind is consistent with the stated length of the packet
-	# TODO: elevate something more formal?
+	# log the error, return empty dictionary
 	if ind != (packetLength + 1):
-		print("Warning: invalid packet length in message", packetLength, ind)
+		logging.error("[extract_percepts.py] invalid parse index: (packetLength)" + str(packetLength + 1) + ", (parse index)" + str(ind))
+		return dict()
 		
 	return feedbackData
 			

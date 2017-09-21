@@ -154,18 +154,16 @@ def extract(packet):
 			NUM_FTSN_SEGMENTS = 5; #index, middle, ring, little, thumb
 			NUM_FTSN_FORCE_MAX_NUMBER_VALUES = 14; # 14 capacitive force sensors
 			NUM_FTSN_ACCEL_MAX_NUMBER_VALUES = 3; # 3 axes for force and acceleration data (only 1 for temperature)
-			
-			feedbackData["segmentPercepts"]["contactPercepts"]= numpy.zeros((1,NUM_CONTACT_SENSORS))
-			
+						
+			# fill in contact percepts
 			# TODO: bytes aren't swapped in MATLAB, should be though?
-			segContactPercepts = struct.unpack("H" * NUM_CONTACT_SENSORS, packet[ind:(ind+NUM_CONTACT_SENSORS*2)])
+			feedbackData["segmentPercepts"]["contactPercepts"] = struct.unpack("H" * NUM_CONTACT_SENSORS, packet[ind:(ind+NUM_CONTACT_SENSORS*2)])
 			ind += NUM_CONTACT_SENSORS*2
-			feedbackData["segmentPercepts"]["contactPercepts"] = segContactPercepts
 			
 			# pre-allocate ftsn dicts
 			feedbackData["segmentPercepts"]["ftsnForce"]= numpy.zeros((NUM_FTSN_FORCE_MAX_NUMBER_VALUES,NUM_FTSN_SEGMENTS))
 			feedbackData["segmentPercepts"]["ftsnAccel"]= numpy.zeros((NUM_FTSN_ACCEL_MAX_NUMBER_VALUES,NUM_FTSN_SEGMENTS))
-			feedbackData["segmentPercepts"]["ftsnTemp"]= numpy.zeros((1,NUM_FTSN_SEGMENTS))
+			feedbackData["segmentPercepts"]["ftsnTemp"]= numpy.zeros((NUM_FTSN_SEGMENTS,))
 			
 			# fill in FTSN force vals
 			for segmentId in range(NUM_FTSN_SEGMENTS):

@@ -292,7 +292,7 @@ class MyoUdp(SignalInput):
         self.__gyro = (0.0, 0.0, 0.0)
 
         # Default data buffer [nSamples by nChannels]
-        # Treat as private.  use getData to access since it is thread-safe
+        # Treat as private.  use get_data to access since it is thread-safe
         self.__dataEMG = np.zeros((num_samples, 8))
 
         # UDP Port setup

@@ -94,17 +94,17 @@ Running a python module stand-alone
 The base of the project is /git/minivie/python/minvie
 As such, typical modules will import assuming this is the base
 Example:
-from utilities import user_config
-from scenarios import mpl_nfu
-from mpl.open_nfu import NfuUdp
+    from utilities import user_config
+    from scenarios import mpl_nfu
+    from mpl.open_nfu import NfuUdp
 
 However if a module is to be run stand-alone from a direcoty (e.g. /git/minivie/python/minvie/gui), the module won't be found
 Example:
-C:\git\minivie\python\minivie\gui>python test_live_plot.py
-Traceback (most recent call last):
-  File "test_live_plot.py", line 4, in <module>
-    from inputs import myo
-ModuleNotFoundError: No module named 'inputs'
+    C:\git\minivie\python\minivie\gui>python test_live_plot.py
+    Traceback (most recent call last):
+      File "test_live_plot.py", line 4, in <module>
+        from inputs import myo
+    ModuleNotFoundError: No module named 'inputs'
 
 Option 1:
 execute the submodule from the project home:
@@ -114,13 +114,23 @@ Option 2:
 make the module add the project home to the path by adding the following to the code [Not recommended].
 While this not be the most robust, it allows 'double click' access to the module
 
-# Ensure that the minivie specific modules can be found on path allowing execution from the 'inputs' folder
-if os.path.split(os.getcwd())[1] == 'inputs':
-    import sys
-    sys.path.insert(0, os.path.abspath('..'))
-import inputs
+    # Ensure that the minivie specific modules can be found on path allowing execution from the 'inputs' folder
+    if os.path.split(os.getcwd())[1] == 'inputs':
+        import sys
+        sys.path.insert(0, os.path.abspath('..'))
+    import inputs
 
 
+
+Byte packing
+------------
+Pack a variable length list of floats
+
+    import random
+    import struct
+
+    floatlist = [random.random() for _ in range(10**5)]
+    buf = struct.pack('%sf' % len(floatlist), *floatlist)
 
 
 

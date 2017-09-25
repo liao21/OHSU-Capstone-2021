@@ -9,7 +9,7 @@ This class is designed to receive training commands. Training commands can be fo
 
 from pattern_rec.training_interface import TrainingInterface
 
-class TrainingManagerSpacebrew(TrainingManager):
+class TrainingManagerSpacebrew(TrainingInterface):
     """
     This Training manager uses websockets provided through the spacebrew interface to manager training commands
 

@@ -39,14 +39,14 @@ classdef BluetoothTactor_UDP < handle
             obj.hTimer.Period = 0.05;
             
             
-            fprintf('Opening %s:%f...',obj.udpIP, obj.udpPort)
+            fprintf('Opening %s:%d...',obj.udpIP, obj.udpPort)
             % create the serial port
             
             
-            obj.hUDP = pnet('udpsocket', obj.udpPort);
-            pnet(obj.hUDP,'udpconnect', obj.udpIP, obj.udpPort)
-            obj.udpPort
-            obj.udpIP
+            obj.hUDP = pnet('udpsocket', obj.udpPort + 101);
+            pnet(obj.hUDP,'udpconnect', obj.udpIP, obj.udpPort);
+%             obj.udpPort
+%             obj.udpIP
             
             fprintf('Done\n');
             

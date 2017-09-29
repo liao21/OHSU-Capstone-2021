@@ -19,6 +19,7 @@ import numpy as np
 import mpl
 from mpl.data_sink import DataSink
 
+
 class NfuUdp(DataSink):
     """
     Python Class for NFU connections

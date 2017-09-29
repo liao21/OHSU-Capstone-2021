@@ -25,7 +25,7 @@ class DataSink(object):
         pass
 
     @abstractmethod
-    def get_status_message(self):
+    def get_status_msg(self):
         pass
 
     @abstractmethod

@@ -12,12 +12,32 @@ from mpl import JointEnum as MplId
 import collections
 import random
 from controls.plant import class_map
+from abc import ABCMeta, abstractmethod
 
 
-class MotionTester(object):
+class AssessmentInterface(object):
+    __metaclass__ = ABCMeta
+
+    def __init__(self):
+        pass
+
+    # All methods with this decorator must be overloaded
+    @abstractmethod
+    def start_assessment(self):
+        pass
+
+    @abstractmethod
+    def save_results(self):
+        pass
+
+class MotionTester(AssessmentInterface):
 # Method to perform motion tester assessments, communicate results to user
 
     def __init__(self, vie, trainer):
+
+        # Initialize superclass
+        super(AssessmentInterface, self).__init__()
+
         self.vie = vie
         self.trainer = trainer
         self.thread = None
@@ -249,13 +269,17 @@ class MotionTester(object):
         self.reset()
 
 
-class TargetAchievementControl(object):
+class TargetAchievementControl(AssessmentInterface):
     # Method to perform TAC assessments, with three conditions
     # 1) 1 joint assessment, all other joints locked
     # 2) 1 joint assessment, all other joints free
     # 3) 3-joint assessment
 
     def __init__(self, vie, trainer):
+
+        # Initialize superclass
+        super(AssessmentInterface, self).__init__()
+
         self.vie = vie
         self.trainer = trainer
         self._condition = None # 1,2, or 3, corresponding to standard TAC conditions

@@ -57,9 +57,10 @@ import socket
 import struct
 import logging
 import numpy as np
+from mpl.data_sink import DataSink
 
 
-class UnityUdp(object):
+class UnityUdp(DataSink):
     """
         % Left
         obj.MplCmdPort = 25100;
@@ -72,6 +73,10 @@ class UnityUdp(object):
 
     """
     def __init__(self, remote_host="127.0.0.1", remote_port=25000, local_port=25001):
+
+        # Initialize superclass
+        super(UnityUdp, self).__init__()
+
         self.udp = {'RemoteHost': remote_host, 'RemotePort': remote_port, 'LocalPort': local_port}
         self.sock = None
         self.is_connected = False

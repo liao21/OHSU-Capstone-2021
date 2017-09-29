@@ -198,7 +198,7 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 tactorVals(4) = interp1(indexSensorLowHigh,indexActuatorLowHigh,indexSensorVal,'linear');
                 tactorVals(5) = interp1(thumbSensorLowHigh,thumbActuatorLowHigh,thumbSensorVal,'linear');
                 
-                % fprintf('[%d,%d,%d,%d,%d]\n', round(tactorVals));
+                fprintf('[%.2f,%.2f,%.2f,%.2f,%.2f]->[%d,%d,%d,%d,%d]\n', [littleSensorVal, ringSensorVal, middleSensorVal, indexSensorVal, thumbSensorVal], round(tactorVals));
                 
                 % send tactor commands to device
                 obj.hTactors.tactorVals = double(round(tactorVals));

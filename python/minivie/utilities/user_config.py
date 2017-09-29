@@ -15,32 +15,34 @@ from datetime import datetime
 import xml.etree.cElementTree as xmlTree
 import logging
 
-xmlRoot = None
+xml_root = None
+xml_tree = None
+xml_file = None
 
 
-def read_user_config(file):
+def read_user_config(file='../../user_config.xml'):
     # function to read in xml file and store as dictionary
-    global xmlRoot
-    xmlRoot = xmlTree.parse(file).getroot()
+    logging.info('Reading xml config file: {}'.format(file))
+    global xml_file, xml_root, xml_tree
+    xml_file = file
+    xml_tree = xmlTree.parse(xml_file)
+    xml_root = xml_tree.getroot()
 
 
 def get_user_config_var(key, default_value):
     # Look through XML document root for matching key value and retutn entry as a string
-    global xmlRoot
-    
-    if xmlRoot is None:
-        logging.info('xmlRoot is unset')
-        logging.info('Reading default xml config file: user_config.xml')
-        read_user_config('../../user_config.xml')
-    
-    for element in xmlRoot.findall('add'):
+    if xml_root is None:
+        logging.info('xml_root is unset')
+        read_user_config()
+
+    for element in xml_root.findall('add'):
         # child is an element, has tag and attributes
         xml_key = element.get('key')
 
         if xml_key == key:
             str_value = element.get('value')
             logging.info(key + ' : ' + str_value)
-            
+
             if type(default_value) is str:
                 return str_value
             elif type(default_value) is int:
@@ -51,12 +53,73 @@ def get_user_config_var(key, default_value):
                 return tuple(float(i) for i in str_value.split(','))
             else:
                 logging.warning('Unhandled type [{}] for default value for key = {}'.format(type(default_value), key))
-    
+
     # Unmatched isn't a problem, parameter just happens to not be in xml, so use default
     # logging.warning(key + ' : UNMATCHED')
-    
+
     logging.info(key + ' : ' + str(default_value) + ' (default)')
     return default_value
+
+
+def set_user_config_var(key, value):
+    # Look through XML document root for matching key value and update entry as string,
+    # or create new entry if necessary
+    #
+    # Inputs: key - string, should match existing key from user config or new key will be written
+    #         value - string/float/int or array/tuple of these, will always be formatted as string
+
+    if xml_root is None:
+        logging.info('xml_root is unset')
+        read_user_config()
+
+    # Format value as comma-separated list
+    if type(value) is list or type(value) is tuple:
+        str_value = ','.join([str(x) for x in value])
+    elif type(value) is int or type(value) is float or type(value) is str:
+        str_value = str(value)
+    else:
+        logging.warning('Unhandled type [{}] for value for key = {}'.format(type(value), key))
+        return None
+
+    # Initialize old string value
+    old_str_value = 'NA'
+    key_exists = False
+    for element in xml_root.findall('add'):
+        # child is an element, has tag and attributes
+        xml_key = element.get('key')
+
+        if xml_key == key:
+            key_exists = True
+            old_str_value = element.get('value') # Get old value
+            element.set('value', str_value)  # Set new value
+
+    # Add new key if it didn't exist
+    if not key_exists:
+        new_element = xmlTree.fromstring('<add key="{}" value="{}"/>'.format(key, str_value))
+        xml_root.append(new_element)
+
+    logging.info(key + ' : ' + old_str_value + ' (original)')
+    logging.info(key + ' : ' + str_value + ' (new)')
+
+
+def save(file='../../user_config.xml'):
+    # Save out xml
+
+    if xml_root is None:
+        logging.info('xml_root is unset')
+        read_user_config()
+
+    # Check if file already exists, and save with incremented name
+    if os.path.isfile(file):
+        fname = os.path.splitext(file)[0]
+        date_string =  datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        old_file = '{}_{}.xml'.format(fname, date_string)
+        os.rename(file, old_file)
+        logging.warning('Overwritten user configuration file {} moved to {}'.format(file, old_file))
+
+    # Save
+    indent(xml_root)  # Pretties up the writing
+    xml_tree.write(file, encoding='utf-8', xml_declaration=True, default_namespace=None, method='xml')
 
 
 def setup_file_logging(prefix='MiniVIE_', log_level=logging.INFO):
@@ -129,19 +192,33 @@ def setup_file_logging(prefix='MiniVIE_', log_level=logging.INFO):
     '''
 
 
+def indent(elem, level=0):
+    # https://stackoverflow.com/questions/3095434/inserting-newlines-in-xml-file-generated-via-xml-etree-elementtree-in-python
+    # Pretty printing of XML elements with proper indents
+
+    i = "\n" + level * "  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            indent(elem, level + 1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
+
+
 def main():
-
-    # logging.basicConfig(level=logging.DEBUG)
-
-    # Check reading parameter from default roc file
-    # (must be done before call to readUserConfig(filename)
-    get_user_config_var('rocTable', '')
-    
     # get default config file.  This script should be run from python\minivie, 
     # but also support calling from module directory (utilities)
     filename = "../../user_config.xml"
+    new_filename = "../../test_new_user_config.xml"
     if os.path.split(os.getcwd())[1] == 'utilities':
         filename = '../' + filename
+        new_filename = '../' + new_filename
     read_user_config(filename)
     
     # check known types
@@ -157,6 +234,20 @@ def main():
     
     get_user_config_var('ELBOW_LIMITS', (0.0, 140.0))
     get_user_config_var('TEST_INVALID_ELBOW_LIMITS', (0.0, 140.0))
+
+    # overwrite old values
+    set_user_config_var('FeatureExtract.sscThreshold', '0.01')
+    set_user_config_var('FeatureExtract.zcThreshold', 0.01)
+
+    # add new key-value pairs
+    set_user_config_var('Test Int Value', 1)
+    set_user_config_var('Test Float Value', 1.0)
+    set_user_config_var('Test String Value', '1.0')
+    set_user_config_var('Test List Value', [1, 2, 3])
+    set_user_config_var('Test Tuple Value', ('1', '2', '3'))
+
+    # save user config to new name
+    save(file = new_filename)
 
     logging.debug('End UserConfig Demo Script')
     

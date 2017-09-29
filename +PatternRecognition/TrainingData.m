@@ -731,7 +731,7 @@ classdef TrainingData < handle
             end
             
             % load features
-            obj.SignalFeatures3D = reshape(features(:),4,16,[]);
+            obj.SignalFeatures3D = reshape(features(:),4,numchannels,[]);
             obj.SignalFeatures3D = permute(obj.SignalFeatures3D,[2 1 3]);
             obj.MaxChannels = double(numchannels);
             

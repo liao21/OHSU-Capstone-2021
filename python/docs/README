@@ -1,0 +1,151 @@
+The objective of the PythonVIE is to provide the essential BioSignal Acquisition, processing, and output modules to 
+control prosthetic limb ranging in complexity from open source 3d printed arms, to advanced dexterous arms such as 
+the JHUAPL Modualr Prosthetic limb.
+
+
+-------------------------
+PythonVIE system overview
+-------------------------
+
+The basic workflow of the PythonVIE is as follows:
+
+Input: Signal Acquisition of a variety of signal types ranging from wireless surface electromyography (sEMG) devices such
+    as the Thalmic Myo Armband, to generic data acquisition (DAQ) using National Instruments USB DAQ such as the USB-6001,
+    to customized bio amplificaiton hardware such as the Intan RHD chipset
+    
+Signal Analysis: This module handles the data signal processing and links to machine learning tools.  Initially this is integrated
+    with the sklearn toolbox, but others can be added or customized as necessary.
+    An important submodule to this is 1) the ability to store and load data for machine learning approaches (TrainingData) and 
+    2) an interface module for controlling data labeling and management (TrainingInterface).
+    
+Plant: The 'plant' (used in the Control Theory sense) is the model of the control system (such as an arm) that has state information
+    (i.e. hold the current position of the arm), as well as the range of motion and speed limits.  A new control command might send a 
+    velocity command to the joint, in which case it is the job of the plant to store the incremented position and stop when the range
+    of motion is exceeded
+    
+Presentation:  The 'presentation' refers generically to the output of the system, whether a physical or virtual arm. 
+
+
+Scenario: Scenario objects contain different combinations of the above modules to develop specific use-cases.  This could be wireless electrodes
+    controlling a virtual limb system, or synthetic (stored) data used to control a physical arm for testing, or any combination thereof.
+
+    
+    
+    
+    
+    
+-------------------------------------
+Style and Programming Best Practices
+-------------------------------------
+
+UDP
+---
+
+Many of the modules communicate via UDP.  UDP is chosen because it is a lightweight communications protocol suitable for real-time control. The
+major downside is that the communcation packet is not 'guarenteed' to arrive in the correct order, or arrive at all.  However, given a real-time system
+that updated 20-50 times per second, a 'new' packet is usually available in the time it would take to perform error correction of a dropped packet.  The 
+other advantage is to have multiple listeners or senders (e.g. an embedded system and a PC receiving data allowing simultaneous physical and virtual system 
+control).
+
+Examples of UDP communcation are:
+
+One process to collect wireless bluetooth EMG.  This would be a simple 'program' that reads from a bluetooth socket and streams data via UDP
+A second process to receive UDP packets and perform classification and signal processing
+
+One process to send UDP joint commands formatted for a particular device (e.g. virtual limb).  This would allow a second computer (e.g. VR rendering PC, or 
+Augmented reality Hololens to receive and display the information.  This also allows program communcation across programming languages (e.g. Python sending 
+data to an embedded C program (running on Arduino) to allow communication)
+
+Printing and Logging
+--------------------
+
+Use Python's logging module to log any errors/warnings. The log file is set up in the utilities/user_config.py file.  This allows controlling the level of messages
+that are displayed for any given module.  Within code just issue one of the following instead of print:
+
+logging.info(your_string)
+logging.warning(your_string)
+logging.error(your_string)
+logging.debug(your_string)
+
+
+Web interface
+-------------
+
+The mobile interface for the PythonVIE uses websockets to communicate from the embedded device to a web browser (PC, Mac, Mobile Phone).  Websockets allow
+dynamic real-time updates of the website for streaming information like the current position, selected motion, or system status.  The current implementation 
+of websockets uses the Spacebrew project, though this may be removed in future versions in favor of more low-level communcations.
+All commands and messages between the device and the controller are handled through formatted web-sockets allowing bi-directional communcation
+
+
+
+
+
+
+
+---------------
+Design Patterns
+---------------
+
+Below are a few frequently used design patterns in the PythonVIE
+
+Running a python module stand-alone
+-----------------------------------
+
+The base of the project is /git/minivie/python/minvie
+As such, typical modules will import assuming this is the base
+Example:
+    from utilities import user_config
+    from scenarios import mpl_nfu
+    from mpl.open_nfu import NfuUdp
+
+However if a module is to be run stand-alone from a direcoty (e.g. /git/minivie/python/minvie/gui), the module won't be found
+Example:
+    C:\git\minivie\python\minivie\gui>python test_live_plot.py
+    Traceback (most recent call last):
+      File "test_live_plot.py", line 4, in <module>
+        from inputs import myo
+    ModuleNotFoundError: No module named 'inputs'
+
+Option 1:
+execute the submodule from the project home:
+> python -m gui.test_live_plot
+
+Option 2: 
+make the module add the project home to the path by adding the following to the code [Not recommended].
+While this not be the most robust, it allows 'double click' access to the module
+
+    # Ensure that the minivie specific modules can be found on path allowing execution from the 'inputs' folder
+    if os.path.split(os.getcwd())[1] == 'inputs':
+        import sys
+        sys.path.insert(0, os.path.abspath('..'))
+    import inputs
+
+
+
+Byte packing
+------------
+Pack a variable length list of floats
+
+    import random
+    import struct
+
+    floatlist = [random.random() for _ in range(10**5)]
+    buf = struct.pack('%sf' % len(floatlist), *floatlist)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    

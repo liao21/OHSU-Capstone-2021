@@ -240,6 +240,8 @@ class NfuUdp(DataSink):
         # transmit packets (and optionally write to log for DEBUG)
         self.__sock.sendto(msg, (self.udp['Hostname'], self.udp['CommandPort']))
 
+    def get_percepts(self):
+        pass
 
 def decode_heartbeat_msg_v2(msg_bytes):
 

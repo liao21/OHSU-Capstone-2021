@@ -30,7 +30,7 @@ def read_user_config(file='../../user_config.xml'):
 
 
 def get_user_config_var(key, default_value):
-    # Look through XML document root for matching key value and retutn entry as a string
+    # Look through XML document root for matching key value and return entry as a string
     if xml_root is None:
         logging.info('xml_root is unset')
         read_user_config()

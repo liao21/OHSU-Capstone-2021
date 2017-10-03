@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # test script for MPL interface
 #
 # This test function is intended to be operated from the command line to bring up a short menu allow communication
@@ -82,7 +82,6 @@ elif choice == 3:
     hSink.connect()
 
     # Read ROC Table
-
     filename = "../../WrRocDefaults.xml"
     rocTable = roc.read_roc_table(filename)
 
@@ -105,6 +104,7 @@ elif choice == 3:
             hSink.send_joint_angles(mplAngles)
             time.sleep(0.02)
     hSink.close()
+
 elif choice == 4:
     logging.basicConfig(level=logging.INFO)
     hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)

@@ -18,6 +18,7 @@ import struct
 import numpy as np
 import mpl
 from mpl.data_sink import DataSink
+from utilities import extract_percepts
 
 
 class NfuUdp(DataSink):
@@ -187,6 +188,14 @@ class NfuUdp(DataSink):
 
                 if self.param['echoHeartbeat']:
                     print(msg)
+
+            elif msg_id == mpl.NfuUdpMsgId.UDPMSGID_PERCEPTDATA:
+               # Note, passing whole message to extraction function
+               #msg = extract_percepts.extract(raw_chars)
+               #values = msg['jointPercepts']['position']
+               #print('Joint Percepts:' + np.array2string(np.array(values), precision=2, separator=','))
+               #logging.debug('Joint Command:' + np.array2string(np.array(values), precision=2, separator=','))
+               pass
 
     def send_joint_angles(self, values):
         # Transmit joint angle command in radians

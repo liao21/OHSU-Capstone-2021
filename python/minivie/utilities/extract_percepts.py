@@ -28,7 +28,7 @@ def extract(packet):
 		return dict()
 	
 	# next byte is the streaming ID of the message
-	MplStreamingMessageId = struct.unpack("B", packet[2])[0]
+	MplStreamingMessageId = struct.unpack("B", packet[2:3])[0]
 	ind = 0
 	
 	# this is the return value
@@ -39,14 +39,14 @@ def extract(packet):
 		ind = 3;
 		
 		# next byte is a limb percepts type, NONE is only supported option
-		LimbPerceptsType = struct.unpack("B", packet[ind])[0]
+		LimbPerceptsType = struct.unpack("B", packet[ind:ind+1])[0]
 		if LimbPerceptsType == NONE:
 			ind += 1
 		else:
 			logging.warning("[extract_percepts.py] invalid LimbPerceptsType: " + str(LimbPerceptsType))
 		
 		# next byte is a joint percepts type
-		JointPerceptsType = struct.unpack("B", packet[ind])[0]
+		JointPerceptsType = struct.unpack("B", packet[ind:ind+1])[0]
 		feedbackData["jointPercepts"] = dict()
 		
 		# fill in default values
@@ -73,7 +73,7 @@ def extract(packet):
 			logging.warning("[extract_percepts.py] invalid JointPerceptsType: " + str(JointPerceptsType))
 		
 		# next set of bytes is a ROC percepts type.  this is untested at the moment
-		ROCPerceptsType = struct.unpack("B", packet[ind])[0]
+		ROCPerceptsType = struct.unpack("B", packet[ind:ind+1])[0]
 		ind += 1
 		if ROCPerceptsType == NONE:
 			pass
@@ -104,7 +104,7 @@ def extract(packet):
 			logging.warning("[extract_percepts.py] invalid ROCPerceptsType: " + str(ROCPerceptsType))
 		
 		# next byte is a segment percepts type
-		SegmentPerceptsType = struct.unpack("B", packet[ind])[0]
+		SegmentPerceptsType = struct.unpack("B", packet[ind:ind+1])[0]
 		ind += 1
 		
 		# initialize segmentPercepts key/value in the return dict
@@ -203,7 +203,7 @@ def extract(packet):
 	
 	# double-check that we parsed something
 	if ind != 0:
-		checksum = struct.unpack("B", packet[ind])[0]
+		checksum = struct.unpack("B", packet[ind:ind+1])[0]
 	
 	# log the warning
 	else:

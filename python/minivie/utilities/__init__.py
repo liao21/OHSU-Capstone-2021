@@ -43,23 +43,25 @@ def change_myo(val):
     # Set two is mpl_myo3 mpl_myo4
     
     if val == 1:
-        os.system("sudo systemctl stop mpl_myo1.service")
-        os.system("sudo systemctl disable mpl_myo1.service")
-        os.system("sudo systemctl stop mpl_myo2.service")
-        os.system("sudo systemctl disable mpl_myo2.service")
-        os.system("sudo systemctl enable mpl_myo3.service")
-        os.system("sudo systemctl start mpl_myo3.service")
-        os.system("sudo systemctl enable mpl_myo4.service")
-        os.system("sudo systemctl start mpl_myo4.service")
-    elif val == 2:
         os.system("sudo systemctl stop mpl_myo3.service")
         os.system("sudo systemctl disable mpl_myo3.service")
         os.system("sudo systemctl stop mpl_myo4.service")
         os.system("sudo systemctl disable mpl_myo4.service")
+
         os.system("sudo systemctl enable mpl_myo1.service")
         os.system("sudo systemctl start mpl_myo1.service")
         os.system("sudo systemctl enable mpl_myo2.service")
         os.system("sudo systemctl start mpl_myo2.service")
+    elif val == 2:
+        os.system("sudo systemctl stop mpl_myo1.service")
+        os.system("sudo systemctl disable mpl_myo1.service")
+        os.system("sudo systemctl stop mpl_myo2.service")
+        os.system("sudo systemctl disable mpl_myo2.service")
+
+        os.system("sudo systemctl enable mpl_myo3.service")
+        os.system("sudo systemctl start mpl_myo3.service")
+        os.system("sudo systemctl enable mpl_myo4.service")
+        os.system("sudo systemctl start mpl_myo4.service")
 
 def reboot():
     os.system("sudo shutdown -r now")

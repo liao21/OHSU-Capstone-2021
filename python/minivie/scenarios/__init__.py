@@ -145,7 +145,7 @@ class Scenario(object):
         """
 
         import logging
-        from utilities import shutdown, reboot, restart_myo
+        from utilities import shutdown, reboot, restart_myo, change_myo
 
         # Commands should come in with colon operator
         # e.g. Cmd:Add or Cls:Elbow Flexion

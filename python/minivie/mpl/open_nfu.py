@@ -190,12 +190,17 @@ class NfuUdp(DataSink):
                     print(msg)
 
             elif msg_id == mpl.NfuUdpMsgId.UDPMSGID_PERCEPTDATA:
-               # Note, passing whole message to extraction function
-               #msg = extract_percepts.extract(raw_chars)
-               #values = msg['jointPercepts']['position']
-               #print('Joint Percepts:' + np.array2string(np.array(values), precision=2, separator=','))
-               #logging.debug('Joint Command:' + np.array2string(np.array(values), precision=2, separator=','))
-               pass
+                # Note, passing whole message to extraction function
+                percepts = extract_percepts.extract(raw_chars)
+                values = np.array(percepts['jointPercepts']['torque'])
+                msg = np.array2string(values, precision=2, separator=',',max_line_width=200, prefix='Joint Percepts')
+                msg = 'Joint Percepts:' + np.array2string(values,
+                                                          formatter={'float_kind':lambda x: "%6.2f" % x},
+                                                          separator=',',
+                                                          max_line_width=200)
+                print(msg)
+                logging.debug(msg)
+                pass
 
     def send_joint_angles(self, values):
         # Transmit joint angle command in radians

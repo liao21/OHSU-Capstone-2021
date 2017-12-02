@@ -76,7 +76,15 @@ dynamic real-time updates of the website for streaming information like the curr
 of websockets uses the Spacebrew project, though this may be removed in future versions in favor of more low-level communcations.
 All commands and messages between the device and the controller are handled through formatted web-sockets allowing bi-directional communcation
 
+Dubugging via command line
+--------------------------
+src:http://swimminginthought.com/putty-ssh-dark-blue-directory-listing-unreadable-quick-fix/
+If you use putty (as do I), here’s the quick solution to fixing that horrible Dark Blue Color for those directory entries.
 
+    Start Up Putty and go to Settings.
+    Select “Session” on the right and “Default Settings” on the bottom Right. Hit the Load button to load the default settings.
+    Select “Colours” under the “Window” tree on the left.  Scroll down and highlight ANSI Blue and pop in the following values:  
+    (R: 255,  G: 255, B: 0)  Do the same for Ansi Blue Bold.
 
 
 
@@ -133,19 +141,30 @@ Pack a variable length list of floats
     buf = struct.pack('%sf' % len(floatlist), *floatlist)
 
 
+Adding new commands to the web interface:
+-----------------------------------
+
+Update Sender (html page):
+    First, update the index.html page with the desired feature.  E.g. add a new button option under Advanced Options
+    and set a new reference ID tag
+        Example:
+        <p>Select New function:
+        <a href="#" class="ui-btn ui-btn-icon-right ui-icon-check" id="ID_NEW_BUTTON">Select New Option</a>
 
 
+    Next, update mplHome.js to respond to the button action and name the transmit command
+        $("#ID_NEW_BUTTON").on("mousedown", function() {sendCmd("Cmd:NewCommand")} );
 
+Update Receiver (python):
 
+    Set the python code receiver to respond to the command. Typically scenarios\__init.py__
+    def command_string(self, value):
+        ...
+        elif cmd_data == 'NewCommand':
+                    do_something(1)
 
-
-
-
-
-
-
-
-
-
-
-    
+                    
+                    
+                    
+                    
+                    

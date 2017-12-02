@@ -35,6 +35,31 @@ def restart_myo(val):
     elif val == 2:
         os.system("sudo systemctl restart mpl_myo2.service")
 
+        
+def change_myo(val):
+    # Use this command to change the active pair of myos searched during startup
+    # This is accomplished by stopping/disabling and enabling/starting the respective services
+    # Set one is mpl_myo1 mpl_myo2
+    # Set two is mpl_myo3 mpl_myo4
+    
+    if val == 1:
+        os.system("sudo systemctl stop mpl_myo1.service")
+        os.system("sudo systemctl disable mpl_myo1.service")
+        os.system("sudo systemctl stop mpl_myo2.service")
+        os.system("sudo systemctl disable mpl_myo2.service")
+        os.system("sudo systemctl enable mpl_myo3.service")
+        os.system("sudo systemctl start mpl_myo3.service")
+        os.system("sudo systemctl enable mpl_myo4.service")
+        os.system("sudo systemctl start mpl_myo4.service")
+    elif val == 2:
+        os.system("sudo systemctl stop mpl_myo3.service")
+        os.system("sudo systemctl disable mpl_myo3.service")
+        os.system("sudo systemctl stop mpl_myo4.service")
+        os.system("sudo systemctl disable mpl_myo4.service")
+        os.system("sudo systemctl enable mpl_myo1.service")
+        os.system("sudo systemctl start mpl_myo1.service")
+        os.system("sudo systemctl enable mpl_myo2.service")
+        os.system("sudo systemctl start mpl_myo2.service")
 
 def reboot():
     os.system("sudo shutdown -r now")

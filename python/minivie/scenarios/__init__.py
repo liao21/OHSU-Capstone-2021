@@ -205,6 +205,10 @@ class Scenario(object):
                 restart_myo(1)
             elif cmd_data == 'RestartMyo2':
                 restart_myo(2)
+            elif cmd_data == 'ChangeMyoSet1':
+                change_myo(1)
+            elif cmd_data == 'ChangeMyoSet2':
+                change_myo(2)
             elif cmd_data == 'Reboot':
                 reboot()
             elif cmd_data == 'Shutdown':

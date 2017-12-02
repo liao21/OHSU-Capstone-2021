@@ -106,9 +106,9 @@ class DCellSerial(SignalInput):
        
         # Check that port opened
         if self.ser.isOpen():  # Check if open
-            print('DCell serial port opened: ' + self.ser.name + '\n')  # Check which port was really opened
+            logging.info('DCell serial port opened: ' + self.ser.name + '\n')  # Check which port was really opened
         else:
-            print('DCell serial port was not opened \n')
+            logging.info('DCell serial port was not opened \n')
 
         # Set DCell default parameters
         self._set_defaults()
@@ -129,7 +129,7 @@ class DCellSerial(SignalInput):
     def send_command(self, command_string):
         # Method to send command according to DCell ASCII protocol
         cmd = '!001:' + command_string + '\r'
-        print(cmd)
+        logging.debug(cmd)
         self.ser.write(cmd.encode())
         # Every command has an output
         out = self._readline()
@@ -158,13 +158,13 @@ class DCellSerial(SignalInput):
                
                 line += c_string 
                 if c_byte == eol_byte:  # Break once EOL, in this case carriage return, is issued
-                    print('Breaking because of carriage return')
+                    logging.debug('Breaking because of carriage return')
                     break
                     
             else:  # Break if nothing read back
                 #time.sleep(0.05) # dcell manual says response should come within 50ms
                 # timeout occurs on ser.read
-                print('Breaking because nothing read back')
+                logging.debug('Breaking because nothing read back')
                 break
                 
         #print(line[0:-leneol])  # Return line without EOL

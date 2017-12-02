@@ -250,7 +250,17 @@ class NfuUdp(DataSink):
         out.extend(checksum)
 
         self.send_udp_command(out)
-
+        
+    def set_limb_idle(self):
+        #  Send limb to idle; this is a lower power mode that still maintains position
+        msg = bytearray([3, 0, 10, 10, 23])
+        self.send_udp_command(msg)
+        
+    def set_limb_soft_reset(self):
+        #  Send limb to soft reset.  this will allow back driving fingers. Active state will resume when next command received
+        msg = bytearray([3, 0, 11, 11, 25])
+        self.send_udp_command(msg)
+        
     def send_udp_command(self, msg):
         # transmit packets (and optionally write to log for DEBUG)
         self.__sock.sendto(msg, (self.udp['Hostname'], self.udp['CommandPort']))

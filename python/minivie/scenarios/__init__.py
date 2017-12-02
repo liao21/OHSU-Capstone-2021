@@ -91,8 +91,16 @@ class Scenario(object):
         # pause('All', True) Force PAUSE
         # pause('All', False) Force RESUME
 
-        if state is not None:
-            self.__pause[scope] = state
+        # check if 2 args given (set versus toggle)
+        if state is not None: 
+            # need to toggle only if state not already set
+            if state is not self.__pause[scope]:
+                # this should only happen once when state is changed
+                self.__pause[scope] = state
+                # Try to set the limb state to soft reset
+                self.DataSink.set_limb_soft_reset()
+                
+            # return either way
             return
 
         if self.__pause[scope]:

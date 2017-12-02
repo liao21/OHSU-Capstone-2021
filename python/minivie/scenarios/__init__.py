@@ -165,6 +165,12 @@ class Scenario(object):
             self.training_id = self.TrainingData.motion_names.index(cmd_data)
             self.add_data = False
 
+        elif cmd_type == 'Log':
+            # Parse a log message
+            print("User inserted log message: " + cmd_data)
+            logging.critical("User inserted log message: " + cmd_data)
+
+            
         elif cmd_type == 'Cmd':
             print(cmd_data)
             if cmd_data == 'Add':

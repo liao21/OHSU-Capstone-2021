@@ -105,6 +105,15 @@ function sendCmd(cmd) {
     }
 }
 
+// submitLogMessage called from index.html 
+function submitLogMessage() {
+    if (sb) {
+        var x = document.getElementById("ID_LOG_MSG").value;
+        console.log('Logging ' + x);
+        sendCmd("Log:" + x);
+    }
+}
+
 // Function that is called when Spacebrew connection is established
 function onOpen() {
     console.log('Spacebrew Connected');

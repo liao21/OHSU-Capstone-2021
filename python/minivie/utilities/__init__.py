@@ -30,10 +30,17 @@ def get_address(url):
 
 
 def restart_myo(val):
+    # Use this function to issue a restart command on the myo services.  
+    # Note this gets trickier when primary/back myo bands are used.
+    # first check if the service is active, only then issue restart
     if val == 1:
-        os.system("sudo systemctl restart mpl_myo1.service")
+        # os.system("sudo systemctl restart mpl_myo1.service")
+        os.system("sudo systemctl is-enabled mpl_myo1.service | grep 'enabled' > /dev/null && sudo systemctl restart mpl_myo1.service")
+        os.system("sudo systemctl is-enabled mpl_myo3.service | grep 'enabled' > /dev/null && sudo systemctl restart mpl_myo3.service")
     elif val == 2:
-        os.system("sudo systemctl restart mpl_myo2.service")
+        # os.system("sudo systemctl restart mpl_myo2.service")
+        os.system("sudo systemctl is-enabled mpl_myo2.service | grep 'enabled' > /dev/null && sudo systemctl restart mpl_myo2.service")
+        os.system("sudo systemctl is-enabled mpl_myo4.service | grep 'enabled' > /dev/null && sudo systemctl restart mpl_myo4.service")
 
         
 def change_myo(val):

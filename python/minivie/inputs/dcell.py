@@ -46,21 +46,21 @@ cd /home/pi/git/minivie/python/minivie/inputs/
 sudo ./dcell.py --PORT COM4 &
 """
 import time
-import serial
-import serial.rs485
+import os
 import threading
 import logging
 import numpy as np
 from datetime import datetime
 from inputs.signal_input import SignalInput
 import h5py
+import serial
+if os.name is 'posix':
+    import serial.rs485
 
 
 class DCellSerial(SignalInput):
     """
-
         Class for receiving DCell strain data via RS485 serial connection
-
 
     """
 
@@ -106,9 +106,9 @@ class DCellSerial(SignalInput):
        
         # Check that port opened
         if self.ser.isOpen():  # Check if open
-            logging.info('DCell serial port opened: ' + self.ser.name + '\n')  # Check which port was really opened
+            logging.info('DCell serial port opened: ' + self.ser.name)  # Check which port was really opened
         else:
-            logging.info('DCell serial port was not opened \n')
+            logging.info('DCell serial port was not opened')
 
         # Set DCell default parameters
         self._set_defaults()
@@ -197,7 +197,9 @@ class DCellSerial(SignalInput):
                     self.__dataStrain = np.roll(self.__dataStrain, 1, axis=0)
                     data = float(data)
                     self.__dataStrain[0] = data  # insert in first buffer entry
-                    self._log_data(data)
+                    # RSA Mod:  Adjusting to simple logging due to possibility of corrupt hdf5
+                    logging.info('DCELL: ' + str(data))
+                    #self._log_data(data)
             # Update sleep time
             self._set_stream_sleep_time(stream_loop_start_time, 0.1)
 
@@ -290,6 +292,7 @@ def main():
     # Connect and start streaming
     dcell.enable_data_logging = True
     dcell.connect()
+
 
 if __name__ == '__main__':
     interactive_testing('/dev/ttymxc2')

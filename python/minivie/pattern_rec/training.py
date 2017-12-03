@@ -9,6 +9,7 @@ This class is designed to receive training commands. Training commands can be fo
 
 from pattern_rec.training_interface import TrainingInterface
 
+
 class TrainingManagerSpacebrew(TrainingInterface):
     """
     This Training manager uses websockets provided through the spacebrew interface to manager training commands
@@ -26,9 +27,9 @@ class TrainingManagerSpacebrew(TrainingInterface):
         # store the last messages so we don't re-transmit a lot of repeated data
         self.last_msg = {'strStatus': '', 'strOutputMotion': '', 'strTrainingMotion': '', 'strMotionTester': '',
                          'strTAC': '', 'strMotionTesterProgress': '', 'strMotionTesterImage': '',
-                         'strTACJoint1Bar': '','strTACJoint1Target': '','strTACJoint1Error': '','strTACJoint1Name': '',
-                         'strTACJoint2Bar': '','strTACJoint2Target': '','strTACJoint2Error': '','strTACJoint2Name': '',
-                         'strTACJoint3Bar': '','strTACJoint3Target': '','strTACJoint3Error': '','strTACJoint3Name': '',
+                         'strTACJoint1Bar': '', 'strTACJoint1Target': '', 'strTACJoint1Error': '', 'strTACJoint1Name': '',
+                         'strTACJoint2Bar': '', 'strTACJoint2Target': '', 'strTACJoint2Error': '', 'strTACJoint2Name': '',
+                         'strTACJoint3Bar': '', 'strTACJoint3Target': '', 'strTACJoint3Error': '', 'strTACJoint3Name': '',
                          }
         
         # keep count of skipped messages so we can send at some nominal rate
@@ -44,7 +45,7 @@ class TrainingManagerSpacebrew(TrainingInterface):
         self.brew.start()
 
     def add_message_handler(self, func):
-        # attach a function to received commands from websocket
+        # attach a function to receive commands from websocket
         self.brew.subscribe("cmdString", func)
 
     def send_message(self, msg_id, msg):
@@ -59,7 +60,7 @@ class TrainingManagerSpacebrew(TrainingInterface):
 
             return
         else:
-            self.msg_skip_count +=1
+            self.msg_skip_count += 1
             
         # add a timeout so that we get 'some' messages as a nominal rate
         
@@ -74,8 +75,6 @@ class TrainingManagerSpacebrew(TrainingInterface):
                 
             # reset counter
             self.msg_skip_count = 0
-            
-        
 
     def close(self):
         self.brew.stop()

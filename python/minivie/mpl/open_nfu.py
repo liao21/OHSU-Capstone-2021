@@ -9,9 +9,8 @@
 #   08SEP2017 Armiger: added limb state commands
 
 
-import time
+import os
 import threading
-import subprocess
 import socket
 import logging
 import struct
@@ -19,6 +18,8 @@ import numpy as np
 import mpl
 from mpl.data_sink import DataSink
 from utilities import extract_percepts
+
+SHUTDOWN_VOLTAGE = 19.0  # Critical bus voltage that will trigger immediate system shutdown
 
 
 class NfuUdp(DataSink):
@@ -88,6 +89,11 @@ class NfuUdp(DataSink):
         #
         # Note: this function allows setting a reduced rate for how many calls are made to the system
 
+        # Bail out if Windows
+        if os.name is not 'posix':
+            return 0.0
+
+        # set a rate reduction factor to decrease calls to system process
         decimate_rate = 10
 
         if self.__lastTempCounter == 0:
@@ -196,9 +202,7 @@ class NfuUdp(DataSink):
                 logging.warning('Message received was too small. Minimum message size is 3 bytes')
                 continue
             else:
-                #print(data)
                 msg_id = data[2]
-                #print('Got NFU MSG ID = {} LEN = {}\n'.format(msg_id,len(data)))
 
             if msg_id == mpl.NfuUdpMsgId.UDPMSGID_HEARTBEATV2:
 
@@ -209,12 +213,23 @@ class NfuUdp(DataSink):
 
                 logging.info(msg)
 
+                if self.mpl_status['bus_voltage'] < SHUTDOWN_VOLTAGE:
+                    # Execute limb Shutdown procedure
+                    #
+                    # Send a log message; set LC to soft reset; poweroff NFU
+                    #
+                    from utilities import shutdown
+
+                    logging.critical('MPL bus voltage is below critical value.  Shutting down system!!!')
+                    self.set_limb_soft_reset()
+                    shutdown()
+
                 if self.param['echoHeartbeat']:
                     print(msg)
 
             elif msg_id == mpl.NfuUdpMsgId.UDPMSGID_PERCEPTDATA:
                 # Note, passing whole message to extraction function
-                #percepts = extract_percepts.extract(raw_chars)
+                percepts = extract_percepts.extract(raw_chars)
                 #values = np.array(percepts['jointPercepts']['torque'])
                 #msg = np.array2string(values, precision=2, separator=',',max_line_width=200, prefix='Joint Percepts')
                 #msg = 'Joint Percepts:' + np.array2string(values,
@@ -275,12 +290,12 @@ class NfuUdp(DataSink):
         self.send_udp_command(out)
 
     def set_limb_idle(self):
-        #  Send limb to idle; this is a lower power mode that still maintains position
+        # Send limb to idle; this is a lower power mode that still maintains position
         msg = bytearray([3, 0, 10, 10, 23])
         self.send_udp_command(msg)
 
     def set_limb_soft_reset(self):
-        #  Send limb to soft reset.  this will allow back driving fingers. Active state will resume when next command received
+        # Send limb to soft reset.  This will allow back driving joints. Active state resumes when next command received
         msg = bytearray([3, 0, 11, 11, 25])
         self.send_udp_command(msg)
 
@@ -290,6 +305,7 @@ class NfuUdp(DataSink):
 
     def get_percepts(self):
         pass
+
 
 def decode_heartbeat_msg_v2(msg_bytes):
 
@@ -313,7 +329,6 @@ def decode_heartbeat_msg_v2(msg_bytes):
     # // additional data possible
     # // messages per second
     # // flag - doubled messages per handle
-
 
     # Lookup NFU state id from the enumeration
     nfu_state_id = msg_bytes[0].view(np.uint8)

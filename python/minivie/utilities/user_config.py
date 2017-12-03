@@ -22,6 +22,10 @@ xml_file = None
 
 def read_user_config(file='../../user_config.xml'):
     # function to read in xml file and store as dictionary
+    #
+    # Note this function uses the xml as a global variable such that any function in the system can make a direct call
+    # to access parameters
+
     logging.info('Reading xml config file: {}'.format(file))
     global xml_file, xml_root, xml_tree
     xml_file = file
@@ -31,6 +35,8 @@ def read_user_config(file='../../user_config.xml'):
 
 def get_user_config_var(key, default_value):
     # Look through XML document root for matching key value and return entry as a string
+    # Note the second argument is the a default value in the event the key or xml file is not found
+    #
     if xml_root is None:
         logging.info('xml_root is unset')
         read_user_config()
@@ -168,12 +174,6 @@ def setup_file_logging(prefix='MiniVIE_', log_level=logging.INFO):
     logging.critical('-----------------------------------------------')
     logging.critical('Starting Log File "{}" with level: {}'.format(file_name, logging.getLevelName(log_level)))
     logging.critical('-----------------------------------------------')
-    logging.debug('TEST MSG: DEBUG')
-    logging.info('TEST MSG: INFO')
-    logging.warning('TEST MSG: WARNING')
-    logging.error('TEST MSG: ERROR')
-    logging.critical('TEST MSG: CRITICAL')
-    logging.info('-----------------------------------------------')
 
     '''
     Code snip for parsing command line
@@ -250,7 +250,8 @@ def main():
     save(file = new_filename)
 
     logging.debug('End UserConfig Demo Script')
-    
+
+
 # Main Function (for demo)
 if __name__ == "__main__":
     setup_file_logging('UserConfig_TEST_')

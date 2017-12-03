@@ -1,5 +1,6 @@
 import struct
 
+
 class Scenario(object):
     """
     Define the building blocks of the MiniVIE
@@ -63,7 +64,7 @@ class Scenario(object):
             return  # No need to do anything if we are already in correct mode
         else:
             self.precision_mode = boolean
-            if boolean == True:
+            if boolean:
                 print('Switching to precision gain mode')
                 # Arm gain
                 self.__gain_value_default = self.__gain_value  # preserve this for later
@@ -72,7 +73,7 @@ class Scenario(object):
                 self.__hand_gain_value_default = self.__hand_gain_value  # preserve this for later
                 self.__hand_gain_value = self.__hand_gain_value_precision
 
-            elif boolean == False:
+            else:
                 print('Switching to default gain mode')
                 # Arm gain
                 self.__gain_value_precision = self.__gain_value  # preserve this for later
@@ -80,7 +81,6 @@ class Scenario(object):
                 # Hand gain
                 self.__hand_gain_value_precision = self.__hand_gain_value  # preserve this for later
                 self.__hand_gain_value = self.__hand_gain_value_default
-
 
     def pause(self, scope='All', state=None):
         # Toggles pause state which suspends motion of arm
@@ -178,7 +178,6 @@ class Scenario(object):
             print("User inserted log message: " + cmd_data)
             logging.critical("User inserted log message: " + cmd_data)
 
-            
         elif cmd_type == 'Cmd':
             print(cmd_data)
             if cmd_data == 'Add':

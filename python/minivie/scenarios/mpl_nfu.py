@@ -13,6 +13,7 @@ import pattern_rec as pr
 from mpl.unity import UnityUdp
 from controls.plant import Plant, class_map
 from scenarios import Scenario
+from utilities import user_config
 
 dt = 0.02  # seconds per loop.  50Hz update
 
@@ -39,14 +40,19 @@ def setup():
     vie.TrainingData = pr.TrainingData()
     vie.TrainingData.load()
     vie.TrainingData.num_channels = vie.num_channels
-    vie.FeatureExtract = pr.FeatureExtract(zc_thresh=0.05, ssc_thresh=0.05, sample_rate=200)
+
+    # Setup feature extract and properties
+    vie.FeatureExtract = pr.FeatureExtract()
+    vie.FeatureExtract.zc_thresh = user_config.get_user_config_var('FeatureExtract.zcThreshold', 0.05)
+    vie.FeatureExtract.ssc_thresh = user_config.get_user_config_var('FeatureExtract.sscThreshold', 0.05)
+    vie.FeatureExtract.sample_rate = 200
 
     # Classifier parameters
     vie.SignalClassifier = pr.Classifier(vie.TrainingData)
     vie.SignalClassifier.fit()
 
     # Plant maintains current limb state (positions) during velocity control
-    filename = "../../WrRocDefaults.xml"
+    filename = user_config.get_user_config_var('rocTable', "../../WrRocDefaults.xml")
     vie.Plant = Plant(dt, filename)
 
     # Sink is output to outside world (in this case to VIE)
@@ -58,7 +64,8 @@ def setup():
 
 
 def run(vie):
-    """ Main function that involves setting up devices,
+    """
+        Main function that involves setting up devices,
         looping at a fixed time interval, and performing cleanup
     """
 
@@ -88,8 +95,11 @@ def run(vie):
                     msg += '<br>MYO:' + src.get_status_msg()
                 msg += '<br>' + time.strftime("%c")
 
+                # Forward status message (voltage, temp, etc) to mobile app
                 vie.TrainingInterface.send_message("strStatus", msg)
+                # Send classifier output to mobile app (e.g. Elbow Flexion)
                 vie.TrainingInterface.send_message("strOutputMotion", output['decision'])
+                # Send motion training status to mobile app (e.g. No Movement [70]
                 msg = '{} [{:.0f}]'.format(vie.training_motion, round(vie.TrainingData.get_totals(vie.training_id), -1))
                 vie.TrainingInterface.send_message("strTrainingMotion", msg)
 

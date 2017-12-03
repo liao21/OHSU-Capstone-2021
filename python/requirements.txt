@@ -17,5 +17,6 @@ enum34
 h5py
 six
 transforms3d
-#serial
+websocket-client
+serial
 #pygame

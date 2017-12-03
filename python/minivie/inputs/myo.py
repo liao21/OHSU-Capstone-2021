@@ -131,7 +131,6 @@ import subprocess
 import logging
 import time
 import binascii
-from builtins import bytes
 
 
 from transforms3d.euler import quat2euler

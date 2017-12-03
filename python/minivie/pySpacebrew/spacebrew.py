@@ -57,13 +57,13 @@ class Spacebrew(object):
 
     def addPublisher(self, name, brewType="string", default=None):
         if self.connected:
-            raise ConfigurationError(self, "Can not add a new publisher to a running Spacebrew instance (yet).")
+            raise self.ConfigurationError(self, "Can not add a new publisher to a running Spacebrew instance (yet).")
         else:
             self.publishers[name] = self.Publisher(name, brewType, default)
 
     def addSubscriber(self, name, brewType="string", default=None):
         if self.connected:
-            raise ConfigurationError(self, "Can not add a new subscriber to a running Spacebrew instance (yet).")
+            raise self.ConfigurationError(self, "Can not add a new subscriber to a running Spacebrew instance (yet).")
         else:
             self.subscribers[name] = self.Subscriber(name, brewType, default)
 
@@ -128,6 +128,7 @@ class Spacebrew(object):
 
         self.started = True
         self.thread = threading.Thread(target=run)
+        self.thread.name = 'SpaceBrew'
         self.thread.start()
 
     def stop(self):
@@ -138,8 +139,8 @@ class Spacebrew(object):
 
 
 if __name__ == "__main__":
-    print
+    a = """
+    This is the Spacebrew module.
+    See spacebrew_ex.py for usage examples.
     """
-   This is the Spacebrew module.
-   See spacebrew_ex.py for usage examples.
-   """
+    print(a)

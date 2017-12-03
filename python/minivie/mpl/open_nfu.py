@@ -68,6 +68,10 @@ class NfuUdp(DataSink):
         }
         self.mpl_status = self.__mpl_status_default
 
+        # create a counter to delay how often CPU temperature is read and logged
+        self.__lastTemp = 0.0
+        self.__lastTempCounter = 0
+
     def is_alive(self):
         with self.__lock:
             val = self.__active_connection
@@ -81,14 +85,33 @@ class NfuUdp(DataSink):
         # Get the processor temperature from the system
         # returns float
         # units is celsius
+        #
+        # Note: this function allows setting a reduced rate for how many calls are made to the system
 
-        try:
-            with open('/sys/class/thermal/thermal_zone0/temp','r') as f:
-                contents = f.read()
-            return float(contents) / 1000.0
-        except FileNotFoundError:
-            logging.warning('Failed to get system processor temperature')
-            return 0.0
+        decimate_rate = 10
+
+        if self.__lastTempCounter == 0:
+            # Read the temperature
+            try:
+                with open('/sys/class/thermal/thermal_zone0/temp','r') as f:
+                    contents = f.read()
+                temp = float(contents) / 1000.0
+                logging.info('CPU Temp: ' + str(temp))
+            except FileNotFoundError:
+                logging.warning('Failed to get system processor temperature')
+                temp = 0.0
+            self.__lastTemp = temp
+        else:
+            # Use the old temp
+            temp = self.__lastTemp
+
+        # increment and roll counter
+        self.__lastTempCounter += 1
+
+        if self.__lastTempCounter > decimate_rate:
+            self.__lastTempCounter = 0
+
+        return temp
 
     def get_status_msg(self):
         # returns a general purpose status message about the system state
@@ -191,15 +214,15 @@ class NfuUdp(DataSink):
 
             elif msg_id == mpl.NfuUdpMsgId.UDPMSGID_PERCEPTDATA:
                 # Note, passing whole message to extraction function
-                percepts = extract_percepts.extract(raw_chars)
-                values = np.array(percepts['jointPercepts']['torque'])
-                msg = np.array2string(values, precision=2, separator=',',max_line_width=200, prefix='Joint Percepts')
-                msg = 'Joint Percepts:' + np.array2string(values,
-                                                          formatter={'float_kind':lambda x: "%6.2f" % x},
-                                                          separator=',',
-                                                          max_line_width=200)
-                print(msg)
-                logging.debug(msg)
+                #percepts = extract_percepts.extract(raw_chars)
+                #values = np.array(percepts['jointPercepts']['torque'])
+                #msg = np.array2string(values, precision=2, separator=',',max_line_width=200, prefix='Joint Percepts')
+                #msg = 'Joint Percepts:' + np.array2string(values,
+                #                                          formatter={'float_kind':lambda x: "%6.2f" % x},
+                #                                          separator=',',
+                #                                          max_line_width=200)
+                #print(msg)
+                #logging.debug(msg)
                 pass
 
     def send_joint_angles(self, values):
@@ -250,17 +273,17 @@ class NfuUdp(DataSink):
         out.extend(checksum)
 
         self.send_udp_command(out)
-        
+
     def set_limb_idle(self):
         #  Send limb to idle; this is a lower power mode that still maintains position
         msg = bytearray([3, 0, 10, 10, 23])
         self.send_udp_command(msg)
-        
+
     def set_limb_soft_reset(self):
         #  Send limb to soft reset.  this will allow back driving fingers. Active state will resume when next command received
         msg = bytearray([3, 0, 11, 11, 25])
         self.send_udp_command(msg)
-        
+
     def send_udp_command(self, msg):
         # transmit packets (and optionally write to log for DEBUG)
         self.__sock.sendto(msg, (self.udp['Hostname'], self.udp['CommandPort']))

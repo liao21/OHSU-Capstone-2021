@@ -79,10 +79,10 @@ class DCellSerial(SignalInput):
 
         # Set up logging
         self.enable_data_logging = False  # Enables logging data stream to disk
-        t = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self._h5filename = t + '_DCELL_LOG.hdf5'
-        self._h5file = h5py.File(self._h5filename, 'w')
-        self._h5file.close()
+        #t = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        #self._h5filename = t + '_DCELL_LOG.hdf5'
+        #self._h5file = h5py.File(self._h5filename, 'w')
+        #self._h5file.close()
         self._log_counter = 1
 
     def connect(self, start_streaming=True):

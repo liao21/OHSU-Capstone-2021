@@ -228,8 +228,13 @@ class NfuUdp(DataSink):
                     print(msg)
 
             elif msg_id == mpl.NfuUdpMsgId.UDPMSGID_PERCEPTDATA:
+                # Percept message comes in as follows: <class:bytes> len=879
+
                 # Note, passing whole message to extraction function
-                percepts = extract_percepts.extract(raw_chars)
+                #logging.info('Percepts: ' + ''.join('{:02x}'.format(x) for x in raw_chars))
+
+
+                # percepts = extract_percepts.extract(raw_chars)
                 #values = np.array(percepts['jointPercepts']['torque'])
                 #msg = np.array2string(values, precision=2, separator=',',max_line_width=200, prefix='Joint Percepts')
                 #msg = 'Joint Percepts:' + np.array2string(values,

@@ -377,8 +377,7 @@ def main():
     # Note, ensure to make deep copies of joint angles, so no references are used
     import copy
 
-    #nfu = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
-    nfu = NfuUdp(hostname="10.0.0.212", udp_telem_port=9028, udp_command_port=9027)
+    nfu = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
     nfu.connect()
 
     # need to add a wait here to synch percepts

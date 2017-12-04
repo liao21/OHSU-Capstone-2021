@@ -225,7 +225,7 @@ def main():
         sink.send_joint_angles(p.JointPosition)
 
         # Print first 7 joints
-        ang = ''.join('{:6.1f}'.format(k * 180 / math.pi) for k in p.JointPosition[:7])
+        ang = ' '.join('{:6.1f}'.format(np.rad2deg(k)) for k in p.JointPosition[:7])
         print('Angles (deg):' + ang + ' | Grasp Value: {:6.3f}'.format(p.GraspPosition))
 
     class_map('Unmatched')

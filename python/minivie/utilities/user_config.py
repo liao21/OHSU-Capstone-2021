@@ -18,6 +18,7 @@ import logging
 xml_root = None
 xml_tree = None
 xml_file = None
+xml_force_default = True  # If there is a problem with the xml, revert to just returning config value defaults
 
 
 def read_user_config(file='../../user_config.xml'):
@@ -27,16 +28,28 @@ def read_user_config(file='../../user_config.xml'):
     # to access parameters
 
     logging.info('Reading xml config file: {}'.format(file))
-    global xml_file, xml_root, xml_tree
+    global xml_file, xml_root, xml_tree, xml_force_default
     xml_file = file
-    xml_tree = xmlTree.parse(xml_file)
-    xml_root = xml_tree.getroot()
+    try:
+        xml_tree = xmlTree.parse(xml_file)
+        xml_root = xml_tree.getroot()
+        xml_force_default = False
+    except FileNotFoundError:
+        xml_force_default = True
+        logging.error('Failed to find file {}. Param defaults will be used.'.format(xml_file))
+
 
 
 def get_user_config_var(key, default_value):
     # Look through XML document root for matching key value and return entry as a string
     # Note the second argument is the a default value in the event the key or xml file is not found
     #
+
+    # If there was a problem with the xml file, no point in parsing or loading further,
+    if xml_force_default:
+        return default_value
+
+    # Assume file is not loaded, try to load it
     if xml_root is None:
         logging.info('xml_root is unset')
         read_user_config()

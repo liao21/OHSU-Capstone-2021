@@ -6,7 +6,11 @@
 #
 #
 # Revisions:
-#   08SEP2017 Armiger: added limb state commands
+#    08SEP2017 Armiger: Added limb state commands
+#    03DEC2017 Armiger: Removed locking since only attributes are being changed.
+#                        Updated log format for better performance
+#                        Added SHUTDOWN_VOLTAGE Critical bus voltage that will trigger immediate system shutdown
+#
 
 
 import os
@@ -14,13 +18,11 @@ import threading
 import socket
 import logging
 import struct
+import time
 import numpy as np
 import mpl
 from mpl.data_sink import DataSink
-from utilities import extract_percepts
-import time
-
-SHUTDOWN_VOLTAGE = 19.0  # Critical bus voltage that will trigger immediate system shutdown
+from utilities import extract_percepts, user_config
 
 
 class NfuUdp(DataSink):
@@ -40,47 +42,63 @@ class NfuUdp(DataSink):
         super(NfuUdp, self).__init__()
 
         self.udp = {'Hostname': hostname, 'TelemPort': udp_telem_port, 'CommandPort': udp_command_port}
-        self.param = {'echoHeartbeat': 1, 'echoPercepts': 1, 'echoCpch': 1}
+        self.verbosity = {'echoHeartbeat': True, 'echoPercepts': False}
 
-        # Use this parameter to prevent limb commands from being transmitted by this
-        # class until valid UDP are received first.  I.e. wait for valid limb state to send data
-        self.wait_for_mpl = False
-
-        self.__sock = None
-
-        # Create thread-safe lock
-        self.__lock = threading.Lock()
+        self.sock = None
 
         # Create a receive thread
-        self.__thread = threading.Thread(target=self.message_handler)
-        self.__thread.name = 'NfuUdpRcv'
+        self.thread = threading.Thread(target=self.message_handler)
+        self.thread.name = 'NfuUdpRcv'
 
         # This private variable is used to monitor data receipt from the limb.  If a timeout occurs then the parameter
         # is false until new data is received
-        self.__active_connection = False
+        self.active_connection = False
 
         # mpl_status updated by heartbeat messages
-        self.__mpl_status_default = {
+        self.mpl_status_default = {
             'nfu_state': 'NULL',
             'lc_software_state': 'NULL',
-            'lmc_software_state': [0,0,0,0,0,0,0],
+            'lmc_software_state': [0, 0, 0, 0, 0, 0, 0],
             'bus_voltage': 0.0,
             'nfu_ms_per_CMDDOM': 0.0,
             'nfu_ms_per_ACTUATEMPL': 0.0,
         }
-        self.mpl_status = self.__mpl_status_default
+        self.mpl_status = self.mpl_status_default
 
         # create a counter to delay how often CPU temperature is read and logged
-        self.__lastTemp = 0.0
-        self.__lastTempCounter = 0
+        self.last_temperature = 0.0
+        self.last_temperature_counter = 0
 
-        #store the last known limb position
-        self.last_percept_position = [0.0] * 27
+        # store the last known limb position
+        self.last_percept_position = None
 
-    def is_alive(self):
-        with self.__lock:
-            val = self.__active_connection
-        return val
+    def connect(self):
+        # open up the socket and bind to IP address
+
+        # log socket creation
+        logging.info('Setting up UDP comms on port {}. Default destination is {}:{}:'.format(
+            self.udp['TelemPort'], self.udp['Hostname'], self.udp['CommandPort']))
+
+        # create socket
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # bind to any IP address at the 'Telemetry' port (the port on which percepts are received)
+        self.sock.bind(('0.0.0.0', self.udp['TelemPort']))
+        # set timeout in seconds
+        self.sock.settimeout(3.0)
+
+        # Create a thread for processing new data
+        if not self.thread.isAlive():
+            logging.warning('Starting NfuUdp rcv thread')
+            self.thread.start()
+
+    def wait_for_connection(self):
+        # After connecting, this function can be used as a blocking call to ensure the desired percepts are received
+        # before continuing program execution.  E.g. ensure valid joint percepts are received to ensure smooth start
+
+        while (not self.active_connection) and (self.last_percept_position is None):
+            time.sleep(0.02)
+            print('Waiting 20 ms for valid percepts...')
+            logging.info('Waiting 20 ms for valid percepts...')
 
     def get_voltage(self):
         # returns the battery voltage as a string based on the last status message
@@ -100,7 +118,7 @@ class NfuUdp(DataSink):
         # set a rate reduction factor to decrease calls to system process
         decimate_rate = 10
 
-        if self.__lastTempCounter == 0:
+        if self.last_temperature_counter == 0:
             # Read the temperature
             try:
                 with open('/sys/class/thermal/thermal_zone0/temp','r') as f:
@@ -110,16 +128,16 @@ class NfuUdp(DataSink):
             except FileNotFoundError:
                 logging.warning('Failed to get system processor temperature')
                 temp = 0.0
-            self.__lastTemp = temp
+            self.last_temperature = temp
         else:
             # Use the old temp
-            temp = self.__lastTemp
+            temp = self.last_temperature
 
         # increment and roll counter
-        self.__lastTempCounter += 1
+        self.last_temperature_counter += 1
 
-        if self.__lastTempCounter > decimate_rate:
-            self.__lastTempCounter = 0
+        if self.last_temperature_counter > decimate_rate:
+            self.last_temperature_counter = 0
 
         return temp
 
@@ -135,34 +153,15 @@ class NfuUdp(DataSink):
 
         return msg
 
-    def connect(self):
-        # open up the socket and bind to IP address
-
-        # log socket creation
-        logging.info('Setting up UDP comms on port {}. Default destination is {}:{}:'.format(
-            self.udp['TelemPort'], self.udp['Hostname'], self.udp['CommandPort']))
-
-        # create socket
-        self.__sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # bind to any IP address at the 'Telemetry' port (the port on which percepts are received)
-        self.__sock.bind(('0.0.0.0', self.udp['TelemPort']))
-        # set timeout in seconds
-        self.__sock.settimeout(3.0)
-
-        # Create a thread for processing new data
-        if not self.__thread.isAlive():
-            logging.warning('Starting NfuUdp rcv thread')
-            self.__thread.start()
-
     def stop(self):
         # stop the receive thread
-        self.__thread.join()
+        self.thread.join()
 
     def close(self):
         """ Cleanup socket """
-        if self.__sock is not None:
+        if self.sock is not None:
             logging.info("Closing NfuUdp Socket IP={} Port={}".format(self.udp['Hostname'], self.udp['TelemPort']))
-            self.__sock.close()
+            self.sock.close()
         self.stop()
 
     def message_handler(self):
@@ -173,24 +172,22 @@ class NfuUdp(DataSink):
             # Blocking call until data received
             try:
                 # receive call will error if socket closed externally (i.e. on exit)
-                raw_chars, address = self.__sock.recvfrom(8192)  # blocks until timeout or socket closed
+                raw_chars, address = self.sock.recvfrom(8192)  # blocks until timeout or socket closed
                 data = bytearray(raw_chars)
 
                 # if the above function returns (without error) it means we have a connection
-                if not self.is_alive():
+                if not self.active_connection:
                     logging.info('MPL Connection is Active: Data received')
-                    with self.__lock:
-                        self.__active_connection = True
+                    self.active_connection = True
 
             except socket.timeout as e:
                 # the data stream has stopped.  don't break the thread, just continue to wait
                 msg = "NfuUdp timed out during recvfrom() on IP={} Port={}. Error: {}".format(
                     self.udp['Hostname'], self.udp['TelemPort'], e)
                 logging.warning(msg)
-                with self.__lock:
-                    logging.info('MPL Connection is Lost')
-                    self.__active_connection = False
-                    self.mpl_status = self.__mpl_status_default
+                logging.info('MPL Connection is Lost')
+                self.active_connection = False
+                self.mpl_status = self.mpl_status_default
                 continue
 
             except socket.error:
@@ -212,24 +209,20 @@ class NfuUdp(DataSink):
 
                 # pass message bytes
                 msg = decode_heartbeat_msg_v2(data[3:])
-                with self.__lock:
-                    self.mpl_status = msg
+                self.mpl_status = msg
 
                 logging.info(msg)
+                if self.verbosity['echoHeartbeat']:
+                    print(msg)
 
-                if self.mpl_status['bus_voltage'] < SHUTDOWN_VOLTAGE:
+                # Check Limb Shutdown Condition
+                if self.mpl_status['bus_voltage'] < user_config.get_user_config_var('shutdown_voltage', 19.0):
                     # Execute limb Shutdown procedure
-                    #
                     # Send a log message; set LC to soft reset; poweroff NFU
-                    #
                     from utilities import shutdown
-
                     logging.critical('MPL bus voltage is below critical value.  Shutting down system!!!')
                     self.set_limb_soft_reset()
                     shutdown()
-
-                if self.param['echoHeartbeat']:
-                    print(msg)
 
             elif msg_id == mpl.NfuUdpMsgId.UDPMSGID_PERCEPTDATA:
                 # Percept message comes in as follows: <class:bytes> len=879
@@ -241,8 +234,8 @@ class NfuUdp(DataSink):
                 # t = time.time()
                 percepts = extract_percepts.extract(raw_chars)  # takes 1-3 ms on DART
                 self.last_percept_position = np.array(percepts['jointPercepts']['position'])
-                values = np.array(percepts['jointPercepts']['torque']) # DART Time: 50-70 us
-                msg = 'Torque: ' + ','.join([ '%.1f' % elem for elem in values]) # DART Time: 220 us
+                values = np.array(percepts['jointPercepts']['torque'])  # DART Time: 50-70 us
+                msg = 'Torque: ' + ','.join(['%.1f' % elem for elem in values])  # DART Time: 220 us
 
                 # msg = 'Joint Percepts:' + np.array2string(values,
                 #                                           formatter={'float_kind': lambda x: "%6.2f" % x},
@@ -254,7 +247,9 @@ class NfuUdp(DataSink):
                 # print('Percept time: {}'.format(time.time() - t))
 
                 # Log torque at minimum
-                logging.info(msg) #60 us
+                logging.info(msg)  # 60 us
+                if self.verbosity['echoPercepts']:
+                    print(msg)
 
                 pass
 
@@ -264,10 +259,10 @@ class NfuUdp(DataSink):
         # Inputs:
         #
         # values -
-        #    joint angles in radians of size 7 for arm joints
-        #    joint angles in radians of size 27 for all arm joints
+        #    joint angles in radians of size 7 for arm joints  (e.g. [0.0] * 7 )
+        #    joint angles in radians of size 27 for all arm joints (e.g. [0.0] * 27 )
 
-        if not self.is_alive():
+        if not self.active_connection:
             logging.warning('MPL Connection is closed; not sending joint angles.')
             return
 
@@ -278,10 +273,12 @@ class NfuUdp(DataSink):
 
         # 3/24/2017 RSA: Updated angle formatting
         # 'Joint Angles: [0.00 1.20 3.14 ... ]'
-        logging.info('Joint Angles: ' +
-                     np.array2string(np.array(values),
-                                     formatter={'float_kind': lambda x: "%.2f" % x}, max_line_width=250,
-                                     suppress_small=True))
+        # logging.info('Joint Angles: ' +
+        #             np.array2string(np.array(values),
+        #                             formatter={'float_kind': lambda x: "%.2f" % x}, max_line_width=250,
+        #                             suppress_small=True))
+        # 12/3/2017 RSA: Updated angle formatting again after seeing how slow array2string can be
+        msg = 'CmdAngles: ' + ','.join(['%.1f' % elem for elem in values])
 
         # TEMP fix to lock middle finger and prevent drift
         # values[mpl.JointEnum.MIDDLE_MCP] = 0.35
@@ -319,7 +316,7 @@ class NfuUdp(DataSink):
 
     def send_udp_command(self, msg):
         # transmit packets (and optionally write to log for DEBUG)
-        self.__sock.sendto(msg, (self.udp['Hostname'], self.udp['CommandPort']))
+        self.sock.sendto(msg, (self.udp['Hostname'], self.udp['CommandPort']))
 
     def get_percepts(self):
         pass
@@ -376,21 +373,35 @@ def decode_heartbeat_msg_v2(msg_bytes):
 
 def main():
     # Main function for testing limb communications, especially timing
-    import time
-    import math
+    #
+    # Note, ensure to make deep copies of joint angles, so no references are used
+    import copy
 
     #nfu = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
     nfu = NfuUdp(hostname="10.0.0.212", udp_telem_port=9028, udp_command_port=9027)
     nfu.connect()
+
     # need to add a wait here to synch percepts
+    # without synching first, user will get a few messages until first percepts received:
+    # WARNING:root:MPL Connection is closed; not sending joint angles.
+    nfu.wait_for_connection()
+    start_angles = copy.deepcopy(nfu.last_percept_position)
+    angles = copy.deepcopy(start_angles)
+
+    # Decide which way to move arm
+    if start_angles[mpl.JointEnum.ELBOW] < np.deg2rad(45):
+        direction = +1.0
+    else:
+        direction = -1.0
 
     # on connect, data should be streaming
-    angles = [0.0] * 7
-    for iAngle in range(0, 31):
-        time.sleep(0.1)
-        angles[mpl.JointEnum.ELBOW] = round(iAngle * math.pi/180,2)
-        print('Angle cmd: {}'.format(angles,2))
+    for iAngle in np.arange(0.0, 30.0, 0.2):
+        time.sleep(0.02)
+        new_val = start_angles[mpl.JointEnum.ELBOW] + (np.deg2rad(iAngle) * direction)
+        angles[mpl.JointEnum.ELBOW] = new_val
         nfu.send_joint_angles(angles)
+        msg = 'JointCmd: ' + ','.join(['%.2f' % elem for elem in angles])
+        print(msg)
 
     nfu.close()
 

@@ -167,4 +167,18 @@ Update Receiver (python):
                     
                     
                     
-                    
+Referencing MPL Joint Enumerations:
+-----------------------------------
+import mpl
+mpl.JointEnum.MIDDLE_MCP
+
+
+
+
+Formatting arrays of floats:
+----------------------------
+
+msg = 'Torque: ' + ','.join([ '%.1f' % elem for elem in values])
+
+# Note this was found to be 5-10x faster than np.array2string
+

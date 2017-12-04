@@ -79,10 +79,10 @@ class DCellSerial(SignalInput):
 
         # Set up logging
         self.enable_data_logging = False  # Enables logging data stream to disk
-        #t = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        #self._h5filename = t + '_DCELL_LOG.hdf5'
-        #self._h5file = h5py.File(self._h5filename, 'w')
-        #self._h5file.close()
+        # t = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        # self._h5filename = t + '_DCELL_LOG.hdf5'
+        # self._h5file = h5py.File(self._h5filename, 'w')
+        # self._h5file.close()
         self._log_counter = 1
 
     def connect(self, start_streaming=True):
@@ -191,15 +191,15 @@ class DCellSerial(SignalInput):
             stream_loop_start_time = time.time()
             # Ask for strain
             data = self.send_command('SYS?')
-            with self.__lock:
-                if data != '':  # Returns nothing if serial stream times out
-                    # Populate Strain Data Buffer (newest on top)
+
+            if data != '':  # Returns nothing if serial stream times out
+                # Populate Strain Data Buffer (newest on top)
+                data = float(data)
+                with self.__lock:
                     self.__dataStrain = np.roll(self.__dataStrain, 1, axis=0)
-                    data = float(data)
                     self.__dataStrain[0] = data  # insert in first buffer entry
-                    # RSA Mod:  Adjusting to simple logging due to possibility of corrupt hdf5
-                    logging.info('DCELL: ' + str(data))
-                    #self._log_data(data)
+                self._log_data(data)
+
             # Update sleep time
             self._set_stream_sleep_time(stream_loop_start_time, 0.1)
 
@@ -222,14 +222,17 @@ class DCellSerial(SignalInput):
         # Method to log all data values as hdf5
         # Should append to file each time
         if self.enable_data_logging:
-            self._h5file = h5py.File(self._h5filename, 'r+')
-            t = datetime.now()
-            g1 = self._h5file.create_group('Log_{0:05d}'.format(self._log_counter))
-            g1.create_dataset('strain', data=[data], shape=(1, 1))
-            encoded = [a.encode('utf8') for a in str(t)]  # Need to encode strings
-            g1.create_dataset('timestamp', data=encoded, shape=(len(encoded), 1))
-            self._log_counter += 1
-            self._h5file.close()
+            # Armiger 12/3/2017:  Adjusting to simple logging due to possibility of corrupt hdf5
+            logging.info('DCELL: ' + str(data))
+
+            # self._h5file = h5py.File(self._h5filename, 'r+')
+            # t = datetime.now()
+            # g1 = self._h5file.create_group('Log_{0:05d}'.format(self._log_counter))
+            # g1.create_dataset('strain', data=[data], shape=(1, 1))
+            # encoded = [a.encode('utf8') for a in str(t)]  # Need to encode strings
+            # g1.create_dataset('timestamp', data=encoded, shape=(len(encoded), 1))
+            # self._log_counter += 1
+            # self._h5file.close()
 
     def close(self):
         # Method to disconnect object

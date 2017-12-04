@@ -45,6 +45,11 @@ def main():
     # Replace sink with actual arm
     sink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
     sink.connect()
+    sink.wait_for_connection()
+    # Synch joint position
+    for i in range(0,len(vie.Plant.JointPosition)):
+        vie.Plant.JointPosition[i] = sink.last_percept_position[i]
+
     vie.DataSink = sink
 
     # setup web interface
@@ -61,7 +66,7 @@ def main():
     # Start DCell Streaming
     dc = dcell.DCellSerial('/dev/ttymxc2')
     # Connect and start streaming
-    dc.enable_data_logging = False
+    dc.enable_data_logging = True
     try:
         dc.connect()
         logging.info('DCell streaming started successfully')

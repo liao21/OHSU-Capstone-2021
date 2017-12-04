@@ -18,6 +18,7 @@ import numpy as np
 import mpl
 from mpl.data_sink import DataSink
 from utilities import extract_percepts
+import time
 
 SHUTDOWN_VOLTAGE = 19.0  # Critical bus voltage that will trigger immediate system shutdown
 
@@ -230,9 +231,15 @@ class NfuUdp(DataSink):
             elif msg_id == mpl.NfuUdpMsgId.UDPMSGID_PERCEPTDATA:
                 # Percept message comes in as follows: <class:bytes> len=879
 
+                t = time.time()
+                percepts = extract_percepts.extract(raw_chars)
+                print('Percept time: {}'.format(time.time() - t))
+
                 # Note, passing whole message to extraction function
                 #logging.info('Percepts: ' + ''.join('{:02x}'.format(x) for x in raw_chars))
-
+                #with open('percept_log', 'a') as f:
+                    #f.write(str(raw_chars))
+                    # f.write('Percepts: ' + ''.join('{:02x}'.format(x) for x in raw_chars))
 
                 # percepts = extract_percepts.extract(raw_chars)
                 #values = np.array(percepts['jointPercepts']['torque'])
@@ -359,3 +366,29 @@ def decode_heartbeat_msg_v2(msg_bytes):
     }
 
     return msg
+
+
+def main():
+    # Main function for testing limb communications, especially timing
+    import time
+    import math
+
+    #nfu = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
+    nfu = NfuUdp(hostname="10.0.0.121", udp_telem_port=9028, udp_command_port=9027)
+    nfu.connect()
+
+    # on connect, data should be streaming
+    angles = [0.0] * 7
+    for iAngle in range(0, 31):
+        time.sleep(0.1)
+        angles[mpl.JointEnum.ELBOW] = round(iAngle * math.pi/180,2)
+        print('Angle cmd: {}'.format(angles,2))
+        nfu.send_joint_angles(angles)
+
+    nfu.close()
+
+    pass
+
+
+if __name__ == '__main__':
+    main()

@@ -279,6 +279,7 @@ class NfuUdp(DataSink):
         #                             suppress_small=True))
         # 12/3/2017 RSA: Updated angle formatting again after seeing how slow array2string can be
         msg = 'CmdAngles: ' + ','.join(['%.1f' % elem for elem in values])
+        logging.info(msg)
 
         # TEMP fix to lock middle finger and prevent drift
         # values[mpl.JointEnum.MIDDLE_MCP] = 0.35

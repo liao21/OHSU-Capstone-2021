@@ -190,10 +190,10 @@ class NfuUdp(DataSink):
                     self.mpl_status = self.__mpl_status_default
                 continue
 
-            except socket.error as e:
+            except socket.error:
                 # The connection has been closed
-                msg = "NfuUdp Socket Error during recvfrom() on IP={} Port={}. Error: {}".format(
-                    self.udp['Hostname'], self.udp['TelemPort'], e)
+                msg = "NfuUdp Socket Closed on IP={} Port={}.".format(
+                    self.udp['Hostname'], self.udp['TelemPort'])
                 logging.warning(msg)
                 # break so that the thread can terminate
                 break
@@ -232,8 +232,7 @@ class NfuUdp(DataSink):
                 # Percept message comes in as follows: <class:bytes> len=879
 
                 t = time.time()
-                percepts = extract_percepts.extract(raw_chars)
-                print('Percept time: {}'.format(time.time() - t))
+                percepts = extract_percepts.extract(raw_chars)  # takes 1-3 ms on DART
 
                 # Note, passing whole message to extraction function
                 #logging.info('Percepts: ' + ''.join('{:02x}'.format(x) for x in raw_chars))
@@ -242,14 +241,16 @@ class NfuUdp(DataSink):
                     # f.write('Percepts: ' + ''.join('{:02x}'.format(x) for x in raw_chars))
 
                 # percepts = extract_percepts.extract(raw_chars)
-                #values = np.array(percepts['jointPercepts']['torque'])
-                #msg = np.array2string(values, precision=2, separator=',',max_line_width=200, prefix='Joint Percepts')
-                #msg = 'Joint Percepts:' + np.array2string(values,
-                #                                          formatter={'float_kind':lambda x: "%6.2f" % x},
-                #                                          separator=',',
-                #                                          max_line_width=200)
+                values = np.array(percepts['jointPercepts']['torque'])
+                msg = np.array2string(values, precision=2, separator=',',max_line_width=200, prefix='Joint Percepts')
+                msg = 'Joint Percepts:' + np.array2string(values,
+                                                          formatter={'float_kind': lambda x: "%6.2f" % x},
+                                                          separator=',',
+                                                          max_line_width=200)
                 #print(msg)
-                #logging.debug(msg)
+                logging.info(msg)
+
+                print('Percept time: {}'.format(time.time() - t))
                 pass
 
     def send_joint_angles(self, values):
@@ -374,8 +375,9 @@ def main():
     import math
 
     #nfu = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
-    nfu = NfuUdp(hostname="10.0.0.121", udp_telem_port=9028, udp_command_port=9027)
+    nfu = NfuUdp(hostname="10.0.0.212", udp_telem_port=9028, udp_command_port=9027)
     nfu.connect()
+    # need to add a wait here to synch percepts
 
     # on connect, data should be streaming
     angles = [0.0] * 7

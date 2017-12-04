@@ -74,6 +74,9 @@ class NfuUdp(DataSink):
         self.__lastTemp = 0.0
         self.__lastTempCounter = 0
 
+        #store the last known limb position
+        self.last_percept_position = [0.0] * 27
+
     def is_alive(self):
         with self.__lock:
             val = self.__active_connection
@@ -194,7 +197,7 @@ class NfuUdp(DataSink):
                 # The connection has been closed
                 msg = "NfuUdp Socket Closed on IP={} Port={}.".format(
                     self.udp['Hostname'], self.udp['TelemPort'])
-                logging.warning(msg)
+                logging.info(msg)
                 # break so that the thread can terminate
                 break
 
@@ -230,27 +233,29 @@ class NfuUdp(DataSink):
 
             elif msg_id == mpl.NfuUdpMsgId.UDPMSGID_PERCEPTDATA:
                 # Percept message comes in as follows: <class:bytes> len=879
+                #
+                # Note this has some useful info on message creation and timing on the DART processor
+                #
+                # After switching to str join, this whole function with logging is 1.5-3 ms
 
-                t = time.time()
+                # t = time.time()
                 percepts = extract_percepts.extract(raw_chars)  # takes 1-3 ms on DART
+                self.last_percept_position = np.array(percepts['jointPercepts']['position'])
+                values = np.array(percepts['jointPercepts']['torque']) # DART Time: 50-70 us
+                msg = 'Torque: ' + ','.join([ '%.1f' % elem for elem in values]) # DART Time: 220 us
 
-                # Note, passing whole message to extraction function
-                #logging.info('Percepts: ' + ''.join('{:02x}'.format(x) for x in raw_chars))
-                #with open('percept_log', 'a') as f:
-                    #f.write(str(raw_chars))
-                    # f.write('Percepts: ' + ''.join('{:02x}'.format(x) for x in raw_chars))
+                # msg = 'Joint Percepts:' + np.array2string(values,
+                #                                           formatter={'float_kind': lambda x: "%6.2f" % x},
+                #                                           separator=',',
+                #                                           max_line_width=200) # 3-10ms
 
-                # percepts = extract_percepts.extract(raw_chars)
-                values = np.array(percepts['jointPercepts']['torque'])
-                msg = np.array2string(values, precision=2, separator=',',max_line_width=200, prefix='Joint Percepts')
-                msg = 'Joint Percepts:' + np.array2string(values,
-                                                          formatter={'float_kind': lambda x: "%6.2f" % x},
-                                                          separator=',',
-                                                          max_line_width=200)
-                #print(msg)
-                logging.info(msg)
+                # msg = np.array2string(values, precision=2, separator=',',max_line_width=200, prefix='Joint Percepts') #8ms
 
-                print('Percept time: {}'.format(time.time() - t))
+                # print('Percept time: {}'.format(time.time() - t))
+
+                # Log torque at minimum
+                logging.info(msg) #60 us
+
                 pass
 
     def send_joint_angles(self, values):

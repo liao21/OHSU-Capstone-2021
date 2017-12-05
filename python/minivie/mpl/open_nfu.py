@@ -65,6 +65,8 @@ class NfuUdp(DataSink):
         }
         self.mpl_status = self.mpl_status_default
 
+        self.shutdown_voltage = user_config.get_user_config_var('shutdown_voltage', 19.0)
+
         # create a counter to delay how often CPU temperature is read and logged
         self.last_temperature = 0.0
         self.last_temperature_counter = 0
@@ -216,7 +218,7 @@ class NfuUdp(DataSink):
                     print(msg)
 
                 # Check Limb Shutdown Condition
-                if self.mpl_status['bus_voltage'] < user_config.get_user_config_var('shutdown_voltage', 19.0):
+                if self.mpl_status['bus_voltage'] < self.shutdown_voltage:
                     # Execute limb Shutdown procedure
                     # Send a log message; set LC to soft reset; poweroff NFU
                     from utilities import shutdown
@@ -285,6 +287,7 @@ class NfuUdp(DataSink):
         # values[mpl.JointEnum.MIDDLE_MCP] = 0.35
         # values[mpl.JointEnum.MIDDLE_PIP] = 0.35
         # values[mpl.JointEnum.MIDDLE_DIP] = 0.35
+        # values[mpl.JointEnum.THUMB_CMC_FE] = values[mpl.JointEnum.THUMB_CMC_AB_AD] + 0.5
 
         payload = np.append(values, 27 * [0.0])
 

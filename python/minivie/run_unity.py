@@ -15,8 +15,23 @@ from pattern_rec import training, assessment
 
 def main():
 
-    # setup logging
-    user_config.setup_file_logging(prefix='VMPL_')
+    """Parse command line arguments into argparse model.
+
+    Command-line arguments:
+    -h or --help -- output help text describing command-line arguments.
+
+    """
+    import argparse
+
+    # Parse main function input parameters to get user_config xml file
+    parser = argparse.ArgumentParser(description='run_www: Configure and run a full user VIE with web training.')
+    parser.add_argument('-x', '--XML', help='Specify path for user config file', default='../../user_config.xml')
+    args = parser.parse_args()
+
+    # setup logging.  This will create a log file like: USER_2016-02-11_11-28-21.log to which all 'logging' calls go
+    user_config.read_user_config(file=args.XML)
+    prefix = user_config.get_user_config_var('userFilePrefix', 'USER_')
+    user_config.setup_file_logging(prefix=prefix)
 
     # Setup MPL scenario
     vie = scenarios.mpl_nfu.setup()

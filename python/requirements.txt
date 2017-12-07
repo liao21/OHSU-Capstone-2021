@@ -12,11 +12,12 @@ future
 numpy
 scipy
 scikit-learn
-bluepy
+matplotlib
 enum34
 h5py
 six
 transforms3d
 websocket-client
 serial
+bluepy
 #pygame

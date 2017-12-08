@@ -210,6 +210,10 @@ class Scenario(object):
                 self.pause('All', True)
             elif cmd_data == 'PauseAllOff':
                 self.pause('All', False)
+            elif cmd_data == 'ResetTorqueOn':
+                self.DataSink.reset_impedance = True
+            elif cmd_data == 'ResetTorqueOff':
+                self.DataSink.reset_impedance = False
             elif cmd_data == 'PauseHandOn':
                 self.pause('Hand', True)
             elif cmd_data == 'PauseHandOff':

@@ -85,6 +85,13 @@ function setupSpacebrew() {
             sendCmd("Cmd:PauseHandOff");
         }
     });
+    $('#resetTorque').on("change", function() {
+        if (this.checked) {
+            sendCmd("Cmd:ResetTorqueOn");
+        } else {
+            sendCmd("Cmd:ResetTorqueOff");
+        }
+    });
     $('#autoSave').on("change", function() {
         var val = this.value;
         if (val=="On") {

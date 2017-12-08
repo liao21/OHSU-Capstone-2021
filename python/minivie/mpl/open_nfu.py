@@ -65,6 +65,9 @@ class NfuUdp(DataSink):
         }
         self.mpl_status = self.mpl_status_default
 
+        reset_impedance = False
+        magic_impedance = [5.0, 5.0, 5.0, 5.0, 1.0, 5.0, 1.5] + [15.6288] * 20
+
         self.shutdown_voltage = user_config.get_user_config_var('shutdown_voltage', 19.0)
         self.enable_impedance = user_config.get_user_config_var('enable_impedance', 0)
 
@@ -306,7 +309,10 @@ class NfuUdp(DataSink):
             # imp(7+mpl_hand_enum.THUMB_CMC_AD_AB) = 16;
 
             velocity = 27 * [0.0]
-            stiffness = [5.0, 5.0, 5.0, 5.0, 1.0, 5.0, 1.5] + [0.05] * 20
+            if self.reset_impedance:
+                stiffness = magic_impedance = [5.0, 5.0, 5.0, 5.0, 1.0, 5.0, 1.5] + [15.6288] * 20
+            else:
+                stiffness = [5.0, 5.0, 5.0, 5.0, 1.0, 5.0, 1.5] + [0.05] * 20
             payload = np.append(values, velocity)
             payload = np.append(payload, stiffness)
 

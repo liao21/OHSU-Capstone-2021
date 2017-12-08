@@ -422,7 +422,7 @@ classdef ParsePythonData
             if nargin < 1
                 %%
                 file = 'EMG_MAC_F01CCDA72C85_PORT_15001.log';
-                file = 'EMG_MAC_C30AEA1414D9_PORT_15002.log';
+                file = 'EMG_MAC_C30AEA1414D9_PORT_15001.log';
             end
             
             %%
@@ -451,10 +451,10 @@ classdef ParsePythonData
             % 1491553915.862235 E1: fdeb4aebfdcce30df100f6edd6083504
             % 1491553915.868435 E2: 0e15d93a1efceae900f82ef218fd18fd
             % 1491553915.883724 E3: f1f2d8d3d5135d1bfa0ea02505121ff4
-            idxEMG0 = contains(lines,'E0:');
-            idxEMG1 = contains(lines,'E1:');
-            idxEMG2 = contains(lines,'E2:');
-            idxEMG3 = contains(lines,'E3:');
+            idxEMG0 = contains(lines,' E0:');
+            idxEMG1 = contains(lines,' E1:');
+            idxEMG2 = contains(lines,' E2:');
+            idxEMG3 = contains(lines,' E3:');
             
             %% Parse Battery Level
             

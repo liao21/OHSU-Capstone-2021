@@ -66,6 +66,7 @@ class NfuUdp(DataSink):
         self.mpl_status = self.mpl_status_default
 
         self.shutdown_voltage = user_config.get_user_config_var('shutdown_voltage', 19.0)
+        self.enable_impedance = user_config.get_user_config_var('enable_impedance', 0)
 
         # create a counter to delay how often CPU temperature is read and logged
         self.last_temperature = 0.0
@@ -289,16 +290,48 @@ class NfuUdp(DataSink):
         # values[mpl.JointEnum.MIDDLE_DIP] = 0.35
         # values[mpl.JointEnum.THUMB_CMC_FE] = values[mpl.JointEnum.THUMB_CMC_AB_AD] + 0.5
 
-        payload = np.append(values, 27 * [0.0])
+        if self.enable_impedance:
+            # PVI Command
 
-        # Send data
-        # size is 7 + 20 + 7 + 20
-        # packing is one uint8 by 54 singles
-        # total message is 221 bytes [uint16 MSD_ID_FIELD_BYTES]
-        # uint16 MSG_LENGTH + uint8 MSG_TYPE + 1 msg_id + payload + checksum
-        packer = struct.Struct('54f')
-        msg = bytearray([219, 0, 5, 1])
-        msg.extend(packer.pack(*payload))
+            # Impedance Notes
+            # 0 to 256 for upper arm (256 is off)
+            # upper arm around 40
+            # wrist around 20, start around 40
+            # hand is 0 to 16 (16 is off)
+            # 0 to 1.5 for hand is useful range
+            #
+            # imp = [256*ones(1,4) 256*ones(1,3) 15.6288*ones(1,20)];
+            # imp = [256*ones(1,4) 256*ones(1,3) 0.5*ones(1,20)];
+            #
+            # imp(7+mpl_hand_enum.THUMB_CMC_AD_AB) = 16;
+
+            velocity = 27 * [0.0]
+            stiffness = [5.0, 5.0, 5.0, 5.0, 1.0, 5.0, 1.5] + [0.05] * 20
+            payload = np.append(values, velocity)
+            payload = np.append(payload, stiffness)
+
+            # Send data
+            # size is 7 + 20 + 7 + 20 + 27
+            # packing is one uint8 by 81 singles
+            # total message is 327 bytes [uint16 MSD_ID_FIELD_BYTES]
+            # uint16 MSG_LENGTH + uint8 MSG_TYPE + 1 msg_id + payload + checksum
+            packer = struct.Struct('81f')
+            msg = bytearray([71, 1, 5, 8])
+            msg.extend(packer.pack(*payload))
+
+        else:
+            # PV Command
+            payload = np.append(values, 27 * [0.0])
+
+            # Send data
+            # size is 7 + 20 + 7 + 20
+            # packing is one uint8 by 54 singles
+            # total message is 221 bytes [uint16 MSD_ID_FIELD_BYTES]
+            # uint16 MSG_LENGTH + uint8 MSG_TYPE + 1 msg_id + payload + checksum
+            packer = struct.Struct('54f')
+            msg = bytearray([219, 0, 5, 1])
+            msg.extend(packer.pack(*payload))
+
         checksum = bytearray([sum(msg) % 256])
 
         # add on the checksum

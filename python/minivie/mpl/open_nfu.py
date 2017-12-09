@@ -314,9 +314,9 @@ class NfuUdp(DataSink):
 
             velocity = 27 * [0.0]
             if self.reset_impedance:
-                stiffness = magic_impedance = [5.0, 5.0, 5.0, 5.0, 1.0, 5.0, 1.5] + [15.6288] * 20
+                stiffness = self.magic_impedance
             else:
-                stiffness = [5.0, 5.0, 5.0, 5.0, 1.0, 5.0, 1.5] + [0.05] * 20
+                stiffness = [5.0, 5.0, 5.0, 5.0, 1.0, 5.0, 1.5] + [0.04] * 20
             payload = np.append(values, velocity)
             payload = np.append(payload, stiffness)
 

@@ -373,6 +373,20 @@ class MyoUdp(SignalInput):
                     self.__accel = output[12:15]
                     self.__gyro = output[15:18]
 
+                    # compute data rate
+                    if self.__count_emg == 0:
+                        # mark time
+                        self.__time_emg = time.time()
+                    self.__count_emg += 2  # 2 data points per packet
+
+                    t_now = time.time()
+                    t_elapsed = t_now - self.__time_emg
+
+                    if t_elapsed > 3.0:
+                        # compute rate (every second)
+                        self.__rate_emg = self.__count_emg / t_elapsed
+                        self.__count_emg = 0  #reset counter
+
             elif len(data) == 16:  # EMG data only
                 # -------------------------------------
                 # Handles data from unix direct stream

@@ -65,8 +65,8 @@ class NfuUdp(DataSink):
         }
         self.mpl_status = self.mpl_status_default
 
-        reset_impedance = False
-        magic_impedance = [5.0, 5.0, 5.0, 5.0, 1.0, 5.0, 1.5] + [15.6288] * 20
+        self.reset_impedance = False
+        self.magic_impedance = [5.0, 5.0, 5.0, 5.0, 1.0, 5.0, 1.5] + [15.6288] * 20
 
         self.shutdown_voltage = user_config.get_user_config_var('shutdown_voltage', 19.0)
         self.enable_impedance = user_config.get_user_config_var('enable_impedance', 0)

@@ -13,6 +13,7 @@
 #
 
 
+import collections
 import os
 import threading
 import socket
@@ -64,6 +65,9 @@ class NfuUdp(DataSink):
             'nfu_ms_per_ACTUATEMPL': 0.0,
         }
         self.mpl_status = self.mpl_status_default
+
+        # battery samples will contain N most recent samples for averaging
+        self.battery_samples = collections.deque([], maxlen=15)
 
         self.reset_impedance = False
         self.magic_impedance = [5.0, 5.0, 5.0, 5.0, 1.0, 5.0, 1.5] + [15.6288] * 20
@@ -212,6 +216,8 @@ class NfuUdp(DataSink):
                 msg_id = data[2]
 
             if msg_id == mpl.NfuUdpMsgId.UDPMSGID_HEARTBEATV2:
+                # When we get a heatbeat message, parse the message, update the running battery voltage
+                # and check for shutdown conditions
 
                 # pass message bytes
                 msg = decode_heartbeat_msg_v2(data[3:])
@@ -221,9 +227,14 @@ class NfuUdp(DataSink):
                 if self.verbosity['echoHeartbeat']:
                     print(msg)
 
+                self.battery_samples.append(msg['bus_voltage'])
+                #for v in self.battery_samples:
+                #    logging.info('Batt Sample: ' + str(v))
+
                 # Check Limb Shutdown Condition
                 # Note that 0.0 is a voltage reported as a valid heartbeat when hand disconnected
-                v_battery = self.mpl_status['bus_voltage']
+                v_battery = sum(self.battery_samples)/len(self.battery_samples)
+                logging.info('Moving Average Bus Voltage: ' + str(v_battery))
                 if v_battery != 0.0 and v_battery < self.shutdown_voltage:
                     # Execute limb Shutdown procedure
                     # Send a log message; set LC to soft reset; poweroff NFU

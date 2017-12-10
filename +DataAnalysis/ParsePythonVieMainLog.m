@@ -30,6 +30,7 @@ classdef ParsePythonVieMainLog
         unreadLines
         userMsg
         heartbeatMsg
+        meanVoltageMsg
         torqueMsg
         jointCmdMsg
         tempMsg
@@ -69,7 +70,7 @@ classdef ParsePythonVieMainLog
             obj.numLines = length(obj.textLines);
             obj.isRead = false(obj.numLines,1);
             fprintf('\nRead file: "%s" \t Found %d lines\n',obj.fileName,obj.numLines);
-
+            
             %%%%%%%%%%%%%%%%%
             % Parse User Messages:
             %%%%%%%%%%%%%%%%%
@@ -82,10 +83,20 @@ classdef ParsePythonVieMainLog
                 for i = 1:length(logLines)
                     % convert to date number
                     obj.userMsg.timeStamp{1,i} = datetime(logLines{i}(1:23),'InputFormat','yyyy-MM-dd HH:mm:ss,SSS');
-                end 
+                end
                 disp(obj.userMsg)
             end
-
+            
+            %%%%%%%%%%%%%%%%%
+            % Parse Moving Average Bus Voltage:
+            %%%%%%%%%%%%%%%%%
+            msgId = contains(obj.textLines,'Moving Average Bus Voltage:');
+            obj.isRead(msgId ) = true;
+            if any(msgId )
+                msgLines = obj.textLines(msgId )';
+                obj.meanVoltageMsg.time = datetime(extractBefore(msgLines,24),'InputFormat','yyyy-MM-dd HH:mm:ss,SSS');
+                obj.meanVoltageMsg.value = str2double(extractAfter(msgLines,'Voltage: '));
+            end
             
             %%%%%%%%%%%%%%%%%
             % Parse CPU Temp Messages:
@@ -97,7 +108,7 @@ classdef ParsePythonVieMainLog
                 obj.tempMsg.time = datetime(extractBefore(tempLines,24),'InputFormat','yyyy-MM-dd HH:mm:ss,SSS');
                 obj.tempMsg.value = str2double(extractAfter(tempLines,'CPU Temp: '));
             end
-
+            
             
             %%%%%%%%%%%%%%%%%
             % Parse DCELL Temp Messages:
@@ -120,7 +131,7 @@ classdef ParsePythonVieMainLog
                 obj.torqueMsg.time = datetime(extractBefore(torqueLines,24),'InputFormat','yyyy-MM-dd HH:mm:ss,SSS');
                 obj.torqueMsg.value = cellfun(@str2num,extractAfter(torqueLines,'Torque: '),'UniformOutput',false);
             end
-
+            
             %%%%%%%%%%%%%%%%%
             % Parse Joint Command:
             %%%%%%%%%%%%%%%%%
@@ -131,7 +142,7 @@ classdef ParsePythonVieMainLog
                 obj.jointCmdMsg.time = datetime(extractBefore(jointCmdLines,24),'InputFormat','yyyy-MM-dd HH:mm:ss,SSS');
                 obj.jointCmdMsg.value = cellfun(@str2num,extractAfter(jointCmdLines,'CmdAngles: '),'UniformOutput',false);
             end
-
+            
             %%%%%%%%%%%%%%%%%%
             % Parse Hearbeat lines
             % example:
@@ -149,7 +160,7 @@ classdef ParsePythonVieMainLog
             C = cellfun(@(x)regexp(x,'.*(?= [NfuUdp)','match'),statusLines);
             % convert to date number
             obj.heartbeatMsg.timeStamp = datetime(C,'InputFormat','yyyy-MM-dd HH:mm:ss,SSS');
-
+            
             % add date stats
             obj.firstDatetime = min(obj.heartbeatMsg.timeStamp);
             obj.lastDatetime = max(obj.heartbeatMsg.timeStamp);
@@ -163,7 +174,7 @@ classdef ParsePythonVieMainLog
             % add voltage stats
             obj.maxVoltage = max(obj.heartbeatMsg.busVoltage);
             obj.minVoltage = min(obj.heartbeatMsg.busVoltage);
-
+            
             
             %%
             % lc_software_state': '        ', 'nfu_ms_per_CMDDOM
@@ -178,15 +189,15 @@ classdef ParsePythonVieMainLog
             
             C = cellfun(@(x)regexp(x,'(?<=nfu_ms_per_ACTUATEMPL'':\s)\d+.\d+','match'),statusLines);
             obj.heartbeatMsg.nfu_ms_per_ACTUATEMPL = str2double(C);
-
+            
             % ignore messages:
-            obj.isRead(contains(obj.textLines,'shutdown_voltage')) = true;           
+            obj.isRead(contains(obj.textLines,'shutdown_voltage')) = true;
             
             %% Print Remaining Lines
             obj.unreadLines = obj.textLines(~obj.isRead)';
             
             
-        end        
+        end
     end
 end
 

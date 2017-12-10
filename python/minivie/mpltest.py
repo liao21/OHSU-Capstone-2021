@@ -7,7 +7,7 @@
 # Revisions:
 # 2016OCT05 Armiger: Created
 
-# Python 2 and 3:
+# Python 3:
 import time
 import numpy as np
 from builtins import input
@@ -27,6 +27,7 @@ print("1. Ping: Limb system and router using OS")
 print("2. MPL Wrist")
 print("3. MPL Grasps")
 print("4. MPL Heartbeats")
+print("5. MPL Range of Motion (All Joints)")
 print(30 * '-')
 print("0. Exit")
 print(30 * '-')
@@ -113,6 +114,35 @@ elif choice == 4:
         try:
             print(hSink.get_status_msg())
             time.sleep(1)
+        except KeyboardInterrupt:
+            break
+
+    hSink.close()
+
+elif choice == 5:
+    print("Starting MPL Range of Motion Test...")
+
+    # Read ROM File
+    filename = "../tests/mpl_motion_arm5.csv"
+    with open(filename) as f:
+        mpl_angles = f.read().splitlines()
+
+    # hSink = UnityUdp()
+
+    hSink = NfuUdp(hostname="192.168.8.1", udp_telem_port=9028, udp_command_port=9027)
+    hSink.connect()
+    #hSink.wait_for_connection()
+    hSink.enable_impedance = 0
+    hSink.reset_impedance = 0
+
+    while 1:
+        try:
+            for s in mpl_angles:
+                angles = [float(x) for x in s.split(',')]
+                msg = 'JointCmd: ' + ','.join(['%.1f' % elem for elem in angles])
+                print(msg)
+                hSink.send_joint_angles(angles)
+                time.sleep(0.02)
         except KeyboardInterrupt:
             break
 

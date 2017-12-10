@@ -1,6 +1,6 @@
 import socket
 import sys
-import Run_Servo
+from utilities.servo_tactor import Run_Servo
 import time
 
 # This file is creates a UDP client and receives an array of torque values from the UDP run from the MPL.
@@ -21,7 +21,7 @@ while (True):
         #newDataOne = newData[0::2]
         #newDataTwo = newData[1::2]
         #Run_Servo.setAngles(newDataOne, newDataTwo)
-        .setAngles(newData)
+        Run_Servo.setAngles(newData)
     except KeyboardInterrupt:
         Run_Servo.originalPos([0, 1, 2, 3, 4])
         udpSocket.close()

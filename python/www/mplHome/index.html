@@ -84,12 +84,15 @@
     <script src="jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
     <script src="spacebrew.js/sb-1.4.1.min.js"></script>
     <script src="mplHome.js"></script>
+    <link rel="stylesheet" href="lib/themes/offline-theme-chrome.css" />
+    <link rel="stylesheet" href="lib/themes/offline-language-english.css" />
+    <script src="lib/offline.min.js"></script>
+    <script src="lib/offline-simulate-ui.min.js"></script>
 
 </head>
 
 
-
-<body>
+<body class="container">
     <!-- Main Mobile Trainer Page -->
     <div data-role="page" id="ID_MAIN_PAGE">
         <div data-role="header" data-theme="b" >
@@ -380,6 +383,29 @@
             </div>
         </div><!-- /content -->
     </div><!-- /page -->
+    <script>
+        $(function(){
+            
+            Offline.options = {checks: {image: {url: 'my-image.gif'}, active: 'image'}}
+            
+            var 
+                $online = $('.online'),
+                $offline = $('.offline');
+
+            Offline.on('confirmed-down', function () {
+                $online.fadeOut(function () {
+                    $offline.fadeIn();
+                });
+            });
+
+            Offline.on('confirmed-up', function () {
+                $offline.fadeOut(function () {
+                    $online.fadeIn();
+                });
+            });
+
+        });
+    </script>
 
 </body>
 

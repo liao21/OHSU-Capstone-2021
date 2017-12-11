@@ -86,14 +86,16 @@ function setupSpacebrew() {
         }
     });
     $('#resetTorque').on("change", function() {
-        if (this.checked) {
+        var val = this.value;
+        if (val=="On") {
             sendCmd("Cmd:ResetTorqueOn");
         } else {
             sendCmd("Cmd:ResetTorqueOff");
         }
     });
     $('#enableImpedance').on("change", function() {
-        if (this.checked) {
+        var val = this.value;
+        if (val=="On") {
             sendCmd("Cmd:ImpedanceOn");
         } else {
             sendCmd("Cmd:ImpedanceOff");

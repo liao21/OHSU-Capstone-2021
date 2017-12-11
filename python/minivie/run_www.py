@@ -30,12 +30,15 @@ def main():
     # Parse main function input parameters to get user_config xml file
     parser = argparse.ArgumentParser(description='run_www: Configure and run a full user VIE with web training.')
     parser.add_argument('-x', '--XML', help='Specify path for user config file', default='../../user_config.xml')
+    parser.add_argument("-l", "--log", dest="logLevel", choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], 
+                        default=logging.INFO, help="Set the logging level")
+
     args = parser.parse_args()
 
     # setup logging.  This will create a log file like: USER_2016-02-11_11-28-21.log to which all 'logging' calls go
     user_config.read_user_config(file=args.XML)
     prefix = user_config.get_user_config_var('userFilePrefix', 'USER_')
-    user_config.setup_file_logging(prefix=prefix)
+    user_config.setup_file_logging(prefix=prefix, log_level=args.logLevel)
 
     # Setup MPL scenario
     # A Scenario is the fundamental building blocks of the VIE: Inputs, Signal Analysis, System Plant, and Output Sink

@@ -131,7 +131,7 @@ class NfuUdp(DataSink):
         if self.last_temperature_counter == 0:
             # Read the temperature
             try:
-                with open('/sys/class/thermal/thermal_zone0/temp','r') as f:
+                with open('/sys/class/thermal/thermal_zone0/temp', 'r') as f:
                     contents = f.read()
                 temp = float(contents) / 1000.0
                 logging.info('CPU Temp: ' + str(temp))

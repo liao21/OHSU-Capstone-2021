@@ -1,4 +1,6 @@
-import struct
+import logging
+
+from utilities import shutdown, reboot, restart_myo, change_myo
 
 
 class Scenario(object):
@@ -12,7 +14,7 @@ class Scenario(object):
     """
 
     def __init__(self):
-        import socket
+        # import socket
         self.SignalSource = None
         self.SignalClassifier = None
         self.FeatureExtract = None
@@ -22,12 +24,12 @@ class Scenario(object):
         self.DataSink = None
 
         # Debug socket for streaming Features
-        #self.DebugSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # self.DebugSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         # Training parameters
         self.add_data = False
-        self.add_data_previous = False  # Tracks whether data was added on previous update, necessary to know when to autosave
-        self.auto_save = True  # Boolean, if true, will save out training data every time new data finished beind added
+        self.add_data_last = False  # Track whether data added on previous update, necessary to know when to autosave
+        self.auto_save = True  # Boolean, if true, will save out training data every time new data finished being added
         self.training_motion = 'No Movement'
         self.training_id = 0
 
@@ -35,52 +37,46 @@ class Scenario(object):
 
         self.output = None  # Will contain latest status message
 
+        # User should access values through the is_paused method
         self.__pause = {'All': False, 'Arm': False, 'Hand': False}
+
+        # Control gains and speeds for precision control mode
         self.precision_mode = False
-        self.__gain_value = 1.0
-        self.__gain_value_default = 1.0
-        self.__gain_value_precision = 0.1
-        self.__hand_gain_value = 1.0
-        self.__hand_gain_value_default = 1.0
-        self.__hand_gain_value_precision = 0.1
+        self.gain_value = 1.4
+        self.gain_value_last = self.gain_value
+        self.gain_value_precision = 0.2
+        self.hand_gain_value = 1.2
+        self.hand_gain_value_last = self.hand_gain_value
+        self.hand_gain_value_precision = 0.15
+
+    def set_precision_mode(self, value):
+        # Select between precision mode or default mode.
+        # When switching, gain values for alternate mode will be preserved.
+        #
+        # Input argument can be True/False or 1/0
+
+        self.precision_mode = value
+        if value:
+            logging.info('Switching to precision gain mode')
+            # Arm gain
+            self.gain_value_last = self.gain_value  # preserve this for later
+            self.gain_value = self.gain_value_precision
+            # Hand gain
+            self.hand_gain_value_last = self.hand_gain_value  # preserve this for later
+            self.hand_gain_value = self.hand_gain_value_precision
+
+        else:
+            logging.info('Switching to default gain mode')
+            # Arm gain
+            self.gain_value_precision = self.gain_value  # preserve this for later
+            self.gain_value = self.gain_value_last
+            # Hand gain
+            self.hand_gain_value_precision = self.hand_gain_value  # preserve this for later
+            self.hand_gain_value = self.hand_gain_value_last
 
     def is_paused(self, scope='All'):
         # return the pause value for the given context ['All' 'Arm' 'Hand']
         return self.__pause[scope]
-
-    def get_gain_value(self):
-        return self.__gain_value
-
-    def get_hand_gain_value(self):
-        return self.__hand_gain_value
-
-    def set_precision_mode(self, boolean):
-        # Select between precision mode or default mode.
-        # When switching, gain values for alternate mode will be preserved.
-
-        assert isinstance(boolean, bool), 'boolean should be a bool'
-
-        if bool == self.precision_mode:
-            return  # No need to do anything if we are already in correct mode
-        else:
-            self.precision_mode = boolean
-            if boolean:
-                print('Switching to precision gain mode')
-                # Arm gain
-                self.__gain_value_default = self.__gain_value  # preserve this for later
-                self.__gain_value = self.__gain_value_precision
-                # Hand gain
-                self.__hand_gain_value_default = self.__hand_gain_value  # preserve this for later
-                self.__hand_gain_value = self.__hand_gain_value_precision
-
-            else:
-                print('Switching to default gain mode')
-                # Arm gain
-                self.__gain_value_precision = self.__gain_value  # preserve this for later
-                self.__gain_value = self.__gain_value_default
-                # Hand gain
-                self.__hand_gain_value_precision = self.__hand_gain_value  # preserve this for later
-                self.__hand_gain_value = self.__hand_gain_value_default
 
     def pause(self, scope='All', state=None):
         # Toggles pause state which suspends motion of arm
@@ -109,14 +105,20 @@ class Scenario(object):
             self.__pause[scope] = True
 
     def gain(self, factor):
-        self.__gain_value *= factor
-        if self.__gain_value < 0.1:
-            self.__gain_value = 0.1
+        # Increase the speed of the arm and apply max / min constraints
+        self.gain_value *= factor
+        if self.gain_value < 0.1:
+            self.gain_value = 0.1
+        if self.gain_value > 5:
+            self.gain_value = 5
 
     def hand_gain(self, factor):
-        self.__hand_gain_value *= factor
-        if self.__hand_gain_value < 0.1:
-            self.__hand_gain_value = 0.1
+        # Increase the speed of the hand and apply max / min constraints
+        self.hand_gain_value *= factor
+        if self.hand_gain_value < 0.1:
+            self.hand_gain_value = 0.1
+        if self.hand_gain_value > 5:
+            self.hand_gain_value = 5
 
     def command_string(self, value):
         """
@@ -152,9 +154,6 @@ class Scenario(object):
         TODO: add reset to hand/arm speed
         """
 
-        import logging
-        from utilities import shutdown, reboot, restart_myo, change_myo
-
         # Commands should come in with colon operator
         # e.g. Cmd:Add or Cls:Elbow Flexion
         logging.info('Received new scenario command:' + value)
@@ -179,7 +178,8 @@ class Scenario(object):
             logging.critical("User inserted log message: " + cmd_data)
 
         elif cmd_type == 'Cmd':
-            print(cmd_data)
+
+            # Training Options
             if cmd_data == 'Add':
                 self.add_data = True
             elif cmd_data == 'Stop':
@@ -198,26 +198,27 @@ class Scenario(object):
                 self.TrainingData.save()
             elif cmd_data == 'Backup':
                 self.TrainingData.copy()
+
             elif cmd_data == 'AutoSaveOn':
                 self.auto_save = True
             elif cmd_data == 'AutoSaveOff':
                 self.auto_save = False
-            elif cmd_data == 'Pause':
-                self.pause('All')
-            elif cmd_data == 'PauseHand':
-                self.pause('Hand')
-            elif cmd_data == 'PauseAllOn':
-                self.pause('All', True)
-            elif cmd_data == 'PauseAllOff':
-                self.pause('All', False)
+
+            # MPL Control Options
             elif cmd_data == 'ResetTorqueOn':
                 self.DataSink.reset_impedance = True
             elif cmd_data == 'ResetTorqueOff':
                 self.DataSink.reset_impedance = False
-            elif cmd_data == 'PauseHandOn':
-                self.pause('Hand', True)
-            elif cmd_data == 'PauseHandOff':
-                self.pause('Hand', False)
+
+            elif cmd_data == 'ImpedanceOn':
+                self.DataSink.enable_impedance = 1
+            elif cmd_data == 'ImpedanceOff':
+                self.DataSink.enable_impedance = 0
+
+            elif cmd_data == 'ReloadRoc':
+                self.Plant.reload_roc('../../WrRocDefaults.xml')
+
+            # Myo Control Options
             elif cmd_data == 'RestartMyo1':
                 restart_myo(1)
             elif cmd_data == 'RestartMyo2':
@@ -226,26 +227,47 @@ class Scenario(object):
                 change_myo(1)
             elif cmd_data == 'ChangeMyoSet2':
                 change_myo(2)
+
+            # System Options
             elif cmd_data == 'Reboot':
                 reboot()
             elif cmd_data == 'Shutdown':
                 shutdown()
+
+            # Speed Options
             elif cmd_data == 'PrecisionModeOff':
                 self.set_precision_mode(False)
             elif cmd_data == 'PrecisionModeOn':
                 self.set_precision_mode(True)
+
             elif cmd_data == 'SpeedUp':
                 self.gain(1.2)
             elif cmd_data == 'SpeedDown':
                 self.gain(0.8)
+
             elif cmd_data == 'HandSpeedUp':
                 self.hand_gain(1.2)
             elif cmd_data == 'HandSpeedDown':
                 self.hand_gain(0.8)
-            elif cmd_data == 'ReloadRoc':
-                self.Plant.reload_roc('../../WrRocDefaults.xml')
+
+            elif cmd_data == 'Pause':
+                self.pause('All')
+            elif cmd_data == 'PauseHand':
+                self.pause('Hand')
+
+            elif cmd_data == 'PauseAllOn':
+                self.pause('All', True)
+            elif cmd_data == 'PauseAllOff':
+                self.pause('All', False)
+            elif cmd_data == 'PauseHandOn':
+                self.pause('Hand', True)
+            elif cmd_data == 'PauseHandOff':
+                self.pause('Hand', False)
+
             else:
-                logging.info('Unknown scenario command: ' + cmd_data)
+                # It's ok to have commands that done't match here.  another callback might use them
+                # logging.info('Unknown scenario command: ' + cmd_data)
+                pass
 
     def attach_source(self, input_source):
         # Pass in a list of signal sources and they will be added to the scenario
@@ -275,6 +297,7 @@ class Scenario(object):
 
         """
         from controls.plant import class_map
+        # import struct
 
         # initialize output
         self.output = {'status': 'RUNNING', 'features': None, 'decision': 'None', 'vote': None}
@@ -283,22 +306,22 @@ class Scenario(object):
         self.output['features'], f, imu = self.FeatureExtract.get_features(self.SignalSource)
 
         # Debug stream:
-        #values = self.output['features']
-        #print(values)
-        #packer = struct.Struct('64f')
-        #packed_data = packer.pack(*values)
-        #self.DebugSock.sendto(packed_data, ('192.168.7.1', 23456))
+        # values = self.output['features']
+        # print(values)
+        # packer = struct.Struct('64f')
+        # packed_data = packer.pack(*values)
+        # self.DebugSock.sendto(packed_data, ('192.168.7.1', 23456))
 
         # if simultaneously training the system, add the current results to the data buffer
         if self.add_data and f.any():
             self.TrainingData.add_data(self.output['features'], self.training_id, self.training_motion, imu)
 
         # save out training data if auto_save is on, data just finished being added
-        if self.auto_save and self.add_data_previous and not self.add_data:
+        if self.auto_save and self.add_data_last and not self.add_data:
             self.TrainingData.delete()  # Lets delete so we have a clean file to write to
             self.TrainingData.save()
         # track previous add_data state
-        self.add_data_previous = self.add_data
+        self.add_data_last = self.add_data
 
         # classify
         decision_id, self.output['status'] = self.SignalClassifier.predict(f)
@@ -331,12 +354,12 @@ class Scenario(object):
             if class_info['GraspId'] is not None and self.Plant.GraspPosition < 0.2:
                 # change the grasp state if still early in the grasp motion
                 self.Plant.GraspId = class_info['GraspId']
-            self.Plant.set_grasp_velocity(class_info['Direction'] * self.__hand_gain_value)
+            self.Plant.set_grasp_velocity(class_info['Direction'] * self.hand_gain_value)
 
         pause_arm = self.is_paused('Arm') or self.is_paused('All')
         if not class_info['IsGrasp'] and not pause_arm:
             # the motion class is an arm movement
-            self.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * self.__gain_value)
+            self.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * self.gain_value)
 
         self.Plant.update()
 

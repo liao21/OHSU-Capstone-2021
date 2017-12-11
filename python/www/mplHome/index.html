@@ -97,6 +97,8 @@
         </div><!-- /header -->
 
         <div data-role="content">
+
+            <!-- Speed Settings Dropdown -->
             <div data-role="collapsible" data-collapsed-icon="gear" data-expanded-icon="gear">
             <h4>Speed Settings</h4>
             <ul data-role="listview" data-inset="false">
@@ -125,6 +127,7 @@
             </ul>
             </div>
 
+            <!-- Assessments Dropdown -->
             <div data-role="collapsible" data-collapsed-icon="star" data-expanded-icon="star">
             <h4>Assessments</h4>
             <ul data-role="listview" data-inset="false">
@@ -132,30 +135,18 @@
             <li><a href="#ID_MT_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-star">Motion Tester...</a></li>
             </ul>
             </div>
-
             
+            <!-- Options Dropdown -->
             <div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
             <h4>Options</h4>
             <ul data-role="listview" data-inset="false">
-            <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_RELOAD_ROC">Reload ROC Table</a></li>
-            <li></li>
-            <li><a href="#popupReboot" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-icon="refresh" data-theme="a" data-iconpos="right">Reboot MPL</a></li>
             <li><a href="#popupShutdown" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-icon="power" data-theme="a" data-iconpos="right">Shutdown MPL</a></li>
-            <li>
-            <div class="ui-field-contain">
-                <label for="autoSave">Autosave:</label>
-                <select type="checkbox" id="autoSave" data-role="flipswitch">
-                     <option value="Off">Off</option>
-                    <option value="On" selected="selected">On</option>
-                </select>
-            </div>
-            </li>
-            <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_MYO1">Restart MYO #1</a></li>
-            <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_MYO2">Restart MYO #2</a></li>
-            <li><a href="#ID_ADVANCED_OPTIONS_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-edit">Advanced Options...</a></li>
+            <li><a href="#ID_MYO_OPTIONS_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-edit">Myo Configuration...</a></li>
+            <li><a href="#ID_ADVANCED_OPTIONS_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-edit">Advanced MPL Options...</a></li>
             </ul>
             </div>
 
+            <!-- Confirmation Dialog: Reboot -->
             <div data-role="popup" id="popupReboot" data-overlay-theme="a" data-theme="b" data-dismissible="false" style="max-width:400px;" class="ui-corner-all">
             <div data-role="header" data-theme="a" class="ui-corner-top">
             <h1>Confirm Reboot</h1>
@@ -167,6 +158,7 @@
             </div>
             </div>
 
+            <!-- Confirmation Dialog: Shutdown -->
             <div data-role="popup" id="popupShutdown" data-overlay-theme="a" data-theme="b" data-dismissible="false" style="max-width:400px;" class="ui-corner-all">
             <div data-role="header" data-theme="a" class="ui-corner-top">
             <h1>Confirm Shutdown</h1>
@@ -178,6 +170,7 @@
             </div>
             </div>
 
+            <!-- Training and Motion Selection Section -->
             <p>Selected Motion: <span id="msg_train"></span> </p>
             <div id="blueimp-image-carousel" class="blueimp-gallery blueimp-gallery-controls blueimp-gallery-carousel">
                 <div class="slides"></div>
@@ -223,23 +216,67 @@
     <!-- Advanced Options Page -->
     <div data-role="page" id="ID_ADVANCED_OPTIONS_PAGE">
         <div data-role="header" data-theme="b" >
-            <h1>Advanced Options</h1>
+            <h1>Advanced MPL Options</h1>
             <a href="#ID_MAIN_PAGE" data-role="button" data-icon="arrow-l">Back</a>
         </div><!-- /header -->
         <div data-role="content">
-            <p>Select MYO Set:
-            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-check" id="ID_SELECT_MYO_SET_1">Select Primary MYO Set</a>
-            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-check" id="ID_SELECT_MYO_SET_2">Select Backup MYO Set</a>
-            <p>Type a log message:
+
+            <!-- Toggle AutoSave -->
+            <div class="ui-field-contain">
+                <label for="autoSave">Autosave:</label>
+                <select type="checkbox" id="autoSave" data-role="flipswitch">
+                    <option value="Off">Off</option>
+                    <option value="On" selected="selected">On</option>
+                </select>
+            </div>
+
+            <!-- Toggle Torque Rezero -->
+            <div class="ui-field-contain">
+                <label for="resetTorque">Torque Zero:</label>
+                <select type="checkbox" id="resetTorque" data-role="flipswitch">
+                    <option value="Off"  selected="selected">Off</option>
+                    <option value="On">On</option>
+                </select>
+            </div>
+
+            <!-- Toggle Impedance Mode -->
+            <div class="ui-field-contain">
+                <label for="resetTorque">Impedance:</label>
+                <select type="checkbox" id="enableImpedance" data-role="flipswitch">
+                    <option value="Off">Off</option>
+                    <option value="On" selected="selected">On</option>
+                </select>
+            </div>
+
+            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_RELOAD_ROC">Reload ROC Table</a>
+
+            <!-- Log Entry -->
+            <p>Enter a log message:
             <input type="text" id="ID_LOG_MSG" value="">
             <button onclick="submitLogMessage()">Submit Log Entry</button>
 
-            <div class="ui-field-contain">
-                <label for="resetTorque">Re-Zero Torque:</label>
-                <input type="checkbox" id="resetTorque" data-role="flipswitch" />
-            </div>
+            <!-- Status Messages -->
+            <p>Devices: <span id="msg_status_opt"></span></p>
 
-            <p>Devices: <span id="msg_status2"></span></p>
+        </div><!-- /content -->
+    </div><!-- /page -->
+
+
+    <!-- Myo Options Page -->
+    <div data-role="page" id="ID_MYO_OPTIONS_PAGE">
+        <div data-role="header" data-theme="b" >
+            <h1>Myo Armbands</h1>
+            <a href="#ID_MAIN_PAGE" data-role="button" data-icon="arrow-l">Back</a>
+        </div><!-- /header -->
+        <div data-role="content">
+            <p>Manage Myo Armbands:</p>
+            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-check" id="ID_SELECT_MYO_SET_1">Select PRIMARY Myo Set</a>
+            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-check" id="ID_SELECT_MYO_SET_2">Select BACKUP Myo Set</a>
+            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_MYO1">Restart Myo #1</a>
+            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_MYO2">Restart Myo #2</a>
+
+            <!-- Status Messages -->
+            <p>Devices: <span id="msg_status_myo"></span></p>
 
         </div><!-- /content -->
     </div><!-- /page -->

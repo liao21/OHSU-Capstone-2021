@@ -92,6 +92,13 @@ function setupSpacebrew() {
             sendCmd("Cmd:ResetTorqueOff");
         }
     });
+    $('#enableImpedance').on("change", function() {
+        if (this.checked) {
+            sendCmd("Cmd:ImpedanceOn");
+        } else {
+            sendCmd("Cmd:ImpedanceOff");
+        }
+    });
     $('#autoSave').on("change", function() {
         var val = this.value;
         if (val=="On") {
@@ -146,7 +153,8 @@ function onOpen() {
      if (name == "statusString") {
          if (cmd_type == "strStatus") {
              $("#msg_status").html(cmd_data);
-             $("#msg_status2").html(cmd_data);
+             $("#msg_status_opt").html(cmd_data);
+             $("#msg_status_myo").html(cmd_data);
          }
          if (cmd_type == "strTrainingMotion") {
              $("#msg_train").text(cmd_data);

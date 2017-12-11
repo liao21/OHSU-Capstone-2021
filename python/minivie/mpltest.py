@@ -128,19 +128,25 @@ elif choice == 5:
         mpl_angles = f.read().splitlines()
 
     # hSink = UnityUdp()
-
-    hSink = NfuUdp(hostname="192.168.8.1", udp_telem_port=9028, udp_command_port=9027)
+    # By selecting a different port for telemetry, this can run while run_www is open
+    hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9099, udp_command_port=9027)
     hSink.connect()
+    time.sleep(1.5)
     #hSink.wait_for_connection()
     hSink.enable_impedance = 0
     hSink.reset_impedance = 0
 
+    i_loop = 0
     while 1:
+        i_loop += 1
+        print('Running.  Starting Loop: {}'.format(i_loop))
+
         try:
             for s in mpl_angles:
                 angles = [float(x) for x in s.split(',')]
-                msg = 'JointCmd: ' + ','.join(['%.1f' % elem for elem in angles])
-                print(msg)
+                # msg = 'JointCmd: ' + ','.join(['%.1f' % elem for elem in angles])
+                # print(msg)
+                hSink.active_connection = True
                 hSink.send_joint_angles(angles)
                 time.sleep(0.02)
         except KeyboardInterrupt:

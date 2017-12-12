@@ -7,6 +7,8 @@
 
     <title>MPL Mobile Trainer</title>
 
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
 
     <link rel="stylesheet" href="jquery.mobile/jquery.mobile-1.4.5.min.css" />
@@ -87,8 +89,14 @@
     <link rel="stylesheet" href="lib/themes/offline-theme-chrome.css" />
     <link rel="stylesheet" href="lib/themes/offline-language-english.css" />
     <script src="lib/offline.min.js"></script>
-    <script src="lib/offline-simulate-ui.min.js"></script>
-
+    <!-- <script src="lib/offline-simulate-ui.min.js"></script> -->
+    <script>
+        var run = function(){
+         if (Offline.state === 'up')
+         Offline.check();
+         }
+         setInterval(run, 3000);
+    </script>
 </head>
 
 
@@ -138,7 +146,7 @@
             <li><a href="#ID_MT_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-star">Motion Tester...</a></li>
             </ul>
             </div>
-            
+
             <!-- Options Dropdown -->
             <div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
             <h4>Options</h4>
@@ -189,13 +197,13 @@
             </div>
 
             <!-- Training Buttons -->
-            <br>            
+            <br>
             <div data-role="controlgroup" data-type="horizontal">
                 <a href="#" class="ui-btn" id="ID_CLEARCLASS">Clear</a>
                 <a href="#" class="ui-btn" id="ID_CLEARALL">Reset</a>
                 <a href="#" class="ui-btn" id="ID_SAVE">Save</a>
             </div>
-            
+
             <!-- Helper Scripts for Image Carousel -->
             <script src="blueimp-gallery/js/blueimp-helper.js"></script>
             <script src="blueimp-gallery/js/blueimp-gallery.js"></script>
@@ -214,8 +222,8 @@
 
         </div><!-- /content -->
     </div><!-- /page -->
-    
-    
+
+
     <!-- Advanced Options Page -->
     <div data-role="page" id="ID_ADVANCED_OPTIONS_PAGE">
         <div data-role="header" data-theme="b" >
@@ -284,8 +292,6 @@
         </div><!-- /content -->
     </div><!-- /page -->
 
-    
-    
     <!-- Motion Tester Page -->
     <div data-role="page" id="ID_MT_PAGE">
         <div data-role="header" data-theme="b" >
@@ -383,30 +389,5 @@
             </div>
         </div><!-- /content -->
     </div><!-- /page -->
-    <script>
-        $(function(){
-            
-            Offline.options = {checks: {image: {url: 'my-image.gif'}, active: 'image'}}
-            
-            var 
-                $online = $('.online'),
-                $offline = $('.offline');
-
-            Offline.on('confirmed-down', function () {
-                $online.fadeOut(function () {
-                    $offline.fadeIn();
-                });
-            });
-
-            Offline.on('confirmed-up', function () {
-                $offline.fadeOut(function () {
-                    $online.fadeIn();
-                });
-            });
-
-        });
-    </script>
-
 </body>
-
 </html>

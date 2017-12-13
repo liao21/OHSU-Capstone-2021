@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<userConfig>
+    <!--Tag definition in MATLAB code:-->
+    
+    <!--Prefix to add to save data files e.g. USER_ -->
+    <add key="userFilePrefix"   value="USER_"/>
+    
+    <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
+    <add key="rocTable"         value="../../WrRocDefaults.xml"/>
+
+    <!--Specify the Output Module [Unity | NfuUdp] -->
+    <add key="DataSink"         value="NfuUdp"/>
+
+    <!--Specify the timestep in seconds -->
+    <add key="timestep"         value="0.02"/>
+
+    <!-- shutdown_voltage-->
+    <add key="shutdown_voltage"         value="20.5"/>
+    
+    <!-- enable_impedance-->
+    <add key="enable_impedance"         value="1"/>
+
+    <!-- enable_dcell strain gauge logging-->
+    <add key="dcell_enable"         value="0"/>
+    <add key="dcell_serial_port"    value="/dev/ttymxc2"/>
+
+    <!--Pattern Recognition Parameters-->
+    <add key="FeatureExtract.zcThreshold" value="0.05"/>
+    <add key="FeatureExtract.sscThreshold" value="0.05"/>    
+
+    <!-- User defined joint limits
+     Optionally limit the range of each joint prior to sending to the MPL
+     Value format: "MinAngle, MaxAngle" (degrees)
+     
+     TODO: Currently only upper arm limits are parsed
+     -->
+    <add key="ApplyUserJointLimits"   value="true"/>
+
+    <add key="SHOULDER_FE_LIMITS"     value=" -35, 170" />
+    <add key="SHOULDER_AB_AD_LIMITS"  value=" -90, 0" />
+    <add key="HUMERAL_ROT_LIMITS"     value=" -35, 80" />
+    <add key="ELBOW_LIMITS"           value="   0, 130" />
+
+    <add key="WRIST_ROT_LIMITS"       value=" -85, 85" />
+    <add key="WRIST_AB_AD_LIMITS"     value=" -45, 45" />
+    <add key="WRIST_FE_LIMITS"        value=" -60, 60" />
+
+    <add key="INDEX_AB_AD_LIMITS"     value=" -20, 0" />
+    <add key="INDEX_MCP_LIMITS"       value=" -40, 85" />
+    <add key="INDEX_PIP_LIMITS"       value="   0, 100" />
+    <add key="INDEX_DIP_LIMITS"       value="   0, 80" />
+
+    <add key="MIDDLE_AB_AD_LIMITS"    value=" -20, 0" />
+    <add key="MIDDLE_MCP_LIMITS"      value=" -40, 85" />
+    <add key="MIDDLE_PIP_LIMITS"      value="   0, 100" />
+    <add key="MIDDLE_DIP_LIMITS"      value="   0, 80" />
+
+    <add key="RING_AB_AD_LIMITS"      value="   0, 20" />
+    <add key="RING_MCP_LIMITS"        value=" -40, 85" />
+    <add key="RING_PIP_LIMITS"        value="   0, 100" />
+    <add key="RING_DIP_LIMITS"        value="   0, 80" />
+
+    <add key="LITTLE_AB_AD_LIMITS"    value="   0, 20" />
+    <add key="LITTLE_MCP_LIMITS"      value=" -40, 85" />
+    <add key="LITTLE_PIP_LIMITS"      value="   0, 100" />
+    <add key="LITTLE_DIP_LIMITS"      value="   0, 80" />
+
+    <add key="THUMB_CMC_AB_AD_LIMITS" value="  8, 135" />
+    <add key="THUMB_CMC_FE_LIMITS"    value="   8, 80" />
+    <add key="THUMB_MCP_LIMITS"       value="   8, 80" />
+    <add key="THUMB_DIP_LIMITS"       value=" -12, 60" />
+
+    <!-- Joint direction parameters to flip joint direction +/- 1 -->    
+    <add key="WRIST_FE_DIRECTION"        value="+1" />
+
+    <!-- Joint impedance parameters -->    
+    <add key="SHOULDER_FE_STIFFNESS"     value="12.0" />
+    <add key="SHOULDER_AB_AD_STIFFNESS"  value="12.0" />
+    <add key="HUMERAL_ROT_STIFFNESS"     value="8.0" />
+    <add key="ELBOW_STIFFNESS"           value="8.0" />
+
+    <add key="WRIST_ROT_STIFFNESS"       value="8.0" />
+    <add key="WRIST_AB_AD_STIFFNESS"     value="8.0" />
+    <add key="WRIST_FE_STIFFNESS"        value="8.0" />
+
+    <add key="INDEX_AB_AD_STIFFNESS"     value="1.5" />
+    <add key="INDEX_MCP_STIFFNESS"       value="1.5" />
+    <add key="INDEX_PIP_STIFFNESS"       value="1.5" />
+    <add key="INDEX_DIP_STIFFNESS"       value="1.5" />
+
+    <add key="MIDDLE_AB_AD_STIFFNESS"    value="1.5" />
+    <add key="MIDDLE_MCP_STIFFNESS"      value="1.5" />
+    <add key="MIDDLE_PIP_STIFFNESS"      value="1.5" />
+    <add key="MIDDLE_DIP_STIFFNESS"      value="1.5" />
+
+    <add key="RING_AB_AD_STIFFNESS"      value="1.5" />
+    <add key="RING_MCP_STIFFNESS"        value="1.5" />
+    <add key="RING_PIP_STIFFNESS"        value="1.5" />
+    <add key="RING_DIP_STIFFNESS"        value="1.5" />
+
+    <add key="LITTLE_AB_AD_STIFFNESS"    value="1.5" />
+    <add key="LITTLE_MCP_STIFFNESS"      value="1.5" />
+    <add key="LITTLE_PIP_STIFFNESS"      value="1.5" />
+    <add key="LITTLE_DIP_STIFFNESS"      value="1.5" />
+
+    <add key="THUMB_CMC_AB_AD_STIFFNESS" value="1.75" />
+    <add key="THUMB_CMC_FE_STIFFNESS"    value="1.5" />
+    <add key="THUMB_MCP_STIFFNESS"       value="1.5" />
+    <add key="THUMB_DIP_STIFFNESS"       value="1.5" />
+    
+    <!-- The Global hand stiffness will overwite values above!!-->    
+    <add key="GLOBAL_HAND_STIFFNESS_ENABLE"     value="1" />
+    <add key="GLOBAL_HAND_STIFFNESS"            value="4.0" />
+    
+</userConfig>

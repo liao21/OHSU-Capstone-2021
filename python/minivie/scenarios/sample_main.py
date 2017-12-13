@@ -101,7 +101,7 @@ def model(signal_source, signal_classifier, plant, data_sink, trainer, file):
     # set the mapped class
     if class_info['IsGrasp']:
         if class_info['GraspId'] is not None:
-            plant.GraspId = class_info['GraspId']
+            plant.grasp_id = class_info['GraspId']
         plant.set_grasp_velocity(class_info['Direction'] * gain)
     else:
         plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * gain)
@@ -112,10 +112,10 @@ def model(signal_source, signal_classifier, plant, data_sink, trainer, file):
     # perform joint motion update
     vals = signal_source.get_angles()
     # Temp: Overwrite Elbow angle based on Myo orientation
-    plant.JointPosition[3] = vals[1] + math.pi / 2
+    plant.joint_position[3] = vals[1] + math.pi / 2
 
     # transmit output
-    data_sink.send_joint_angles(plant.JointPosition)
+    data_sink.send_joint_angles(plant.joint_position)
 
     # TODO[Lydia2]: Update training 
     # Training Process begin logging
@@ -134,7 +134,7 @@ def model(signal_source, signal_classifier, plant, data_sink, trainer, file):
     # DEBUG output display
     if VERBOSE:
         # print(f[:1,:])
-        print(("%8.4f" % plant.position[3], "%8.4f" % plant.position[4]), 'Class: %s' % class_names[class_num])
+        print(("%8.4f" % plant.joint_position[3], "%8.4f" % plant.joint_position[4]), 'Class: %s' % class_names[class_num])
 
 
 def main():

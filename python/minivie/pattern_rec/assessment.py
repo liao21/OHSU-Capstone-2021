@@ -492,9 +492,10 @@ class TargetAchievementControl(AssessmentInterface):
                 lower_limit_list.append(float(0))
                 upper_limit_list.append(float(100))
                 # Set target joint angle
-                # TAC set an angle 75 degrees away from current position, for now we wil just pick random number within limits
-                # Will ensure this position is at least 25% of total range from current position, and not at edge of limit
-                current_position = self.vie.Plant.GraspPosition * 100.0
+                # TAC set an angle 75 degrees away from current position, for now we will just pick random number
+                # within limits.  Will ensure this position is at least 25% of total range from current position,
+                # and not at edge of limit
+                current_position = self.vie.Plant.grasp_position * 100.0
                 time_begin = time.time()
                 while True:
                     target_position = float(random.randint(int(round(lower_limit_list[-1])), int(round(upper_limit_list[-1]))))
@@ -508,12 +509,12 @@ class TargetAchievementControl(AssessmentInterface):
             else:
                 target_error_list.append(float(self.target_error_degree))
                 mplId = getattr(MplId, joint_name)
-                lower_limit_list.append(float(self.vie.Plant.lowerLimit[mplId] * 180.0 / math.pi))
-                upper_limit_list.append(float(self.vie.Plant.upperLimit[mplId] * 180.0 / math.pi))
+                lower_limit_list.append(float(self.vie.Plant.lower_limit[mplId] * 180.0 / math.pi))
+                upper_limit_list.append(float(self.vie.Plant.upper_limit[mplId] * 180.0 / math.pi))
                 # Set target joint angle
                 # TAC set an angle 75 degrees away from current position, for now we wil just pick random number within limits
                 # Will ensure this position is at least 25% of total range away from current position, and not at edge of limit
-                current_position = self.vie.Plant.JointPosition[mplId] * 180.0 / math.pi
+                current_position = self.vie.Plant.joint_position[mplId] * 180.0 / math.pi
                 time_begin = time.time()
                 while True:
                     target_position = float(random.randint(int(round(lower_limit_list[-1])), int(round(upper_limit_list[-1]))))
@@ -568,10 +569,10 @@ class TargetAchievementControl(AssessmentInterface):
 
                 # Get current joint position
                 if is_grasp:
-                    position = self.vie.Plant.GraspPosition*100.0
+                    position = self.vie.Plant.grasp_position*100.0
                 else:
                     mplId = getattr(MplId, joint_name)
-                    position = self.vie.Plant.JointPosition[mplId] * 180.0 / math.pi
+                    position = self.vie.Plant.joint_position[mplId] * 180.0 / math.pi
 
                 # Get current intent
                 current_class = self.vie.output['decision']

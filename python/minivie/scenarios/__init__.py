@@ -368,7 +368,7 @@ class Scenario(object):
             # the motion class is either a grasp type or hand open
             if class_info['GraspId'] is not None and self.Plant.grasp_position < 0.2:
                 # change the grasp state if still early in the grasp motion
-                self.Plant.GraspId = class_info['GraspId']
+                self.Plant.grasp_id = class_info['GraspId']
             self.Plant.set_grasp_velocity(class_info['Direction'] * self.hand_gain_value)
 
         pause_arm = self.is_paused('Arm') or self.is_paused('All')

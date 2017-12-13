@@ -29,7 +29,14 @@ class RocElement:
 
 # function to read in ROC xml file and store as dictionary
 def read_roc_table(file):
-    roc_table_tree = xmlTree.parse(file)  # store ROC table as an ElementTree
+    import os, sys
+    try:
+        roc_table_tree = xmlTree.parse(file)  # store ROC table as an ElementTree
+    except FileNotFoundError:
+        # unrecoverable
+        logging.critical('Failed to find file {} in {}. Program Halted.'.format(file, os.getcwd()))
+        sys.exit(1)
+
     roc_table = {}  # make dictionary of ROC grasps
     root = roc_table_tree.getroot()
 
@@ -109,9 +116,9 @@ def main():
     print("\n\nDEMO Get ROC By [INVALID] ID:")
     print_roc(get_roc_id(roc_table, 99))
 
-    print("\n\nDEMO Get ROC Vals:")
-    new_vals = get_roc_values(get_roc_id(roc_table, 1), 0.1)
-    print(['{:6.3f}'.format(i) for i in new_vals])
+    print("\n\nDEMO Get ROC Values:")
+    new_values = get_roc_values(get_roc_id(roc_table, 1), 0.1)
+    print(['{:6.3f}'.format(i) for i in new_values])
 
 
 # Main Function (for demo)

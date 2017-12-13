@@ -1,6 +1,6 @@
 import logging
-
-from utilities import shutdown, reboot, restart_myo, change_myo
+import utilities
+import utilities.user_config
 
 
 class Scenario(object):
@@ -179,7 +179,9 @@ class Scenario(object):
 
         elif cmd_type == 'Cmd':
 
+            ###################
             # Training Options
+            ###################
             if cmd_data == 'Add':
                 self.add_data = True
             elif cmd_data == 'Stop':
@@ -204,7 +206,9 @@ class Scenario(object):
             elif cmd_data == 'AutoSaveOff':
                 self.auto_save = False
 
+            ######################
             # MPL Control Options
+            ######################
             elif cmd_data == 'ResetTorqueOn':
                 self.DataSink.reset_impedance = True
             elif cmd_data == 'ResetTorqueOff':
@@ -216,25 +220,36 @@ class Scenario(object):
                 self.DataSink.enable_impedance = 0
 
             elif cmd_data == 'ReloadRoc':
-                self.Plant.reload_roc('../../WrRocDefaults.xml')
+                # Reload xml parameters and ROC Table
+                # RSA: Update reload both ROC and xml config parameters
+                utilities.user_config.read_user_config(reload=True)
+                self.Plant.load_roc()
+                self.Plant.load_config_parameters()
+                self.DataSink.load_config_parameters()
 
+            ######################
             # Myo Control Options
+            ######################
             elif cmd_data == 'RestartMyo1':
-                restart_myo(1)
+                utilities.restart_myo(1)
             elif cmd_data == 'RestartMyo2':
-                restart_myo(2)
+                utilities.restart_myo(2)
             elif cmd_data == 'ChangeMyoSet1':
-                change_myo(1)
+                utilities.change_myo(1)
             elif cmd_data == 'ChangeMyoSet2':
-                change_myo(2)
+                utilities.change_myo(2)
 
+            #################
             # System Options
+            #################
             elif cmd_data == 'Reboot':
-                reboot()
+                utilities.reboot()
             elif cmd_data == 'Shutdown':
-                shutdown()
+                utilities.shutdown()
 
+            ################
             # Speed Options
+            ################
             elif cmd_data == 'PrecisionModeOff':
                 self.set_precision_mode(False)
             elif cmd_data == 'PrecisionModeOn':
@@ -375,3 +390,139 @@ class Scenario(object):
             s.close()
         if self.DataSink is not None:
             self.DataSink.close()
+
+
+class MplScenario(Scenario):
+    """
+    Created on Tue Jan 23 10:17:58 2016
+
+    Initial pass at simulating MiniVIE processing using python so that this runs on an embedded device
+
+    @author: R. Armiger
+    """
+
+    from scenarios import Scenario
+
+    def setup(self):
+        """
+        Create the building blocks of the MiniVIE
+
+            SignalSource - source of EMG data
+            SignalClassifier - algorithm to classify emg into 'intent'
+            Plant - Perform forward integration and apply joint limits
+            DataSink - output destination of command signals (e.g. real or virtual arm)
+        """
+        from inputs import myo
+        import pattern_rec as pr
+        from mpl.unity import UnityUdp
+        from mpl.open_nfu import NfuUdp
+        from controls.plant import Plant, class_map
+        from scenarios import Scenario
+        from utilities import user_config
+
+        # attach inputs
+        self.attach_source([myo.MyoUdp(source='//0.0.0.0:15001'), myo.MyoUdp(source='//0.0.0.0:15002')])
+        # self.attach_source([myo.MyoUdp(source='//0.0.0.0:15001')])
+
+        # Training Data holds data labels
+        # training data manager
+        self.TrainingData = pr.TrainingData()
+        self.TrainingData.load()
+        self.TrainingData.num_channels = self.num_channels
+
+        # Setup feature extract and properties
+        self.FeatureExtract = pr.FeatureExtract()
+        self.FeatureExtract.zc_thresh = user_config.get_user_config_var('FeatureExtract.zcThreshold', 0.05)
+        self.FeatureExtract.ssc_thresh = user_config.get_user_config_var('FeatureExtract.sscThreshold', 0.05)
+        self.FeatureExtract.sample_rate = 200
+
+        # Classifier parameters
+        self.SignalClassifier = pr.Classifier(self.TrainingData)
+        self.SignalClassifier.fit()
+
+        # Plant maintains current limb state (positions) during velocity control
+        filename = user_config.get_user_config_var('rocTable', '../../WrRocDefaults.xml')
+        dt = user_config.get_user_config_var('timestep', 0.02)
+        self.Plant = Plant(dt, filename)
+
+        # Sink is output to outside world (in this case to VIE)
+        # For MPL, this might be: real MPL/NFU, Virtual Arm, etc.
+        data_sink = user_config.get_user_config_var('DataSink', 'Unity')
+        if data_sink == 'Unity':
+            sink = UnityUdp(remote_host="127.0.0.1")  # ("192.168.1.24")
+            self.DataSink = sink
+        elif data_sink == 'NfuUdp':
+            sink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
+            sink.connect()
+            sink.wait_for_connection()
+            # Synchronize joint positions
+            if sink.last_percept_position is not None:
+                for i in range(0, len(self.Plant.joint_position)):
+                    self.Plant.joint_position[i] = sink.last_percept_position[i]
+            self.DataSink = sink
+
+    def run(self):
+        """
+            Main function that involves setting up devices,
+            looping at a fixed time interval, and performing cleanup
+        """
+        import sys
+        import time
+
+        # setup main loop control
+        print("")
+        print("Running...")
+        print("")
+        sys.stdout.flush()
+
+        # ##########################
+        # Run the control loop
+        # ##########################
+        time_elapsed = 0.0
+        dt = self.Plant.dt
+        print(dt)
+        while True:
+            try:
+                # Fixed rate loop.  get start time, run model, get end time; delay for duration
+                time_begin = time.time()
+
+                # Run the actual model
+                output = self.update()
+
+                # send gui updates
+                if self.TrainingInterface is not None:
+                    msg = '<br>' + self.DataSink.get_status_msg()  # Limb Status
+                    msg += ' ' + output['status']  # Classifier Status
+                    for src in self.SignalSource:
+                        msg += '<br>MYO:' + src.get_status_msg()
+                    msg += '<br>' + time.strftime("%c")
+
+                    # Forward status message (voltage, temp, etc) to mobile app
+                    self.TrainingInterface.send_message("strStatus", msg)
+                    # Send classifier output to mobile app (e.g. Elbow Flexion)
+                    self.TrainingInterface.send_message("strOutputMotion", output['decision'])
+                    # Send motion training status to mobile app (e.g. No Movement [70]
+                    msg = '{} [{:.0f}]'.format(self.training_motion,
+                                               round(self.TrainingData.get_totals(self.training_id), -1))
+                    self.TrainingInterface.send_message("strTrainingMotion", msg)
+
+                time_end = time.time()
+                time_elapsed = time_end - time_begin
+                if dt > time_elapsed:
+                    time.sleep(dt - time_elapsed)
+                else:
+                    # print("Timing Overload: {}".format(time_elapsed))
+                    pass
+
+                # print('{0} dt={1:6.3f}'.format(output['decision'],time_elapsed))
+
+            except KeyboardInterrupt:
+                break
+
+        print("")
+        print("Last time_elapsed was: ", time_elapsed)
+        print("")
+        print("Cleaning up...")
+        print("")
+
+        self.close()

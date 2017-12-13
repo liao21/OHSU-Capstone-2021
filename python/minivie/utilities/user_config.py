@@ -21,23 +21,25 @@ xml_file = None
 xml_force_default = True  # If there is a problem with the xml, revert to just returning config value defaults
 
 
-def read_user_config(file='../../user_config.xml'):
+def read_user_config(file='../../user_config.xml', reload=False):
     # function to read in xml file and store as dictionary
     #
     # Note this function uses the xml as a global variable such that any function in the system can make a direct call
     # to access parameters
+    #
+    # Use the reload command to just re-read the xml file and not change the filename
 
-    logging.info('Reading xml config file: {}'.format(file))
     global xml_file, xml_root, xml_tree, xml_force_default
-    xml_file = file
+    if not reload:
+        xml_file = file
+    logging.info('Reading xml config file: {}'.format(xml_file))
     try:
         xml_tree = xmlTree.parse(xml_file)
         xml_root = xml_tree.getroot()
         xml_force_default = False
     except FileNotFoundError:
         xml_force_default = True
-        logging.error('Failed to find file {}. Param defaults will be used.'.format(xml_file))
-
+        logging.error('Failed to find file {} in {}. Param defaults will be used.'.format(xml_file, os.getcwd()))
 
 
 def get_user_config_var(key, default_value):

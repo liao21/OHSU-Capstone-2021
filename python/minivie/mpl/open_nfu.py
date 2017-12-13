@@ -23,6 +23,7 @@ import time
 import numpy as np
 import mpl
 from mpl.data_sink import DataSink
+from mpl import JointEnum as MplId
 from utilities import extract_percepts, user_config
 
 
@@ -70,10 +71,7 @@ class NfuUdp(DataSink):
         self.battery_samples = collections.deque([], maxlen=15)
 
         self.reset_impedance = False
-        self.magic_impedance = [5.0, 5.0, 5.0, 5.0, 1.0, 5.0, 1.5] + [15.6288] * 20
-
-        self.shutdown_voltage = user_config.get_user_config_var('shutdown_voltage', 19.0)
-        self.enable_impedance = user_config.get_user_config_var('enable_impedance', 0)
+        self.magic_impedance = [12.0] * 7 + [15.6288] * 20
 
         # create a counter to delay how often CPU temperature is read and logged
         self.last_temperature = 0.0
@@ -81,6 +79,31 @@ class NfuUdp(DataSink):
 
         # store the last known limb position
         self.last_percept_position = None
+
+        self.stiffness = None
+        self.shutdown_voltage = None
+        self.enable_impedance = None
+        self.load_config_parameters()
+
+    def load_config_parameters(self):
+        # Load parameters from xml config file
+
+        # initialize stiffness to global value (overwrite later if needed)
+        s = user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS', 2.5)
+        self.stiffness = [s] * MplId.NUM_JOINTS
+
+        # Upper Arm
+        num_upper_arm_joints = 7
+        for i in range(num_upper_arm_joints):
+            self.stiffness[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS', 12.0)
+
+        # Hand
+        if not user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS_ENABLE', 0):
+            for i in range(num_upper_arm_joints, MplId.NUM_JOINTS):
+                self.stiffness[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS', 4.0)
+
+        self.shutdown_voltage = user_config.get_user_config_var('shutdown_voltage', 19.0)
+        self.enable_impedance = user_config.get_user_config_var('enable_impedance', 0)
 
     def connect(self):
         # open up the socket and bind to IP address
@@ -435,6 +458,7 @@ def main():
     # Note, ensure to make deep copies of joint angles, so no references are used
     import copy
 
+    user_config.read_user_config('../user_config_default.xml')
     nfu = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
     nfu.connect()
 

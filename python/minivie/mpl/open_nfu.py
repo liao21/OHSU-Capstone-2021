@@ -350,9 +350,12 @@ class NfuUdp(DataSink):
             if self.reset_impedance:
                 stiffness = self.magic_impedance
             else:
-                stiffness = [5.0, 5.0, 5.0, 5.0, 1.0, 5.0, 1.5] + [0.04] * 20
+                stiffness = self.stiffness
+
             payload = np.append(values, velocity)
             payload = np.append(payload, stiffness)
+
+            # print(stiffness)
 
             # Send data
             # size is 7 + 20 + 7 + 20 + 27

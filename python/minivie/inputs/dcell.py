@@ -54,8 +54,10 @@ from datetime import datetime
 from inputs.signal_input import SignalInput
 import h5py
 import serial
-if os.name is 'posix':
+try:
     import serial.rs485
+except ImportError:
+    logging.warning('Failed to load module: serial.rs485')
 
 
 class DCellSerial(SignalInput):

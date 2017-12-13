@@ -366,7 +366,7 @@ class Scenario(object):
         pause_hand = self.is_paused('Hand') or self.is_paused('All')
         if class_info['IsGrasp'] and not pause_hand:
             # the motion class is either a grasp type or hand open
-            if class_info['GraspId'] is not None and self.Plant.GraspPosition < 0.2:
+            if class_info['GraspId'] is not None and self.Plant.grasp_position < 0.2:
                 # change the grasp state if still early in the grasp motion
                 self.Plant.GraspId = class_info['GraspId']
             self.Plant.set_grasp_velocity(class_info['Direction'] * self.hand_gain_value)
@@ -380,7 +380,7 @@ class Scenario(object):
 
         # transmit output
         if self.DataSink is not None:
-            self.DataSink.send_joint_angles(self.Plant.JointPosition)
+            self.DataSink.send_joint_angles(self.Plant.joint_position)
 
         return self.output
 

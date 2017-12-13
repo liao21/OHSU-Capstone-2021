@@ -389,7 +389,7 @@ class TargetAchievementControl(AssessmentInterface):
         if 'No Movement' in trained_classes: trained_classes.remove('No Movement')
 
         # Determine which joints/grasps have been trained
-        # TAC is based on a joint being fully treined in both directions, and on having a grasp and Hand Open trained
+        # TAC is based on a joint being fully trained in both directions, and on having a grasp and Hand Open trained
         all_joint_ids = []
         all_grasp_ids = []
         for class_name in trained_classes:

@@ -94,7 +94,10 @@ class Scenario(object):
                 # this should only happen once when state is changed
                 self.__pause[scope] = state
                 # Try to set the limb state to soft reset
-                self.DataSink.set_limb_soft_reset()
+                try:
+                    self.DataSink.set_limb_soft_reset()
+                except AttributeError:
+                    logging.warning('set_limb_soft_reset mode not defined')
                 
             # return either way
             return

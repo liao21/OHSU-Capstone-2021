@@ -71,7 +71,7 @@ class NfuUdp(DataSink):
         self.battery_samples = collections.deque([], maxlen=15)
 
         self.reset_impedance = False
-        self.magic_impedance = [12.0] * 7 + [15.6288] * 20
+        self.magic_impedance = [40.0] * 7 + [15.6288] * 20
 
         # create a counter to delay how often CPU temperature is read and logged
         self.last_temperature = 0.0
@@ -86,7 +86,7 @@ class NfuUdp(DataSink):
         # RSA: moved this parameter out of the load function to not overwrite on reload from app
         # self.enable_impedance = None
         self.enable_impedance = user_config.get_user_config_var('enable_impedance', 0)
-        self.impedance_level = 'low'  # Options are low | high
+        self.impedance_level = 'high'  # Options are low | high
         self.load_config_parameters()
 
     def load_config_parameters(self):
@@ -96,13 +96,13 @@ class NfuUdp(DataSink):
         s = user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS_HIGH', 1.5)
         self.stiffness_high = [s] * MplId.NUM_JOINTS
         s = user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS_LOW', 0.75)
-        self.stiffness_high = [s] * MplId.NUM_JOINTS
+        self.stiffness_low = [s] * MplId.NUM_JOINTS
 
         # Upper Arm
         num_upper_arm_joints = 7
         for i in range(num_upper_arm_joints):
             self.stiffness_high[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS_HIGH', 40.0)
-            self.stiffness_high[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS_LOW', 20.0)
+            self.stiffness_low[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS_LOW', 20.0)
 
         # Hand
         if not user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS_HIGH_ENABLE', 0):
@@ -110,7 +110,7 @@ class NfuUdp(DataSink):
                 self.stiffness_high[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS_HIGH', 4.0)
         if not user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS_LOW_ENABLE', 0):
             for i in range(num_upper_arm_joints, MplId.NUM_JOINTS):
-                self.stiffness_high[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS_LOW', 4.0)
+                self.stiffness_low[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS_LOW', 4.0)
 
         self.shutdown_voltage = user_config.get_user_config_var('shutdown_voltage', 19.0)
         # self.enable_impedance = user_config.get_user_config_var('enable_impedance', 0)
@@ -316,7 +316,7 @@ class NfuUdp(DataSink):
         #    joint angles in radians of size 7 for arm joints  (e.g. [0.0] * 7 )
         #    joint angles in radians of size 27 for all arm joints (e.g. [0.0] * 27 )
 
-        if not self.active_connection:
+        if not self.active_connection and user_config.get_user_config_var('mpl_connection_check', 1):
             logging.warning('MPL Connection is closed; not sending joint angles.')
             return
 
@@ -368,7 +368,7 @@ class NfuUdp(DataSink):
             payload = np.append(values, velocity)
             payload = np.append(payload, stiffness)
 
-            # print(stiffness)
+            print(stiffness)
 
             # Send data
             # size is 7 + 20 + 7 + 20 + 27

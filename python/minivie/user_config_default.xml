@@ -13,6 +13,7 @@
 
     <!--Specify the Output Module [Unity | NfuUdp] -->
     <add key="DataSink"         value="NfuUdp"/>
+    <add key="mpl_connection_check"         value="1"/>
 
     <!--Specify the timestep in seconds -->
     <add key="timestep"         value="0.02"/>

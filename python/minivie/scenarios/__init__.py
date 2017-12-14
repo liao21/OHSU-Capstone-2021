@@ -98,7 +98,7 @@ class Scenario(object):
                     self.DataSink.set_limb_soft_reset()
                 except AttributeError:
                     logging.warning('set_limb_soft_reset mode not defined')
-                
+
             # return either way
             return
 
@@ -462,7 +462,8 @@ class MplScenario(Scenario):
         elif data_sink == 'NfuUdp':
             sink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
             sink.connect()
-            sink.wait_for_connection()
+            if user_config.get_user_config_var('mpl_connection_check', 1):
+                sink.wait_for_connection()
             # Synchronize joint positions
             if sink.last_percept_position is not None:
                 for i in range(0, len(self.Plant.joint_position)):

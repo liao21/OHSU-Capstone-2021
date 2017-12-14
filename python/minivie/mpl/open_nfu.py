@@ -80,29 +80,37 @@ class NfuUdp(DataSink):
         # store the last known limb position
         self.last_percept_position = None
 
-        self.stiffness = None
+        self.stiffness_high = None
+        self.stiffness_low = None
         self.shutdown_voltage = None
         # RSA: moved this parameter out of the load function to not overwrite on reload from app
         # self.enable_impedance = None
         self.enable_impedance = user_config.get_user_config_var('enable_impedance', 0)
+        self.impedance_level = 'low'  # Options are low | high
         self.load_config_parameters()
 
     def load_config_parameters(self):
         # Load parameters from xml config file
 
         # initialize stiffness to global value (overwrite later if needed)
-        s = user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS', 2.5)
-        self.stiffness = [s] * MplId.NUM_JOINTS
+        s = user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS_HIGH', 1.5)
+        self.stiffness_high = [s] * MplId.NUM_JOINTS
+        s = user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS_LOW', 0.75)
+        self.stiffness_high = [s] * MplId.NUM_JOINTS
 
         # Upper Arm
         num_upper_arm_joints = 7
         for i in range(num_upper_arm_joints):
-            self.stiffness[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS', 12.0)
+            self.stiffness_high[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS_HIGH', 40.0)
+            self.stiffness_high[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS_LOW', 20.0)
 
         # Hand
-        if not user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS_ENABLE', 0):
+        if not user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS_HIGH_ENABLE', 0):
             for i in range(num_upper_arm_joints, MplId.NUM_JOINTS):
-                self.stiffness[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS', 4.0)
+                self.stiffness_high[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS_HIGH', 4.0)
+        if not user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS_LOW_ENABLE', 0):
+            for i in range(num_upper_arm_joints, MplId.NUM_JOINTS):
+                self.stiffness_high[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS_LOW', 4.0)
 
         self.shutdown_voltage = user_config.get_user_config_var('shutdown_voltage', 19.0)
         # self.enable_impedance = user_config.get_user_config_var('enable_impedance', 0)
@@ -352,7 +360,10 @@ class NfuUdp(DataSink):
             if self.reset_impedance:
                 stiffness = self.magic_impedance
             else:
-                stiffness = self.stiffness
+                if self.impedance_level == 'low':
+                    stiffness = self.stiffness_low
+                else:
+                    stiffness = self.stiffness_high
 
             payload = np.append(values, velocity)
             payload = np.append(payload, stiffness)

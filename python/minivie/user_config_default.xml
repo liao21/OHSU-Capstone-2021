@@ -77,42 +77,81 @@
     <add key="WRIST_FE_DIRECTION"        value="+1" />
 
     <!-- Joint impedance parameters -->    
-    <add key="SHOULDER_FE_STIFFNESS"     value="12.0" />
-    <add key="SHOULDER_AB_AD_STIFFNESS"  value="12.0" />
-    <add key="HUMERAL_ROT_STIFFNESS"     value="8.0" />
-    <add key="ELBOW_STIFFNESS"           value="8.0" />
+    <add key="SHOULDER_FE_STIFFNESS_HIGH"     value="40.0" />
+    <add key="SHOULDER_AB_AD_STIFFNESS_HIGH"  value="40.0" />
+    <add key="HUMERAL_ROT_STIFFNESS_HIGH"     value="40.0" />
+    <add key="ELBOW_STIFFNESS_HIGH"           value="40.0" />
 
-    <add key="WRIST_ROT_STIFFNESS"       value="8.0" />
-    <add key="WRIST_AB_AD_STIFFNESS"     value="8.0" />
-    <add key="WRIST_FE_STIFFNESS"        value="8.0" />
+    <add key="WRIST_ROT_STIFFNESS_HIGH"       value="40.0" />
+    <add key="WRIST_AB_AD_STIFFNESS_HIGH"     value="40.0" />
+    <add key="WRIST_FE_STIFFNESS_HIGH"        value="40.0" />
 
-    <add key="INDEX_AB_AD_STIFFNESS"     value="1.5" />
-    <add key="INDEX_MCP_STIFFNESS"       value="1.5" />
-    <add key="INDEX_PIP_STIFFNESS"       value="1.5" />
-    <add key="INDEX_DIP_STIFFNESS"       value="1.5" />
+    <add key="INDEX_AB_AD_STIFFNESS_HIGH"     value="1.5" />
+    <add key="INDEX_MCP_STIFFNESS_HIGH"       value="1.5" />
+    <add key="INDEX_PIP_STIFFNESS_HIGH"       value="1.5" />
+    <add key="INDEX_DIP_STIFFNESS_HIGH"       value="1.5" />
 
-    <add key="MIDDLE_AB_AD_STIFFNESS"    value="1.5" />
-    <add key="MIDDLE_MCP_STIFFNESS"      value="1.5" />
-    <add key="MIDDLE_PIP_STIFFNESS"      value="1.5" />
-    <add key="MIDDLE_DIP_STIFFNESS"      value="1.5" />
+    <add key="MIDDLE_AB_AD_STIFFNESS_HIGH"    value="1.5" />
+    <add key="MIDDLE_MCP_STIFFNESS_HIGH"      value="1.5" />
+    <add key="MIDDLE_PIP_STIFFNESS_HIGH"      value="1.5" />
+    <add key="MIDDLE_DIP_STIFFNESS_HIGH"      value="1.5" />
 
-    <add key="RING_AB_AD_STIFFNESS"      value="1.5" />
-    <add key="RING_MCP_STIFFNESS"        value="1.5" />
-    <add key="RING_PIP_STIFFNESS"        value="1.5" />
-    <add key="RING_DIP_STIFFNESS"        value="1.5" />
+    <add key="RING_AB_AD_STIFFNESS_HIGH"      value="1.5" />
+    <add key="RING_MCP_STIFFNESS_HIGH"        value="1.5" />
+    <add key="RING_PIP_STIFFNESS_HIGH"        value="1.5" />
+    <add key="RING_DIP_STIFFNESS_HIGH"        value="1.5" />
 
-    <add key="LITTLE_AB_AD_STIFFNESS"    value="1.5" />
-    <add key="LITTLE_MCP_STIFFNESS"      value="1.5" />
-    <add key="LITTLE_PIP_STIFFNESS"      value="1.5" />
-    <add key="LITTLE_DIP_STIFFNESS"      value="1.5" />
+    <add key="LITTLE_AB_AD_STIFFNESS_HIGH"    value="1.5" />
+    <add key="LITTLE_MCP_STIFFNESS_HIGH"      value="1.5" />
+    <add key="LITTLE_PIP_STIFFNESS_HIGH"      value="1.5" />
+    <add key="LITTLE_DIP_STIFFNESS_HIGH"      value="1.5" />
 
-    <add key="THUMB_CMC_AB_AD_STIFFNESS" value="1.75" />
-    <add key="THUMB_CMC_FE_STIFFNESS"    value="1.5" />
-    <add key="THUMB_MCP_STIFFNESS"       value="1.5" />
-    <add key="THUMB_DIP_STIFFNESS"       value="1.5" />
+    <add key="THUMB_CMC_AB_AD_STIFFNESS_HIGH" value="1.5" />
+    <add key="THUMB_CMC_FE_STIFFNESS_HIGH"    value="1.5" />
+    <add key="THUMB_MCP_STIFFNESS_HIGH"       value="1.5" />
+    <add key="THUMB_DIP_STIFFNESS_HIGH"       value="1.5" />
     
-    <!-- The Global hand stiffness will overwite values above!!-->    
-    <add key="GLOBAL_HAND_STIFFNESS_ENABLE"     value="1" />
-    <add key="GLOBAL_HAND_STIFFNESS"            value="4.0" />
-    
+    <!-- The Global hand STIFFNESS_HIGH will overwrite values above!!-->
+    <add key="GLOBAL_HAND_STIFFNESS_HIGH_ENABLE"     value="1" />
+    <add key="GLOBAL_HAND_STIFFNESS_HIGH"            value="2.0" />
+
+    <!-- Joint impedance parameters -->
+    <add key="SHOULDER_FE_STIFFNESS_LOW"     value="20.0" />
+    <add key="SHOULDER_AB_AD_STIFFNESS_LOW"  value="20.0" />
+    <add key="HUMERAL_ROT_STIFFNESS_LOW"     value="20.0" />
+    <add key="ELBOW_STIFFNESS_LOW"           value="20.0" />
+
+    <add key="WRIST_ROT_STIFFNESS_LOW"       value="20.0" />
+    <add key="WRIST_AB_AD_STIFFNESS_LOW"     value="20.0" />
+    <add key="WRIST_FE_STIFFNESS_LOW"        value="20.0" />
+
+    <add key="INDEX_AB_AD_STIFFNESS_LOW"     value="0.75" />
+    <add key="INDEX_MCP_STIFFNESS_LOW"       value="0.75" />
+    <add key="INDEX_PIP_STIFFNESS_LOW"       value="0.75" />
+    <add key="INDEX_DIP_STIFFNESS_LOW"       value="0.75" />
+
+    <add key="MIDDLE_AB_AD_STIFFNESS_LOW"    value="0.75" />
+    <add key="MIDDLE_MCP_STIFFNESS_LOW"      value="0.75" />
+    <add key="MIDDLE_PIP_STIFFNESS_LOW"      value="0.75" />
+    <add key="MIDDLE_DIP_STIFFNESS_LOW"      value="0.75" />
+
+    <add key="RING_AB_AD_STIFFNESS_LOW"      value="0.75" />
+    <add key="RING_MCP_STIFFNESS_LOW"        value="0.75" />
+    <add key="RING_PIP_STIFFNESS_LOW"        value="0.75" />
+    <add key="RING_DIP_STIFFNESS_LOW"        value="0.75" />
+
+    <add key="LITTLE_AB_AD_STIFFNESS_LOW"    value="0.75" />
+    <add key="LITTLE_MCP_STIFFNESS_LOW"      value="0.75" />
+    <add key="LITTLE_PIP_STIFFNESS_LOW"      value="0.75" />
+    <add key="LITTLE_DIP_STIFFNESS_LOW"      value="0.75" />
+
+    <add key="THUMB_CMC_AB_AD_STIFFNESS_LOW" value="0.75" />
+    <add key="THUMB_CMC_FE_STIFFNESS_LOW"    value="0.75" />
+    <add key="THUMB_MCP_STIFFNESS_LOW"       value="0.75" />
+    <add key="THUMB_DIP_STIFFNESS_LOW"       value="0.75" />
+
+    <!-- The Global hand STIFFNESS_LOW will overwrite values above!!-->
+    <add key="GLOBAL_HAND_STIFFNESS_LOW_ENABLE"     value="1" />
+    <add key="GLOBAL_HAND_STIFFNESS_LOW"            value="1.0" />
+
 </userConfig>

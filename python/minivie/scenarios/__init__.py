@@ -222,6 +222,11 @@ class Scenario(object):
             elif cmd_data == 'ImpedanceOff':
                 self.DataSink.enable_impedance = 0
 
+            elif cmd_data == 'ImpedanceLow':
+                self.DataSink.impedance_level = 'low'
+            elif cmd_data == 'ImpedanceHigh':
+                self.DataSink.impedance_level= 'high'
+
             elif cmd_data == 'ReloadRoc':
                 # Reload xml parameters and ROC Table
                 # RSA: Update reload both ROC and xml config parameters

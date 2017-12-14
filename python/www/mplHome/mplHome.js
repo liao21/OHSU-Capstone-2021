@@ -101,6 +101,14 @@ function setupSpacebrew() {
             sendCmd("Cmd:ImpedanceOff");
         }
     });
+    $('#impedanceLevel').on("change", function() {
+        var val = this.value;
+        if (val=="Low") {
+            sendCmd("Cmd:ImpedanceLow");
+        } else {
+            sendCmd("Cmd:ImpedanceHigh");
+        }
+    });
     $('#autoSave').on("change", function() {
         var val = this.value;
         if (val=="On") {

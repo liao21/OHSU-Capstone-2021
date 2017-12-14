@@ -82,7 +82,9 @@ class NfuUdp(DataSink):
 
         self.stiffness = None
         self.shutdown_voltage = None
-        self.enable_impedance = None
+        # RSA: moved this parameter out of the load function to not overwrite on reload from app
+        # self.enable_impedance = None
+        self.enable_impedance = user_config.get_user_config_var('enable_impedance', 0)
         self.load_config_parameters()
 
     def load_config_parameters(self):
@@ -103,7 +105,7 @@ class NfuUdp(DataSink):
                 self.stiffness[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS', 4.0)
 
         self.shutdown_voltage = user_config.get_user_config_var('shutdown_voltage', 19.0)
-        self.enable_impedance = user_config.get_user_config_var('enable_impedance', 0)
+        # self.enable_impedance = user_config.get_user_config_var('enable_impedance', 0)
 
     def connect(self):
         # open up the socket and bind to IP address

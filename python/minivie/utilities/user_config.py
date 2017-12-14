@@ -143,7 +143,7 @@ def save(file='../../user_config.xml'):
     xml_tree.write(file, encoding='utf-8', xml_declaration=True, default_namespace=None, method='xml')
 
 
-def setup_file_logging(prefix='MiniVIE_', log_level=logging.INFO):
+def setup_file_logging(prefix=None, log_level=logging.INFO):
     ######################
     # setup logging
     ######################
@@ -165,9 +165,16 @@ def setup_file_logging(prefix='MiniVIE_', log_level=logging.INFO):
     logger = logging.getLogger('')
     logger.setLevel(log_level)
 
+    if prefix is None:
+        prefix = get_user_config_var('userFilePrefix', 'MiniVIE_')
+
+    use_combined_log = get_user_config_var('use_combined_log', 0)
     # create file handler which logs debug messages
     file_path = '.'
-    file_name = prefix + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
+    if use_combined_log:
+        file_name = prefix + "VIE.log"
+    else:
+        file_name = prefix + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
     fh = logging.FileHandler(os.path.join(file_path, file_name))
     #fh.setLevel(logging.DEBUG)
     fh.setLevel(logging.INFO)

@@ -4,7 +4,10 @@
     
     <!--Prefix to add to save data files e.g. USER_ -->
     <add key="userFilePrefix"   value="USER_"/>
-    
+
+    <!--Specify whether system log should be datestamped files, or one single file -->
+    <add key="use_combined_log"   value="1"/>
+
     <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
     <add key="rocTable"         value="../../WrRocDefaults.xml"/>
 

@@ -36,8 +36,7 @@ def main():
 
     # setup logging.  This will create a log file like: USER_2016-02-11_11-28-21.log to which all 'logging' calls go
     uc.read_user_config(file=args.XML)
-    prefix = uc.get_user_config_var('userFilePrefix', 'USER_')
-    uc.setup_file_logging(prefix=prefix, log_level=args.logLevel)
+    uc.setup_file_logging(log_level=args.logLevel)
 
     # Setup MPL scenario
     # A Scenario is the fundamental building blocks of the VIE: Inputs, Signal Analysis, System Plant, and Output Sink

@@ -9,10 +9,9 @@ one class to talk over bluetooth but publish or forward the information over a n
 be used by multiple local or remote clients.  Bluetooth messages are sent via user datagram (UDP)
 network messages.  Additionally, there is a receiver class designed to run on clients to read udp
 messages and make them accessible in a buffer for use in emg based control.  Finally, two variants
-of simulators exist for virtual streaming [random] data for testing when a physical armband isn;t present
+of simulators exist for virtual streaming [random] data for testing when a physical armband isn't present
 
 usage: myo.py [-h] [-e] [-u] [-rx] [-tx] [-i IFACE] [-m MAC] [-a ADDRESS]
-
 MyoUdp: Read from myo and stream UDP.
 
 optional arguments:
@@ -806,6 +805,9 @@ def main():
 
         address = utilities.get_address(args.ADDRESS)
         logger.setLevel(logging.DEBUG)
+
+        # force upper case
+        args.MAC = args.MAC.upper()
 
         file_handler = logging.FileHandler('EMG_MAC_{}_PORT_{}.log'.format(args.MAC.replace(':',''),address[1]))
         file_handler.setLevel(logging.DEBUG)

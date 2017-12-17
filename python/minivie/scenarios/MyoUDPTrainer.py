@@ -10,7 +10,7 @@ Most of the functionality is controlled by command line flags
 Can also control training object almost entirely from UDP cues.
 e.g. run: python MyoUDPTrainer -x, (-x skips handshake). 
 --In python minivie:
->>  cd \minivie\python\minivie\utilities
+>>  cd /minivie/python/minivie/utilities
 >>  python send_to_udp.py
 >>  <enter_data_to_transmit>
 (use spaces to separate numbers and strings. numbers are converted to bytes which are sent)
@@ -133,7 +133,7 @@ def main(args):
     Default execution case. Fully controllable training process via agnostically generatied UDP cues.
     
     For control from Python:
-    >>  cd \minivie\python\minivie\utilities
+    >>  cd /minivie/python/minivie/utilities
     >>  python send_to_udp.py
     >>  <enter_data_to_transmit>
     (use spaces to separate numbers and strings. numbers are converted to bytes which are sent)

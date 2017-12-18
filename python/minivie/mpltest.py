@@ -133,7 +133,7 @@ elif choice == 5:
     hSink.connect()
     time.sleep(1.5)
     #hSink.wait_for_connection()
-    hSink.enable_impedance = 0
+    hSink.enable_impedance = 1
     hSink.reset_impedance = 0
 
     i_loop = 0

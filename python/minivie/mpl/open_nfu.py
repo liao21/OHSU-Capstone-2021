@@ -350,7 +350,7 @@ class NfuUdp(DataSink):
             payload = np.append(values, velocity)
             payload = np.append(payload, stiffness)
 
-            print(stiffness)
+            # print(stiffness)
 
             # Send data
             # size is 7 + 20 + 7 + 20 + 27

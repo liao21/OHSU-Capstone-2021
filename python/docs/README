@@ -164,15 +164,40 @@ Update Receiver (python):
                     do_something(1)
 
                     
-                    
-                    
-                    
+Adding a New Grasp to web interface:
+----------------------------
+
+0) Create ROC Grasp and save image
+    GUIs.guiRocEditor()
+1) Add image file (bmp or png) to folder
+    E.g.
+        img_grasps/GEN3_Index.png
+2) Update gallery-links.js with description and filename
+    E.g.
+        {
+        title: 'Index',
+        href:  'img_grasps/GEN3_Index.png',
+        },
+    Note: Title will be the name of the class command
+        sendCmd("Cls:Index"); break;
+4) Update motion names in  pattern_rec\__init__.py class TrainingData
+    E.g.
+        self.motion_names = (
+            ....
+            'Index Grasp',
+            ....
+    Note: Training Class Selection comes from:
+        a. gallery-links.js
+        b. scenarios\__init__.py\command_string
+        c. class name matched to motion names
+5) Verify that the trained class maps to a motion in: controls\plant class_map()
+6) Update Index,img_grasps/GEN3_Index.png
+
+
 Referencing MPL Joint Enumerations:
 -----------------------------------
 import mpl
 mpl.JointEnum.MIDDLE_MCP
-
-
 
 
 Formatting arrays of floats:
@@ -181,4 +206,6 @@ Formatting arrays of floats:
 msg = 'Torque: ' + ','.join([ '%.1f' % elem for elem in values])
 
 # Note this was found to be 5-10x faster than np.array2string
+
+
 

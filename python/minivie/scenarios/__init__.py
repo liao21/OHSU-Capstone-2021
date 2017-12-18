@@ -171,8 +171,11 @@ class Scenario(object):
 
         if cmd_type == 'Cls':
             # Parse a Class Message
-            self.training_motion = cmd_data
-            self.training_id = self.TrainingData.motion_names.index(cmd_data)
+            try:
+                self.training_id = self.TrainingData.motion_names.index(cmd_data)
+                self.training_motion = cmd_data
+            except ValueError:
+                logging.error('Unmatched training class name: {}'.format(cmd_data))
             self.add_data = False
 
         elif cmd_type == 'Log':
@@ -458,17 +461,25 @@ class MplScenario(Scenario):
         data_sink = user_config.get_user_config_var('DataSink', 'Unity')
         if data_sink == 'Unity':
             sink = UnityUdp(remote_host="127.0.0.1")  # ("192.168.1.24")
-            self.DataSink = sink
+            sink.connect()
         elif data_sink == 'NfuUdp':
             sink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
             sink.connect()
-            if user_config.get_user_config_var('mpl_connection_check', 1):
-                sink.wait_for_connection()
-            # Synchronize joint positions
-            if sink.last_percept_position is not None:
-                for i in range(0, len(self.Plant.joint_position)):
-                    self.Plant.joint_position[i] = sink.last_percept_position[i]
-            self.DataSink = sink
+        else:
+            import sys
+            # unrecoverable
+            logging.critical('Unmatched Data Sink from user_config: {}. Program Halted.'.format(data_sink))
+            self.close()
+            sys.exit(1)
+
+        # synchronize the data sink with the plant model
+        if user_config.get_user_config_var('mpl_connection_check', 1):
+            sink.wait_for_connection()
+        # Synchronize joint positions
+        if sink.last_percept_position is not None:
+            for i in range(0, len(self.Plant.joint_position)):
+                self.Plant.joint_position[i] = sink.last_percept_position[i]
+        self.DataSink = sink
 
     def run(self):
         """
@@ -535,3 +546,28 @@ class MplScenario(Scenario):
         print("")
 
         self.close()
+
+
+def test_scenarios():
+    print('Testing Scenario File')
+    import sys, os
+
+    if os.path.split(os.getcwd())[1] == 'scenarios':
+        import sys
+        sys.path.insert(0, os.path.abspath('..'))
+        os.chdir('..')  # change directory so xml files can be found as expected
+
+    print('Working Directory is {}'.format(os.getcwd()))
+    a = MplScenario()
+    a.setup()
+    # Expected to be valid:
+    a.command_string('Cls:Index Grasp')
+    # Expected to log an error:
+    a.command_string('Cls:Error Grasp')
+    a.close()
+
+    pass
+
+
+if __name__ == '__main__':
+    test_scenarios()

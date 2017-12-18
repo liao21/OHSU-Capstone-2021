@@ -231,18 +231,24 @@ def emulate_myo_unix(destination='//127.0.0.1:15001'):
     """
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
-
+    counter = 0
     print('Running MyoUdp.exe Emulator to ' + destination)
     try:
         while True:
+            counter += 1
+
             # generate random bytes matching the size of MyoUdp.exe streaming
             # Future: generate orientation data in valid range
             vals = np.random.randint(255, size=16).astype('uint8')
             sock.sendto(vals.tostring(), utilities.get_address(destination))
             vals = np.random.randint(255, size=16).astype('uint8')
             sock.sendto(vals.tostring(), utilities.get_address(destination))
+
             # simulate a battery level
-            sock.sendto("c".encode(), utilities.get_address(destination))
+            if counter > 500: # delay frequency of battery levels
+                # send battery levels
+                sock.sendto(bytes([98]), utilities.get_address(destination))
+                counter = 0
 
             # create synthetic orientation data
             # rpy = np.random.rand(90, size=3)

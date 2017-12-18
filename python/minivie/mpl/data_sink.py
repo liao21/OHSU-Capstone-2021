@@ -10,6 +10,9 @@ minivie.
 @author: Connor Pyles
 """
 
+import time
+import logging
+
 from abc import ABCMeta, abstractmethod
 
 
@@ -17,7 +20,23 @@ class DataSink(object):
     __metaclass__ = ABCMeta
 
     def __init__(self):
-        pass
+        # This private variable is used to monitor data receipt from the limb.  If a timeout occurs then the parameter
+        # is false until new data is received
+        self.active_connection = False
+
+        # store the last known limb position
+        self.last_percept_position = None
+
+    def wait_for_connection(self):
+        # After connecting, this function can be used as a blocking call to ensure the desired percepts are received
+        # before continuing program execution.  E.g. ensure valid joint percepts are received to ensure smooth start
+
+        print('Checking for valid percepts...')
+
+        while (not self.active_connection) and (self.last_percept_position is None):
+            time.sleep(0.02)
+            print('Waiting 20 ms for valid percepts...')
+            logging.info('Waiting 20 ms for valid percepts...')
 
     # All methods with this decorator must be overloaded
     @abstractmethod

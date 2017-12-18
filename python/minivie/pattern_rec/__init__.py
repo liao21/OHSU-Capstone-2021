@@ -264,11 +264,11 @@ class TrainingData:
             'Cylindrical Grasp',
             'Power Grasp',
             'Point Grasp',
-            'Index Grasp',
-            'Middle Grasp',
-            'Ring Grasp',
-            'Little Grasp',
-            'Thumb Grasp',
+            'Index',
+            'Middle',
+            'Ring',
+            'Little',
+            'Thumb',
         )
 
         # Create lock to control write access to training data

@@ -15,10 +15,11 @@ Wrist Abduction,img_arm_motions/Wrist_Abduction.png
 Wrist Flex In,img_arm_motions/Wrist_Flexion.png
 Wrist Extend Out,img_arm_motions/Wrist_Extension.png
 Hand Open,img_grasps/Hand_Open.png
-Index Grasp,img_grasps/Index_Grasp.bmp
-Middle Grasp,img_grasps/Middle_Grasp.bmp
-Ring Grasp,img_grasps/Ring_Grasp.bmp
-Little Grasp,img_grasps/Little_Grasp.bmp
+Index,img_grasps/GEN3_Index.png
+Middle,img_grasps/GEN3_Middle.png
+Ring,img_grasps/GEN3_Ring.png
+Little,img_grasps/GEN3_Little.png
+Thumb,img_grasps/GEN3_Thumb.png
 Spherical Grasp,img_grasps/Spherical_Grasp.png
 Tip Grasp,img_grasps/Tip_Grasp.png
 Point Grasp,img_grasps/Trigger_Grasp.png

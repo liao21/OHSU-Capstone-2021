@@ -57,6 +57,7 @@ import socket
 import struct
 import logging
 import numpy as np
+import threading
 from mpl.data_sink import DataSink
 
 
@@ -80,7 +81,10 @@ class UnityUdp(DataSink):
         self.udp = {'RemoteHost': remote_host, 'RemotePort': remote_port, 'LocalPort': local_port}
         self.sock = None
         self.is_connected = False
-        self.connect()
+
+        # Create a receive thread
+        self.thread = threading.Thread(target=self.message_handler)
+        self.thread.name = 'UnityRcv'
 
     def connect(self):
         logging.info("UnityUdp local port: {}".format(self.udp['LocalPort']))
@@ -89,6 +93,22 @@ class UnityUdp(DataSink):
         self.sock.bind(('0.0.0.0', self.udp['LocalPort']))
         self.sock.settimeout(3.0)
         self.is_connected = True
+
+        # Create a thread for processing new data
+        if not self.thread.isAlive():
+            logging.info('Starting Unity rcv thread')
+            self.thread.start()
+
+    def message_handler(self):
+
+        while True:
+            try:
+                joint_data, contact_data, segment_data = self.get_percepts()
+            except KeyboardInterrupt:
+                break
+            # select every 3rd element in the percept stream for joint angles
+            self.last_percept_position = np.array(joint_data[0::3])
+            # print(self.last_percept_position)
 
     def get_status_msg(self):
         # returns a general purpose status message about the system state
@@ -110,6 +130,10 @@ class UnityUdp(DataSink):
          None
 
         """
+
+        if not self.is_connected:
+            logging.warning('Connection closed.  Call connect() first')
+            return
 
         if len(values) == 27:
             pass
@@ -148,9 +172,18 @@ class UnityUdp(DataSink):
         try:
             # receive call will error if socket closed on exit
             data, address = self.sock.recvfrom(1024)  # blocks until timeout
+
+            # if the above function returns (without error) it means we have a connection
+            if not self.active_connection:
+                logging.info('MPL Connection is Active: Data received')
+                self.active_connection = True
+
         except socket.timeout:
             msg = "Percept Read Timeout"
             logging.warning(msg)
+            logging.info('MPL Connection is Lost')
+            self.active_connection = False
+
             return joint_data, contact_data, segment_data
         except socket.error:
             msg = "Error reading data. Socket closed while receiving"

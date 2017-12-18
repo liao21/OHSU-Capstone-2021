@@ -24,13 +24,13 @@ $(function () {
         thumbnail: 'img_arm_motions/Elbow_Extension.png'
         },
         {
-        title: 'Wrist Rotate In (Pronate)',
+        title: 'Wrist Rotate In',
         href:  'img_arm_motions/Wrist_Rotate_In.png',
         type: 'image/png',
         thumbnail: 'img_arm_motions/Wrist_Rotate_In.png'
         },
         {
-        title: 'Wrist Rotate Out (Supinate)',
+        title: 'Wrist Rotate Out',
         href:  'img_arm_motions/Wrist_Rotate_Out.png',
         type: 'image/png',
         thumbnail: 'img_arm_motions/Wrist_Rotate_Out.png'
@@ -80,30 +80,51 @@ $(function () {
         {
         title: 'Point Grasp',
         href:  'img_grasps/Trigger_Grasp.png',
-        }
+        },
+        {
+        title: 'Hand Open',
+        href:  'img_grasps/GEN3_Hand_Open.png',
+        type: 'image/png',
+        thumbnail: 'img_arm_motions/GEN3_Hand_Open.png'
+        },
+        {
+        title: 'Index',
+        href:  'img_grasps/GEN3_Index.png',
+        type: 'image/png',
+        thumbnail: 'img_arm_motions/GEN3_Index.png'
+        },
+        {
+        title: 'Middle',
+        href:  'img_grasps/GEN3_Middle.png',
+        type: 'image/png',
+        thumbnail: 'img_arm_motions/GEN3_Middle.png'
+        },
+        {
+        title: 'Ring',
+        href:  'img_grasps/GEN3_Ring.png',
+        type: 'image/png',
+        thumbnail: 'img_arm_motions/GEN3_Ring.png'
+        },
+        {
+        title: 'Little',
+        href:  'img_grasps/GEN3_Little.png',
+        type: 'image/png',
+        thumbnail: 'img_arm_motions/GEN3_Little.png'
+        },
+        {
+        title: 'Thumb',
+        href:  'img_grasps/GEN3_Thumb.png',
+        type: 'image/png',
+        thumbnail: 'img_arm_motions/GEN3_Thumb.png'
+        },
     ], {
         container: '#blueimp-image-carousel',
         carousel: true,
         onslide: function (index, slide) {
                 // Callback function executed on slide change.
                 // Note these class commands must match those listed in pattern_rec\__init__.py class TrainingData
-                switch(index) {
-                case  0: sendCmd("Cls:No Movement"); break;
-                case  1: sendCmd("Cls:Elbow Flexion"); break;
-                case  2: sendCmd("Cls:Elbow Extension"); break;
-                case  3: sendCmd("Cls:Wrist Rotate In"); break;
-                case  4: sendCmd("Cls:Wrist Rotate Out"); break;
-                case  5: sendCmd("Cls:Wrist Flex In"); break;
-                case  6: sendCmd("Cls:Wrist Extend Out"); break;
-                case  7: sendCmd("Cls:Hand Open"); break;
-                case  8: sendCmd("Cls:Spherical Grasp"); break;
-                case  9: sendCmd("Cls:Tip Grasp"); break;
-                case 10: sendCmd("Cls:Three Finger Pinch Grasp"); break;
-                case 11: sendCmd("Cls:Lateral Grasp"); break;
-                case 12: sendCmd("Cls:Cylindrical Grasp"); break;
-                case 13: sendCmd("Cls:Point Grasp"); break;
-                default: break;
-                }
+                console.log(slide.firstChild.title)
+                sendCmd("Cls:" + slide.firstChild.title);
         }
     });
 }); // function

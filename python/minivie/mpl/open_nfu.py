@@ -52,10 +52,6 @@ class NfuUdp(DataSink):
         self.thread = threading.Thread(target=self.message_handler)
         self.thread.name = 'NfuUdpRcv'
 
-        # This private variable is used to monitor data receipt from the limb.  If a timeout occurs then the parameter
-        # is false until new data is received
-        self.active_connection = False
-
         # mpl_status updated by heartbeat messages
         self.mpl_status_default = {
             'nfu_state': 'NULL',
@@ -76,9 +72,6 @@ class NfuUdp(DataSink):
         # create a counter to delay how often CPU temperature is read and logged
         self.last_temperature = 0.0
         self.last_temperature_counter = 0
-
-        # store the last known limb position
-        self.last_percept_position = None
 
         self.stiffness_high = None
         self.stiffness_low = None
@@ -133,15 +126,6 @@ class NfuUdp(DataSink):
         if not self.thread.isAlive():
             logging.warning('Starting NfuUdp rcv thread')
             self.thread.start()
-
-    def wait_for_connection(self):
-        # After connecting, this function can be used as a blocking call to ensure the desired percepts are received
-        # before continuing program execution.  E.g. ensure valid joint percepts are received to ensure smooth start
-
-        while (not self.active_connection) and (self.last_percept_position is None):
-            time.sleep(0.02)
-            print('Waiting 20 ms for valid percepts...')
-            logging.info('Waiting 20 ms for valid percepts...')
 
     def get_voltage(self):
         # returns the battery voltage as a string based on the last status message

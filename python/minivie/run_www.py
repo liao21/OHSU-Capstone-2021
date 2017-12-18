@@ -68,7 +68,11 @@ def main():
             log = logging.getLogger()
             log.exception('Error from DCELL:')
 
-    vie.run()
+    try:
+        vie.run()
+    except KeyboardInterrupt:
+        vie.close()
+        vie.TrainingInterface.brew.stop()
 
 
 if __name__ == '__main__':

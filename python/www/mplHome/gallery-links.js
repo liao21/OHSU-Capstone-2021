@@ -66,7 +66,7 @@ $(function () {
         thumbnail: 'img_grasps/Tip_Grasp.png'
         },
         {
-        title: 'Three Finger Pinch',
+        title: 'Three Finger Pinch Grasp',
         href:  'img_grasps/Tripod_Grasp.bmp',
         },
         {

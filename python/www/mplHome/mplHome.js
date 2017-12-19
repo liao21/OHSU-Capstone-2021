@@ -54,7 +54,9 @@ function setupSpacebrew() {
     $("#ID_ASSESSMENT_MT").on("mousedown", function() {startMT()} );
     $("#ID_ASSESSMENT_TAC1").on("mousedown", function() {startTAC1()} );
     $("#ID_ASSESSMENT_TAC3").on("mousedown", function() {startTAC3()} );
-    
+    $("#ID_GOTO_HOME").on("mousedown", function() {sendCmd("Cmd:GotoHome")} );
+    $("#ID_GOTO_PARK").on("mousedown", function() {sendCmd("Cmd:GotoPark")} );
+
 
     // Create switch listeners:
     $('#trainSwitch').on("change", function() {

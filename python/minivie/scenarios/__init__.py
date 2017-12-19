@@ -1,6 +1,7 @@
 import logging
 import utilities
 import utilities.user_config
+import mpl
 
 
 class Scenario(object):
@@ -93,11 +94,6 @@ class Scenario(object):
             if state is not self.__pause[scope]:
                 # this should only happen once when state is changed
                 self.__pause[scope] = state
-                # Try to set the limb state to soft reset
-                try:
-                    self.DataSink.set_limb_soft_reset()
-                except AttributeError:
-                    logging.warning('set_limb_soft_reset mode not defined')
 
             # return either way
             return
@@ -238,6 +234,15 @@ class Scenario(object):
                 self.Plant.load_config_parameters()
                 self.DataSink.load_config_parameters()
 
+            elif cmd_data == 'GotoHome':
+                angles = [0.0] * mpl.JointEnum.NUM_JOINTS
+                self.DataSink.goto_smooth(angles)
+
+            elif cmd_data == 'GotoPark':
+                angles = [0.0] * mpl.JointEnum.NUM_JOINTS
+                angles[mpl.JointEnum.ELBOW] = (100 * 3.14159 / 180)
+                self.DataSink.goto_smooth(angles)
+
             ######################
             # Myo Control Options
             ######################
@@ -284,6 +289,11 @@ class Scenario(object):
 
             elif cmd_data == 'Pause':
                 self.pause('All')
+                # Try to set the limb state to soft reset
+                try:
+                    self.DataSink.set_limb_soft_reset()
+                except AttributeError:
+                    logging.warning('set_limb_soft_reset mode not defined')
             elif cmd_data == 'PauseHand':
                 self.pause('Hand')
 

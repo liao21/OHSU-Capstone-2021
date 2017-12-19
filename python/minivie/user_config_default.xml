@@ -155,4 +155,41 @@
     <add key="GLOBAL_HAND_STIFFNESS_LOW_ENABLE"     value="1" />
     <add key="GLOBAL_HAND_STIFFNESS_LOW"            value="1.0" />
 
+    <!-- Set Park Position in degrees -->
+    <add key="SHOULDER_FE_POS_PARK"     value="0.00"/>
+    <add key="SHOULDER_AB_AD_POS_PARK"  value="0.00"/>
+    <add key="HUMERAL_ROT_POS_PARK"     value="0.00"/>
+    <add key="ELBOW_POS_PARK"           value="100.0"/>
+
+    <add key="WRIST_ROT_POS_PARK"       value="0.00"/>
+    <add key="WRIST_AB_AD_POS_PARK"     value="0.00"/>
+    <add key="WRIST_FE_POS_PARK"        value="0.00"/>
+
+    <add key="INDEX_AB_AD_POS_PARK"     value="0.00"/>
+    <add key="INDEX_MCP_POS_PARK"       value="0.00"/>
+    <add key="INDEX_PIP_POS_PARK"       value="0.00"/>
+    <add key="INDEX_DIP_POS_PARK"       value="0.00"/>
+
+    <add key="MIDDLE_AB_AD_POS_PARK"    value="0.00"/>
+    <add key="MIDDLE_MCP_POS_PARK"      value="0.00"/>
+    <add key="MIDDLE_PIP_POS_PARK"      value="0.00"/>
+    <add key="MIDDLE_DIP_POS_PARK"      value="0.00"/>
+
+    <add key="RING_AB_AD_POS_PARK"      value="0.00"/>
+    <add key="RING_MCP_POS_PARK"        value="0.00"/>
+    <add key="RING_PIP_POS_PARK"        value="0.00"/>
+    <add key="RING_DIP_POS_PARK"        value="0.00"/>
+
+    <add key="LITTLE_AB_AD_POS_PARK"    value="0.00"/>
+    <add key="LITTLE_MCP_POS_PARK"      value="0.00"/>
+    <add key="LITTLE_PIP_POS_PARK"      value="0.00"/>
+    <add key="LITTLE_DIP_POS_PARK"      value="0.00"/>
+
+    <add key="THUMB_CMC_AB_AD_POS_PARK" value="20.0"/>
+    <add key="THUMB_CMC_FE_POS_PARK"    value="0.00"/>
+    <add key="THUMB_MCP_POS_PARK"       value="0.00"/>
+    <add key="THUMB_DIP_POS_PARK"       value="0.00"/>
+
+
+
 </userConfig>

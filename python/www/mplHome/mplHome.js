@@ -42,7 +42,7 @@ function setupSpacebrew() {
     $("#ID_SPEEDDOWN").on("mousedown", function() {sendCmd("Cmd:SpeedDown")} );
     $("#ID_HAND_SPEED_UP").on("mousedown", function() {sendCmd("Cmd:HandSpeedUp")} );
     $("#ID_HAND_SPEED_DOWN").on("mousedown", function() {sendCmd("Cmd:HandSpeedDown")} );
-    $("#ID_PAUSE").on("mousedown", function() {sendCmd("Cmd:Pause")} );  // 4/5/2017 RSA: Moved to slider switch
+    /*$("#ID_PAUSE").on("mousedown", function() {sendCmd("Cmd:Pause")} );  // 4/5/2017 RSA: Moved to slider switch */
     $("#ID_PAUSE_HAND").on("mousedown", function() {sendCmd("Cmd:PauseHand")} );  // 4/5/2017 RSA: Moved to slider switch
     $("#ID_MYO1").on("mousedown", function() {sendCmd("Cmd:RestartMyo1")} );
     $("#ID_MYO2").on("mousedown", function() {sendCmd("Cmd:RestartMyo2")} );

@@ -1,3 +1,4 @@
+import time
 import logging
 import utilities
 import utilities.user_config
@@ -235,8 +236,11 @@ class Scenario(object):
                 self.DataSink.load_config_parameters()
 
             elif cmd_data == 'GotoHome':
+                self.pause('All', True)
                 angles = [0.0] * mpl.JointEnum.NUM_JOINTS
                 self.DataSink.goto_smooth(angles)
+                time.sleep(1.0)
+                self.pause('All', False)
 
             elif cmd_data == 'GotoPark':
                 angles = [0.0] * mpl.JointEnum.NUM_JOINTS
@@ -287,18 +291,16 @@ class Scenario(object):
             elif cmd_data == 'HandSpeedDown':
                 self.hand_gain(0.8)
 
-            elif cmd_data == 'Pause':
-                self.pause('All')
-                # Try to set the limb state to soft reset
-                try:
-                    self.DataSink.set_limb_soft_reset()
-                except AttributeError:
-                    logging.warning('set_limb_soft_reset mode not defined')
             elif cmd_data == 'PauseHand':
                 self.pause('Hand')
 
             elif cmd_data == 'PauseAllOn':
                 self.pause('All', True)
+                # Try to set the limb state to soft reset
+                try:
+                    self.DataSink.set_limb_soft_reset()
+                except AttributeError:
+                    logging.warning('set_limb_soft_reset mode not defined')
             elif cmd_data == 'PauseAllOff':
                 self.pause('All', False)
             elif cmd_data == 'PauseHandOn':

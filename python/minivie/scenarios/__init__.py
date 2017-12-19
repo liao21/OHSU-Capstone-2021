@@ -254,9 +254,15 @@ class Scenario(object):
             # System Options
             #################
             elif cmd_data == 'Reboot':
-                utilities.reboot()
+                # utilities.reboot()
+                # Try to set the limb state to soft reset
+                try:
+                    self.DataSink.set_limb_soft_reset()
+                except AttributeError:
+                    logging.warning('set_limb_soft_reset mode not defined')
             elif cmd_data == 'Shutdown':
-                utilities.shutdown()
+                # utilities.shutdown()
+                pass
 
             ################
             # Speed Options

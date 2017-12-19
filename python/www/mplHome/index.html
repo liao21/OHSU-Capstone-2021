@@ -157,18 +157,6 @@
             </ul>
             </div>
 
-            <!-- Confirmation Dialog: Reboot -->
-            <div data-role="popup" id="popupReboot" data-overlay-theme="a" data-theme="b" data-dismissible="false" style="max-width:400px;" class="ui-corner-all">
-            <div data-role="header" data-theme="a" class="ui-corner-top">
-            <h1>Confirm Reboot</h1>
-            </div>
-            <div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
-            <h3 class="ui-title">Reboot?</h3>
-            <a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Cancel</a>
-            <a href="#" data-role="button" data-inline="true" data-rel="back" data-transition="flow" data-theme="b" id="ID_REBOOT">OK</a>
-            </div>
-            </div>
-
             <!-- Confirmation Dialog: Shutdown -->
             <div data-role="popup" id="popupShutdown" data-overlay-theme="a" data-theme="b" data-dismissible="false" style="max-width:400px;" class="ui-corner-all">
             <div data-role="header" data-theme="a" class="ui-corner-top">
@@ -282,6 +270,7 @@
             </div>
 
             <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_RELOAD_ROC">Reload Configuration Files</a>
+            <a href="#popupReboot" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-icon="power" data-theme="a" data-iconpos="right">Reboot Limb Controller</a>
 
             <!-- Log Entry -->
             <p>Enter a log message:
@@ -290,6 +279,18 @@
 
             <!-- Status Messages -->
             <p>Devices: <span id="msg_status_opt"></span></p>
+
+            <!-- Confirmation Dialog: Reboot -->
+            <div data-role="popup" id="popupReboot" data-overlay-theme="a" data-theme="b" data-dismissible="false" style="max-width:400px;" class="ui-corner-all">
+            <div data-role="header" data-theme="a" class="ui-corner-top">
+            <h1>Confirm Reboot</h1>
+            </div>
+            <div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+            <h3 class="ui-title">Reboot LC?</h3>
+            <a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Cancel</a>
+            <a href="#" data-role="button" data-inline="true" data-rel="back" data-transition="flow" data-theme="b" id="ID_REBOOT">OK</a>
+            </div>
+            </div>
 
         </div><!-- /content -->
     </div><!-- /page -->

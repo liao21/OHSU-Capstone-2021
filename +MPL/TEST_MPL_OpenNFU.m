@@ -26,14 +26,18 @@ hSink.putData(msg)
 
 
 %% Send P[V] Command
-mplAngles(MPL.EnumArm.ELBOW) = 100*pi/180;
+mplAngles(MPL.EnumArm.ELBOW) = 0*pi/180;
 mplAngles(MPL.EnumArm.WRIST_FE) = -35*pi/180;
 mplAngles(MPL.EnumArm.WRIST_ROT) = 60*pi/180;
-rocValue = min(max( 0.7 ,0),1);
+rocValue = min(max( 0.0 ,0),1);
 rocId = 8;
 fprintf('Hand Shape: "%s" %d%%\n',structRoc(rocId).name,rocValue*100);
 mplAngles(structRoc(rocId).joints) = interp1(structRoc(rocId).waypoint,structRoc(rocId).angles,rocValue);
+
+mplAngles(MPL.EnumArm.THUMB_CMC_FE) = 0 * pi/ 180
+mplAngles(MPL.EnumArm.THUMB_CMC_AB_AD) = 5 * pi/ 180
 msg = mce.AllJointsPosVelCmd(mplAngles(1:7), zeros(1,7), mplAngles(8:27), zeros(1,20));
+
 hSink.putData(msg)
 
 hSink.getAllData();

@@ -297,6 +297,17 @@ class NfuUdp(DataSink):
         # values -
         #    joint angles in radians of size 7 for arm joints  (e.g. [0.0] * 7 )
         #    joint angles in radians of size 27 for all arm joints (e.g. [0.0] * 27 )
+        #
+        # Impedance Notes
+        # 0 to 256 for upper arm (256 is off)
+        # upper arm around 40
+        # wrist around 20, start around 40
+        # hand is 0 to 16 (16 is off)
+        # 0 to 1.5 for hand is useful range
+        #
+        # imp = [256*ones(1,4) 256*ones(1,3) 15.6288*ones(1,20)];
+        # imp = [256*ones(1,4) 256*ones(1,3) 0.5*ones(1,20)];
+        #
 
         if not self.active_connection and user_config.get_user_config_var('mpl_connection_check', 1):
             logging.warning('MPL Connection is closed; not sending joint angles.')
@@ -323,65 +334,38 @@ class NfuUdp(DataSink):
         # values[mpl.JointEnum.MIDDLE_DIP] = 0.35
         # values[mpl.JointEnum.THUMB_CMC_FE] = values[mpl.JointEnum.THUMB_CMC_AB_AD] + 0.5
 
-        if self.enable_impedance:
-            # PVI Command
-
-            # Impedance Notes
-            # 0 to 256 for upper arm (256 is off)
-            # upper arm around 40
-            # wrist around 20, start around 40
-            # hand is 0 to 16 (16 is off)
-            # 0 to 1.5 for hand is useful range
-            #
-            # imp = [256*ones(1,4) 256*ones(1,3) 15.6288*ones(1,20)];
-            # imp = [256*ones(1,4) 256*ones(1,3) 0.5*ones(1,20)];
-            #
-            # imp(7+mpl_hand_enum.THUMB_CMC_AD_AB) = 16;
-
-            velocity = 27 * [0.0]
-            if self.reset_impedance:
-                stiffness = self.magic_impedance
-            else:
-                if self.impedance_level == 'low':
-                    stiffness = self.stiffness_low
-                else:
-                    stiffness = self.stiffness_high
-
+        # velocity is currently unused, but need to assign value for correct transmission
+        velocity = [0.0] * mpl.JointEnum.NUM_JOINTS
+        if self.reset_impedance:
+            # PVI Command w/ magic number
             payload = np.append(values, velocity)
-            payload = np.append(payload, stiffness)
-
-            # print(stiffness)
-
-            # Send data
-            # size is 7 + 20 + 7 + 20 + 27
-            # packing is one uint8 by 81 singles
-            # total message is 327 bytes [uint16 MSD_ID_FIELD_BYTES]
+            payload = np.append(payload, self.magic_impedance)
             # uint16 MSG_LENGTH + uint8 MSG_TYPE + 1 msg_id + payload + checksum
-            packer = struct.Struct('81f')
-            msg = bytearray([71, 1, 5, 8])
-            msg.extend(packer.pack(*payload))
+            packer = struct.Struct('HBB81f')
+            msg_bytes = packer.pack(327, 5, 8, *payload)
+
+        elif self.enable_impedance:
+            # PVI Command
+            payload = np.append(values, velocity)
+            if self.impedance_level == 'low':
+                payload = np.append(payload, self.stiffness_low)
+            else:
+                payload = np.append(payload, self.stiffness_high)
+            # uint16 MSG_LENGTH + uint8 MSG_TYPE + 1 msg_id + payload + checksum
+            packer = struct.Struct('HBB81f')
+            msg_bytes = packer.pack(327, 5, 8, *payload)
 
         else:
             # PV Command
-            payload = np.append(values, 27 * [0.0])
-
-            # Send data
-            # size is 7 + 20 + 7 + 20
-            # packing is one uint8 by 54 singles
-            # total message is 221 bytes [uint16 MSD_ID_FIELD_BYTES]
+            payload = np.append(values, velocity)
             # uint16 MSG_LENGTH + uint8 MSG_TYPE + 1 msg_id + payload + checksum
-            packer = struct.Struct('54f')
-            msg = bytearray([219, 0, 5, 1])
-            msg.extend(packer.pack(*payload))
+            packer = struct.Struct('HBB54f')
+            msg_bytes = packer.pack(219, 5, 1, *payload)
 
-        checksum = bytearray([sum(msg) % 256])
+        checksum = bytearray([sum(msg_bytes) % 256])
 
         # add on the checksum
-        out = bytearray([])
-        out.extend(msg)
-        out.extend(checksum)
-
-        self.send_udp_command(out)
+        self.send_udp_command(msg_bytes + checksum)
 
     def set_limb_idle(self):
         # Send limb to idle; this is a lower power mode that still maintains position

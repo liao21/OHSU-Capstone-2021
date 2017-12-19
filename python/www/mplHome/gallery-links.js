@@ -117,6 +117,18 @@ $(function () {
         type: 'image/png',
         thumbnail: 'img_arm_motions/GEN3_Thumb.png'
         },
+        {
+        title: 'Ring-Middle',
+        href:  'img_grasps/GEN3_RingMiddle.png',
+        type: 'image/png',
+        thumbnail: 'img_arm_motions/GEN3_Thumb.png'
+        },
+        {
+        title: 'The Bird',
+        href:  'img_grasps/GEN3_Bird.png',
+        type: 'image/png',
+        thumbnail: 'img_arm_motions/GEN3_Thumb.png'
+        },
     ], {
         container: '#blueimp-image-carousel',
         carousel: true,

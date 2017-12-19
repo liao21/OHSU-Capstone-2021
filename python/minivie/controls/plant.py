@@ -80,6 +80,8 @@ def class_map(class_name):
         'Ring': [True, None, +1, 'Ring Only'],
         'Little': [True, None, +1, 'Little Only'],
         'Thumb': [True, None, +1, 'Thumb Only'],
+        'Ring-Middle': [True, None, +1, 'Ring Middle'],
+        'The Bird': [True, None, +1, 'Bird'],
     }
 
     if class_name in class_lookup:

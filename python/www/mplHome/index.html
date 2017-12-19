@@ -200,8 +200,21 @@
             <br>
             <div data-role="controlgroup" data-type="horizontal">
                 <a href="#" class="ui-btn" id="ID_CLEARCLASS">Clear</a>
-                <a href="#" class="ui-btn" id="ID_CLEARALL">Reset</a>
+                <!--<a href="#" class="ui-btn" id="ID_CLEARALL">Reset</a>-->
+                <a href="#popupResetClassData" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-theme="a">Reset</a>
                 <a href="#" class="ui-btn" id="ID_SAVE">Save</a>
+            </div>
+
+            <!-- Confirmation Dialog: Reset Class Data-->
+            <div data-role="popup" id="popupResetClassData" data-overlay-theme="a" data-theme="b" data-dismissible="false" style="max-width:400px;" class="ui-corner-all">
+            <div data-role="header" data-theme="a" class="ui-corner-top">
+            <h1>Confirm Reset</h1>
+            </div>
+            <div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+            <h3 class="ui-title">Reset?</h3>
+            <a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Cancel</a>
+            <a href="#" data-role="button" data-inline="true" data-rel="back" data-transition="flow" data-theme="b" id="ID_CLEARALL">OK</a>
+            </div>
             </div>
 
             <!-- Helper Scripts for Image Carousel -->

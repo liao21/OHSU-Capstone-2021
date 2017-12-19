@@ -269,6 +269,8 @@ class TrainingData:
             'Ring',
             'Little',
             'Thumb',
+            'Ring-Middle',
+            'The Bird',
         )
 
         # Create lock to control write access to training data

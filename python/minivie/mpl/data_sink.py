@@ -47,7 +47,7 @@ class DataSink(object):
             print('Waiting 20 ms for valid percepts...')
             logging.info('Waiting 20 ms for valid percepts...')
 
-    def goto_smooth(self,new_position):
+    def goto_smooth(self, new_position):
         # Smoothly move to a new position
 
         # first get current position

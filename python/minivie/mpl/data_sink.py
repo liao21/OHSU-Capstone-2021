@@ -12,9 +12,9 @@ minivie.
 
 import time
 import logging
-import math
-import mpl
-import utilities.user_config
+import mpl.JointEnum as MPL
+import controls
+import utilities.user_config as uc
 import numpy as np
 
 from abc import ABCMeta, abstractmethod
@@ -28,13 +28,16 @@ class DataSink(object):
         # is false until new data is received
         self.active_connection = False
 
-        # store the last known limb position
-        self.last_percept_position = None
+        # store the last known limb position; None indicates no valid percepts received
+        self.position['last_percept'] = None
 
-        self.position_park = [0.0] * mpl.JointEnum.NUM_JOINTS
-        for i in range(mpl.JointEnum.NUM_JOINTS):
-            pos = utilities.user_config.get_user_config_var(mpl.JointEnum(i).name + '_POS_PARK', 0.0)
-            self.position_park[i] = pos * math.pi / 180
+        self.position['park'] = [0.0] * MPL.NUM_JOINTS
+        for i in range(MPL.NUM_JOINTS):
+            self.position['park'][i] = np.deg2rad(uc.get_user_config_var(MPL(i).name + '_POS_PARK', 0.0))
+
+        self.position['home'] = [0.0] * MPL.NUM_JOINTS
+        for i in range(MPL.NUM_JOINTS):
+            self.position['home'][i] = np.deg2rad(uc.get_user_config_var(MPL(i).name + '_POS_HOME', 0.0))
 
     def wait_for_connection(self):
         # After connecting, this function can be used as a blocking call to ensure the desired percepts are received
@@ -42,8 +45,8 @@ class DataSink(object):
 
         print('Checking for valid percepts...')
 
-        while (not self.active_connection) and (self.last_percept_position is None):
-            time.sleep(0.02)
+        while (not self.active_connection) and (self.position['last_percept'] is None):
+            time.sleep(controls.timestep)
             print('Waiting 20 ms for valid percepts...')
             logging.info('Waiting 20 ms for valid percepts...')
 
@@ -51,12 +54,12 @@ class DataSink(object):
         # Smoothly move to a new position
 
         # first get current position
-        if (not self.active_connection) or (self.last_percept_position is None):
+        if (not self.active_connection) or (self.position['last_percept'] is None):
             logging.warning('Limb Position is unknown. Go-to command disabled')
             return
 
         # create map between current position and target position
-        start_angles = self.last_percept_position
+        start_angles = self.position['last_percept']
         end_angles = new_position
 
         for percent in np.linspace(0, 100, 200):
@@ -73,9 +76,8 @@ class DataSink(object):
                 y = (y0 * (x1 - x) + y1 * (x - x0)) / (x1 - x0)
                 intermediate_command[idx] = y
             self.send_joint_angles(intermediate_command)
-            time.sleep(0.02)
-            logging.warning('Limb Go-to...')
-        logging.warning('Limb Go-to Complete')
+            time.sleep(controls.timestep)
+        logging.info('Limb Go-to Complete')
 
         pass
 

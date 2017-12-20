@@ -26,7 +26,6 @@ Revisions:
 #
 # Created 1/23/2016 Armiger
 import os
-import math
 import time
 import logging
 import numpy as np
@@ -135,8 +134,8 @@ class Plant(object):
         # Load parameters from xml config file
         for i in range(MplId.NUM_JOINTS):
             limit = user_config.get_user_config_var(MplId(i).name + '_LIMITS', (0.0, 30.0))
-            self.lower_limit[i] = limit[0] * math.pi / 180
-            self.upper_limit[i] = limit[1] * math.pi / 180
+            self.lower_limit[i] = np.deg2rad(limit[0])
+            self.upper_limit[i] = np.deg2rad(limit[1])
 
     def load_roc(self):
         # load the roc table

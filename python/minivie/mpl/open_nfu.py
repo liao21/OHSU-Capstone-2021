@@ -22,6 +22,7 @@ import struct
 import time
 import numpy as np
 import mpl
+import controls
 from mpl.data_sink import DataSink
 from mpl import JointEnum as MplId
 from utilities import extract_percepts, user_config
@@ -269,7 +270,7 @@ class NfuUdp(DataSink):
 
                 # t = time.time()
                 percepts = extract_percepts.extract(raw_chars)  # takes 1-3 ms on DART
-                self.last_percept_position = np.array(percepts['jointPercepts']['position'])
+                self.position['last_percept'] = np.array(percepts['jointPercepts']['position'])
                 values = np.array(percepts['jointPercepts']['torque'])  # DART Time: 50-70 us
                 msg = 'Torque: ' + ','.join(['%.1f' % elem for elem in values])  # DART Time: 220 us
 
@@ -467,7 +468,7 @@ class Simulator(object):
                 for row in rows:
                     b = bytearray.fromhex(''.join(row))
                     self.sock.sendto(b, ('127.0.0.1', 9028))
-                    time.sleep(0.02)
+                    time.sleep(controls.timestep)
                     if self.stop_event.is_set():
                         run = False
                         break
@@ -508,7 +509,7 @@ def main():
     # without synching first, user will get a few messages until first percepts received:
     # WARNING:root:MPL Connection is closed; not sending joint angles.
     nfu.wait_for_connection()
-    start_angles = copy.deepcopy(nfu.last_percept_position)
+    start_angles = copy.deepcopy(nfu.position['last_percept'])
     angles = copy.deepcopy(start_angles)
 
     # Decide which way to move arm
@@ -519,7 +520,7 @@ def main():
 
     # on connect, data should be streaming
     for iAngle in np.arange(0.0, 30.0, 0.2):
-        time.sleep(0.02)
+        time.sleep(controls.timestep)
         new_val = start_angles[mpl.JointEnum.ELBOW] + (np.deg2rad(iAngle) * direction)
         angles[mpl.JointEnum.ELBOW] = new_val
         nfu.send_joint_angles(angles)

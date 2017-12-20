@@ -112,7 +112,7 @@ def model(signal_source, signal_classifier, plant, data_sink, trainer, file):
     # perform joint motion update
     vals = signal_source.get_angles()
     # Temp: Overwrite Elbow angle based on Myo orientation
-    plant.joint_position[3] = vals[1] + math.pi / 2
+    plant.joint_position[3] = vals[1] + (math.pi / 2)
 
     # transmit output
     data_sink.send_joint_angles(plant.joint_position)

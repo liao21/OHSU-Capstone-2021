@@ -239,13 +239,21 @@ class Scenario(object):
                 self.pause('All', True)
                 angles = [0.0] * mpl.JointEnum.NUM_JOINTS
                 self.DataSink.goto_smooth(angles)
-                time.sleep(1.0)
+                time.sleep(0.1)
+                # synch percept position and plant position
+                self.Plant.joint_position = self.DataSink.position['last_percept'][:]
+                time.sleep(0.1)
                 self.pause('All', False)
 
             elif cmd_data == 'GotoPark':
-                angles = [0.0] * mpl.JointEnum.NUM_JOINTS
-                angles[mpl.JointEnum.ELBOW] = (100 * 3.14159 / 180)
+                self.pause('All', True)
+                angles = self.DataSink.position['park']
                 self.DataSink.goto_smooth(angles)
+                time.sleep(0.1)
+                # synch percept position and plant position
+                self.Plant.joint_position = self.DataSink.position['last_percept'][:]
+                time.sleep(0.1)
+                self.pause('All', False)
 
             ######################
             # Myo Control Options
@@ -494,9 +502,9 @@ class MplScenario(Scenario):
         if user_config.get_user_config_var('mpl_connection_check', 1):
             sink.wait_for_connection()
         # Synchronize joint positions
-        if sink.last_percept_position is not None:
+        if sink.position['last_percept'] is not None:
             for i in range(0, len(self.Plant.joint_position)):
-                self.Plant.joint_position[i] = sink.last_percept_position[i]
+                self.Plant.joint_position[i] = sink.position['last_percept'][i]
         self.DataSink = sink
 
     def run(self):

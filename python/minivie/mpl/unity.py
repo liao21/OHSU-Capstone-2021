@@ -107,8 +107,7 @@ class UnityUdp(DataSink):
             except KeyboardInterrupt:
                 break
             # select every 3rd element in the percept stream for joint angles
-            self.last_percept_position = np.array(joint_data[0::3])
-            # print(self.last_percept_position)
+            self.position['last_percept'] = np.array(joint_data[0::3])
 
     def get_status_msg(self):
         # returns a general purpose status message about the system state

@@ -12,7 +12,7 @@ minivie.
 
 import time
 import logging
-import mpl.JointEnum as MPL
+from mpl import JointEnum as MPL
 import controls
 import utilities.user_config as uc
 import numpy as np
@@ -29,13 +29,11 @@ class DataSink(object):
         self.active_connection = False
 
         # store the last known limb position; None indicates no valid percepts received
-        self.position['last_percept'] = None
+        self.position = {'last_percept': None, 'home': [0.0] * MPL.NUM_JOINTS, 'park': [0.0] * MPL.NUM_JOINTS}
 
-        self.position['park'] = [0.0] * MPL.NUM_JOINTS
         for i in range(MPL.NUM_JOINTS):
             self.position['park'][i] = np.deg2rad(uc.get_user_config_var(MPL(i).name + '_POS_PARK', 0.0))
 
-        self.position['home'] = [0.0] * MPL.NUM_JOINTS
         for i in range(MPL.NUM_JOINTS):
             self.position['home'][i] = np.deg2rad(uc.get_user_config_var(MPL(i).name + '_POS_HOME', 0.0))
 

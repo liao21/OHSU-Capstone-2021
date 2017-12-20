@@ -310,6 +310,17 @@ class Scenario(object):
                 except AttributeError:
                     logging.warning('set_limb_soft_reset mode not defined')
             elif cmd_data == 'PauseAllOff':
+                # Synchronize current position
+                # Wait for a new percept
+                # Then set plant position to percept position
+
+                self.DataSink.position['last_percept'] = None
+                time.sleep(0.1)
+                self.DataSink.wait_for_connection()
+                # synchronize percept position and plant position
+                self.Plant.joint_position = self.DataSink.position['last_percept'][:]
+                time.sleep(0.1)
+
                 self.pause('All', False)
             elif cmd_data == 'PauseHandOn':
                 self.pause('Hand', True)
@@ -317,7 +328,7 @@ class Scenario(object):
                 self.pause('Hand', False)
 
             else:
-                # It's ok to have commands that done't match here.  another callback might use them
+                # It's ok to have commands that don't match here.  another callback might use them
                 # logging.info('Unknown scenario command: ' + cmd_data)
                 pass
 

@@ -35,8 +35,6 @@
     <!-- User defined joint limits
      Optionally limit the range of each joint prior to sending to the MPL
      Value format: "MinAngle, MaxAngle" (degrees)
-     
-     TODO: Currently only upper arm limits are parsed
      -->
     <add key="ApplyUserJointLimits"   value="true"/>
 
@@ -189,7 +187,5 @@
     <add key="THUMB_CMC_FE_POS_PARK"    value="0.00"/>
     <add key="THUMB_MCP_POS_PARK"       value="0.00"/>
     <add key="THUMB_DIP_POS_PARK"       value="0.00"/>
-
-
 
 </userConfig>

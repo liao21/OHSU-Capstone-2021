@@ -225,7 +225,7 @@ class Scenario(object):
             elif cmd_data == 'ImpedanceLow':
                 self.DataSink.impedance_level = 'low'
             elif cmd_data == 'ImpedanceHigh':
-                self.DataSink.impedance_level= 'high'
+                self.DataSink.impedance_level = 'high'
 
             elif cmd_data == 'ReloadRoc':
                 # Reload xml parameters and ROC Table
@@ -464,7 +464,7 @@ class MplScenario(Scenario):
         import pattern_rec as pr
         from mpl.unity import UnityUdp
         from mpl.open_nfu import NfuUdp
-        from controls.plant import Plant, class_map
+        from controls.plant import Plant
         from scenarios import Scenario
         from utilities import user_config
 
@@ -587,7 +587,7 @@ class MplScenario(Scenario):
 
 def test_scenarios():
     print('Testing Scenario File')
-    import sys, os
+    import os
 
     if os.path.split(os.getcwd())[1] == 'scenarios':
         import sys

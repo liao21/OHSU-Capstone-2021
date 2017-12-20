@@ -111,7 +111,7 @@ def set_user_config_var(key, value):
 
         if xml_key == key:
             key_exists = True
-            old_str_value = element.get('value') # Get old value
+            old_str_value = element.get('value')  # Get old value
             element.set('value', str_value)  # Set new value
 
     # Add new key if it didn't exist
@@ -133,7 +133,7 @@ def save(file='../../user_config.xml'):
     # Check if file already exists, and save with incremented name
     if os.path.isfile(file):
         fname = os.path.splitext(file)[0]
-        date_string =  datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        date_string = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         old_file = '{}_{}.xml'.format(fname, date_string)
         os.rename(file, old_file)
         logging.warning('Overwritten user configuration file {} moved to {}'.format(file, old_file))
@@ -172,11 +172,11 @@ def setup_file_logging(prefix=None, log_level=logging.INFO):
     # create file handler which logs debug messages
     file_path = '.'
     if use_combined_log:
-        file_name = prefix + "VIE.log"
+        file_name = str(prefix) + "VIE.log"
     else:
-        file_name = prefix + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
+        file_name = str(prefix) + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
     fh = logging.FileHandler(os.path.join(file_path, file_name))
-    #fh.setLevel(logging.DEBUG)
+    # fh.setLevel(logging.DEBUG)
     fh.setLevel(logging.INFO)
 
     # create console handler with a higher log level
@@ -269,7 +269,7 @@ def main():
     set_user_config_var('Test Tuple Value', ('1', '2', '3'))
 
     # save user config to new name
-    save(file = new_filename)
+    save(file=new_filename)
 
     logging.debug('End UserConfig Demo Script')
 

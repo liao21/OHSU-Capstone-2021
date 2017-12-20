@@ -41,8 +41,6 @@ Example:
 
     Verify that the left virtual arm moves in Unity
 
-TODO: Presently this is only one-way communication.  Receive sensor data
-
 Notes:
     for debug use:
     import logging
@@ -58,6 +56,7 @@ import struct
 import logging
 import numpy as np
 import threading
+import mpl
 from mpl.data_sink import DataSink
 
 
@@ -134,7 +133,7 @@ class UnityUdp(DataSink):
             logging.warning('Connection closed.  Call connect() first')
             return
 
-        if len(values) == 27:
+        if len(values) == mpl.JointEnum.NUM_JOINTS:
             pass
         elif len(values) == 7:
             # Only upper arm angles passed.  Use zeros for hand angles
@@ -194,7 +193,7 @@ class UnityUdp(DataSink):
         # Upper Arm Joints = 7 Joints * 3 values per joint * 4 bytes per value = 84 bytes)... bytes 0-84
         # Fingers and Thumb = 20 Joints * 3 values per joint * 4 bytes per value = 240 bytes)... bytes 85-324
         if len(data) >= 324:
-            joint_data = np.frombuffer(data[0:324], np.float32, 27 * 3)
+            joint_data = np.frombuffer(data[0:324], np.float32, mpl.JointEnum.NUM_JOINTS * 3)
 
         # ContactPerceptsType   74 (37 values (2 bytes each), so (2x37) enum for each of potential contact sensors)
         # FtsnForcePerceptsType 60 (3-axis x 32-bit values (3 x 4 bytes) for each of 5 fingers, so (3x4x5 = 60))

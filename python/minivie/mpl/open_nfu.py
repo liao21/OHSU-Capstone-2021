@@ -68,7 +68,7 @@ class NfuUdp(DataSink):
         self.battery_samples = collections.deque([], maxlen=15)
 
         self.reset_impedance = False
-        self.magic_impedance = [40.0] * 7 + [15.6288] * 20
+        self.magic_impedance = [40.0] * controls.NUM_UPPER_ARM_JOINTS + [15.6288] * controls.NUM_HAND_JOINTS
 
         # create a counter to delay how often CPU temperature is read and logged
         self.last_temperature = 0.0
@@ -279,7 +279,8 @@ class NfuUdp(DataSink):
                 #                                           separator=',',
                 #                                           max_line_width=200) # 3-10ms
 
-                # msg = np.array2string(values, precision=2, separator=',',max_line_width=200, prefix='Joint Percepts') #8ms
+                # Takes 8ms:
+                # msg = np.array2string(values, precision=2, separator=',',max_line_width=200, prefix='Joint Percepts')
 
                 # print('Percept time: {}'.format(time.time() - t))
 
@@ -314,10 +315,10 @@ class NfuUdp(DataSink):
             logging.warning('MPL Connection is closed; not sending joint angles.')
             return
 
-        if len(values) == 7:
+        if len(values) == controls.NUM_UPPER_ARM_JOINTS:
             # append hand angles
             # TODO: consider keeping hand in current position
-            values = np.append(values, 20 * [0.0])
+            values = np.append(values, controls.NUM_HAND_JOINTS * [0.0])
 
         # 3/24/2017 RSA: Updated angle formatting
         # 'Joint Angles: [0.00 1.20 3.14 ... ]'

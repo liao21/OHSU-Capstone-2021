@@ -200,7 +200,7 @@ class Classifier:
         print('shape of X: ' + str(f_.shape))
         print('shape of y: ' + str(y.shape))
 
-        # self.clf = QuadraticDiscriminantAnalysis()
+        # self.classifier = QuadraticDiscriminantAnalysis()
         self.classifier = LinearDiscriminantAnalysis()
         self.classifier.fit(f_, y)
 

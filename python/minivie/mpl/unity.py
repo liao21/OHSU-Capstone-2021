@@ -31,12 +31,14 @@ Example:
 
     >>> from mpl.unity import UnityUdp
     >>> sink = UnityUdp()
+    >>> sink.connect()
     >>> sink.send_joint_angles([0.2,0.2,0.2,0.2,0.2,0.2,0.2])
 
     Verify that the right virtual arm moves in Unity
     Next add a left arm controller:
 
     >>> sink2 = UnityUdp(port=25100)
+    >>> sink2.connect()
     >>> sink2.send_joint_angles([0.2,0.2,0.2,0.9,0.2,0.2,0.2])
 
     Verify that the left virtual arm moves in Unity

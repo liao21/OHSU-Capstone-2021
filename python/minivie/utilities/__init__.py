@@ -75,4 +75,16 @@ def reboot():
 
 
 def shutdown():
-    os.system("sudo shutdown -h now")
+    # os.system("sudo shutdown -h now")
+    import socket
+    import time
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    while True:
+        #
+        s.sendto(bytearray([1]), ('localhost', 16001))
+        time.sleep(0.5)
+        s.sendto(bytearray([1]), ('localhost', 16001))
+        time.sleep(0.5)
+        s.sendto(bytearray([1]), ('localhost', 16001))
+        time.sleep(5)

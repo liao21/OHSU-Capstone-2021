@@ -583,7 +583,7 @@ def set_parameters(p):
     return
 
 
-def connect(mac_addr, stream_addr, hci_interface):
+def connect(mac_addr, stream_addr, recv_address, hci_interface):
     '''
         The command sets the Preferred Peripheral Connection Parameters (PPCP).  You can find summary Bluetooth
         information here: https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.
@@ -654,6 +654,8 @@ def connect(mac_addr, stream_addr, hci_interface):
 
     # Setup Socket
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.bind(recv_address)
+    s.setblocking(0)
 
     # Assign event handler
     h_delegate = MyoDelegate(p, s, stream_addr)
@@ -666,6 +668,7 @@ def connect(mac_addr, stream_addr, hci_interface):
             t_now = time.time()
             t_elapsed = t_now - t_start
             p.waitForNotifications(1.0)
+
             if t_elapsed > 2.0:
                 rate1 = h_delegate.pCount / t_elapsed
                 rate2 = h_delegate.imuCount / t_elapsed
@@ -674,13 +677,28 @@ def connect(mac_addr, stream_addr, hci_interface):
                 t_start = t_now
                 h_delegate.pCount = 0
                 h_delegate.imuCount = 0
+
+            # Check for receive messages
+            # Send a single byte for vibration command with duration of 0-3 seconds
+            # s.sendto(bytearray([2]),('localhost',16001))
+            try:
+                data, address = s.recvfrom(1024)
+                print(data)
+                length = ord(data)
+                if 0 <= length <= 3:
+                    p.writeCharacteristic(0x19, struct.pack('<bbb', 0x03, 0x01, length), True)
+            except BlockingIOError:
+                pass
+
+
         except:
             logger.info('Caught error. Closing UDP Connection')
             s.close()
             raise
 
 
-def manage_connection(mac_addr='C3:0A:EA:14:14:D9', stream_addr=('127.0.0.1', 15001), hci_interface=0):
+def manage_connection(mac_addr='C3:0A:EA:14:14:D9', stream_addr=('127.0.0.1', 15001),
+                      recv_address=('127.0.0.1', 16001), hci_interface=0):
 
     while True:
 
@@ -698,7 +716,7 @@ def manage_connection(mac_addr='C3:0A:EA:14:14:D9', stream_addr=('127.0.0.1', 15
         while device_ok:
             try:
                 logger.info('Starting connection to ' + hci)
-                connect(mac_addr, stream_addr, hci_interface)
+                connect(mac_addr, stream_addr, recv_address, hci_interface)
             except KeyboardInterrupt:
                 logger.info('Got Keyboard Interrupt')
                 break
@@ -792,6 +810,8 @@ def main():
     parser.add_argument('-m', '--MAC', help='Myo MAC address', default='C3:0A:EA:14:14:D9', )
     parser.add_argument('-a', '--ADDRESS', help=r'Destination Address (e.g. //127.0.0.1:15001)',
                         default='//127.0.0.1:15001')
+    parser.add_argument('-l', '--LISTEN', help=r'Vibration Recv Address (e.g. //127.0.0.1:16001)',
+                        default='//127.0.0.1:16001')
     args = parser.parse_args()
 
     if args.SIM_EXE:
@@ -809,13 +829,14 @@ def main():
         # in TX mode then basic connection and rate messages should go to std.out (picked up by systemctl)
         # in TX mode raw EMG messages should go to dedicated file
 
-        address = utilities.get_address(args.ADDRESS)
+        address_send = utilities.get_address(args.ADDRESS)
+        address_recv = utilities.get_address(args.LISTEN)
         logger.setLevel(logging.DEBUG)
 
         # force upper case
         args.MAC = args.MAC.upper()
 
-        file_handler = logging.FileHandler('EMG_MAC_{}_PORT_{}.log'.format(args.MAC.replace(':',''),address[1]))
+        file_handler = logging.FileHandler('EMG_MAC_{}_PORT_{}.log'.format(args.MAC.replace(':', ''), address_send[1]))
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(logging.Formatter('%(created)f %(message)s'))
 
@@ -826,7 +847,7 @@ def main():
         logger.addHandler(file_handler)
         logger.addHandler(stream_handler)
 
-        manage_connection(args.MAC, address, args.IFACE)
+        manage_connection(args.MAC, address_send, address_recv, args.IFACE)
     else:
         # No Action
         print(sys.argv[0] + " Version: " + __version__)
@@ -837,6 +858,7 @@ def main():
         h.connect()
 
     logger.info(sys.argv[0] + " Version: " + __version__)
+
 
 if __name__ == '__main__':
     main()

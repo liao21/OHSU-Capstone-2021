@@ -270,9 +270,16 @@ class NfuUdp(DataSink):
 
                 # t = time.time()
                 percepts = extract_percepts.extract(raw_chars)  # takes 1-3 ms on DART
+
                 self.position['last_percept'] = np.array(percepts['jointPercepts']['position'])
+
                 values = np.array(percepts['jointPercepts']['torque'])  # DART Time: 50-70 us
                 msg = 'Torque: ' + ','.join(['%.1f' % elem for elem in values])  # DART Time: 220 us
+                logging.info(msg)  # 60 us
+
+                values = np.array(percepts['jointPercepts']['temperature'])  # DART Time: 50-70 us
+                msg = 'Temp: ' + ','.join(['%d' % elem for elem in values])  # DART Time: 220 us
+                logging.info(msg)  # 60 us
 
                 # msg = 'Joint Percepts:' + np.array2string(values,
                 #                                           formatter={'float_kind': lambda x: "%6.2f" % x},
@@ -284,8 +291,6 @@ class NfuUdp(DataSink):
 
                 # print('Percept time: {}'.format(time.time() - t))
 
-                # Log torque at minimum
-                logging.info(msg)  # 60 us
                 if self.verbosity['echoPercepts']:
                     print(msg)
 

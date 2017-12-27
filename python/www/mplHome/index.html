@@ -103,11 +103,11 @@
                return(false);
         }
 
-        # Add query string &debug=1 to disable offline check
-        # E.g.: index.html?name=MPL_DEBUG&server=127.0.0.1&debug=1
+        // Add query string &debug=1 to disable offline check
+        // E.g.: index.html?name=MPL_DEBUG&server=127.0.0.1&debug=1
 
         var run = function(){
-         if (Offline.state === 'up' && getQueryVariable("debug") != '1')
+         if (Offline.state === 'up' && getQueryVariable("debug") != "1")
          Offline.check();
          }
          setInterval(run, 3000);

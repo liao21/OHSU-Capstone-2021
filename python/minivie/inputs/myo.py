@@ -510,222 +510,221 @@ class MyoDelegate(btleDefaultDelegate):
     """
     # TODO: Currently this only supports udp streaming.  consider internal buffer for udp-free mode (local)
 
-    def __init__(self, send_udp):
-        self.send_udp = send_udp
-        self.counter = {'emg': 0, 'imu': 0, 'battery': 0}
-        super(MyoDelegate, self).__init__()
+    def __init__(self, myo, sock, addr):
+        self.myo = myo
+        self.sock = sock
+        self.addr = addr
+        self.pCount = 0
+        self.imuCount = 0
+        self.battCount = 0
 
     def handleNotification(self, cHandle, data):
         if cHandle == 0x2b:  # EmgData0Characteristic
-            self.send_udp(data)
+            self.sock.sendto(data, self.addr)
             logger.debug('E0: ' + binascii.hexlify(data).decode('utf-8'))
-            self.counter['emg'] += 2
+            self.pCount += 2
         elif cHandle == 0x2e:  # EmgData1Characteristic
-            self.send_udp(data)
+            self.sock.sendto(data, self.addr)
             logger.debug('E1: ' + binascii.hexlify(data).decode('utf-8'))
-            self.counter['emg'] += 2
+            self.pCount += 2
         elif cHandle == 0x31:  # EmgData2Characteristic
-            self.send_udp(data)
+            self.sock.sendto(data, self.addr)
             logger.debug('E2: ' + binascii.hexlify(data).decode('utf-8'))
-            self.counter['emg'] += 2
+            self.pCount += 2
         elif cHandle == 0x34:  # EmgData3Characteristic
-            self.send_udp(data)
+            self.sock.sendto(data, self.addr)
             logger.debug('E3: ' + binascii.hexlify(data).decode('utf-8'))
-            self.counter['emg'] += 2
+            self.pCount += 2
         elif cHandle == 0x1c:  # IMUCharacteristic
-            self.send_udp(data)
+            self.sock.sendto(data, self.addr)
             logger.debug('IMU: ' + binascii.hexlify(data).decode('utf-8'))
-            self.counter['imu'] += 1
+            self.imuCount += 1
         elif cHandle == 0x11:  # BatteryCharacteristic
-            self.send_udp(data)
+            self.sock.sendto(data, self.addr)
             logger.info('Battery Level: {}'.format(ord(data)))
-            self.counter['battery'] += 1
+            self.battCount += 1
         else:
             logger.warning('Got Unknown Notification: %d' % cHandle)
 
         return
 
 
-class MyoUdpServer(object):
+def set_parameters(p):
+    """function parameters"""
+    # Notifications are unacknowledged, while indications are acknowledged. Notifications are therefore faster,
+    # but less reliable.
+    # Indication = 0x02; Notification = 0x01
 
-    def __init__(self, iface=0, mac_address='C3:OA:EA:14:14:D9',
-                 local_port=('localhost', 16001),
-                 remote_port=('localhost', 15001)):
-        # create unconnected peripheral
-        self.iface = iface
-        self.peripheral = None
-        self.mac_address = mac_address.upper()
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.local_port = local_port
-        self.remote_port = remote_port
-        sendto = lambda data: self.sock.sendto(data, self.remote_port)
-        self.delegate = MyoDelegate(sendto)
+    # Setup main streaming:
+    p.writeCharacteristic(0x12, struct.pack('<bb', 1, 0), 1)  # Un/subscribe from battery_level notifications
+    p.writeCharacteristic(0x24, struct.pack('<bb', 0, 0), 1)  # Un/subscribe from classifier indications
+    p.writeCharacteristic(0x1d, struct.pack('<bb', 1, 0), 1)  # Subscribe from imu notifications
+    p.writeCharacteristic(0x2c, struct.pack('<bb', 1, 0), 1)  # Subscribe to emg data0 notifications
+    p.writeCharacteristic(0x2f, struct.pack('<bb', 1, 0), 1)  # Subscribe to emg data1 notifications
+    p.writeCharacteristic(0x32, struct.pack('<bb', 1, 0), 1)  # Subscribe to emg data2 notifications
+    p.writeCharacteristic(0x35, struct.pack('<bb', 1, 0), 1)  # Subscribe to emg data3 notifications
 
-    def set_device_parameters(self):
-        """function parameters"""
-        # Notifications are unacknowledged, while indications are acknowledged. Notifications are therefore faster,
-        # but less reliable.
-        # Indication = 0x02; Notification = 0x01
+    # note: Default values indicated by [] below:
+    # [1]Should be for Classifier modes (00,01)
+    # [1]Should be for IMU modes (00,01,02,03,04,05)
+    # [1]Should be for EMG modes (00,02,03) **?can use value=1,4,5?
+    # [2]Should be for payload size 03
+    # [1]Should be for command 01
+    # 200Hz (default) streaming
+    p.writeCharacteristic(0x19, struct.pack('<bbbbb', 1, 3, 3, 1, 0), 1)  # Tell the myo we want EMG, IMU
 
-        write = self.peripheral.writeCharacteristic
+    # Custom Streaming
+    # Tell the myo we want EMG@300Hz, IMU@50Hz
+    # p.writeCharacteristic(0x19, struct.pack('<bbbbbhbbhb',2,0xa,3,1,0,0x12c,0,0,0x32,0x62), 1)
 
-        # Setup main streaming:
-        write(0x12, struct.pack('<bb', 1, 0), 1)  # Un/subscribe from battery_level notifications
-        write(0x24, struct.pack('<bb', 0, 0), 1)  # Un/subscribe from classifier indications
-        write(0x1d, struct.pack('<bb', 1, 0), 1)  # Subscribe from imu notifications
-        write(0x2c, struct.pack('<bb', 1, 0), 1)  # Subscribe to emg data0 notifications
-        write(0x2f, struct.pack('<bb', 1, 0), 1)  # Subscribe to emg data1 notifications
-        write(0x32, struct.pack('<bb', 1, 0), 1)  # Subscribe to emg data2 notifications
-        write(0x35, struct.pack('<bb', 1, 0), 1)  # Subscribe to emg data3 notifications
+    # turn off sleep
+    p.writeCharacteristic(0x19, struct.pack('<bbb', 9, 1, 1), 1)
 
-        # note: Default values indicated by [] below:
-        # [1]Should be for Classifier modes (00,01)
-        # [1]Should be for IMU modes (00,01,02,03,04,05)
-        # [1]Should be for EMG modes (00,02,03) **?can use value=1,4,5?
-        # [2]Should be for payload size 03
-        # [1]Should be for command 01
-        # 200Hz (default) streaming
-        write(0x19, struct.pack('<bbbbb', 1, 3, 3, 1, 0), 1)  # Tell the myo we want EMG, IMU
+    return
 
-        # Custom Streaming
-        # Tell the myo we want EMG@300Hz, IMU@50Hz
-        # write(0x19, struct.pack('<bbbbbhbbhb',2,0xa,3,1,0,0x12c,0,0,0x32,0x62), 1)
 
-        # turn off sleep
-        write(0x19, struct.pack('<bbb', 9, 1, 1), 1)
+def connect(mac_addr, stream_addr, recv_address, hci_interface):
+    '''
+        The command sets the Preferred Peripheral Connection Parameters (PPCP).  You can find summary Bluetooth
+        information here: https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.
+            characteristic.gap.peripheral_preferred_connection_parameters.xml
 
-    def set_host_parameters(self):
-        '''
-            Set parameters on the host adapter to allow low-latency streaming
+        Breaking down the command "sudo hcitool cmd 0x08 0x0013 40 00 06 00 06 00 00 00 90 01 00 00 07 00"
 
-            The command sets the Preferred Peripheral Connection Parameters (PPCP).  You can find summary Bluetooth
-            information here: https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.
-                characteristic.gap.peripheral_preferred_connection_parameters.xml
+        the syntax for the 'cmd' option in 'hcitool' is:
+            hcitool cmd <ogf> <ocf> [parameters]
 
-            Breaking down the command "sudo hcitool cmd 0x08 0x0013 40 00 06 00 06 00 00 00 90 01 00 00 07 00"
+            OGF: 0x08 "7.8 LE Controller Commands"
 
-            the syntax for the 'cmd' option in 'hcitool' is:
-                hcitool cmd <ogf> <ocf> [parameters]
+            OCF: 0x0013 "7.8.18 LE Connection Update Command"
 
-                OGF: 0x08 "7.8 LE Controller Commands"
+        The significant command parameter bytes are "06 00 06 00 00 00 90 01" (0x0006, 0x0006, 0x0000, 0x0190)
 
-                OCF: 0x0013 "7.8.18 LE Connection Update Command"
+        These translate to setting the min, and max Connection Interval to 0x0006=6;6*1.25ms=7.5ms, with no slave
+            latency, and a 0x0190=400; 400*10ms=4s timeout.
+        UPDATE: Added non-zero slave latency for robustness on DART board
 
-            The significant command parameter bytes are "06 00 06 00 00 00 90 01" (0x0006, 0x0006, 0x0000, 0x0190)
+        For more info, you can search for the OGF, OCF sections listed above in the Bluetooth Core 4.2 spec
 
-            These translate to setting the min, and max Connection Interval to 0x0006=6;6*1.25ms=7.5ms, with no slave
-                latency, and a 0x0190=400; 400*10ms=4s timeout.
-            UPDATE: Added non-zero slave latency for robustness on DART board
+        :return:
 
-            For more info, you can search for the OGF, OCF sections listed above in the Bluetooth Core 4.2 spec
 
-        '''
+        Example session to create a connection:
 
-        # get the connection information
-        conn_raw = subprocess.check_output(['hcitool', 'con'])
+        from bluepy.btle import DefaultDelegate as btleDefaultDelegate
+        from bluepy.btle import BTLEException as btleBTLEException
+        from bluepy.btle import Peripheral as btlePeripheral
+        from bluepy.btle import ADDR_TYPE_PUBLIC as btleADDR_TYPE_PUBLIC
+        mac_addr = 'E8:A2:46:0b:2c:49'
+        hci_interface = 0
+        p = btlePeripheral(mac_addr, addrType=btleADDR_TYPE_PUBLIC, iface=hci_interface)
 
-        # parse to get our connection handle
-        conn_lines = conn_raw.decode('utf-8').split('\n')
+    '''
 
-        for conn in conn_lines:
-            if conn.find(self.mac_address) > 0:
-                start = 'handle'
-                end = 'state'
-                handle = int(conn.split(start)[1].split(end)[0])
-                handle_hex = '{:04x}'.format(handle)
-                logger.info('MAC: {} is handle {}'.format(self.mac_address,handle))
+    # This blocks until device is awake and connection established
+    logger.info("Connecting to: " + mac_addr)
 
-        cmd_str = "hcitool -i hci{} cmd 0x08 0x0013 {} {} 06 00 06 00 00 00 90 01 01 00 07 00".format(self.iface, handle_hex[2:], handle_hex[:2])
-        logger.info("Setting host adapterupdate rate: " + cmd_str)
-        subprocess.Popen(cmd_str, shell=True)
+    # create unconnected peripheral
+    p = btlePeripheral(None, addrType=btleADDR_TYPE_PUBLIC, iface=hci_interface)
+    p.connect(mac_addr)
 
-    def set_udp_parameters(self, source_address, destination_address):
+    # set security level
+    #p.setSecurityLevel(2)
 
-        pass
+    time.sleep(1.0)
 
-    def run(self):
+    # get the connection information
+    conn_raw = subprocess.check_output(['hcitool', 'con'])
+    # parse to get our connection handle
+    conn_lines = conn_raw.decode('utf-8').split('\n')
+    for conn in conn_lines:
+        if conn.find(mac_addr.upper()) > 0:
+            start = 'handle'
+            end = 'state'
+            handle = int(conn.split(start)[1].split(end)[0])
+            handle_hex = '{:04x}'.format(handle)
+            logger.info('MAC: {} is handle {}'.format(mac_addr,handle))
 
-        # connect bluetooth
-        logger.info("Connecting to: " + self.mac_address)
-        # This blocks until device is awake and connection established
-        print(self.iface)
-        self.peripheral = btlePeripheral(None, addrType=btleADDR_TYPE_PUBLIC, iface=self.iface)
-        self.peripheral.connect(self.mac_address)
-        self.set_device_parameters()
+    cmd_str = "hcitool -i hci{} cmd 0x08 0x0013 {} {} 06 00 06 00 00 00 90 01 01 00 07 00".format(hci_interface, handle_hex[2:], handle_hex[:2])
+    logger.info("Setting Update Rate: " + cmd_str)
+    subprocess.Popen(cmd_str, shell=True)
+    time.sleep(1.0)
 
-        # connect udp
+    set_parameters(p)
 
-        self.sock.setblocking(0)
-        self.sock.bind(self.local_port)
+    # Setup Socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.bind(recv_address)
+    s.setblocking(0)
 
-        # Assign event handler
-        self.peripheral.withDelegate(self.delegate)
+    # Assign event handler
+    h_delegate = MyoDelegate(p, s, stream_addr)
+    p.withDelegate(h_delegate)
 
-        # start run loop
-        status_msg_rate = 2.0  # seconds
-        t_start = time.time()
+    t_start = time.time()
 
-        while True:
+    while True:
+        try:
             t_now = time.time()
             t_elapsed = t_now - t_start
-            #  waitForNotifications(timeout) Blocks until a notification is received from the peripheral
-            # or until the given timeout (in seconds) has elapsed
-            if self.peripheral.waitForNotifications(1.0):
-                print('got valid data')
-            else:
-                print('missed  notification')
+            p.waitForNotifications(1.0)
 
-            if t_elapsed > status_msg_rate:
-                rate1 = self.delegate.counter['emg'] / t_elapsed
-                rate2 = self.delegate.counter['imu'] / t_elapsed
-                status = "MAC: %s Port: %d EMG: %4.1f Hz IMU: %4.1f Hz BattEvts: %d" % (
-                    self.mac_address,self.remote_port[1], rate1, rate2, self.delegate.counter['battery'])
-                logger.info(status)
-
+            if t_elapsed > 2.0:
+                rate1 = h_delegate.pCount / t_elapsed
+                rate2 = h_delegate.imuCount / t_elapsed
+                logger.info("MAC: %s Port: %d EMG: %4.1f Hz IMU: %4.1f Hz BattEvts: %d" % (
+                    mac_addr,stream_addr[1], rate1, rate2, h_delegate.battCount))
                 t_start = t_now
-                self.delegate.counter['emg'] = 0
-                self.delegate.counter['imu'] = 0
+                h_delegate.pCount = 0
+                h_delegate.imuCount = 0
 
             # Check for receive messages
             # Send a single byte for vibration command with duration of 0-3 seconds
             # s.sendto(bytearray([2]),('localhost',16001))
             try:
-                data, address = self.sock.recvfrom(1024)
+                data, address = s.recvfrom(1024)
                 print(data)
                 length = ord(data)
                 if 0 <= length <= 3:
-                    self.writeCharacteristic(0x19, struct.pack('<bbb', 0x03, 0x01, length), True)
+                    p.writeCharacteristic(0x19, struct.pack('<bbb', 0x03, 0x01, length), True)
             except BlockingIOError:
                 pass
 
-    def manage_connection(mac_addr='C3:0A:EA:14:14:D9', stream_addr=('127.0.0.1', 15001),
-                          recv_address=('127.0.0.1', 16001), hci_interface=0):
 
-        while True:
+        except:
+            logger.info('Caught error. Closing UDP Connection')
+            s.close()
+            raise
 
-            logger.debug('Running subprocess command: hcitool dev')
-            hci = 'hci' + str(hci_interface)
 
-            output = subprocess.check_output(["hcitool", "dev"])
-            if hci in output.decode('utf-8'):
-                logger.info('Found device: ' + hci)
-                device_ok = True
-            else:
-                logger.info('Device not found: ' + hci)
-                device_ok = False
+def manage_connection(mac_addr='C3:0A:EA:14:14:D9', stream_addr=('127.0.0.1', 15001),
+                      recv_address=('127.0.0.1', 16001), hci_interface=0):
 
-            while device_ok:
-                try:
-                    logger.info('Starting connection to ' + hci)
-                    connect(mac_addr, stream_addr, recv_address, hci_interface)
-                except KeyboardInterrupt:
-                    logger.info('Got Keyboard Interrupt')
-                    break
-                except btleBTLEException:
-                    logger.info('Device Disconnected')
-                    break
+    while True:
 
-            time.sleep(1.0)
+        logger.debug('Running subprocess command: hcitool dev')
+        hci = 'hci' + str(hci_interface)
+
+        output = subprocess.check_output(["hcitool", "dev"])
+        if hci in output.decode('utf-8'):
+            logger.info('Found device: ' + hci)
+            device_ok = True
+        else:
+            logger.info('Device not found: ' + hci)
+            device_ok = False
+
+        while device_ok:
+            try:
+                logger.info('Starting connection to ' + hci)
+                connect(mac_addr, stream_addr, recv_address, hci_interface)
+            except KeyboardInterrupt:
+                logger.info('Got Keyboard Interrupt')
+                break
+            except btleBTLEException:
+                logger.info('Device Disconnected')
+                break
+
+        time.sleep(1.0)
 
 def interactive_startup():
     """
@@ -862,6 +861,4 @@ def main():
 
 
 if __name__ == '__main__':
-    #main()
-    s = MyoUdpServer()
-    s.run()
+    main()

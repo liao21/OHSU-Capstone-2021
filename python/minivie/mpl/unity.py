@@ -108,6 +108,9 @@ class UnityUdp(DataSink):
             except KeyboardInterrupt:
                 break
             # select every 3rd element in the percept stream for joint angles
+
+            # TODO: on unity close:
+            # TypeError: 'NoneType' object is not subscriptable
             self.position['last_percept'] = np.array(joint_data[0::3])
 
     def get_status_msg(self):

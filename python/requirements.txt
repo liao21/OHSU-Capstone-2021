@@ -13,6 +13,7 @@ numpy
 scipy
 scikit-learn
 matplotlib
+tornado
 enum34
 h5py
 six

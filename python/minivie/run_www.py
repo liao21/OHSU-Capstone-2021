@@ -44,8 +44,8 @@ def main():
     vie.setup()
 
     # setup web interface
-    vie.TrainingInterface = training.TrainingManagerSpacebrew()
-    vie.TrainingInterface.setup(description="JHU/APL Embedded Controller", server="127.0.0.1", port=9000)
+    vie.TrainingInterface = training.TrainingManagerWebsocket()
+    vie.TrainingInterface.setup(description="JHU/APL Embedded Controller", server="127.0.0.1", port=9090)
     vie.TrainingInterface.add_message_handler(vie.command_string)
 
     # Setup Assessments
@@ -72,7 +72,7 @@ def main():
         vie.run()
     except KeyboardInterrupt:
         vie.close()
-        vie.TrainingInterface.brew.stop()
+        vie.TrainingInterface.close()
 
 
 if __name__ == '__main__':

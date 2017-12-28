@@ -382,7 +382,7 @@ class MyoUdp(SignalInput):
                     if self.__count_emg == 0:
                         # mark time
                         self.__time_emg = time.time()
-                    self.__count_emg += 2  # 2 data points per packet
+                    self.__count_emg += 1  # 2 data points per packet
 
                     t_now = time.time()
                     t_elapsed = t_now - self.__time_emg

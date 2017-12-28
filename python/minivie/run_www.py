@@ -45,7 +45,7 @@ def main():
 
     # setup web interface
     vie.TrainingInterface = training.TrainingManagerWebsocket()
-    vie.TrainingInterface.setup(description="JHU/APL Embedded Controller", server="127.0.0.1", port=9090)
+    vie.TrainingInterface.setup(port=9090)
     vie.TrainingInterface.add_message_handler(vie.command_string)
 
     # Setup Assessments

@@ -30,8 +30,19 @@ class AssessmentInterface(object):
     def save_results(self):
         pass
 
+
 class MotionTester(AssessmentInterface):
-# Method to perform motion tester assessments, communicate results to user
+    # Method to perform motion tester assessments, communicate results to user
+
+    # Class Assessment - Elbow Extension - 6.0/8 Correct Classifications, 23.0 Misclassifications
+    # Motion Incomplete
+    # INFO:root:Class Assessment - Elbow Extension - 6.0/8 Correct Classifications, 23.0 Misclassifications
+    # INFO:root:Motion Incomplete
+    # Motion name No Motion does not exist
+    # TODO: ERROR:root:must be str, not NoneType
+    # [MotionTester] [ERROR]  must be str, not NoneType
+    # Saved MOTION_TESTER_LOG
+    # Motion Tester Assessment Completed.
 
     def __init__(self, vie, trainer):
 
@@ -109,7 +120,7 @@ class MotionTester(AssessmentInterface):
         self.update_gui_progress(0, 1)
 
         # Determine which classes should be trained
-        all_class_names = self.vie.TrainingData.motion_names;
+        all_class_names = self.vie.TrainingData.motion_names
         totals = self.vie.TrainingData.get_totals()
         trained_classes = [all_class_names[i] for i, e in enumerate(totals) if e != 0]
         # Remove no movement class
@@ -137,7 +148,7 @@ class MotionTester(AssessmentInterface):
                 self.update_gui_progress(i + 1 + i_rep*len(trained_classes), self.repetitions*len(trained_classes))
 
         # Reset GUI to no-motion image
-        image_name = self.vie.TrainingData.get_motion_image('No Motion')
+        image_name = self.vie.TrainingData.get_motion_image('No Movement')
         self.trainer.send_message("strMotionTesterImage", image_name)
         # Save out stored data
         self.save_results()
@@ -234,6 +245,23 @@ class MotionTester(AssessmentInterface):
         current_class_id = self.vie.TrainingData.motion_names.index(current_class)
 
         # Append to data dicts
+        #
+        # Testing Class - Elbow Flexion - 1.0/10 Correct Classifications
+        # INFO:root:Testing Class - Elbow Flexion - 1.0/10 Correct Classifications
+        # Exception in thread MotionTester:
+        # Traceback (most recent call last):
+        #   File "C:\Users\armigrs1\AppData\Local\Programs\Python\Python36\lib\threading.py", line 916, in _bootstrap_inner
+        #     self.run()
+        #   File "C:\Users\armigrs1\AppData\Local\Programs\Python\Python36\lib\threading.py", line 864, in run
+        #     self._target(*self._args, **self._kwargs)
+        #   File "C:\git\minivie\python\minivie\pattern_rec\assessment.py", line 130, in start_assessment
+        #     is_complete = self.assess_class(i_class)
+        #   File "C:\git\minivie\python\minivie\pattern_rec\assessment.py", line 199, in assess_class
+        #     self.add_data(class_name,current_class)
+        #   File "C:\git\minivie\python\minivie\pattern_rec\assessment.py", line 237, in add_data
+        #     self.data[-1]['targetClass'].append(class_name_to_test)
+        # IndexError: list index out of range
+
         self.data[-1]['targetClass'].append(class_name_to_test)
         self.data[-1]['classDecision'].append(current_class_id)
         # TODO: Update the following metadata
@@ -245,6 +273,7 @@ class MotionTester(AssessmentInterface):
         # Mimics struct hierarchy of MATLAB motion tester results
 
         t = dtime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        # TODO: OSError: Unable to create file (unable to truncate a file which is already open)
         h5 = h5py.File(t + '_' + self.filename + self.file_ext, 'w')
         g1 = h5.create_group('TrialLog')
         g1.attrs['description'] = t + 'Motion Tester Data'

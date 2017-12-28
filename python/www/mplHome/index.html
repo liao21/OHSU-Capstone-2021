@@ -87,24 +87,12 @@
     <script src="jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
     <link rel="stylesheet" href="lib/themes/offline-theme-chrome.css"/>
     <link rel="stylesheet" href="lib/themes/offline-language-english.css"/>
+
+    <!-- Configure Offline.js connection monitoring -->
     <script src="lib/offline.min.js"></script>
     <!-- <script src="lib/offline-simulate-ui.min.js"></script> -->
+
     <script src="mplHome.js"></script>
-    <script>
-
-        // Add query string &debug=1 to disable offline check
-        // E.g.: index.html?name=MPL_DEBUG&server=127.0.0.1&debug=1
-
-        var run = function(){
-         if (Offline.state === 'up' && getQueryVariable("debug") != "1")
-         Offline.check();
-         }
-         setInterval(run, 3000);
-
-         // Offline.on('reconnect:stopped',location.reload());
-         Offline.on('up',setupWebsockets);
-
-    </script>
 
 </head>
 

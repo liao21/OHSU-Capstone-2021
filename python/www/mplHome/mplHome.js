@@ -1,3 +1,8 @@
+// global handle to websocket for send / receive commands
+var socket;
+
+jQuery(function($){
+
 //Parse Query Strings for server information
 // E.g. http://10.0.2.15:9090/?server=10.0.2.15
 
@@ -10,18 +15,41 @@ function getQueryVariable(variable)
            if(pair[0] == variable){return pair[1];}
     }
     return(false);
+}  //getQueryVariable
+
+// First check if server name provided, otherwise use the document's hostname, finally default to localhost
+var server = getQueryVariable("server");
+if (server == false){
+    // Get document hostname
+    server = document.location.hostname;
+    if (server) {
+        console.log(server)
+    } else {
+        console.log('Server name is Invalid')
+        server = 'localhost'
+    }
 }
 
-var host = "ws://" + getQueryVariable("server") + ":9090/ws";
-var socket;
-
-//jQuery(function($){
+var host = "ws://" + server + ":9090/ws";
+console.log(host)
 
 if (!("WebSocket" in window)) {
 alert("Your browser does not support web sockets");
 }else{
 setupWebsockets();
 }
+
+// Add query string &debug=1 to disable offline check
+// E.g.: index.html?debug=1
+var run = function(){
+if (Offline.state === 'up' && getQueryVariable("debug") != "1")
+    Offline.check();
+}
+setInterval(run, 3000);
+
+// On html reconnect, reload websockets
+Offline.on('up',setupWebsockets);
+
 
 
 function setupWebsockets(){
@@ -147,7 +175,7 @@ if(socket){
 setupCallbacks()
 }
 
-//});
+});  // jQuery
 
 function setupCallbacks() {
     // listen to button clicks

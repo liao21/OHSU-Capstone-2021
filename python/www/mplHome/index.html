@@ -92,17 +92,6 @@
     <script src="mplHome.js"></script>
     <script>
 
-        function getQueryVariable(variable)
-        {
-               var query = window.location.search.substring(1);
-               var vars = query.split("&");
-               for (var i=0;i<vars.length;i++) {
-                       var pair = vars[i].split("=");
-                       if(pair[0] == variable){return pair[1];}
-               }
-               return(false);
-        }
-
         // Add query string &debug=1 to disable offline check
         // E.g.: index.html?name=MPL_DEBUG&server=127.0.0.1&debug=1
 
@@ -113,7 +102,7 @@
          setInterval(run, 3000);
 
          // Offline.on('reconnect:stopped',location.reload());
-         Offline.on('up',setupWebsockets());
+         //Offline.on('up',alert('Back Up'));
 
     </script>
 

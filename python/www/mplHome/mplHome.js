@@ -1,7 +1,21 @@
-var host = "ws://localhost:9090/ws";
+//Parse Query Strings for server information
+// E.g. http://10.0.2.15:9090/?server=10.0.2.15
+
+function getQueryVariable(variable)
+{
+    var query = window.location.search.substring(1);
+    var vars = query.split("&");
+    for (var i=0;i<vars.length;i++) {
+           var pair = vars[i].split("=");
+           if(pair[0] == variable){return pair[1];}
+    }
+    return(false);
+}
+
+var host = "ws://" + getQueryVariable("server") + ":9090/ws";
 var socket = new WebSocket(host);
 
-jQuery(function($){
+//jQuery(function($){
 
   if (!("WebSocket" in window)) {
     alert("Your browser does not support web sockets");
@@ -132,7 +146,7 @@ jQuery(function($){
     setupCallbacks()
   }
 
-});
+//});
 
 function setupCallbacks() {
     // listen to button clicks

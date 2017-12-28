@@ -154,7 +154,7 @@ class NfuUdp(DataSink):
                 temp = float(contents) / 1000.0
                 logging.info('CPU Temp: ' + str(temp))
             except FileNotFoundError:
-                logging.warning('Failed to get system processor temperature')
+                #logging.warning('Failed to get system processor temperature')
                 temp = 0.0
             self.last_temperature = temp
         else:
@@ -486,7 +486,7 @@ class Simulator(object):
         self.sock.close()
 
 
-def test_simulator():
+def test_simulator(duration=10):
     # Run simulator for testing.  From command line:
     # py -3 -c "from mpl.open_nfu import test_simulator; test_simulator()"
     import time
@@ -494,7 +494,7 @@ def test_simulator():
     a = Simulator()
     a.start()
     try:
-        time.sleep(10)
+        time.sleep(duration)
     except KeyboardInterrupt:
         pass
 

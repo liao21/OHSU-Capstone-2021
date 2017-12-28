@@ -111,7 +111,10 @@ class UnityUdp(DataSink):
 
             # TODO: on unity close:
             # TypeError: 'NoneType' object is not subscriptable
-            self.position['last_percept'] = np.array(joint_data[0::3])
+            try:
+                self.position['last_percept'] = np.array(joint_data[0::3])
+            except TypeError:
+                self.position['last_percept'] = None
 
     def get_status_msg(self):
         # returns a general purpose status message about the system state

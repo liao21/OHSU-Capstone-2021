@@ -13,138 +13,139 @@ function getQueryVariable(variable)
 }
 
 var host = "ws://" + getQueryVariable("server") + ":9090/ws";
-var socket = new WebSocket(host);
+var socket;
 
 //jQuery(function($){
 
-  if (!("WebSocket" in window)) {
-    alert("Your browser does not support web sockets");
-  }else{
-    setupWebsockets();
+if (!("WebSocket" in window)) {
+alert("Your browser does not support web sockets");
+}else{
+setupWebsockets();
+}
+
+
+function setupWebsockets(){
+
+// Note: You have to change the host var
+// if your client runs on a different machine than the websocket server
+socket = new WebSocket(host);
+
+console.log("socket status: " + socket.readyState);
+
+var $txt = $("#data");
+var $btnSend = $("#sendtext");
+
+$txt.focus();
+
+// event handlers for UI
+$btnSend.on('click',function(){
+  var text = $txt.val();
+  if(text == ""){
+    return;
+  }
+  socket.send(text);
+  $txt.val("");
+});
+
+$txt.keypress(function(evt){
+  if(evt.which == 13){
+    $btnSend.click();
+  }
+});
+
+// event handlers for websocket
+if(socket){
+
+  socket.onopen = function(){
+    //alert("connection opened....");
   }
 
+  socket.onmessage = function(msg){
+    //console.log(msg.data)
 
-  function setupWebsockets(){
+    value = msg.data;
 
-    // Note: You have to change the host var
-    // if your client runs on a different machine than the websocket server
+ console.log("[onStringMessage] new message received ", value);
+ var split_id = value.indexOf(":")
+ var cmd_type = value.slice(0,split_id);
+ var cmd_data = value.slice(split_id+1);
 
-    console.log("socket status: " + socket.readyState);
+ if (cmd_type == "strStatus") {
+     $("#msg_status").html(cmd_data);
+     $("#msg_status_opt").html(cmd_data);
+     $("#msg_status_myo").html(cmd_data);
+ }
+ if (cmd_type == "strTrainingMotion") {
+     $("#msg_train").text(cmd_data);
+ }
+ if (cmd_type == "strOutputMotion") {
+     $("#main_output").text(cmd_data);
+     $("#mt_output").text(cmd_data);
+     $("#tac_output").text(cmd_data);
+ }
+ if (cmd_type == "strMotionTester") {
+     $("#mt_status").text(cmd_data);
+ }
+ if (cmd_type == "strMotionTesterProgress") {
+     updateMTProgressBar(cmd_data);
+ }
+ if (cmd_type == "strMotionTesterImage") {
+     updateMTImage(cmd_data);
+ }
+ if (cmd_type == "strTAC") {
+     $("#tac_status").text(cmd_data);
+ }
+ if (cmd_type == "strTACJoint1Name") {
+     $("#tacJoint1Name").text(cmd_data);
+ }
+ if (cmd_type == "strTACJoint1Bar") {
+     updateTACJointBar(cmd_data, "tacJoint1Bar", "tacJoint1Label");
+ }
+ if (cmd_type == "strTACJoint1Target") {
+    updateTACJointTarget(cmd_data, "tacJoint1Target");
+ }
+ if (cmd_type == "strTACJoint1Error") {
+    updateTACJointError(cmd_data, "tacJoint1Target");
+ }
+ if (cmd_type == "strTACJoint2Name") {
+     $("#tacJoint2Name").text(cmd_data);
+ }
+ if (cmd_type == "strTACJoint2Bar") {
+     updateTACJointBar(cmd_data, "tacJoint2Bar", "tacJoint2Label");
+ }
+ if (cmd_type == "strTACJoint2Target") {
+    updateTACJointTarget(cmd_data, "tacJoint2Target");
+ }
+ if (cmd_type == "strTACJoint2Error") {
+    updateTACJointError(cmd_data, "tacJoint2Target");
+ }
+ if (cmd_type == "strTACJoint3Name") {
+     $("#tacJoint3Name").text(cmd_data);
+ }
+ if (cmd_type == "strTACJoint3Bar") {
+     updateTACJointBar(cmd_data, "tacJoint3Bar", "tacJoint3Label");
+ }
+ if (cmd_type == "strTACJoint3Target") {
+    updateTACJointTarget(cmd_data, "tacJoint3Target");
+ }
+ if (cmd_type == "strTACJoint3Error") {
+    updateTACJointError(cmd_data, "tacJoint3Target");
+ }
 
-    var $txt = $("#data");
-    var $btnSend = $("#sendtext");
+}
 
-    $txt.focus();
-
-    // event handlers for UI
-    $btnSend.on('click',function(){
-      var text = $txt.val();
-      if(text == ""){
-        return;
-      }
-      socket.send(text);
-      $txt.val("");
-    });
-
-    $txt.keypress(function(evt){
-      if(evt.which == 13){
-        $btnSend.click();
-      }
-    });
-
-    // event handlers for websocket
-    if(socket){
-
-      socket.onopen = function(){
-        //alert("connection opened....");
-      }
-
-      socket.onmessage = function(msg){
-        //console.log(msg.data)
-
-        value = msg.data;
-
-     console.log("[onStringMessage] new message received ", value);
-     var split_id = value.indexOf(":")
-     var cmd_type = value.slice(0,split_id);
-     var cmd_data = value.slice(split_id+1);
-
-     if (cmd_type == "strStatus") {
-         $("#msg_status").html(cmd_data);
-         $("#msg_status_opt").html(cmd_data);
-         $("#msg_status_myo").html(cmd_data);
-     }
-     if (cmd_type == "strTrainingMotion") {
-         $("#msg_train").text(cmd_data);
-     }
-     if (cmd_type == "strOutputMotion") {
-         $("#main_output").text(cmd_data);
-         $("#mt_output").text(cmd_data);
-         $("#tac_output").text(cmd_data);
-     }
-     if (cmd_type == "strMotionTester") {
-         $("#mt_status").text(cmd_data);
-     }
-     if (cmd_type == "strMotionTesterProgress") {
-         updateMTProgressBar(cmd_data);
-     }
-     if (cmd_type == "strMotionTesterImage") {
-         updateMTImage(cmd_data);
-     }
-     if (cmd_type == "strTAC") {
-         $("#tac_status").text(cmd_data);
-     }
-     if (cmd_type == "strTACJoint1Name") {
-         $("#tacJoint1Name").text(cmd_data);
-     }
-     if (cmd_type == "strTACJoint1Bar") {
-         updateTACJointBar(cmd_data, "tacJoint1Bar", "tacJoint1Label");
-     }
-     if (cmd_type == "strTACJoint1Target") {
-        updateTACJointTarget(cmd_data, "tacJoint1Target");
-     }
-     if (cmd_type == "strTACJoint1Error") {
-        updateTACJointError(cmd_data, "tacJoint1Target");
-     }
-     if (cmd_type == "strTACJoint2Name") {
-         $("#tacJoint2Name").text(cmd_data);
-     }
-     if (cmd_type == "strTACJoint2Bar") {
-         updateTACJointBar(cmd_data, "tacJoint2Bar", "tacJoint2Label");
-     }
-     if (cmd_type == "strTACJoint2Target") {
-        updateTACJointTarget(cmd_data, "tacJoint2Target");
-     }
-     if (cmd_type == "strTACJoint2Error") {
-        updateTACJointError(cmd_data, "tacJoint2Target");
-     }
-     if (cmd_type == "strTACJoint3Name") {
-         $("#tacJoint3Name").text(cmd_data);
-     }
-     if (cmd_type == "strTACJoint3Bar") {
-         updateTACJointBar(cmd_data, "tacJoint3Bar", "tacJoint3Label");
-     }
-     if (cmd_type == "strTACJoint3Target") {
-        updateTACJointTarget(cmd_data, "tacJoint3Target");
-     }
-     if (cmd_type == "strTACJoint3Error") {
-        updateTACJointError(cmd_data, "tacJoint3Target");
-     }
-
+  socket.onclose = function(){
+    //alert("connection closed....");
+    console.log("The connection has been closed.");
+    socket.close
   }
 
-      socket.onclose = function(){
-        //alert("connection closed....");
-        console.log("The connection has been closed.");
-        socket.close
-      }
+}else{
+  console.log("invalid socket");
+}
 
-    }else{
-      console.log("invalid socket");
-    }
-
-    setupCallbacks()
-  }
+setupCallbacks()
+}
 
 //});
 

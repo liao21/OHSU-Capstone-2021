@@ -151,17 +151,15 @@ class MyoUdpServer(object):
         self.logger.info("Setting host adapter update rate: " + cmd_str)
         subprocess.Popen(cmd_str, shell=True)
 
-    def set_udp_parameters(self, source_address, destination_address):
-
-        pass
-
     def run(self):
 
         # connect bluetooth
         self.logger.info("Connecting to: " + self.mac_address)
 
         # This blocks until device is awake and connection established
-        self.peripheral = btle.Peripheral(None, addrType=btle.ADDR_TYPE_PUBLIC, iface=self.iface)
+        # Devices with the most significant address bits set are 'random' addresses, so 'eb:xx:xx' is a random address
+        # (for reference: Bluetooth 4.0 spec, Volume 3, Part C, Section 10.8).
+        self.peripheral = btle.Peripheral(None, addrType=btle.ADDR_TYPE_RANDOM, iface=self.iface)
         self.peripheral.connect(self.mac_address)
 
         self.set_host_parameters()

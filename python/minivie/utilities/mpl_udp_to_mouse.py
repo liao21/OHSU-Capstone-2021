@@ -1,12 +1,13 @@
 import keyboard
+import mouse
 from utilities import Udp
 from mpl import JointEnum
 
-# Simple program to control keyboard with PythonVIE and Myo bands
+# Simple program to control mouse movements with PythonVIE and Myo bands
 #
 # The scenario should be set to NfuUdp as this follows the VulcanX MUD data protocol
 #
-# Set the mapping of arm motion to keyboard events below
+# Set the mapping of arm motion to mouse events below
 #
 # Press ESC to regain control and terminate program
 #
@@ -14,7 +15,7 @@ from mpl import JointEnum
 #   29DEC2017 Armiger: Created
 
 
-def mud_to_keyboard(bytes):
+def mud_to_mouse(bytes):
     import struct
 
     RIGHT_ARM = False
@@ -43,23 +44,21 @@ def mud_to_keyboard(bytes):
     if velocity[JointEnum.WRIST_FE] > 0:
         print('Wrist Flex')
         if RIGHT_ARM:
-            keyboard.press('left')
-            keyboard.release('right')
-            keyboard.release('space')
+            mouse.move(-5, 0, absolute=False)
         else:
-            keyboard.press('right')
-            keyboard.release('left')
-            keyboard.release('space')
+            mouse.move(5, 0, absolute=False)
     elif velocity[JointEnum.WRIST_FE] < 0:
         print('Wrist Extend')
         if RIGHT_ARM:
-            keyboard.press('right')
-            keyboard.release('left')
-            keyboard.release('space')
+            mouse.move(5, 0, absolute=False)
         else:
-            keyboard.press('left')
-            keyboard.release('right')
-            keyboard.release('space')
+            mouse.move(-5, 0, absolute=False)
+    elif velocity[JointEnum.ELBOW] > 0:
+        print('Elbow Up')
+        mouse.move(0, -5, absolute=False)
+    elif velocity[JointEnum.ELBOW] < 0:
+        print('Elbow Down')
+        mouse.move(0, 5, absolute=False)
 
     elif velocity[JointEnum.MIDDLE_MCP] > 0:
         print('Hand Close')
@@ -80,7 +79,7 @@ def main():
     udp = Udp()
     udp.name = 'MplUdpKeyboard'
     udp.timeout = 0.5
-    udp.onmessage = mud_to_keyboard
+    udp.onmessage = mud_to_mouse
 
     # Add a bail out key to terminate emulation
     keyboard.add_hotkey('esc', lambda: udp.close())

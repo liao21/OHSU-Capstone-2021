@@ -438,7 +438,7 @@ class Scenario(object):
 
         # transmit output
         if self.DataSink is not None:
-            self.Plant.joint_velocity[mpl.JointEnum.MIDDLE_MCP] = self.Plant.grasp_velocity
+            #self.Plant.joint_velocity[mpl.JointEnum.MIDDLE_MCP] = self.Plant.grasp_velocity
             self.DataSink.send_joint_angles(self.Plant.joint_position, self.Plant.joint_velocity)
 
         return self.output

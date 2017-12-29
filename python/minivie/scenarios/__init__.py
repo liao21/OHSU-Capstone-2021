@@ -497,7 +497,11 @@ class MplScenario(Scenario):
         # For MPL, this might be: real MPL/NFU, Virtual Arm, etc.
         data_sink = user_config.get_user_config_var('DataSink', 'Unity')
         if data_sink == 'Unity':
-            sink = UnityUdp(remote_host="127.0.0.1")  # ("192.168.1.24")
+            sink = UnityUdp()
+            sink.udp['RemoteHostname'] = "127.0.0.1"
+            sink.udp['RemotePort'] = 25000
+            sink.udp['LocalHostname'] = "0.0.0.0"
+            sink.udp['LocalPort'] = 25001
             sink.connect()
         elif data_sink == 'NfuUdp':
             sink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)

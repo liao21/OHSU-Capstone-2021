@@ -60,9 +60,49 @@ import numpy as np
 import threading
 import mpl
 from mpl.data_sink import DataSink
+from utilities import Udp
 
 
-class UnityUdp(DataSink):
+def get_percepts(data):
+    """
+    Get sensor data from vMPL (returns tuple)
+
+    :return:
+
+        joint_data - [27x3] matrix of position velocity and torque for each joint
+        contact_data - Contact pad data
+        segment_data - FTSN Data (old/new)
+
+    """
+    joint_data = None
+    contact_data = None
+    segment_data = None
+
+    # Convert raw bytes
+
+    # Upper Arm Joints = 7 Joints * 3 values per joint * 4 bytes per value = 84 bytes)... bytes 0-84
+    # Fingers and Thumb = 20 Joints * 3 values per joint * 4 bytes per value = 240 bytes)... bytes 85-324
+    if len(data) >= 324:
+        joint_data = np.frombuffer(data[0:324], np.float32, mpl.JointEnum.NUM_JOINTS * 3)
+
+    # ContactPerceptsType   74 (37 values (2 bytes each), so (2x37) enum for each of potential contact sensors)
+    # FtsnForcePerceptsType 60 (3-axis x 32-bit values (3 x 4 bytes) for each of 5 fingers, so (3x4x5 = 60))
+    # FtsnAccelPerceptsType 60 (3-axis x 32-bit values (3 x 4 bytes) for each of 5 fingers, so (3x4x5 = 60))
+    # FtsnTempPerceptsType  20 (1 x 32-bit value (1 x 4 bytes) for each of 5 fingers, so (1x4x5 = 20))
+    if len(data) >= 398:
+        contact_data = np.frombuffer(data[324:398], np.short, 37)
+
+    # Segment forces (OLD) = 5 sensors * 3 axes/values per sensor * 4 bytes per value = 60 bytes)... bytes 399-458
+    # Segment forces (NEW) = 5 sensors * 14 pads/values per sensor * 4 bytes per value = 280 bytes)... bytes 399-678
+    if len(data) >= 678:
+        segment_data = np.frombuffer(data[398:678], np.float32, 70)
+    elif len(data) >= 458:
+        segment_data = np.frombuffer(data[398:458], np.float32, 15)
+
+    return joint_data, contact_data, segment_data
+
+
+class UnityUdp(Udp, DataSink):
     """
         % Left
         obj.MplCmdPort = 25100;
@@ -74,47 +114,20 @@ class UnityUdp(DataSink):
         obj.MplAddress = '127.0.0.1';
 
     """
-    def __init__(self, remote_host="127.0.0.1", remote_port=25000, local_port=25001):
+    def __init__(self):
+        DataSink.__init__(self)
+        Udp.__init__(self)
+        self.name = "UnityUdp"
+        self.onmessage = self.message_handler
+        pass
 
-        # Initialize superclass
-        super(UnityUdp, self).__init__()
+    def message_handler(self, data):
 
-        self.udp = {'RemoteHost': remote_host, 'RemotePort': remote_port, 'LocalPort': local_port}
-        self.sock = None
-        self.is_connected = False
-
-        # Create a receive thread
-        self.thread = threading.Thread(target=self.message_handler)
-        self.thread.name = 'UnityRcv'
-
-    def connect(self):
-        logging.info("UnityUdp local port: {}".format(self.udp['LocalPort']))
-        logging.info("UnityUdp remote port: {}:{}".format(self.udp['RemoteHost'], self.udp['RemotePort']))
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind(('0.0.0.0', self.udp['LocalPort']))
-        self.sock.settimeout(3.0)
-        self.is_connected = True
-
-        # Create a thread for processing new data
-        if not self.thread.isAlive():
-            logging.info('Starting Unity rcv thread')
-            self.thread.start()
-
-    def message_handler(self):
-
-        while True:
-            try:
-                joint_data, contact_data, segment_data = self.get_percepts()
-            except KeyboardInterrupt:
-                break
-            # select every 3rd element in the percept stream for joint angles
-
-            # TODO: on unity close:
-            # TypeError: 'NoneType' object is not subscriptable
-            try:
-                self.position['last_percept'] = np.array(joint_data[0::3])
-            except TypeError:
-                self.position['last_percept'] = None
+        joint_data, contact_data, segment_data = get_percepts(data)
+        try:
+            self.position['last_percept'] = np.array(joint_data[0::3])
+        except TypeError:
+            self.position['last_percept'] = None
 
     def get_status_msg(self):
         # returns a general purpose status message about the system state
@@ -158,71 +171,6 @@ class UnityUdp(DataSink):
         packer = struct.Struct('27f')
         packed_data = packer.pack(*values)
         if self.is_connected:
-            self.sock.sendto(packed_data, (self.udp['RemoteHost'], self.udp['RemotePort']))
+            self.send(packed_data)
         else:
             print('Socket disconnected')
-
-    def get_percepts(self):
-        """
-        Get sensor data from vMPL (returns tuple)
-
-        :return:
-
-            joint_data - [27x3] matrix of position velocity and torque for each joint
-            contact_data - Contact pad data
-            segment_data - FTSN Data (old/new)
-
-        """
-        joint_data = None
-        contact_data = None
-        segment_data = None
-
-        # get data from socket, with timeout
-        try:
-            # receive call will error if socket closed on exit
-            data, address = self.sock.recvfrom(1024)  # blocks until timeout
-
-            # if the above function returns (without error) it means we have a connection
-            if not self.active_connection:
-                logging.info('MPL Connection is Active: Data received')
-                self.active_connection = True
-
-        except socket.timeout:
-            msg = "Percept Read Timeout"
-            logging.warning(msg)
-            logging.info('MPL Connection is Lost')
-            self.active_connection = False
-
-            return joint_data, contact_data, segment_data
-        except socket.error:
-            msg = "Error reading data. Socket closed while receiving"
-            logging.warning(msg)
-            return joint_data, contact_data, segment_data
-
-        # Convert raw bytes
-
-        # Upper Arm Joints = 7 Joints * 3 values per joint * 4 bytes per value = 84 bytes)... bytes 0-84
-        # Fingers and Thumb = 20 Joints * 3 values per joint * 4 bytes per value = 240 bytes)... bytes 85-324
-        if len(data) >= 324:
-            joint_data = np.frombuffer(data[0:324], np.float32, mpl.JointEnum.NUM_JOINTS * 3)
-
-        # ContactPerceptsType   74 (37 values (2 bytes each), so (2x37) enum for each of potential contact sensors)
-        # FtsnForcePerceptsType 60 (3-axis x 32-bit values (3 x 4 bytes) for each of 5 fingers, so (3x4x5 = 60))
-        # FtsnAccelPerceptsType 60 (3-axis x 32-bit values (3 x 4 bytes) for each of 5 fingers, so (3x4x5 = 60))
-        # FtsnTempPerceptsType  20 (1 x 32-bit value (1 x 4 bytes) for each of 5 fingers, so (1x4x5 = 20))
-        if len(data) >= 398:
-            contact_data = np.frombuffer(data[324:398], np.short, 37)
-
-        # Segment forces (OLD) = 5 sensors * 3 axes/values per sensor * 4 bytes per value = 60 bytes)... bytes 399-458
-        # Segment forces (NEW) = 5 sensors * 14 pads/values per sensor * 4 bytes per value = 280 bytes)... bytes 399-678
-        if len(data) >= 678:
-            segment_data = np.frombuffer(data[398:678], np.float32, 70)
-        elif len(data) >= 458:
-            segment_data = np.frombuffer(data[398:458], np.float32, 15)
-
-        return joint_data, contact_data, segment_data
-
-    def close(self):
-        self.sock.close()
-        logging.info("Closing Local UnityUdp Socket Port={}".format(self.udp['LocalPort']))
-        self.is_connected = False

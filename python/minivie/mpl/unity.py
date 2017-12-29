@@ -121,7 +121,7 @@ class UnityUdp(DataSink):
         # e.g. ' 22.5V 72.6C'
         return 'vMPL'
 
-    def send_joint_angles(self, values):
+    def send_joint_angles(self, values, velocity=[0.0]*mpl.JointEnum.NUM_JOINTS):
         """
 
         send_joint_angles
@@ -131,6 +131,9 @@ class UnityUdp(DataSink):
         :param values:
          Array of joint angles in radians.  Ordering is specified in mpl.JointEnum
          values can either be the 7 arm values, or 27 arm and hand values
+
+        :param velocity:
+         Array of joint velocities.  Unused in unity
 
         :return:
          None

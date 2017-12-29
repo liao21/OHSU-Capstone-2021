@@ -428,7 +428,7 @@ class Scenario(object):
 
         # transmit output
         if self.DataSink is not None:
-            self.DataSink.send_joint_angles(self.Plant.joint_position)
+            self.DataSink.send_joint_angles(self.Plant.joint_position,self.Plant.joint_velocity)
 
         return self.output
 

@@ -296,7 +296,7 @@ class NfuUdp(DataSink):
 
                 pass
 
-    def send_joint_angles(self, values):
+    def send_joint_angles(self, values, velocity=[0.0]*mpl.JointEnum.NUM_JOINTS):
         # Transmit joint angle command in radians
         #
         # Inputs:
@@ -342,7 +342,6 @@ class NfuUdp(DataSink):
         # values[mpl.JointEnum.THUMB_CMC_FE] = values[mpl.JointEnum.THUMB_CMC_AB_AD] + 0.5
 
         # velocity is currently unused, but need to assign value for correct transmission
-        velocity = [0.0] * mpl.JointEnum.NUM_JOINTS
         if self.reset_impedance:
             # PVI Command w/ magic number
             payload = np.append(values, velocity)

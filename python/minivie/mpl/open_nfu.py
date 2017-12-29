@@ -13,8 +13,8 @@
 #
 
 
-import collections
-import os
+from collections import deque
+from os import name as os_name
 import threading
 import socket
 import logging
@@ -25,7 +25,8 @@ import mpl
 import controls
 from mpl.data_sink import DataSink
 from mpl import JointEnum as MplId
-from utilities import extract_percepts, user_config
+from utilities import extract_percepts
+from utilities.user_config import read_user_config, get_user_config_var
 
 
 class NfuUdp(DataSink):
@@ -65,7 +66,7 @@ class NfuUdp(DataSink):
         self.mpl_status = self.mpl_status_default
 
         # battery samples will contain N most recent samples for averaging
-        self.battery_samples = collections.deque([], maxlen=15)
+        self.battery_samples = deque([], maxlen=15)
 
         self.reset_impedance = False
         self.magic_impedance = [40.0] * controls.NUM_UPPER_ARM_JOINTS + [15.6288] * controls.NUM_HAND_JOINTS
@@ -79,7 +80,7 @@ class NfuUdp(DataSink):
         self.shutdown_voltage = None
         # RSA: moved this parameter out of the load function to not overwrite on reload from app
         # self.enable_impedance = None
-        self.enable_impedance = user_config.get_user_config_var('enable_impedance', 0)
+        self.enable_impedance = get_user_config_var('enable_impedance', 0)
         self.impedance_level = 'high'  # Options are low | high
         self.load_config_parameters()
 
@@ -87,27 +88,29 @@ class NfuUdp(DataSink):
         # Load parameters from xml config file
 
         # initialize stiffness to global value (overwrite later if needed)
-        s = user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS_HIGH', 1.5)
+        s = get_user_config_var('GLOBAL_HAND_STIFFNESS_HIGH', 1.5)
         self.stiffness_high = [s] * MplId.NUM_JOINTS
-        s = user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS_LOW', 0.75)
+        s = get_user_config_var('GLOBAL_HAND_STIFFNESS_LOW', 0.75)
         self.stiffness_low = [s] * MplId.NUM_JOINTS
 
         # Upper Arm
         num_upper_arm_joints = 7
         for i in range(num_upper_arm_joints):
-            self.stiffness_high[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS_HIGH', 40.0)
-            self.stiffness_low[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS_LOW', 20.0)
+            self.stiffness_high[i] = get_user_config_var(MplId(i).name + '_STIFFNESS_HIGH', 40.0)
+            self.stiffness_low[i] = get_user_config_var(MplId(i).name + '_STIFFNESS_LOW', 20.0)
 
         # Hand
-        if not user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS_HIGH_ENABLE', 0):
+        if not get_user_config_var('GLOBAL_HAND_STIFFNESS_HIGH_ENABLE', 0):
             for i in range(num_upper_arm_joints, MplId.NUM_JOINTS):
-                self.stiffness_high[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS_HIGH', 4.0)
-        if not user_config.get_user_config_var('GLOBAL_HAND_STIFFNESS_LOW_ENABLE', 0):
+                self.stiffness_high[i] = get_user_config_var(MplId(i).name + '_STIFFNESS_HIGH', 4.0)
+        if not get_user_config_var('GLOBAL_HAND_STIFFNESS_LOW_ENABLE', 0):
             for i in range(num_upper_arm_joints, MplId.NUM_JOINTS):
-                self.stiffness_low[i] = user_config.get_user_config_var(MplId(i).name + '_STIFFNESS_LOW', 4.0)
+                self.stiffness_low[i] = get_user_config_var(MplId(i).name + '_STIFFNESS_LOW', 4.0)
 
-        self.shutdown_voltage = user_config.get_user_config_var('shutdown_voltage', 19.0)
-        # self.enable_impedance = user_config.get_user_config_var('enable_impedance', 0)
+        self.shutdown_voltage = get_user_config_var('shutdown_voltage', 19.0)
+        # self.enable_impedance = get_user_config_var('enable_impedance', 0)
+
+        self.mpl_connection_check = get_user_config_var('mpl_connection_check', 1)
 
     def connect(self):
         # open up the socket and bind to IP address
@@ -140,7 +143,7 @@ class NfuUdp(DataSink):
         # Note: this function allows setting a reduced rate for how many calls are made to the system
 
         # Bail out if Windows
-        if os.name is not 'posix':
+        if os_name is not 'posix':
             return 0.0
 
         # set a rate reduction factor to decrease calls to system process
@@ -316,7 +319,7 @@ class NfuUdp(DataSink):
         # imp = [256*ones(1,4) 256*ones(1,3) 0.5*ones(1,20)];
         #
 
-        if not self.active_connection and user_config.get_user_config_var('mpl_connection_check', 1):
+        if not self.active_connection and self.mpl_connection_check:
             logging.warning('MPL Connection is closed; not sending joint angles.')
             return
 
@@ -506,7 +509,7 @@ def main():
     # Note, ensure to make deep copies of joint angles, so no references are used
     import copy
 
-    user_config.read_user_config('../user_config_default.xml')
+    read_user_config('../user_config_default.xml')
     nfu = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
     nfu.connect()
 

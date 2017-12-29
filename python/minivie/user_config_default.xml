@@ -29,8 +29,9 @@
     <add key="dcell_serial_port"    value="/dev/ttymxc2"/>
 
     <!--Pattern Recognition Parameters-->
+    <add key="NumMajorityVotes" value="25"/>
     <add key="FeatureExtract.zcThreshold" value="0.05"/>
-    <add key="FeatureExtract.sscThreshold" value="0.05"/>    
+    <add key="FeatureExtract.sscThreshold" value="0.05"/>
 
     <!-- Myo Stream Ports -->
     <add key="myo_mac_address_1"    value="xx:xx:xx:xx:xx:xx"/>

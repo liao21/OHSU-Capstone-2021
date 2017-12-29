@@ -1,5 +1,6 @@
 import keyboard
 from utilities import Udp
+from mpl import JointEnum
 
 
 def mud_to_keyboard(bytes):
@@ -26,16 +27,26 @@ def mud_to_keyboard(bytes):
         angles = values[3:30]
         velocity = values[30:57]
 
-    if velocity[6] > 0:
+    if velocity[JointEnum.WRIST_FE] > 0:
         print('Wrist Flex')
         keyboard.press('right')
-    elif velocity[6] < 0:
+        keyboard.release('left')
+        keyboard.release('space')
+    elif velocity[JointEnum.WRIST_FE] < 0:
         print('Wrist Extend')
         keyboard.press('left')
+        keyboard.release('right')
+        keyboard.release('space')
+    elif velocity[JointEnum.MIDDLE_MCP] > 0:
+        print('Hand Close')
+        keyboard.press('space')
+        keyboard.release('left')
+        keyboard.release('right')
     else:
         print('RELEASED')
         keyboard.release('left')
         keyboard.release('right')
+        keyboard.release('space')
 
 
 def main():

@@ -7,6 +7,9 @@ import logging
 
 class Udp(threading.Thread):
     # Basic Template for thread based udp communications
+    #
+    # key function is the onmessgae attribute that is called on data receive
+
     def __init__(self, local_hostname="0.0.0.0", local_port=9027, remote_hostname="127.0.0.1", remote_port=9028):
         threading.Thread.__init__(self)
         self.run_control = False  # Used by the start and terminate to control thread
@@ -37,7 +40,7 @@ class Udp(threading.Thread):
             self.start()
 
     def terminate(self):
-        print('Terminating thread: {}'.format(self.name))
+        logging.info('Terminating receive thread: {}'.format(self.name))
         self.run_control = False
 
     def on_connection_lost(self):
@@ -50,6 +53,11 @@ class Udp(threading.Thread):
         # Loop forever to receive data via UDP
         #
         # This is a thread to receive data as soon as it arrives.
+
+        if not self.is_connected:
+            logging.error("Socket is not connected")
+            return
+
         self.run_control = True
 
         while self.run_control:
@@ -74,7 +82,7 @@ class Udp(threading.Thread):
                 # The connection has been closed
                 msg = "{} Socket Closed on IP={} Port={}.".format(
                     self.name, self.udp['LocalHostname'], self.udp['LocalPort'])
-                print(msg)
+                logging.info(msg)
                 # break so that the thread can terminate
                 self.run_control = False
                 break

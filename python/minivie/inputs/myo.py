@@ -122,6 +122,7 @@ contributor: W. Haris
 
 from __future__ import with_statement  # 2.5 only
 import os
+import platform
 import threading
 import socket
 import struct
@@ -135,7 +136,7 @@ import binascii
 from transforms3d.euler import quat2euler
 
 # The following is only supported under linux (transmit mode)
-if os.name is 'posix':
+if platform.system() is 'Linux':
     from bluepy.btle import DefaultDelegate as btleDefaultDelegate
     from bluepy.btle import BTLEException as btleBTLEException
     from bluepy.btle import Peripheral as btlePeripheral

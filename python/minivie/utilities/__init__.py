@@ -23,7 +23,7 @@ class Udp(threading.Thread):
 
         # default callback is just the print function.  this can be overwritten. also for i in callbacks??
         self.onmessage = lambda s: 1 + 1
-        #self.onmessage = print
+        # self.onmessage = print
         pass
 
     def connect(self):
@@ -151,29 +151,20 @@ def restart_myo(val):
 def change_myo(val):
     # Use this command to change the active pair of myos searched during startup
     # This is accomplished by stopping/disabling and enabling/starting the respective services
-    # Set one is mpl_myo1 mpl_myo2
-    # Set two is mpl_myo3 mpl_myo4
+    # Set one is mpl_myo1
+    # Set two is mpl_myo2
     
     if val == 1:
-        os.system("sudo systemctl stop mpl_myo3.service")
-        os.system("sudo systemctl disable mpl_myo3.service")
-        os.system("sudo systemctl stop mpl_myo4.service")
-        os.system("sudo systemctl disable mpl_myo4.service")
-
+        os.system("sudo systemctl stop mpl_myo2.service")
+        os.system("sudo systemctl disable mpl_myo2.service")
         os.system("sudo systemctl enable mpl_myo1.service")
         os.system("sudo systemctl start mpl_myo1.service")
-        os.system("sudo systemctl enable mpl_myo2.service")
-        os.system("sudo systemctl start mpl_myo2.service")
     elif val == 2:
         os.system("sudo systemctl stop mpl_myo1.service")
         os.system("sudo systemctl disable mpl_myo1.service")
-        os.system("sudo systemctl stop mpl_myo2.service")
-        os.system("sudo systemctl disable mpl_myo2.service")
+        os.system("sudo systemctl enable mpl_myo2.service")
+        os.system("sudo systemctl start mpl_myo2.service")
 
-        os.system("sudo systemctl enable mpl_myo3.service")
-        os.system("sudo systemctl start mpl_myo3.service")
-        os.system("sudo systemctl enable mpl_myo4.service")
-        os.system("sudo systemctl start mpl_myo4.service")
 
 def reboot():
     os.system("sudo shutdown -r now")
@@ -181,12 +172,13 @@ def reboot():
 
 def shutdown():
     # os.system("sudo shutdown -h now")
+    # TODO: This isn't a great strategy for issuing low battery warning, but it works
     import socket
     import time
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     while True:
-        #
+        # Issue vibrate command for myo listenting on this port
         s.sendto(bytearray([1]), ('localhost', 16001))
         time.sleep(0.5)
         s.sendto(bytearray([1]), ('localhost', 16001))

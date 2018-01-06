@@ -237,7 +237,7 @@ class NfuUdp(DataSink):
                 msg_id = data[2]
 
             if msg_id == mpl.NfuUdpMsgId.UDPMSGID_HEARTBEATV2:
-                # When we get a heatbeat message, parse the message, update the running battery voltage
+                # When we get a heartbeat message, parse the message, update the running battery voltage
                 # and check for shutdown conditions
 
                 # pass message bytes

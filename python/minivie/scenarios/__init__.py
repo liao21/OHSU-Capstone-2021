@@ -438,7 +438,7 @@ class Scenario(object):
 
         # transmit output
         if self.DataSink is not None:
-            #self.Plant.joint_velocity[mpl.JointEnum.MIDDLE_MCP] = self.Plant.grasp_velocity
+            # self.Plant.joint_velocity[mpl.JointEnum.MIDDLE_MCP] = self.Plant.grasp_velocity
             self.DataSink.send_joint_angles(self.Plant.joint_position, self.Plant.joint_velocity)
 
         return self.output
@@ -479,8 +479,13 @@ class MplScenario(Scenario):
         from scenarios import Scenario
 
         # attach inputs
-        self.attach_source([myo.MyoUdp(source='//0.0.0.0:15001'), myo.MyoUdp(source='//0.0.0.0:15002')])
-        # self.attach_source([myo.MyoUdp(source='//0.0.0.0:15001')])
+        local_port_1 = get_user_config_var('myo_client_local_port_1', '//0.0.0.0:15001')
+        source_list = [myo.MyoUdp(source=local_port_1)]
+        # add second device
+        if get_user_config_var('myo_client_number_or_devices', 1) > 1:
+            local_port_2 = get_user_config_var('myo_client_local_port_2', '//0.0.0.0:15002')
+            source_list.append(myo.MyoUdp(source=local_port_2))
+        self.attach_source(source_list)
 
         # Training Data holds data labels
         # training data manager
@@ -492,7 +497,7 @@ class MplScenario(Scenario):
         self.FeatureExtract = pr.FeatureExtract()
         self.FeatureExtract.zc_thresh = get_user_config_var('FeatureExtract.zcThreshold', 0.05)
         self.FeatureExtract.ssc_thresh = get_user_config_var('FeatureExtract.sscThreshold', 0.05)
-        self.FeatureExtract.sample_rate = 200
+        self.FeatureExtract.sample_rate = get_user_config_var('FeatureExtract.sample_rate', 200)
 
         # Classifier parameters
         self.SignalClassifier = pr.Classifier(self.TrainingData)

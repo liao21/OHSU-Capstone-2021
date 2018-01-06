@@ -134,26 +134,20 @@ def get_address(url):
     return a.hostname, a.port
 
 
-def restart_myo(val):
-    # Use this function to issue a restart command on the myo services.  
+def restart_myo(unused):
+    # Use this function to issue a restart command on the myo services.
     # Note this gets trickier when primary/back myo bands are used.
     # first check if the service is active, only then issue restart
-    if val == 1:
-        # os.system("sudo systemctl restart mpl_myo1.service")
-        os.system("sudo systemctl is-enabled mpl_myo1.service | grep 'enabled' > /dev/null && sudo systemctl restart mpl_myo1.service")
-        os.system("sudo systemctl is-enabled mpl_myo3.service | grep 'enabled' > /dev/null && sudo systemctl restart mpl_myo3.service")
-    elif val == 2:
-        # os.system("sudo systemctl restart mpl_myo2.service")
-        os.system("sudo systemctl is-enabled mpl_myo2.service | grep 'enabled' > /dev/null && sudo systemctl restart mpl_myo2.service")
-        os.system("sudo systemctl is-enabled mpl_myo4.service | grep 'enabled' > /dev/null && sudo systemctl restart mpl_myo4.service")
+    os.system("sudo systemctl is-enabled mpl_myo1.service | grep 'enabled' > /dev/null && sudo systemctl stop mpl_myo1.service && sleep 3 && sudo systemctl start mpl_myo1.service")
+    os.system("sudo systemctl is-enabled mpl_myo2.service | grep 'enabled' > /dev/null && sudo systemctl stop mpl_myo2.service && sleep 3 && sudo systemctl start mpl_myo2.service")
 
-        
+
 def change_myo(val):
     # Use this command to change the active pair of myos searched during startup
     # This is accomplished by stopping/disabling and enabling/starting the respective services
     # Set one is mpl_myo1
     # Set two is mpl_myo2
-    
+
     if val == 1:
         os.system("sudo systemctl stop mpl_myo2.service")
         os.system("sudo systemctl disable mpl_myo2.service")

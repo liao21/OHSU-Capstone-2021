@@ -5,6 +5,7 @@
 #
 #
 import os
+import sys
 import logging
 import time
 import socket
@@ -19,7 +20,7 @@ if os.path.split(os.getcwd())[1] == 'inputs':
 from utilities import user_config as uc
 from utilities import get_address
 
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
 
 __version__ = "1.0.0"
 
@@ -29,7 +30,7 @@ class MyoUdpServer(object):
     def __init__(self, iface=0, mac_address='xx:xx:xx:xx:xx:xx',
                  local_port=('localhost', 16001),
                  remote_port=('localhost', 15001),
-                 data_logger=logger,
+                 data_logger=None,
                  name='Myo'):
         import threading
         import subprocess
@@ -40,22 +41,27 @@ class MyoUdpServer(object):
         self.local_port = local_port
         self.remote_port = remote_port
 
+        # Setup file and console logging
+        self.logger = data_logger
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.propagate = 0
+        fh = logging.FileHandler(
+            'EMG_MAC_{}_PORT_{}.log'.format(self.mac_address.replace(':', ''), self.remote_port[1]))
+        fh.setLevel(logging.DEBUG)
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.WARNING)
+        fh.setFormatter(logging.Formatter('%(created)f %(message)s'))
+        ch.setFormatter(logging.Formatter("[%(threadName)-s] [%(levelname)-5.5s]  %(message)s"))
+        self.logger.addHandler(fh)
+        self.logger.addHandler(ch)
+
         # Create data object handles
         self.peripheral = None
         self.sock = None
         send_udp = lambda data: self.sock.sendto(data, self.remote_port)
-        self.delegate = MyoDelegate(send_udp, data_logger)
+        self.delegate = MyoDelegate(send_udp, self.logger)
         self.thread = threading.Thread(target=self.run)
         self.thread.name = name
-
-        self.logger = data_logger
-        self.logger.setLevel(logging.DEBUG)
-
-        file_handler = logging.FileHandler(
-            'EMG_MAC_{}_PORT_{}.log'.format(self.mac_address.replace(':', ''), self.remote_port[1]))
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(logging.Formatter('%(created)f %(message)s'))
-        self.logger.addHandler(file_handler)
 
         self.logger.debug('Running subprocess command: hcitool dev')
         hci = 'hci' + str(iface)
@@ -91,7 +97,7 @@ class MyoUdpServer(object):
         # [2]Should be for payload size 03
         # [1]Should be for command 01
         # 200Hz (default) streaming
-        write(0x19, struct.pack('<bbbbb', 1, 3, 3, 1, 0), 1)  # Tell the myo we want EMG, IMU
+        #write(0x19, struct.pack('<bbbbb', 1, 3, 3, 1, 0), 1)  # Tell the myo we want EMG, IMU
 
         # Custom Streaming
         # Tell the myo we want EMG@300Hz, IMU@50Hz
@@ -155,16 +161,23 @@ class MyoUdpServer(object):
 
         pass
 
-    def run(self):
-
+    def connect(self):
         # connect bluetooth
+        # Make this a blocking call that overrides timeout to ensure connection order
         self.logger.info("Connecting to: " + self.mac_address)
 
         # This blocks until device is awake and connection established
-        self.peripheral = btle.Peripheral(None, addrType=btle.ADDR_TYPE_PUBLIC, iface=self.iface)
-        self.peripheral.connect(self.mac_address)
+        #self.peripheral = btle.Peripheral(None, addrType=btle.ADDR_TYPE_PUBLIC, iface=self.iface)
+        #self.peripheral.connect(self.mac_address)
+        self.peripheral = btle.Peripheral()
+        while True:
+            try:
+                self.peripheral.connect(self.mac_address,addrType=btle.ADDR_TYPE_PUBLIC, iface=self.iface)
+                print('Connection Successful')
+                break
+            except btle.BTLEException:
+                print('Timed out while connecting to device at address {}'.format(self.mac_address))
 
-        self.set_host_parameters()
         self.set_device_parameters()
 
         # connect udp
@@ -174,6 +187,8 @@ class MyoUdpServer(object):
 
         # Assign event handler
         self.peripheral.withDelegate(self.delegate)
+
+    def run(self):
 
         # start run loop
         status_msg_rate = 2.0  # seconds
@@ -187,6 +202,8 @@ class MyoUdpServer(object):
             # or until the given timeout (in seconds) has elapsed
             if not self.peripheral.waitForNotifications(1.0):
                 self.logger.warning('Missed Myo notification.')
+                self.peripheral.writeCharacteristic(0x19, struct.pack('<bbbbb', 1, 3, 3, 1, 0), 1)  # Tell the myo we want EMG, IMU
+
 
             if t_elapsed > status_msg_rate:
                 rate1 = self.delegate.counter['emg'] / t_elapsed
@@ -223,7 +240,7 @@ class MyoDelegate(btle.DefaultDelegate):
     """
     # TODO: Currently this only supports udp streaming.  consider internal buffer for udp-free mode (local)
 
-    def __init__(self, send_udp, raw_logger=logger):
+    def __init__(self, send_udp, raw_logger=None):
         self.send_udp = send_udp
         self.counter = {'emg': 0, 'imu': 0, 'battery': 0}
         self.logger = raw_logger
@@ -278,10 +295,10 @@ def run_threads():
                       name='Myo2')
 
     # go live with connections
-    s1.thread.start()
-    time.sleep(0.1)
-    s2.thread.start()
-
+    #s1.thread.start()
+    #time.sleep(0.1)
+    #s2.thread.start()
+    return s1, s2
 
 def main():
     """Parse command line arguments into argparse model.
@@ -301,12 +318,26 @@ def main():
 
     if args.XML is not None:
         uc.read_user_config(file=args.XML)
-        run_threads()
-    else:
-        # No Action
-        print(sys.argv[0] + " Version: " + __version__)
+        #run_threads()
+        s1, s2 = run_threads()
 
-    logger.info(sys.argv[0] + " Version: " + __version__)
+        print('Connecting Device #1')
+        s1.connect()
+        print('Connecting Device #2')
+        s2.connect()
+        print('Both Connected')
+
+        time.sleep(0.5)
+        s1.thread.start()
+        time.sleep(0.5)
+        s2.thread.start()
+        time.sleep(1.5)
+        s2.set_host_parameters()
+        time.sleep(0.5)
+        s1.set_host_parameters()
+
+
+    print(sys.argv[0] + " Version: " + __version__)
 
 
 if __name__ == '__main__':

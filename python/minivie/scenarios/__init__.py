@@ -1,8 +1,9 @@
 import time
 import logging
 import utilities
-import utilities.user_config
+from utilities.user_config import read_user_config, get_user_config_var
 import mpl
+from collections import Counter, deque
 
 
 class Scenario(object):
@@ -36,6 +37,8 @@ class Scenario(object):
         self.training_id = 0
 
         self.num_channels = 0
+
+        self.decision_buffer = deque([], get_user_config_var('NumMajorityVotes', 25))
 
         self.output = None  # Will contain latest status message
 
@@ -150,7 +153,6 @@ class Scenario(object):
                 AutoSaveOff - Turn off autosave feature
 
         TODO: add classifier options to train and switch between LDA, QDA, SVM, etc
-        TODO: add majority voting
         TODO: add reset to hand/arm speed
         """
 
@@ -230,7 +232,7 @@ class Scenario(object):
             elif cmd_data == 'ReloadRoc':
                 # Reload xml parameters and ROC Table
                 # RSA: Update reload both ROC and xml config parameters
-                utilities.user_config.read_user_config(reload=True)
+                read_user_config(reload=True)
                 self.Plant.load_roc()
                 self.Plant.load_config_parameters()
                 self.DataSink.load_config_parameters()
@@ -391,7 +393,15 @@ class Scenario(object):
         if decision_id is None:
             return self.output
 
-        # TODO: add majority vote
+        # perform majority vote
+        # Note Counter used here instead of statitstics.mode since that will raise error if equal frequency of values,
+        # which can happen even if the buffer length is odd
+        self.decision_buffer.append(decision_id)
+        counter = Counter(self.decision_buffer)
+
+        if self.TrainingData.motion_names[decision_id] != 'No Movement':
+            # Immediately stop if class is no movement, otherwise use majority vote
+            decision_id = counter.most_common(1)[0][0]
 
         # get decision name
         class_decision = self.TrainingData.motion_names[decision_id]
@@ -428,7 +438,8 @@ class Scenario(object):
 
         # transmit output
         if self.DataSink is not None:
-            self.DataSink.send_joint_angles(self.Plant.joint_position)
+            #self.Plant.joint_velocity[mpl.JointEnum.MIDDLE_MCP] = self.Plant.grasp_velocity
+            self.DataSink.send_joint_angles(self.Plant.joint_position, self.Plant.joint_velocity)
 
         return self.output
 
@@ -466,7 +477,6 @@ class MplScenario(Scenario):
         from mpl.open_nfu import NfuUdp
         from controls.plant import Plant
         from scenarios import Scenario
-        from utilities import user_config
 
         # attach inputs
         self.attach_source([myo.MyoUdp(source='//0.0.0.0:15001'), myo.MyoUdp(source='//0.0.0.0:15002')])
@@ -480,8 +490,8 @@ class MplScenario(Scenario):
 
         # Setup feature extract and properties
         self.FeatureExtract = pr.FeatureExtract()
-        self.FeatureExtract.zc_thresh = user_config.get_user_config_var('FeatureExtract.zcThreshold', 0.05)
-        self.FeatureExtract.ssc_thresh = user_config.get_user_config_var('FeatureExtract.sscThreshold', 0.05)
+        self.FeatureExtract.zc_thresh = get_user_config_var('FeatureExtract.zcThreshold', 0.05)
+        self.FeatureExtract.ssc_thresh = get_user_config_var('FeatureExtract.sscThreshold', 0.05)
         self.FeatureExtract.sample_rate = 200
 
         # Classifier parameters
@@ -489,15 +499,19 @@ class MplScenario(Scenario):
         self.SignalClassifier.fit()
 
         # Plant maintains current limb state (positions) during velocity control
-        filename = user_config.get_user_config_var('rocTable', '../../WrRocDefaults.xml')
-        dt = user_config.get_user_config_var('timestep', 0.02)
+        filename = get_user_config_var('rocTable', '../../WrRocDefaults.xml')
+        dt = get_user_config_var('timestep', 0.02)
         self.Plant = Plant(dt, filename)
 
         # Sink is output to outside world (in this case to VIE)
         # For MPL, this might be: real MPL/NFU, Virtual Arm, etc.
-        data_sink = user_config.get_user_config_var('DataSink', 'Unity')
+        data_sink = get_user_config_var('DataSink', 'Unity')
         if data_sink == 'Unity':
-            sink = UnityUdp(remote_host="127.0.0.1")  # ("192.168.1.24")
+            sink = UnityUdp()
+            sink.udp['RemoteHostname'] = "127.0.0.1"
+            sink.udp['RemotePort'] = 25000
+            sink.udp['LocalHostname'] = "0.0.0.0"
+            sink.udp['LocalPort'] = 25001
             sink.connect()
         elif data_sink == 'NfuUdp':
             sink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
@@ -510,7 +524,7 @@ class MplScenario(Scenario):
             sys.exit(1)
 
         # synchronize the data sink with the plant model
-        if user_config.get_user_config_var('mpl_connection_check', 1):
+        if get_user_config_var('mpl_connection_check', 1):
             sink.wait_for_connection()
         # Synchronize joint positions
         if sink.position['last_percept'] is not None:

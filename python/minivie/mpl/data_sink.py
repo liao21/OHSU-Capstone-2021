@@ -24,9 +24,7 @@ class DataSink(object):
     __metaclass__ = ABCMeta
 
     def __init__(self):
-        # This private variable is used to monitor data receipt from the limb.  If a timeout occurs then the parameter
-        # is false until new data is received
-        self.active_connection = False
+        self.active_connection = False # marked for removal.  only used by NfuUdp
 
         # store the last known limb position; None indicates no valid percepts received
         self.position = {'last_percept': None, 'home': [0.0] * Mpl.NUM_JOINTS, 'park': [0.0] * Mpl.NUM_JOINTS}
@@ -43,7 +41,7 @@ class DataSink(object):
 
         print('Checking for valid percepts...')
 
-        while (not self.active_connection) and (self.position['last_percept'] is None):
+        while self.position['last_percept'] is None:
             time.sleep(controls.timestep)
             print('Waiting 20 ms for valid percepts...')
             logging.info('Waiting 20 ms for valid percepts...')
@@ -52,7 +50,7 @@ class DataSink(object):
         # Smoothly move to a new position
 
         # first get current position
-        if (not self.active_connection) or (self.position['last_percept'] is None):
+        if self.position['last_percept'] is None:
             logging.warning('Limb Position is unknown. Go-to command disabled')
             return
 

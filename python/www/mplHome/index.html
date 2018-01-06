@@ -2,36 +2,33 @@
 <html>
 
 <head>
-
-    <meta charset="UTF-8">
-
-    <title>MPL Mobile Trainer</title>
-
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
-
-    <link rel="stylesheet" href="jquery.mobile/jquery.mobile-1.4.5.min.css" />
-    <link rel="stylesheet" href="blueimp-gallery/css/blueimp-gallery.css">
-
-    <style type='text/css'>
-        html {
-            background-color: #333;
+  <meta charset="UTF-8">
+  <title>MPL Mobile Trainer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="jquery.mobile/jquery.mobile-1.4.5.min.css">
+  <link rel="stylesheet" href="blueimp-gallery/css/blueimp-gallery.css">
+  <link rel="stylesheet" href="lib/themes/offline-theme-chrome.css">
+  <link rel="stylesheet" href="lib/themes/offline-language-english.css">
+  <style type='text/css'>
+    html {
+          background-color: #333;
         }
         @media only screen and (min-width: 600px) {
-            .ui-page {
-                width: 480px !important;
-                margin: 0 auto !important;
-                position: relative !important;
-                border-right: 5px #666 outset !important;
-                border-left: 5px #666 outset !important;
-            }
+          .ui-page {
+            width: 480px !important;
+            margin: 0 auto !important;
+            position: relative !important;
+            border-right: 5px #666 outset !important;
+            border-left: 5px #666 outset !important;
+          }
         }
 
         p {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 18;
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 18;
         }
+
         #mtProgressBackground {
           width: 100%;
           height: 30px;
@@ -79,343 +76,310 @@
           line-height: 30px;
           color: white;
          }
-
-    </style>
-    
-    <script src="jquery.mobile/jquery-1.11.1.min.js"></script>
-    <script src="jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
-    <script src="spacebrew.js/sb-1.4.1.min.js"></script>
-    <script src="mplHome.js"></script>
-    <link rel="stylesheet" href="lib/themes/offline-theme-chrome.css" />
-    <link rel="stylesheet" href="lib/themes/offline-language-english.css" />
-    <script src="lib/offline.min.js"></script>
-    <!-- <script src="lib/offline-simulate-ui.min.js"></script> -->
-    <script>
-
-        function getQueryVariable(variable)
-        {
-               var query = window.location.search.substring(1);
-               var vars = query.split("&");
-               for (var i=0;i<vars.length;i++) {
-                       var pair = vars[i].split("=");
-                       if(pair[0] == variable){return pair[1];}
-               }
-               return(false);
-        }
-
-        // Add query string &debug=1 to disable offline check
-        // E.g.: index.html?name=MPL_DEBUG&server=127.0.0.1&debug=1
-
-        var run = function(){
-         if (Offline.state === 'up' && getQueryVariable("debug") != "1")
-         Offline.check();
-         }
-         setInterval(run, 3000);
-    </script>
+  </style>
+  <script src="jquery.mobile/jquery-1.11.1.min.js"></script>
+  <script src="jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
+  <script src="lib/offline.min.js"></script>
+  <!-- <script src="lib/offline-simulate-ui.min.js"></script> -->
+  <script src="mplHome.min.js"></script>
 </head>
 
-
 <body class="container">
-    <!-- Main Mobile Trainer Page -->
-    <div data-role="page" id="ID_MAIN_PAGE">
-        <div data-role="header" data-theme="b" >
-            <h1>MPL Mobile Trainer</h1>
-        </div><!-- /header -->
-
-        <div data-role="content">
-
-            <!-- Speed Settings Dropdown -->
-            <div data-role="collapsible" data-collapsed-icon="gear" data-expanded-icon="gear">
-            <h4>Speed Settings</h4>
-            <ul data-role="listview" data-inset="false">
-            <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_SPEEDUP">Increase Arm Speed</a></li>
-            <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_SPEEDDOWN">Decrease Arm Speed</a></li>
-            <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_HAND_SPEED_UP">Increase Hand Speed</a></li>
-            <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_HAND_SPEED_DOWN">Decrease Hand Speed</a></li>
-            <li>
+  <!-- Main Mobile Trainer Page -->
+  <div data-role="page" id="ID_MAIN_PAGE">
+    <!-- /header -->
+    <div data-role="header" data-theme="b">
+      <h1>MPL Mobile Trainer</h1>
+    </div>
+    <div data-role="content">
+      <!-- Speed Settings Dropdown -->
+      <div data-role="collapsible" data-collapsed-icon="gear" data-expanded-icon="gear">
+        <h4>Speed Settings</h4>
+        <ul data-role="listview" data-inset="false">
+          <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_SPEEDUP">Increase Arm Speed</a>
+          </li>
+          <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_SPEEDDOWN">Decrease Arm Speed</a>
+          </li>
+          <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus" id="ID_HAND_SPEED_UP">Increase Hand
+          Speed</a>
+          </li>
+          <li><a href="#" class="ui-btn ui-btn-icon-right ui-icon-minus" id="ID_HAND_SPEED_DOWN">Decrease Hand
+          Speed</a>
+          </li>
+          <li>
             <div class="ui-field-contain">
-                <label for="precisionMode">Precision Mode:</label>
-                <input type="checkbox" id="precisionMode" data-role="flipswitch" />
+              <label for="precisionMode">Precision Mode:</label>
+              <input type="checkbox" id="precisionMode" data-role="flipswitch" />
             </div>
-            </li>
-            <li>
+          </li>
+          <li>
             <div class="ui-field-contain">
-                <label for="pauseAll">Pause All:</label>
-                <input type="checkbox" id="pauseAll" data-role="flipswitch" />
+              <label for="pauseAll">Pause All:</label>
+              <input type="checkbox" id="pauseAll" data-role="flipswitch" />
             </div>
-            </li>
-            <li>
+          </li>
+          <li>
             <div class="ui-field-contain">
-                <label for="pauseHand">Pause Hand:</label>
-                <input type="checkbox" id="pauseHand" data-role="flipswitch" />
+              <label for="pauseHand">Pause Hand:</label>
+              <input type="checkbox" id="pauseHand" data-role="flipswitch" />
             </div>
-            </li>
-            </ul>
-            </div>
-
-            <!-- Assessments Dropdown -->
-            <div data-role="collapsible" data-collapsed-icon="star" data-expanded-icon="star">
-            <h4>Assessments</h4>
-            <ul data-role="listview" data-inset="false">
-            <li><a href="#ID_TAC_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-star">TAC Assessment...</a></li>
-            <li><a href="#ID_MT_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-star">Motion Tester...</a></li>
-            </ul>
-            </div>
-
-            <!-- Options Dropdown -->
-            <div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
-            <h4>Options</h4>
-            <ul data-role="listview" data-inset="false">
-            <!--<li><a href="#popupShutdown" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-icon="power" data-theme="a" data-iconpos="right">Shutdown MPL</a></li>-->
-            <li><a href="#ID_MYO_OPTIONS_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-edit">MYO Configuration...</a></li>
-            <li><a href="#ID_ADVANCED_OPTIONS_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-edit">MPL Configuration...</a></li>
-            </ul>
-            </div>
-
-            <!-- Confirmation Dialog: Shutdown -->
-            <div data-role="popup" id="popupShutdown" data-overlay-theme="a" data-theme="b" data-dismissible="false" style="max-width:400px;" class="ui-corner-all">
-            <div data-role="header" data-theme="a" class="ui-corner-top">
-            <h1>Confirm Shutdown</h1>
-            </div>
-            <div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
-            <h3 class="ui-title">Shutdown?</h3>
-            <a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Cancel</a>
-            <a href="#" data-role="button" data-inline="true" data-rel="back" data-transition="flow" data-theme="b" id="ID_SHUTDOWN">OK</a>
-            </div>
-            </div>
-
-            <!-- Training and Motion Selection Section -->
-            <p>Selected Motion: <span id="msg_train"></span> </p>
-            <div id="blueimp-image-carousel" class="blueimp-gallery blueimp-gallery-controls blueimp-gallery-carousel">
-                <div class="slides"></div>
-                <h3 class="title"></h3>
-                <a class="prev">‹</a>
-                <a class="next">›</a>
-            </div>
-
-            <!-- Training Switch -->
-            <div class="ui-field-contain">
-                <label for="trainSwitch">Add_Data:</label>
-                <input type="checkbox" id="trainSwitch" data-role="flipswitch" />
-            </div>
-
-            <!-- Training Buttons -->
-            <br>
-            <div data-role="controlgroup" data-type="horizontal">
-                <a href="#" class="ui-btn" id="ID_CLEARCLASS">Clear</a>
-                <!--<a href="#" class="ui-btn" id="ID_CLEARALL">Reset</a>-->
-                <a href="#popupResetClassData" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-theme="a">Reset</a>
-                <a href="#" class="ui-btn" id="ID_SAVE">Save</a>
-            </div>
-
-            <!-- Confirmation Dialog: Reset Class Data-->
-            <div data-role="popup" id="popupResetClassData" data-overlay-theme="a" data-theme="b" data-dismissible="false" style="max-width:400px;" class="ui-corner-all">
-            <div data-role="header" data-theme="a" class="ui-corner-top">
-            <h1>Confirm Reset</h1>
-            </div>
-            <div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
-            <h3 class="ui-title">Reset?</h3>
-            <a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Cancel</a>
-            <a href="#" data-role="button" data-inline="true" data-rel="back" data-transition="flow" data-theme="b" id="ID_CLEARALL">OK</a>
-            </div>
-            </div>
-
-            <!-- Helper Scripts for Image Carousel -->
-            <script src="blueimp-gallery/js/blueimp-helper.js"></script>
-            <script src="blueimp-gallery/js/blueimp-gallery.js"></script>
-            <script src="blueimp-gallery/js/blueimp-gallery-fullscreen.js"></script>
-            <script src="blueimp-gallery/js/blueimp-gallery-indicator.js"></script>
-            <script src="blueimp-gallery/js/jquery.blueimp-gallery.js"></script>
-            <script src="gallery-links.js"></script>
-            <!-- <script src="blueimp-gallery/js/vendor/jquery.js"></script> -->
-
-            <!-- Status Messages -->
-            <br>
-            <p><b>Status:</b></p>
-            <p>Classification: <span id="main_output"></span></p>
-            <p>Devices: <span id="msg_status"></span></p>
-            <p>Server: <span id="statusMsg"></span></p>
-
-        </div><!-- /content -->
-    </div><!-- /page -->
-
-
-    <!-- Advanced Options Page -->
-    <div data-role="page" id="ID_ADVANCED_OPTIONS_PAGE">
-        <div data-role="header" data-theme="b" >
-            <h1>Advanced MPL Options</h1>
-            <a href="#ID_MAIN_PAGE" data-role="button" data-icon="arrow-l">Back</a>
-        </div><!-- /header -->
-        <div data-role="content">
-
-            <!-- Toggle AutoSave -->
-            <div class="ui-field-contain">
-                <label for="autoSave">Autosave:</label>
-                <select type="checkbox" id="autoSave" data-role="flipswitch">
-                    <option value="Off">Off</option>
-                    <option value="On" selected="selected">On</option>
-                </select>
-            </div>
-
-            <!-- Toggle Torque Rezero -->
-            <div class="ui-field-contain">
-                <label for="resetTorque">Torque Zero:</label>
-                <select type="checkbox" id="resetTorque" data-role="flipswitch">
-                    <option value="Off"  selected="selected">Off</option>
-                    <option value="On">On</option>
-                </select>
-            </div>
-
-            <!-- Toggle Impedance Mode -->
-            <div class="ui-field-contain">
-                <label for="resetTorque">Impedance:</label>
-                <select type="checkbox" id="enableImpedance" data-role="flipswitch">
-                    <option value="Off">Off</option>
-                    <option value="On" selected="selected">On</option>
-                </select>
-            </div>
-
-            <!-- Toggle Impedance Level [Low|High] -->
-            <div class="ui-field-contain">
-                <label for="impedanceLevel">Stiffness:</label>
-                <select type="checkbox" id="impedanceLevel" data-role="flipswitch">
-                    <option value="Low">Low</option>
-                    <option value="High" selected="selected">High</option>
-                </select>
-            </div>
-
-            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_RELOAD_ROC">Reload Configuration Files</a>
-            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_REBOOT">Reboot Limb Controller</a>
-            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_GOTO_HOME">Limb Go-To Home Position</a>
-            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_GOTO_PARK">Limb Go-To Park Position</a>
-
-            <!-- Log Entry -->
-            <p>Enter a log message:
-            <input type="text" id="ID_LOG_MSG" value="">
-            <button onclick="submitLogMessage()">Submit Log Entry</button>
-
-            <!-- Status Messages -->
-            <p>Devices: <span id="msg_status_opt"></span></p>
-
-        </div><!-- /content -->
-    </div><!-- /page -->
-
-
-    <!-- Myo Options Page -->
-    <div data-role="page" id="ID_MYO_OPTIONS_PAGE">
-        <div data-role="header" data-theme="b" >
-            <h1>Myo Armbands</h1>
-            <a href="#ID_MAIN_PAGE" data-role="button" data-icon="arrow-l">Back</a>
-        </div><!-- /header -->
-        <div data-role="content">
-            <p>Manage Myo Armbands:</p>
-            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-check" id="ID_SELECT_MYO_SET_1">Select PRIMARY Myo Set</a>
-            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-check" id="ID_SELECT_MYO_SET_2">Select BACKUP Myo Set</a>
-            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_MYO1">Restart Myo #1</a>
-            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_MYO2">Restart Myo #2</a>
-
-            <!-- Status Messages -->
-            <p>Devices: <span id="msg_status_myo"></span></p>
-
-        </div><!-- /content -->
-    </div><!-- /page -->
-
-    <!-- Motion Tester Page -->
-    <div data-role="page" id="ID_MT_PAGE">
-        <div data-role="header" data-theme="b" >
-            <h1>Motion Tester</h1>
-            <a href="#ID_MAIN_PAGE" data-role="button" data-icon="arrow-l">Back</a>
-        </div><!-- /header -->
-        <div data-role="content">
-            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_ASSESSMENT_MT">Start Motion Tester</a>
-            <div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
-                <h4>Options</h4>
-                <ul data-role="listview" data-inset="false">
-                <div class="ui-field-contain">
-                  <label for="ID_MT_REPETITIONS">Repetitions:</label>
-                  <input type="number" name="Repetitions" id="ID_MT_REPETITIONS" value="3">
-                </div>
-                <div class="ui-field-contain">
-                  <label for="ID_MT_TIMEOUT">Timeout (s):</label>
-                  <input type="number" name="name" id="ID_MT_TIMEOUT" value="5">
-                </div>
-                <div class="ui-field-contain">
-                  <label for="ID_MT_MAX_CLASSIFICATIONS">Max Classifications:</label>
-                  <input type="number" name="name" id="ID_MT_MAX_CLASSIFICATIONS" value="10">
-                </div>
-                </ul>
-            </div>
-            <p>Status: <span id="mt_status"></span></p>
-            <p>Classifying: <span id="mt_output"></span></p>
-            <img style="max-width: 100%;" src="img_arm_motions/No_Movement.png" id="ID_MT_IMAGE" alt="Motion Image">
-            <div id="mtProgressBackground">
-                <div id="mtProgressBar">
-                    <div id="mtProgressLabel">0%</div>
-                 </div>
-            </div>
-        </div><!-- /content -->
-    </div><!-- /page -->
-
-    <!-- TAC Page -->
-    <div data-role="page" id="ID_TAC_PAGE">
-        <div data-role="header" data-theme="b" >
-            <h1>Target Achievement Control</h1>
-            <a href="#ID_MAIN_PAGE" data-role="button" data-icon="arrow-l">Back</a>
-        </div><!-- /header -->
-        <div data-role="content">
-            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_ASSESSMENT_TAC1">Start TAC1</a>
-            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_ASSESSMENT_TAC3">Start TAC3</a>
-
-            <div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
-                <h4>Options</h4>
-                <ul data-role="listview" data-inset="false">
-                <div class="ui-field-contain">
-                  <label for="ID_REPETITIONS">Repetitions:</label>
-                  <input type="number" name="name" id="ID_REPETITIONS" value="1">
-                </div>
-                <div class="ui-field-contain">
-                  <label for="ID_TIMEOUT">Timeout (s):</label>
-                  <input type="number" name="name" id="ID_TIMEOUT" value="45">
-                </div>
-                <div class="ui-field-contain">
-                  <label for="ID_DWELL_TIME">Dwell Time (s):</label>
-                  <input type="number" name="name" id="ID_DWELL_TIME" value="2">
-                </div>
-                <div class="ui-field-contain">
-                  <label for="ID_DEGREE_ERROR">Error (Degrees):</label>
-                  <input type="number" name="name" id="ID_DEGREE_ERROR" value="5">
-                </div>
-                <div class="ui-field-contain">
-                  <label for="ID_GRASP_ERROR">Error (Grasp %):</label>
-                  <input type="number" name="name" id="ID_GRASP_ERROR" value="5">
-                </div>
-                </ul>
-            </div>
-
-            <p>Status: <span id="tac_status"></span></p>
-            <p>Classifying: <span id="tac_output"></span></p>
-            <p><span id="tacJoint1Name"></span></p>
-            <div id="tacJoint1Background">
-                <div id="tacJoint1Target"></div>
-                <div id="tacJoint1Bar">
-                    <div id="tacJoint1Label">0</div>
-                 </div>
-            </div>
-            <p><span id="tacJoint2Name"></span></p>
-            <div id="tacJoint2Background">
-                <div id="tacJoint2Target"></div>
-                <div id="tacJoint2Bar">
-                    <div id="tacJoint2Label">0</div>
-                 </div>
-            </div>
-            <p><span id="tacJoint3Name"></span></p>
-            <div id="tacJoint3Background">
-                <div id="tacJoint3Target"></div>
-                <div id="tacJoint3Bar">
-                    <div id="tacJoint3Label">0</div>
-                 </div>
-            </div>
-        </div><!-- /content -->
-    </div><!-- /page -->
+          </li>
+        </ul>
+      </div>
+      <!-- Assessments Dropdown -->
+      <div data-role="collapsible" data-collapsed-icon="star" data-expanded-icon="star">
+        <h4>Assessments</h4>
+        <ul data-role="listview" data-inset="false">
+          <li><a href="#ID_TAC_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-star">TAC
+          Assessment...</a>
+          </li>
+          <li><a href="#ID_MT_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-star">Motion
+          Tester...</a>
+          </li>
+        </ul>
+      </div>
+      <!-- Options Dropdown -->
+      <div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
+        <h4>Options</h4>
+        <ul data-role="listview" data-inset="false">
+          <!--<li><a href="#popupShutdown" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-icon="power" data-theme="a" data-iconpos="right">Shutdown MPL</a></li>-->
+          <li><a href="#ID_MYO_OPTIONS_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-edit">MYO Configuration...</a>
+          </li>
+          <li><a href="#ID_ADVANCED_OPTIONS_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-edit">MPL Configuration...</a>
+          </li>
+        </ul>
+      </div>
+      <!-- Confirmation Dialog: Shutdown -->
+      <div data-role="popup" id="popupShutdown" data-overlay-theme="a" data-theme="b" data-dismissible="false" style="max-width:400px;" class="ui-corner-all">
+        <div data-role="header" data-theme="a" class="ui-corner-top">
+          <h1>Confirm Shutdown</h1>
+        </div>
+        <div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+          <h3 class="ui-title">Shutdown?</h3>
+          <a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Cancel</a>
+          <a href="#" data-role="button" data-inline="true" data-rel="back" data-transition="flow" data-theme="b" id="ID_SHUTDOWN">OK</a>
+        </div>
+      </div>
+      <!-- Training and Motion Selection Section -->
+      <p>Selected Motion: <span id="msg_train"></span>
+      </p>
+      <div id="blueimp-image-carousel" class="blueimp-gallery blueimp-gallery-controls blueimp-gallery-carousel">
+        <div class="slides"></div>
+        <h3 class="title"></h3>
+        <a class="prev">‹</a>
+        <a class="next">›</a>
+      </div>
+      <!-- Training Switch -->
+      <div class="ui-field-contain">
+        <label for="trainSwitch">Add_Data:</label>
+        <input type="checkbox" id="trainSwitch" data-role="flipswitch" />
+      </div>
+      <!-- Training Buttons -->
+      <br>
+      <div data-role="controlgroup" data-type="horizontal"> <a href="#" class="ui-btn" id="ID_CLEARCLASS">Clear</a>
+        <a href="#popupResetClassData" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-theme="a">Reset</a>
+        <a href="#" class="ui-btn" id="ID_SAVE">Save</a>
+      </div>
+      <!-- Confirmation Dialog: Reset Class Data-->
+      <div data-role="popup" id="popupResetClassData" data-overlay-theme="a" data-theme="b" data-dismissible="false" style="max-width:400px;" class="ui-corner-all">
+        <div data-role="header" data-theme="a" class="ui-corner-top">
+          <h1>Confirm Reset</h1>
+        </div>
+        <div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+          <h3 class="ui-title">Reset?</h3>
+          <a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Cancel</a>
+          <a href="#" data-role="button" data-inline="true" data-rel="back" data-transition="flow" data-theme="b" id="ID_CLEARALL">OK</a>
+        </div>
+      </div>
+      <!-- Helper Scripts for Image Carousel -->
+      <script src="blueimp-gallery/js/blueimp-helper.js"></script>
+      <script src="blueimp-gallery/js/blueimp-gallery.js"></script>
+      <script src="blueimp-gallery/js/blueimp-gallery-fullscreen.js"></script>
+      <script src="blueimp-gallery/js/blueimp-gallery-indicator.js"></script>
+      <script src="blueimp-gallery/js/jquery.blueimp-gallery.js"></script>
+      <script src="gallery-links.js"></script>
+      <!-- Status Messages -->
+      <br>
+      <p><b>Status:</b>
+      </p>
+      <p>Classification: <span id="main_output"></span>
+      </p>
+      <p>Devices: <span id="msg_status"></span>
+      </p>
+    </div>
+  </div>
+  <!-- Advanced Options Page -->
+  <div data-role="page" id="ID_ADVANCED_OPTIONS_PAGE">
+    <div data-role="header" data-theme="b">
+      <h1>Advanced MPL Options</h1>
+      <a href="#ID_MAIN_PAGE" data-role="button" data-icon="arrow-l">Back</a>
+    </div>
+    <!-- /header -->
+    <div data-role="content">
+      <!-- Toggle AutoSave -->
+      <div class="ui-field-contain">
+        <label for="autoSave">Autosave:</label>
+        <select type="checkbox" id="autoSave" data-role="flipswitch">
+          <option value="Off">Off</option>
+          <option value="On" selected="selected">On</option>
+        </select>
+      </div>
+      <!-- Toggle Torque Rezero -->
+      <div class="ui-field-contain">
+        <label for="resetTorque">Torque Zero:</label>
+        <select type="checkbox" id="resetTorque" data-role="flipswitch">
+          <option value="Off" selected="selected">Off</option>
+          <option value="On">On</option>
+        </select>
+      </div>
+      <!-- Toggle Impedance Mode -->
+      <div class="ui-field-contain">
+        <label for="resetTorque">Impedance:</label>
+        <select type="checkbox" id="enableImpedance" data-role="flipswitch">
+          <option value="Off">Off</option>
+          <option value="On" selected="selected">On</option>
+        </select>
+      </div>
+      <!-- Toggle Impedance Level [Low|High] -->
+      <div class="ui-field-contain">
+        <label for="impedanceLevel">Stiffness:</label>
+        <select type="checkbox" id="impedanceLevel" data-role="flipswitch">
+          <option value="Low">Low</option>
+          <option value="High" selected="selected">High</option>
+        </select>
+      </div> <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_RELOAD_ROC">Reload Configuration Files</a>
+      <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_REBOOT">Reboot Limb Controller</a>
+      <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_GOTO_HOME">Limb Go-To Home Position</a>
+      <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_GOTO_PARK">Limb Go-To Park Position</a>
+      <!-- Log Entry -->
+      <p>Enter a log message:
+        <input type="text" id="ID_LOG_MSG" value="">
+        <button onclick="submitLogMessage()">Submit Log Entry</button>
+        <!-- Status Messages -->
+        <p>Devices: <span id="msg_status_opt"></span>
+        </p>
+    </div>
+    <!-- /content -->
+  </div>
+  <!-- Myo Options Page -->
+  <div data-role="page" id="ID_MYO_OPTIONS_PAGE">
+    <div data-role="header" data-theme="b">
+      <h1>Myo Armbands</h1>
+      <a href="#ID_MAIN_PAGE" data-role="button" data-icon="arrow-l">Back</a>
+    </div>
+    <!-- /header -->
+    <div data-role="content">
+      <p>Manage Myo Armbands:</p> <a href="#" class="ui-btn ui-btn-icon-right ui-icon-check" id="ID_SELECT_MYO_SET_1">Select PRIMARY Myo Set</a>
+      <a href="#" class="ui-btn ui-btn-icon-right ui-icon-check" id="ID_SELECT_MYO_SET_2">Select BACKUP Myo Set</a>
+      <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_MYO1">Restart Myo #1</a>
+      <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_MYO2">Restart Myo #2</a>
+      <!-- Status Messages -->
+      <p>Devices: <span id="msg_status_myo"></span>
+      </p>
+    </div>
+    <!-- /content -->
+  </div>
+  <!-- Motion Tester Page -->
+  <div data-role="page" id="ID_MT_PAGE">
+    <div data-role="header" data-theme="b">
+      <h1>Motion Tester</h1>
+      <a href="#ID_MAIN_PAGE" data-role="button" data-icon="arrow-l">Back</a>
+    </div>
+    <!-- /header -->
+    <div data-role="content"> <a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_ASSESSMENT_MT">Start Motion Tester</a>
+      <div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
+        <h4>Options</h4>
+        <ul data-role="listview" data-inset="false">
+          <div class="ui-field-contain">
+            <label for="ID_MT_REPETITIONS">Repetitions:</label>
+            <input type="number" name="Repetitions" id="ID_MT_REPETITIONS" value="3">
+          </div>
+          <div class="ui-field-contain">
+            <label for="ID_MT_TIMEOUT">Timeout (s):</label>
+            <input type="number" name="name" id="ID_MT_TIMEOUT" value="5">
+          </div>
+          <div class="ui-field-contain">
+            <label for="ID_MT_MAX_CLASSIFICATIONS">Max Classifications:</label>
+            <input type="number" name="name" id="ID_MT_MAX_CLASSIFICATIONS" value="10">
+          </div>
+        </ul>
+      </div>
+      <p>Status: <span id="mt_status"></span>
+      </p>
+      <p>Classifying: <span id="mt_output"></span>
+      </p>
+      <img style="max-width: 100%;" src="img_arm_motions/No_Movement.png" id="ID_MT_IMAGE" alt="Motion Image">
+      <div id="mtProgressBackground">
+        <div id="mtProgressBar">
+          <div id="mtProgressLabel">0%</div>
+        </div>
+      </div>
+    </div><!-- /content -->
+  </div>
+  <!-- TAC Page -->
+  <div data-role="page" id="ID_TAC_PAGE">
+    <div data-role="header" data-theme="b">
+      <h1>Target Achievement Control</h1>
+      <a href="#ID_MAIN_PAGE" data-role="button" data-icon="arrow-l">Back</a>
+    </div>
+    <!-- /header -->
+    <div data-role="content"> <a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_ASSESSMENT_TAC1">Start TAC1</a>
+      <a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_ASSESSMENT_TAC3">Start TAC3</a>
+      <div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
+        <h4>Options</h4>
+        <ul data-role="listview" data-inset="false">
+          <div class="ui-field-contain">
+            <label for="ID_REPETITIONS">Repetitions:</label>
+            <input type="number" name="name" id="ID_REPETITIONS" value="1">
+          </div>
+          <div class="ui-field-contain">
+            <label for="ID_TIMEOUT">Timeout (s):</label>
+            <input type="number" name="name" id="ID_TIMEOUT" value="45">
+          </div>
+          <div class="ui-field-contain">
+            <label for="ID_DWELL_TIME">Dwell Time (s):</label>
+            <input type="number" name="name" id="ID_DWELL_TIME" value="2">
+          </div>
+          <div class="ui-field-contain">
+            <label for="ID_DEGREE_ERROR">Error (Degrees):</label>
+            <input type="number" name="name" id="ID_DEGREE_ERROR" value="5">
+          </div>
+          <div class="ui-field-contain">
+            <label for="ID_GRASP_ERROR">Error (Grasp %):</label>
+            <input type="number" name="name" id="ID_GRASP_ERROR" value="5">
+          </div>
+        </ul>
+      </div>
+      <p>Status: <span id="tac_status"></span>
+      </p>
+      <p>Classifying: <span id="tac_output"></span>
+      </p>
+      <p><span id="tacJoint1Name"></span>
+      </p>
+      <div id="tacJoint1Background">
+        <div id="tacJoint1Target"></div>
+        <div id="tacJoint1Bar">
+          <div id="tacJoint1Label">0</div>
+        </div>
+      </div>
+      <p><span id="tacJoint2Name"></span>
+      </p>
+      <div id="tacJoint2Background">
+        <div id="tacJoint2Target"></div>
+        <div id="tacJoint2Bar">
+          <div id="tacJoint2Label">0</div>
+        </div>
+      </div>
+      <p><span id="tacJoint3Name"></span>
+      </p>
+      <div id="tacJoint3Background">
+        <div id="tacJoint3Target"></div>
+        <div id="tacJoint3Bar">
+          <div id="tacJoint3Label">0</div>
+        </div>
+      </div>
+    </div><!-- /content -->
+  </div>
 </body>
+
 </html>

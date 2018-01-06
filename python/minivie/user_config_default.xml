@@ -29,16 +29,17 @@
     <add key="dcell_serial_port"    value="/dev/ttymxc2"/>
 
     <!--Pattern Recognition Parameters-->
+    <add key="NumMajorityVotes" value="25"/>
     <add key="FeatureExtract.zcThreshold" value="0.05"/>
-    <add key="FeatureExtract.sscThreshold" value="0.05"/>    
+    <add key="FeatureExtract.sscThreshold" value="0.05"/>
 
     <!-- Myo Stream Ports -->
-    <add key="myo_udp_mac_address_1"    value="xx:xx:xx:xx:xx:xx"/>
-    <add key="myo_udp_mac_address_2"    value="xx:xx:xx:xx:xx:xx"/>
-    <add key="myo_local_port_1"         value="//127.0.0.1:16001"/>
-    <add key="myo_local_port_2"         value="//127.0.0.1:16002"/>
-    <add key="myo_remote_port_1"        value="//127.0.0.1:15001"/>
-    <add key="myo_remote_port_2"        value="//127.0.0.1:15002"/>
+    <add key="myo_mac_address_1"    value="xx:xx:xx:xx:xx:xx"/>
+    <add key="myo_mac_address_2"    value="xx:xx:xx:xx:xx:xx"/>
+    <add key="myo_local_port_1"     value="//127.0.0.1:16001"/>
+    <add key="myo_local_port_2"     value="//127.0.0.1:16002"/>
+    <add key="myo_remote_port_1"    value="//127.0.0.1:15001"/>
+    <add key="myo_remote_port_2"    value="//127.0.0.1:15002"/>
 
     <!-- User defined joint limits
      Optionally limit the range of each joint prior to sending to the MPL

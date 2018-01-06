@@ -157,18 +157,12 @@ class MyoUdpServer(object):
         self.logger.info("Setting host adapter update rate: " + cmd_str)
         subprocess.Popen(cmd_str, shell=True)
 
-    def set_udp_parameters(self, source_address, destination_address):
-
-        pass
-
     def connect(self):
         # connect bluetooth
         # Make this a blocking call that overrides timeout to ensure connection order
         self.logger.info("Connecting to: " + self.mac_address)
 
         # This blocks until device is awake and connection established
-        #self.peripheral = btle.Peripheral(None, addrType=btle.ADDR_TYPE_PUBLIC, iface=self.iface)
-        #self.peripheral.connect(self.mac_address)
         self.peripheral = btle.Peripheral()
         while True:
             try:
@@ -327,13 +321,13 @@ def main():
         s2.connect()
         print('Both Connected')
 
-        time.sleep(0.5)
+        time.sleep(0.1)
         s1.thread.start()
-        time.sleep(0.5)
+        time.sleep(0.1)
         s2.thread.start()
-        time.sleep(1.5)
+        time.sleep(0.2)
         s2.set_host_parameters()
-        time.sleep(0.5)
+        time.sleep(0.1)
         s1.set_host_parameters()
 
 

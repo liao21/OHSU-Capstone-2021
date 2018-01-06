@@ -12,12 +12,13 @@ future
 numpy
 scipy
 scikit-learn
-matplotlib
+tornado
 enum34
 h5py
 six
 transforms3d
 websocket-client
 serial
+matplotlib
 bluepy
 #pygame

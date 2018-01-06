@@ -122,6 +122,7 @@ contributor: W. Haris
 
 from __future__ import with_statement  # 2.5 only
 import os
+import platform
 import threading
 import socket
 import struct
@@ -135,7 +136,7 @@ import binascii
 from transforms3d.euler import quat2euler
 
 # The following is only supported under linux (transmit mode)
-if os.name is 'posix':
+if platform.system() is 'Linux':
     from bluepy.btle import DefaultDelegate as btleDefaultDelegate
     from bluepy.btle import BTLEException as btleBTLEException
     from bluepy.btle import Peripheral as btlePeripheral
@@ -382,7 +383,7 @@ class MyoUdp(SignalInput):
                     if self.__count_emg == 0:
                         # mark time
                         self.__time_emg = time.time()
-                    self.__count_emg += 2  # 2 data points per packet
+                    self.__count_emg += 1  # 2 data points per packet
 
                     t_now = time.time()
                     t_elapsed = t_now - self.__time_emg

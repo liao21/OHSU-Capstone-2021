@@ -53,12 +53,9 @@ Created on Sat Jan 23 20:36:50 2016
 @author: R. Armiger
 """
 
-import socket
 import struct
 import logging
-import numpy as np
-import threading
-import mpl
+from mpl import JointEnum as MplId
 from mpl.data_sink import DataSink
 from utilities import Udp
 
@@ -83,21 +80,21 @@ def get_percepts(data):
     # Upper Arm Joints = 7 Joints * 3 values per joint * 4 bytes per value = 84 bytes)... bytes 0-84
     # Fingers and Thumb = 20 Joints * 3 values per joint * 4 bytes per value = 240 bytes)... bytes 85-324
     if len(data) >= 324:
-        joint_data = np.frombuffer(data[0:324], np.float32, mpl.JointEnum.NUM_JOINTS * 3)
+        joint_data = struct.unpack('%df' % MplId.NUM_JOINTS * 3, data[0:324])
 
     # ContactPerceptsType   74 (37 values (2 bytes each), so (2x37) enum for each of potential contact sensors)
     # FtsnForcePerceptsType 60 (3-axis x 32-bit values (3 x 4 bytes) for each of 5 fingers, so (3x4x5 = 60))
     # FtsnAccelPerceptsType 60 (3-axis x 32-bit values (3 x 4 bytes) for each of 5 fingers, so (3x4x5 = 60))
     # FtsnTempPerceptsType  20 (1 x 32-bit value (1 x 4 bytes) for each of 5 fingers, so (1x4x5 = 20))
     if len(data) >= 398:
-        contact_data = np.frombuffer(data[324:398], np.short, 37)
+        contact_data = struct.unpack('%dH' % 37, data[324:398])
 
     # Segment forces (OLD) = 5 sensors * 3 axes/values per sensor * 4 bytes per value = 60 bytes)... bytes 399-458
     # Segment forces (NEW) = 5 sensors * 14 pads/values per sensor * 4 bytes per value = 280 bytes)... bytes 399-678
     if len(data) >= 678:
-        segment_data = np.frombuffer(data[398:678], np.float32, 70)
+        segment_data = struct.unpack('%df' % 70, data[398:678])
     elif len(data) >= 458:
-        segment_data = np.frombuffer(data[398:458], np.float32, 15)
+        segment_data = struct.unpack('%df' % 15, data[398:458])
 
     return joint_data, contact_data, segment_data
 
@@ -114,9 +111,9 @@ class UnityUdp(Udp, DataSink):
         obj.MplAddress = '127.0.0.1';
 
     """
-    def __init__(self):
+    def __init__(self, local_address='//0.0.0.0:25001', remote_address='//127.0.0.1:25000'):
         DataSink.__init__(self)
-        Udp.__init__(self)
+        Udp.__init__(self, local_address=local_address, remote_address=remote_address)
         self.name = "UnityUdp"
         self.onmessage = self.message_handler
         pass
@@ -125,7 +122,7 @@ class UnityUdp(Udp, DataSink):
 
         joint_data, contact_data, segment_data = get_percepts(data)
         try:
-            self.position['last_percept'] = np.array(joint_data[0::3])
+            self.position['last_percept'] = joint_data[0::3]
         except TypeError:
             self.position['last_percept'] = None
 
@@ -134,7 +131,7 @@ class UnityUdp(Udp, DataSink):
         # e.g. ' 22.5V 72.6C'
         return 'vMPL'
 
-    def send_joint_angles(self, values, velocity=[0.0]*mpl.JointEnum.NUM_JOINTS):
+    def send_joint_angles(self, values, velocity=[0.0] * MplId.NUM_JOINTS):
         """
 
         send_joint_angles
@@ -157,7 +154,7 @@ class UnityUdp(Udp, DataSink):
             logging.warning('Connection closed.  Call connect() first')
             return
 
-        if len(values) == mpl.JointEnum.NUM_JOINTS:
+        if len(values) == MplId.NUM_JOINTS:
             pass
         elif len(values) == 7:
             # Only upper arm angles passed.  Use zeros for hand angles
@@ -167,7 +164,9 @@ class UnityUdp(Udp, DataSink):
             return
 
         # Send data
-        logging.debug('Joint Command:' + np.array2string(np.array(values), precision=2, separator=','))
+        msg = 'Joint Command: ' + ','.join(['%d' % elem for elem in values])
+        logging.debug(msg)  # 60 us
+
         packer = struct.Struct('27f')
         packed_data = packer.pack(*values)
         if self.is_connected:

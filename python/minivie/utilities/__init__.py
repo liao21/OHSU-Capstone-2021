@@ -8,15 +8,20 @@ import logging
 class Udp(threading.Thread):
     # Basic Template for thread based udp communications
     #
-    # key function is the onmessgae attribute that is called on data receive
+    # key function is the onmessage attribute that is called on data receive
 
-    def __init__(self, local_hostname="0.0.0.0", local_port=9027, remote_hostname="127.0.0.1", remote_port=9028):
+    def __init__(self, local_address='//0.0.0.0:9027', remote_address='//127.0.0.1:9028'):
+
         threading.Thread.__init__(self)
         self.run_control = False  # Used by the start and terminate to control thread
         self.read_buffer_size = 1024
         self.sock = None
+
+        remote_hostname, remote_port = get_address(remote_address)
+        local_hostname, local_port = get_address(local_address)
         self.udp = {'RemoteHostname': remote_hostname, 'RemotePort': remote_port,
                     'LocalHostname': local_hostname, 'LocalPort': local_port}
+
         self.is_data_received = False
         self.is_connected = False
         self.timeout = 3.0

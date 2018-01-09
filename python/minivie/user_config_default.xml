@@ -11,8 +11,13 @@
     <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
     <add key="rocTable"         value="../../WrRocDefaults.xml"/>
 
-    <!--Specify the Output Module [Unity | NfuUdp] -->
+    <!--Specify the Output Module [UnityUdp | NfuUdp] -->
     <add key="DataSink"         value="NfuUdp"/>
+    <add key="NfuUdp.remote_address" value="//127.0.0.1:9027"/>
+    <add key="NfuUdp.local_address" value="//0.0.0.0:9028"/>
+    <add key="UnityUdp.remote_address" value="//127.0.0.1:25000"/>
+    <add key="UnityUdp.local_address" value="//0.0.0.0:25001"/>
+
     <add key="mpl_connection_check"         value="1"/>
 
     <!--Specify the timestep in seconds -->
@@ -45,8 +50,8 @@
     <add key="myo_remote_port_2"    value="//127.0.0.1:15002"/>
 
     <!-- Myo Data Client Streaming Ports
-        Use these parameters for reading from a Myo Data Dource in a client application  -->
-    <add key="myo_client_number_or_devices" value="2"/>
+        Use these parameters for reading from a Myo Data Source in a client application  -->
+    <add key="myo_client_number_of_devices" value="2"/>
     <add key="myo_client_mac_address_1"    value="xx:xx:xx:xx:xx:xx"/>
     <add key="myo_client_mac_address_2"    value="xx:xx:xx:xx:xx:xx"/>
     <add key="myo_client_local_port_1"     value="//0.0.0.0:15001"/>

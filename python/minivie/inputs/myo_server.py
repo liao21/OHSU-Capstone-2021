@@ -321,13 +321,13 @@ def main():
         s2.connect()
         print('Both Connected')
 
-        time.sleep(0.1)
+        time.sleep(0.5)
         s1.thread.start()
-        time.sleep(0.1)
+        time.sleep(0.5)
         s2.thread.start()
-        time.sleep(0.2)
+        time.sleep(1.5)
         s2.set_host_parameters()
-        time.sleep(0.1)
+        time.sleep(0.5)
         s1.set_host_parameters()
 
 

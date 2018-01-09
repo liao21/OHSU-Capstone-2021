@@ -2,6 +2,7 @@ import time
 import logging
 import utilities
 from utilities.user_config import read_user_config, get_user_config_var
+from utilities import get_address
 import mpl
 from collections import Counter, deque
 
@@ -482,7 +483,7 @@ class MplScenario(Scenario):
         local_port_1 = get_user_config_var('myo_client_local_port_1', '//0.0.0.0:15001')
         source_list = [myo.MyoUdp(source=local_port_1)]
         # add second device
-        if get_user_config_var('myo_client_number_or_devices', 1) > 1:
+        if get_user_config_var('myo_client_number_of_devices', 1) > 1:
             local_port_2 = get_user_config_var('myo_client_local_port_2', '//0.0.0.0:15002')
             source_list.append(myo.MyoUdp(source=local_port_2))
         self.attach_source(source_list)
@@ -511,15 +512,15 @@ class MplScenario(Scenario):
         # Sink is output to outside world (in this case to VIE)
         # For MPL, this might be: real MPL/NFU, Virtual Arm, etc.
         data_sink = get_user_config_var('DataSink', 'Unity')
-        if data_sink == 'Unity':
-            sink = UnityUdp()
-            sink.udp['RemoteHostname'] = "127.0.0.1"
-            sink.udp['RemotePort'] = 25000
-            sink.udp['LocalHostname'] = "0.0.0.0"
-            sink.udp['LocalPort'] = 25001
+        if data_sink in ['Unity', 'UnityUdp']:
+            local_address = get_user_config_var('UnityUdp.local_address', '//0.0.0.0:25001')
+            remote_address = get_user_config_var('UnityUdp.remote_address', '//127.0.0.1:25000')
+            sink = UnityUdp(local_address=local_address, remote_address=remote_address)
             sink.connect()
         elif data_sink == 'NfuUdp':
-            sink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
+            local_hostname, local_port = get_address(get_user_config_var('NfuUdp.local_address', '//0.0.0.0:9028'))
+            remote_hostname, remote_port = get_address(get_user_config_var('NfuUdp.remote_address', '//127.0.0.1:9027'))
+            sink = NfuUdp(hostname=remote_hostname, udp_telem_port=local_port, udp_command_port=remote_port)
             sink.connect()
         else:
             import sys

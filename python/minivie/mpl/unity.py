@@ -37,7 +37,7 @@ Example:
     Verify that the right virtual arm moves in Unity
     Next add a left arm controller:
 
-    >>> sink2 = UnityUdp(port=25100)
+    >>> sink2 = UnityUdp(remote_address='//127.0.0.1:25100', local_address='//127.0.0.1:25101')
     >>> sink2.connect()
     >>> sink2.send_joint_angles([0.2,0.2,0.2,0.9,0.2,0.2,0.2])
 

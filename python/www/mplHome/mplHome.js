@@ -31,7 +31,7 @@ jQuery(function($){
 
 function setupWebsockets(){
   // Create websocket connection
-  var host = "ws://" + document.location.hostname + ":9090/ws";
+  var host = "ws://" + document.location.hostname + ":" + document.location.port + "/ws";
   console.log(host)
   socket = new WebSocket(host);
 

@@ -155,8 +155,10 @@ function setupCallbacks() {
   $("#ID_REBOOT").on("mousedown", function() {sendCmd("Cmd:Reboot")} );
   $("#ID_SHUTDOWN").on("mousedown", function() {sendCmd("Cmd:Shutdown")} );
   $("#ID_ASSESSMENT_MT").on("mousedown", function() {startMT()} );
+  $("#ID_ASSESSMENT_MT_STOP").on("mousedown", function() {stopMT()} );
   $("#ID_ASSESSMENT_TAC1").on("mousedown", function() {startTAC1()} );
   $("#ID_ASSESSMENT_TAC3").on("mousedown", function() {startTAC3()} );
+  $("#ID_ASSESSMENT_TAC_STOP").on("mousedown", function() {stopTAC()} );
   $("#ID_GOTO_HOME").on("mousedown", function() {sendCmd("Cmd:GotoHome")} );
   $("#ID_GOTO_PARK").on("mousedown", function() {sendCmd("Cmd:GotoPark")} );
 
@@ -188,6 +190,10 @@ function startMT() {
   sendCmd("Cmd:StartMotionTester-" + repetitions + "-" + timeout + "-" + max_classifications)
 }
 
+function stopMT() {
+    sendCmd("Cmd:StopMotionTester")
+}
+
 function startTAC1() {
   // Gather parameters to send to TAC1
   var repetitions = $("#ID_REPETITIONS").val()
@@ -206,6 +212,10 @@ function startTAC3() {
   var degree_error = $("#ID_DEGREE_ERROR").val()
   var grasp_error = $("#ID_GRASP_ERROR").val()
   sendCmd("Cmd:StartTAC3-" + repetitions + "-" + timeout + "-" + dwell_time + "-" + degree_error + "-" + grasp_error)
+}
+
+function stopTAC() {
+    sendCmd("Cmd:StopTAC)
 }
 
 function updateMTProgressBar(percent) {

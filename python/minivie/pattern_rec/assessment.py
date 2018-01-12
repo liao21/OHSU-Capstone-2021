@@ -107,6 +107,8 @@ class MotionTester(AssessmentInterface):
                 self.thread = threading.Thread(target=self.start_assessment)
                 self.thread.name = 'MotionTester'
                 self.thread.start()
+            if 'StopMotioTester' in cmd_data:
+                seff.thread.
             else:
                 logging.info('Unknown motion tester command: ' + cmd_data)
 
@@ -440,12 +442,14 @@ class TargetAchievementControl(AssessmentInterface):
             trained_grasps = []
 
         # Identify which joints we will assess
+        # TODO:Add interface to determine which joints/grasps to assess
         joints_to_assess = []
         is_grasp = []
         # For TAC1, we will just assess all joints and/or grasps independently
         if condition==1:
             joints_to_assess = list(trained_joints) + list(trained_grasps)
             is_grasp = [False]*len(trained_joints) + [True]*len(trained_grasps)
+
 
         # For TAC3, we will require simultaneous assess elbow, one wist motion, and one grasp
         if condition==3:
@@ -472,17 +476,21 @@ class TargetAchievementControl(AssessmentInterface):
                 return
 
             # Choose grasp
-            if 'Spherical' in trained_grasps:
-                joints_to_assess.append('Spherical')
-                is_grasp.append(True)
-            elif 'ThreeFingerPinch' in trained_grasps:
-                joints_to_assess.append('ThreeFingerPinch')
-                is_grasp.append(True)
-            elif 'Trigger(Drill)' in trained_grasps:
-                joints_to_assess.append('Trigger(Drill)')
+            # if 'Spherical' in trained_grasps:
+            #     joints_to_assess.append('Spherical')
+            #     is_grasp.append(True)
+            # elif 'ThreeFingerPinch' in trained_grasps:
+            #     joints_to_assess.append('ThreeFingerPinch')
+            #     is_grasp.append(True)
+            # elif 'Trigger(Drill)' in trained_grasps:
+            #     joints_to_assess.append('Trigger(Drill)')
+            #     is_grasp.append(True)
+            if trained_grasps:
+                # Will just assess first trained grasp for now
+                joints_to_assess.append(trained_grasps[0])
                 is_grasp.append(True)
             else:
-                self.send_status('One GRASP must be fully trained to begin TAC3. Stopping assessment.')
+                self.send_status('One GRASP  as well as Hand Open must be fully trained to begin TAC3. Stopping assessment.')
                 return
 
         # Assess joints and grasps
@@ -507,7 +515,7 @@ class TargetAchievementControl(AssessmentInterface):
         dt = 0.1 # Time between assessment queries
         dwell_time = self.dwell_time # Time in target before pass
         timeout = self.timeout
-        move_complete = False # Flag fo move completion
+        move_complete = False # Flag for move completion
 
         # Set joint-specific parameters
         target_error_list = [] # Error range allowed
@@ -571,7 +579,11 @@ class TargetAchievementControl(AssessmentInterface):
         if self._condition==2 or self._condition==3:
             self.update_gui_joint_target(2)
             self.update_gui_joint_target(3)
-
+        self.update_gui_joint(1)
+        if self._condition == 2 or self._condition == 3:
+            self.update_gui_joint(2)
+            self.update_gui_joint(3)
+        #
         # Start once user goes to no-movement, then first non- no movement classification is given
         self.send_status('Testing Joint(s) - ' + ', '.join(joint_name_list) + ' - Return to "No Movement" and Begin')
         entered_no_movement = False
@@ -579,7 +591,7 @@ class TargetAchievementControl(AssessmentInterface):
             current_class = self.vie.output['decision']
             if current_class == 'No Movement': entered_no_movement = True
             if (current_class != 'No Movement') and (current_class != 'None') and entered_no_movement: break
-            time.sleep(0.1)  # Necessary to sleep, otherwise get output gets backlogged
+        time.sleep(0.1)  # Necessary to sleep, otherwise get output gets backlogged
 
         # Start timer
         time_begin = time.time()

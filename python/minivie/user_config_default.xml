@@ -20,6 +20,8 @@
 
     <add key="mpl_connection_check"         value="1"/>
 
+    <add key="mpl_app_port"         value="9090"/>
+
     <!--Specify the timestep in seconds -->
     <add key="timestep"         value="0.02"/>
 

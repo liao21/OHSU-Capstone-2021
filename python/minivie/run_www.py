@@ -45,7 +45,7 @@ def main():
 
     # setup web interface
     vie.TrainingInterface = training.TrainingManagerWebsocket()
-    vie.TrainingInterface.setup(port=9090)
+    vie.TrainingInterface.setup(port=uc.get_user_config_var('mpl_app_port',9090))
     vie.TrainingInterface.add_message_handler(vie.command_string)
 
     # Setup Assessments

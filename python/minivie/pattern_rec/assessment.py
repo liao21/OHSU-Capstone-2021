@@ -14,6 +14,7 @@ import random
 from controls.plant import class_map
 from abc import ABCMeta, abstractmethod
 import sys
+import os.path
 
 
 class AssessmentInterface(object):
@@ -109,6 +110,10 @@ class MotionTester(AssessmentInterface):
                 self.timeout = float(cmd_data.split('-')[2])
                 self.max_correct = int(round(float(cmd_data.split('-')[3])))
                 self.stop_assessment = False
+                if self.thread:
+                    if self.thread.isAlive():
+                        logging.info('Ignoring StartMotionTesterCommand, motion tester already started')
+                        return
                 self.thread = threading.Thread(target=self.start_assessment, args=(lambda : self.stop_assessment,))
                 self.thread.name = 'MotionTester'
                 self.thread.start()
@@ -263,23 +268,6 @@ class MotionTester(AssessmentInterface):
         current_class_id = self.vie.TrainingData.motion_names.index(current_class)
 
         # Append to data dicts
-        #
-        # Testing Class - Elbow Flexion - 1.0/10 Correct Classifications
-        # INFO:root:Testing Class - Elbow Flexion - 1.0/10 Correct Classifications
-        # Exception in thread MotionTester:
-        # Traceback (most recent call last):
-        #   File "C:\Users\armigrs1\AppData\Local\Programs\Python\Python36\lib\threading.py", line 916, in _bootstrap_inner
-        #     self.run()
-        #   File "C:\Users\armigrs1\AppData\Local\Programs\Python\Python36\lib\threading.py", line 864, in run
-        #     self._target(*self._args, **self._kwargs)
-        #   File "C:\git\minivie\python\minivie\pattern_rec\assessment.py", line 130, in start_assessment
-        #     is_complete = self.assess_class(i_class)
-        #   File "C:\git\minivie\python\minivie\pattern_rec\assessment.py", line 199, in assess_class
-        #     self.add_data(class_name,current_class)
-        #   File "C:\git\minivie\python\minivie\pattern_rec\assessment.py", line 237, in add_data
-        #     self.data[-1]['targetClass'].append(class_name_to_test)
-        # IndexError: list index out of range
-
         self.data[-1]['targetClass'].append(class_name_to_test)
         self.data[-1]['classDecision'].append(current_class_id)
         # TODO: Update the following metadata
@@ -291,8 +279,13 @@ class MotionTester(AssessmentInterface):
         # Mimics struct hierarchy of MATLAB motion tester results
 
         t = dtime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        # TODO: OSError: Unable to create file (unable to truncate a file which is already open)
-        h5 = h5py.File(t + '_' + self.filename + self.file_ext, 'w')
+        f = t + '_' + self.filename + self.file_ext
+        counter = 1;
+        while os.path.exists(f):
+            f = t + '_' + self.filename + str(counter) + self.file_ext
+            counter=counter+1
+
+        h5 = h5py.File(f, 'w')
         g1 = h5.create_group('TrialLog')
         g1.attrs['description'] = t + 'Motion Tester Data'
         encoded = [a.encode('utf8') for a in self.vie.TrainingData.motion_names]
@@ -397,6 +390,10 @@ class TargetAchievementControl(AssessmentInterface):
                 self.target_error_degree = float(cmd_data.split('-')[4])
                 self.target_error_percent = float(cmd_data.split('-')[5])
                 self.stop_assessment = False
+                if self.thread:
+                    if self.thread.isAlive():
+                        logging.info('Ignoring StartTAC1 command, TAC already started')
+                        return
                 self.thread = threading.Thread(target=self.start_assessment, args=(1, lambda: self.stop_assessment,))
                 self.thread.name = 'TAC1'
                 self.thread.start()
@@ -408,6 +405,10 @@ class TargetAchievementControl(AssessmentInterface):
                 self.target_error_degree = float(cmd_data.split('-')[4])
                 self.target_error_percent = float(cmd_data.split('-')[5])
                 self.stop_assessment = False
+                if self.thread:
+                    if self.thread.isAlive():
+                        logging.info('Ignoring StartTAC3 command, TAC already started')
+                        return
                 self.thread = threading.Thread(target=self.start_assessment, args=(3, lambda: self.stop_assessment,))
                 self.thread.name = 'TAC3'
                 self.thread.start()
@@ -503,15 +504,6 @@ class TargetAchievementControl(AssessmentInterface):
                 return
 
             # Choose grasp
-            # if 'Spherical' in trained_grasps:
-            #     joints_to_assess.append('Spherical')
-            #     is_grasp.append(True)
-            # elif 'ThreeFingerPinch' in trained_grasps:
-            #     joints_to_assess.append('ThreeFingerPinch')
-            #     is_grasp.append(True)
-            # elif 'Trigger(Drill)' in trained_grasps:
-            #     joints_to_assess.append('Trigger(Drill)')
-            #     is_grasp.append(True)
             if trained_grasps:
                 # Will just assess first trained grasp for now
                 joints_to_assess.append(list(trained_grasps)[0])
@@ -607,7 +599,6 @@ class TargetAchievementControl(AssessmentInterface):
             self.update_gui_joint_target(2)
             self.update_gui_joint_target(3)
 
-        # Start timer
         time_elapsed = 0.0
         time_in_target = 0.0
         joint_in_target = [False] * len(joint_name_list)
@@ -634,6 +625,19 @@ class TargetAchievementControl(AssessmentInterface):
                 else:
                     mplId = getattr(MplId, joint_name)
                     position = np.rad2deg(self.vie.Plant.joint_position[mplId])
+
+                # If within +- target_error of target_position, then flag this joint as within target
+                if (position < (target_position + target_error)) and (position > (target_position - target_error)):
+                    joint_in_target[i] = True
+                    if is_grasp:
+                        # Need an additional check if we are checking a grasp to make sure it is correct grasp that is falling within grasp percentage
+                        if joint_name is not self.vie.Plant.grasp_id:
+                            joint_in_target[i] = False
+                else:
+                    joint_in_target[i] = False
+
+                # Update data storage properties for this joint
+                position_row[0, i] = position
 
             # Get current intent
             current_class = self.vie.output['decision']
@@ -667,19 +671,6 @@ class TargetAchievementControl(AssessmentInterface):
             # self.send_status('Testing Joint - ' + joint_name + ' - Current Position - ' + str(position) +
             #                 ' - Target Position - ' + str(target_position) +
             #                 ' - Time in Target - ' + str(time_in_target))
-
-            # If within +- target_error of target_position, then flag this joint as within target
-            if (position < (target_position + target_error)) and (position > (target_position - target_error)):
-                joint_in_target[i] = True
-                if is_grasp:
-                    # Need an additional check if we are checking a grasp to make sure it is correct grasp that is falling within grasp percentage
-                    if joint_name is not self.vie.Plant.grasp_id:
-                        joint_in_target[i] = False
-            else:
-                joint_in_target[i] = False
-
-            # Update data storage properties for this joint
-            position_row[0, i] = position
 
             # If all joints in target, increment time_in_target, othwerwise reset to 0
             if False in joint_in_target:
@@ -751,7 +742,12 @@ class TargetAchievementControl(AssessmentInterface):
         # Method to save out compiled assessment results in h5df formal, following full assessment
 
         t = dtime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        h5 = h5py.File(t + '_' + self.filename + self.file_ext, 'w')
+        f = t + '_' + self.filename + self.file_ext
+        counter = 1;
+        while os.path.exists(f):
+            f = t + '_' + self.filename + str(counter) + self.file_ext
+            counter = counter + 1
+        h5 = h5py.File(f, 'w')
         g1 = h5.create_group('Data')
         g1.attrs['description'] = t + 'TAC' + str(self._condition)+ ' Data'
 

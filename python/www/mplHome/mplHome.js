@@ -191,7 +191,7 @@ function startMT() {
 }
 
 function stopMT() {
-    sendCmd("Cmd:StopMotionTester")
+  sendCmd("Cmd:StopMotionTester")
 }
 
 function startTAC1() {
@@ -215,7 +215,7 @@ function startTAC3() {
 }
 
 function stopTAC() {
-    sendCmd("Cmd:StopTAC)
+  sendCmd("Cmd:StopTAC")
 }
 
 function updateMTProgressBar(percent) {

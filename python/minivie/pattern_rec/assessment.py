@@ -13,6 +13,7 @@ import collections
 import random
 from controls.plant import class_map
 from abc import ABCMeta, abstractmethod
+import sys
 
 
 class AssessmentInterface(object):
@@ -69,6 +70,9 @@ class MotionTester(AssessmentInterface):
         self.class_id_to_test = []
         self.data = []  # List of dicts
 
+        # Kill flag
+        self.stop_assessment = False
+
     def reset(self):
         # Method to reset all stored data
 
@@ -104,16 +108,19 @@ class MotionTester(AssessmentInterface):
                 self.repetitions = int(round(float(cmd_data.split('-')[1])))
                 self.timeout = float(cmd_data.split('-')[2])
                 self.max_correct = int(round(float(cmd_data.split('-')[3])))
-                self.thread = threading.Thread(target=self.start_assessment)
+                self.stop_assessment = False
+                self.thread = threading.Thread(target=self.start_assessment, args=(lambda : self.stop_assessment,))
                 self.thread.name = 'MotionTester'
                 self.thread.start()
-            if 'StopMotioTester' in cmd_data:
-                seff.thread.
+            elif 'StopMotionTester' in cmd_data:
+                self.stop_assessment = True
             else:
                 logging.info('Unknown motion tester command: ' + cmd_data)
 
-    def start_assessment(self):
+    def start_assessment(self, stop_assessment):
         # Method to assess all trained classes
+
+        # The stop_assessment is a lambda function that will kill the thread once turned to True
 
         # Clear assessment data from previous assessments
         self.reset()
@@ -140,7 +147,7 @@ class MotionTester(AssessmentInterface):
                 self.data.append({'targetClass': [], 'classDecision': [], 'voteDecision': [], 'emgFrames': []})
 
                 # Assess class
-                is_complete = self.assess_class(i_class)
+                is_complete = self.assess_class(i_class, stop_assessment)
                 if is_complete:
                     self.send_status('Motion Completed!')
                 else:
@@ -159,7 +166,7 @@ class MotionTester(AssessmentInterface):
         # Unlock limb
         self.vie.pause('All', False)
 
-    def assess_class(self, class_name):
+    def assess_class(self, class_name, stop_assessment):
         # Method to assess a single class, display/save results for viewing
 
         # Update GUI image
@@ -182,7 +189,11 @@ class MotionTester(AssessmentInterface):
             current_class = self.vie.output['decision']
             if current_class == 'No Movement': entered_no_movement = True
             if (current_class != 'No Movement') and (current_class != 'None') and entered_no_movement: break
-            time.sleep(0.1) # Necessary to sleep, otherwise get output gets backlogged
+            # Kill if stop button pressed
+            if stop_assessment():
+                self.send_status('Assessment aborted')
+                sys.exit() # Stop current thread
+            time.sleep(0.1) # Necessary to sleep, otherwise output gets backlogged
 
         dt = 0.1  # 100ms RIC JAMA
         timeout = self.timeout
@@ -194,6 +205,11 @@ class MotionTester(AssessmentInterface):
         time_elapsed = 0.0
 
         while not move_complete and (time_elapsed < timeout):
+
+            # Kill if stop button pressed
+            if stop_assessment():
+                self.send_status('Assessment aborted')
+                sys.exit()  # Stop current thread
 
             # get the class
             current_class = self.vie.output['decision']
@@ -337,6 +353,9 @@ class TargetAchievementControl(AssessmentInterface):
         self.upper_limit = []
         self.data = [] #list of dicts
 
+        # Kill flag
+        self.stop_assessment = False
+
     def reset(self):
         # Method to reset data storage items
         self.target_joint = []  # Joint or grasp id
@@ -377,7 +396,8 @@ class TargetAchievementControl(AssessmentInterface):
                 self.dwell_time = float(cmd_data.split('-')[3])
                 self.target_error_degree = float(cmd_data.split('-')[4])
                 self.target_error_percent = float(cmd_data.split('-')[5])
-                self.thread = threading.Thread(target=self.start_assessment(condition=1))
+                self.stop_assessment = False
+                self.thread = threading.Thread(target=self.start_assessment, args=(1, lambda: self.stop_assessment,))
                 self.thread.name = 'TAC1'
                 self.thread.start()
 
@@ -387,11 +407,18 @@ class TargetAchievementControl(AssessmentInterface):
                 self.dwell_time = float(cmd_data.split('-')[3])
                 self.target_error_degree = float(cmd_data.split('-')[4])
                 self.target_error_percent = float(cmd_data.split('-')[5])
-                self.thread = threading.Thread(target=self.start_assessment(condition=3))
+                self.stop_assessment = False
+                self.thread = threading.Thread(target=self.start_assessment, args=(3, lambda: self.stop_assessment,))
                 self.thread.name = 'TAC3'
                 self.thread.start()
 
-    def start_assessment(self, condition=1):
+            elif 'StopTAC' in cmd_data:
+                self.stop_assessment = True
+
+            else:
+                logging.info('Unknown TAC command: ' + cmd_data)
+
+    def start_assessment(self, condition=1, stop_assessment=False):
         # condition should be
         # 1 - TAC1
         # 2 - TAC2
@@ -487,7 +514,7 @@ class TargetAchievementControl(AssessmentInterface):
             #     is_grasp.append(True)
             if trained_grasps:
                 # Will just assess first trained grasp for now
-                joints_to_assess.append(trained_grasps[0])
+                joints_to_assess.append(list(trained_grasps)[0])
                 is_grasp.append(True)
             else:
                 self.send_status('One GRASP  as well as Hand Open must be fully trained to begin TAC3. Stopping assessment.')
@@ -500,19 +527,19 @@ class TargetAchievementControl(AssessmentInterface):
             # For TAC1, assess one joint at a time
             if condition==1:
                 for i,joint in enumerate(joints_to_assess):
-                    is_complete = self.assess_joint([joint], [is_grasp[i]]) # Need to be passed in as list
+                    is_complete = self.assess_joint([joint], [is_grasp[i]], stop_assessment) # Need to be passed in as list
 
             # For TAC3, assess all joints simultaneously
             if condition==3:
-                is_complete = self.assess_joint(joints_to_assess, is_grasp)
+                is_complete = self.assess_joint(joints_to_assess, is_grasp, stop_assessment)
 
         self.send_status('TAC Assessment Completed')
         self.save_results()
 
-    def assess_joint(self, joint_name_list, is_grasp_list=[False]):
+    def assess_joint(self, joint_name_list, is_grasp_list=[False], stop_assessment=False):
 
         # Set TAC parameters
-        dt = 0.1 # Time between assessment queries
+        dt = 0.2 # Time between assessment queries
         dwell_time = self.dwell_time # Time in target before pass
         timeout = self.timeout
         move_complete = False # Flag for move completion
@@ -579,27 +606,20 @@ class TargetAchievementControl(AssessmentInterface):
         if self._condition==2 or self._condition==3:
             self.update_gui_joint_target(2)
             self.update_gui_joint_target(3)
-        self.update_gui_joint(1)
-        if self._condition == 2 or self._condition == 3:
-            self.update_gui_joint(2)
-            self.update_gui_joint(3)
-        #
-        # Start once user goes to no-movement, then first non- no movement classification is given
-        self.send_status('Testing Joint(s) - ' + ', '.join(joint_name_list) + ' - Return to "No Movement" and Begin')
-        entered_no_movement = False
-        while True:
-            current_class = self.vie.output['decision']
-            if current_class == 'No Movement': entered_no_movement = True
-            if (current_class != 'No Movement') and (current_class != 'None') and entered_no_movement: break
-        time.sleep(0.1)  # Necessary to sleep, otherwise get output gets backlogged
 
         # Start timer
-        time_begin = time.time()
         time_elapsed = 0.0
         time_in_target = 0.0
         joint_in_target = [False] * len(joint_name_list)
+        start_sequence = True
+        entered_no_movement = False
 
+        self.send_status('Testing Joint(s) - ' + ', '.join(joint_name_list) + ' - Return to "No Movement" and Begin')
         while not move_complete and (time_elapsed < timeout):
+            # Kill if stop button pressed
+            if stop_assessment():
+                self.send_status('Assessment aborted')
+                sys.exit()  # Stop current thread
 
             # Loop through each joint we are assessing simultaneously
             for i, joint_name in enumerate(joint_name_list):
@@ -615,24 +635,8 @@ class TargetAchievementControl(AssessmentInterface):
                     mplId = getattr(MplId, joint_name)
                     position = np.rad2deg(self.vie.Plant.joint_position[mplId])
 
-                # Get current intent
-                current_class = self.vie.output['decision']
-
-                # Output status
-                self.send_status('Testing Joint(s) - ' + ', '.join(joint_name_list) + '- Dwell Time - ' + "{0:0.1f}".format(time_in_target))
-                # Commented out, too cluttered for now, could potentially allow this output with verbose option
-                #self.send_status('Testing Joint - ' + joint_name + ' - Current Position - ' + str(position) +
-                #                 ' - Target Position - ' + str(target_position) +
-                #                 ' - Time in Target - ' + str(time_in_target))
-
-                # If within +- target_error of target_position, then flag this joint as within target
-                if (position < (target_position + target_error)) and (position > (target_position - target_error)):
-                    joint_in_target[i] = True
-                else:
-                    joint_in_target[i] = False
-
-                # Update data storage properties for this joint
-                position_row[0, i] = position
+            # Get current intent
+            current_class = self.vie.output['decision']
 
             #  Update data storage properties for all joints
             self.position_time_history = np.append(self.position_time_history, position_row, axis=0)  # Plant position
@@ -644,6 +648,38 @@ class TargetAchievementControl(AssessmentInterface):
             if self._condition==2 or self._condition==3:
                 self.update_gui_joint(2)
                 self.update_gui_joint(3)
+
+            # Start once user goes to no-movement, then first non- no movement classification is given
+            if start_sequence:
+                if current_class == 'No Movement': entered_no_movement = True
+                if (current_class != 'No Movement') and (current_class != 'None') and entered_no_movement: start_sequence = False
+                # TODO: add a start condition for grasps that hand is all the way open
+                time.sleep(dt)  # Necessary to sleep, otherwise get output gets backlogged
+                continue
+
+            time_begin = time.time()
+
+            # Output status
+            self.send_status(
+                'Testing Joint(s) - ' + ', '.join(joint_name_list) + '- Dwell Time - ' + "{0:0.1f}".format(
+                    time_in_target))
+            # Commented out, too cluttered for now, could potentially allow this output with verbose option
+            # self.send_status('Testing Joint - ' + joint_name + ' - Current Position - ' + str(position) +
+            #                 ' - Target Position - ' + str(target_position) +
+            #                 ' - Time in Target - ' + str(time_in_target))
+
+            # If within +- target_error of target_position, then flag this joint as within target
+            if (position < (target_position + target_error)) and (position > (target_position - target_error)):
+                joint_in_target[i] = True
+                if is_grasp:
+                    # Need an additional check if we are checking a grasp to make sure it is correct grasp that is falling within grasp percentage
+                    if joint_name is not self.vie.Plant.grasp_id:
+                        joint_in_target[i] = False
+            else:
+                joint_in_target[i] = False
+
+            # Update data storage properties for this joint
+            position_row[0, i] = position
 
             # If all joints in target, increment time_in_target, othwerwise reset to 0
             if False in joint_in_target:
@@ -669,7 +705,10 @@ class TargetAchievementControl(AssessmentInterface):
 
     def update_gui_joint(self, joint_num):
         # Will set joint bar display on web interface
-        normalized_joint_position = (self.position_time_history[-1, joint_num-1] - self.lower_limit[joint_num-1])/(self.upper_limit[joint_num-1] - self.lower_limit[joint_num-1]) * 100
+
+        #pull from position_time_history so we are displaying what is being recorded/tested
+        raw_pos = self.position_time_history[-1, joint_num-1]
+        normalized_joint_position = (raw_pos - self.lower_limit[joint_num-1])/(self.upper_limit[joint_num-1] - self.lower_limit[joint_num-1]) * 100
         print("strTACJoint" + str(joint_num) + "Bar", str(normalized_joint_position))
         self.trainer.send_message("strTACJoint" + str(joint_num) + "Bar", str(normalized_joint_position))
 

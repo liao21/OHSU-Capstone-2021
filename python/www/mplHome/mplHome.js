@@ -132,6 +132,129 @@ function routeMessage(cmd_type, cmd_data) {
   if (cmd_type == "strTACJoint3Error") {
     updateTACJointError(cmd_data, "tacJoint3Target");
   }
+
+  // route joint percept message
+  if (cmd_type == "jointCmd") {
+    var values = cmd_data.split(',');
+    $("#SHFE_Cmd").html(values[0]);
+    $("#SHAA_Cmd").html(values[1]);
+    $("#HUM_Cmd").html(values[2]);
+    $("#EL_Cmd").html(values[3]);
+    $("#WRT_Cmd").html(values[4]);
+    $("#WAA_Cmd").html(values[5]);
+    $("#WFE_Cmd").html(values[6]);
+    $("#1AA_Cmd").html(values[7]);
+    $("#1MCP_Cmd").html(values[8]);
+    $("#1PIP_Cmd").html(values[9]);
+    $("#1DIP_Cmd").html(values[10]);
+    $("#2AA_Cmd").html(values[11]);
+    $("#2MCP_Cmd").html(values[12]);
+    $("#2PIP_Cmd").html(values[13]);
+    $("#2DIP_Cmd").html(values[14]);
+    $("#3AA_Cmd").html(values[15]);
+    $("#3MCP_Cmd").html(values[16]);
+    $("#3PIP_Cmd").html(values[17]);
+    $("#3DIP_Cmd").html(values[18]);
+    $("#4AA_Cmd").html(values[19]);
+    $("#4MCP_Cmd").html(values[20]);
+    $("#4PIP_Cmd").html(values[21]);
+    $("#4DIP_Cmd").html(values[22]);
+    $("#5AA_Cmd").html(values[23]);
+    $("#5CMC_Cmd").html(values[24]);
+    $("#5MCP_Cmd").html(values[25]);
+    $("#5DIP_Cmd").html(values[26]);
+  }
+  if (cmd_type == "jointPos") {
+    var values = cmd_data.split(',');
+    $("#SHFE_Pos").html(values[0]);
+    $("#SHAA_Pos").html(values[1]);
+    $("#HUM_Pos").html(values[2]);
+    $("#EL_Pos").html(values[3]);
+    $("#WRT_Pos").html(values[4]);
+    $("#WAA_Pos").html(values[5]);
+    $("#WFE_Pos").html(values[6]);
+    $("#1AA_Pos").html(values[7]);
+    $("#1MCP_Pos").html(values[8]);
+    $("#1PIP_Pos").html(values[9]);
+    $("#1DIP_Pos").html(values[10]);
+    $("#2AA_Pos").html(values[11]);
+    $("#2MCP_Pos").html(values[12]);
+    $("#2PIP_Pos").html(values[13]);
+    $("#2DIP_Pos").html(values[14]);
+    $("#3AA_Pos").html(values[15]);
+    $("#3MCP_Pos").html(values[16]);
+    $("#3PIP_Pos").html(values[17]);
+    $("#3DIP_Pos").html(values[18]);
+    $("#4AA_Pos").html(values[19]);
+    $("#4MCP_Pos").html(values[20]);
+    $("#4PIP_Pos").html(values[21]);
+    $("#4DIP_Pos").html(values[22]);
+    $("#5AA_Pos").html(values[23]);
+    $("#5CMC_Pos").html(values[24]);
+    $("#5MCP_Pos").html(values[25]);
+    $("#5DIP_Pos").html(values[26]);
+  }
+  if (cmd_type == "jointTorque") {
+    var values = cmd_data.split(',');
+    $("#SHFE_Torque").html(values[0]);
+    $("#SHAA_Torque").html(values[1]);
+    $("#HUM_Torque").html(values[2]);
+    $("#EL_Torque").html(values[3]);
+    $("#WRT_Torque").html(values[4]);
+    $("#WAA_Torque").html(values[5]);
+    $("#WFE_Torque").html(values[6]);
+    $("#1AA_Torque").html(values[7]);
+    $("#1MCP_Torque").html(values[8]);
+    $("#1PIP_Torque").html(values[9]);
+    $("#1DIP_Torque").html(values[10]);
+    $("#2AA_Torque").html(values[11]);
+    $("#2MCP_Torque").html(values[12]);
+    $("#2PIP_Torque").html(values[13]);
+    $("#2DIP_Torque").html(values[14]);
+    $("#3AA_Torque").html(values[15]);
+    $("#3MCP_Torque").html(values[16]);
+    $("#3PIP_Torque").html(values[17]);
+    $("#3DIP_Torque").html(values[18]);
+    $("#4AA_Torque").html(values[19]);
+    $("#4MCP_Torque").html(values[20]);
+    $("#4PIP_Torque").html(values[21]);
+    $("#4DIP_Torque").html(values[22]);
+    $("#5AA_Torque").html(values[23]);
+    $("#5CMC_Torque").html(values[24]);
+    $("#5MCP_Torque").html(values[25]);
+    $("#5DIP_Torque").html(values[26]);
+  }
+  if (cmd_type == "jointTemp") {
+    var values = cmd_data.split(',');
+    $("#SHFE_Temp").html(values[0]);
+    $("#SHAA_Temp").html(values[1]);
+    $("#HUM_Temp").html(values[2]);
+    $("#EL_Temp").html(values[3]);
+    $("#WRT_Temp").html(values[4]);
+    $("#WAA_Temp").html(values[5]);
+    $("#WFE_Temp").html(values[6]);
+    $("#1AA_Temp").html(values[7]);
+    $("#1MCP_Temp").html(values[8]);
+    $("#1PIP_Temp").html(values[9]);
+    $("#1DIP_Temp").html(values[10]);
+    $("#2AA_Temp").html(values[11]);
+    $("#2MCP_Temp").html(values[12]);
+    $("#2PIP_Temp").html(values[13]);
+    $("#2DIP_Temp").html(values[14]);
+    $("#3AA_Temp").html(values[15]);
+    $("#3MCP_Temp").html(values[16]);
+    $("#3PIP_Temp").html(values[17]);
+    $("#3DIP_Temp").html(values[18]);
+    $("#4AA_Temp").html(values[19]);
+    $("#4MCP_Temp").html(values[20]);
+    $("#4PIP_Temp").html(values[21]);
+    $("#4DIP_Temp").html(values[22]);
+    $("#5AA_Temp").html(values[23]);
+    $("#5CMC_Temp").html(values[24]);
+    $("#5MCP_Temp").html(values[25]);
+    $("#5DIP_Temp").html(values[26]);
+  }
+
 }  // routeMessage
 
 function setupCallbacks() {

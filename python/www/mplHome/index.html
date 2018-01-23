@@ -24,6 +24,22 @@
           }
         }
 
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+
         p {
           font-family: Arial, Helvetica, sans-serif;
           font-size: 18;
@@ -81,7 +97,8 @@
   <script src="jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
   <script src="lib/offline.min.js"></script>
   <!-- <script src="lib/offline-simulate-ui.min.js"></script> -->
-  <script src="mplHome.min.js"></script>
+  <!--<script src="mplHome.min.js"></script>-->
+  <script src="mplHome.js"></script>
 </head>
 
 <body class="container">
@@ -258,6 +275,38 @@
         <!-- Status Messages -->
         <p>Devices: <span id="msg_status_opt"></span>
         </p>
+
+        <p>Joint Percepts:</p>
+        <table>
+          <tr><th>Joint Name</th><th>Cmd</th><th>Pos</th><th>Torque</th><th>Temp</th></tr>
+          <!--<tr><td>Shoulder FE</td><th><span id="SHFE_Cmd"></span></th><th><span id="SHFE_Pos"></span></th><th><span id="SHFE_Torque"></span></th><th><span id="SHFE_Temp"></span></th></tr>-->
+          <!--<tr><td>Shoulder AA</td><th><span id="SHAA_Cmd"></span></th><th><span id="SHAA_Pos"></span></th><th><span id="SHAA_Torque"></span></th><th><span id="SHAA_Temp"></span></th></tr>-->
+          <!--<tr><td>Humeral Rot.</td><th><span id="HUM_Cmd"></span></th><th><span id="HUM_Pos"></span></th><th><span id="HUM_Torque"></span></th><th><span id="HUM_Temp"></span></th></tr>-->
+          <tr><td>Elbow</td><th><span id="EL_Cmd"></span></th><th><span id="EL_Pos"></span></th><th><span id="EL_Torque"></span></th><th><span id="EL_Temp"></span></th></tr>
+          <tr><td>Wrist Rotation</td><th><span id="WRT_Cmd"></span></th><th><span id="WRT_Pos"></span></th><th><span id="WRT_Torque"></span></th><th><span id="WRT_Temp"></span></th></tr>
+          <!--<tr><td>Wrist AB/AB</td><th><span id="WAA_Cmd"></span></th><th><span id="WAA_Pos"></span></th><th><span id="WAA_Torque"></span></th><th><span id="WAA_Temp"></span></th></tr>-->
+          <tr><td>WristFE</td><th><span id="WFE_Cmd"></span></th><th><span id="WFE_Pos"></span></th><th><span id="WFE_Torque"></span></th><th><span id="WFE_Temp"></span></th></tr>
+          <tr><td>Index AA</td><th><span id="1AA_Cmd"></span></th><th><span id="1AA_Pos"></span></th><th><span id="1AA_Torque"></span></th><th><span id="1AA_Temp"></span></th></tr>
+          <tr><td>Index MCP</td><th><span id="1MCP_Cmd"></span></th><th><span id="1MCP_Pos"></span></th><th><span id="1MCP_Torque"></span></th><th><span id="1MCP_Temp"></span></th></tr>
+          <!--<tr><td>Index PIP</td><th><span id="1PIP_Cmd"></span></th><th><span id="1PIP_Pos"></span></th><th><span id="1PIP_Torque"></span></th><th><span id="1PIP_Temp"></span></th></tr>-->
+          <!--<tr><td>Index DIP</td><th><span id="1DIP_Cmd"></span></th><th><span id="1DIP_Pos"></span></th><th><span id="1DIP_Torque"></span></th><th><span id="1DIP_Temp"></span></th></tr>-->
+          <!--<tr><td>Middle AA</td><th><span id="2AA_Cmd"></span></th><th><span id="2AA_Pos"></span></th><th><span id="2AA_Torque"></span></th><th><span id="2AA_Temp"></span></th></tr>-->
+          <tr><td>Middle MCP</td><th><span id="2MCP_Cmd"></span></th><th><span id="2MCP_Pos"></span></th><th><span id="2MCP_Torque"></span></th><th><span id="2MCP_Temp"></span></th></tr>
+          <!--<tr><td>Middle PIP</td><th><span id="2PIP_Cmd"></span></th><th><span id="2PIP_Pos"></span></th><th><span id="2PIP_Torque"></span></th><th><span id="2PIP_Temp"></span></th></tr>-->
+          <!--<tr><td>Middle DIP</td><th><span id="2DIP_Cmd"></span></th><th><span id="2DIP_Pos"></span></th><th><span id="2DIP_Torque"></span></th><th><span id="2DIP_Temp"></span></th></tr>-->
+          <!--<tr><td>Ring AA</td><th><span id="3AA_Cmd"></span></th><th><span id="3AA_Pos"></span></th><th><span id="3AA_Torque"></span></th><th><span id="3AA_Temp"></span></th></tr>-->
+          <tr><td>Ring MCP</td><th><span id="3MCP_Cmd"></span></th><th><span id="3MCP_Pos"></span></th><th><span id="3MCP_Torque"></span></th><th><span id="3MCP_Temp"></span></th></tr>
+          <!--<tr><td>Ring PIP</td><th><span id="3PIP_Cmd"></span></th><th><span id="3PIP_Pos"></span></th><th><span id="3PIP_Torque"></span></th><th><span id="3PIP_Temp"></span></th></tr>-->
+          <!--<tr><td>Ring DIP</td><th><span id="3DIP_Cmd"></span></th><th><span id="3DIP_Pos"></span></th><th><span id="3DIP_Torque"></span></th><th><span id="3DIP_Temp"></span></th></tr>-->
+          <tr><td>Little AA</td><th><span id="4AA_Cmd"></span></th><th><span id="4AA_Pos"></span></th><th><span id="4AA_Torque"></span></th><th><span id="4AA_Temp"></span></th></tr>
+          <tr><td>Little MCP</td><th><span id="4MCP_Cmd"></span></th><th><span id="4MCP_Pos"></span></th><th><span id="4MCP_Torque"></span></th><th><span id="4MCP_Temp"></span></th></tr>
+          <!--<tr><td>Little PIP</td><th><span id="4PIP_Cmd"></span></th><th><span id="4PIP_Pos"></span></th><th><span id="4PIP_Torque"></span></th><th><span id="4PIP_Temp"></span></th></tr>-->
+          <!--<tr><td>Little DIP</td><th><span id="4DIP_Cmd"></span></th><th><span id="4DIP_Pos"></span></th><th><span id="4DIP_Torque"></span></th><th><span id="4DIP_Temp"></span></th></tr>-->
+          <tr><td>Thumb CMC AA</td><th><span id="5AA_Cmd"></span></th><th><span id="5AA_Pos"></span></th><th><span id="5AA_Torque"></span></th><th><span id="5AA_Temp"></span></th></tr>
+          <tr><td>Thumb CMC FE</td><th><span id="5CMC_Cmd"></span></th><th><span id="5CMC_Pos"></span></th><th><span id="5CMC_Torque"></span></th><th><span id="5CMC_Temp"></span></th></tr>
+          <tr><td>Thumb MCP</td><th><span id="5MCP_Cmd"></span></th><th><span id="5MCP_Pos"></span></th><th><span id="5MCP_Torque"></span></th><th><span id="5MCP_Temp"></span></th></tr>
+          <tr><td>Thumb IP</td><th><span id="5DIP_Cmd"></span></th><th><span id="5DIP_Pos"></span></th><th><span id="5DIP_Torque"></span></th><th><span id="5DIP_Temp"></span></th></tr>
+        </table>
     </div>
     <!-- /content -->
   </div>

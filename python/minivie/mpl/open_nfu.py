@@ -82,6 +82,7 @@ class NfuUdp(DataSink):
         # self.enable_impedance = None
         self.enable_impedance = get_user_config_var('enable_impedance', 0)
         self.impedance_level = 'high'  # Options are low | high
+        self.percepts = None
         self.load_config_parameters()
 
     def load_config_parameters(self):
@@ -273,6 +274,7 @@ class NfuUdp(DataSink):
 
                 # t = time.time()
                 percepts = extract_percepts.extract(raw_chars)  # takes 1-3 ms on DART
+                self.percepts = percepts
 
                 self.position['last_percept'] = np.array(percepts['jointPercepts']['position'])
 
@@ -391,7 +393,7 @@ class NfuUdp(DataSink):
         self.sock.sendto(msg, (self.udp['Hostname'], self.udp['CommandPort']))
 
     def get_percepts(self):
-        pass
+        return self.percepts
 
 
 def decode_heartbeat_msg_v2(msg_bytes):

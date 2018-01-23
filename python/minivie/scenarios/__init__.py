@@ -556,6 +556,7 @@ class MplScenario(Scenario):
         # Run the control loop
         # ##########################
         time_elapsed = 0.0
+        counter = 0
         dt = self.Plant.dt
         print(dt)
         while True:
@@ -582,6 +583,23 @@ class MplScenario(Scenario):
                     msg = '{} [{:.0f}]'.format(self.training_motion,
                                                round(self.TrainingData.get_totals(self.training_id), -1))
                     self.TrainingInterface.send_message("strTrainingMotion", msg)
+
+                if self.TrainingInterface is not None:
+                    counter += 1
+                    if counter == 5:
+                        msg = ','.join(['%.2f' % elem for elem in self.Plant.joint_position])
+                        self.TrainingInterface.send_message("jointCmd", msg)
+                    if counter == 10:
+                        p = self.DataSink.get_percepts()
+                        msg = ','.join(['%.2f' % elem for elem in p['jointPercepts']['position']])
+                        self.TrainingInterface.send_message("jointPos", msg)
+                    if counter == 15:
+                        msg = ','.join(['%.1f' % elem for elem in p['jointPercepts']['torque']])
+                        self.TrainingInterface.send_message("jointTorque", msg)
+                    if counter == 20:
+                        msg = ','.join(['%.0f' % elem for elem in p['jointPercepts']['temperature']])
+                        self.TrainingInterface.send_message("jointTemp", msg)
+                        counter = 0
 
                 time_end = time.time()
                 time_elapsed = time_end - time_begin

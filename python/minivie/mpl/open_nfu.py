@@ -95,6 +95,8 @@ class NfuUdp(DataSink):
         s = get_user_config_var('GLOBAL_HAND_STIFFNESS_LOW', 0.75)
         self.stiffness_low = [s] * MplId.NUM_JOINTS
 
+        self.joint_offset = [0.0] * MplId.NUM_JOINTS
+
         # Upper Arm
         num_upper_arm_joints = 7
         for i in range(num_upper_arm_joints):

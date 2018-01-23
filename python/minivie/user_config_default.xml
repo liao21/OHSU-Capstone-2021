@@ -61,7 +61,7 @@
     <add key="myo_client_remote_port_1"    value="//0.0.0.0:16001"/>
     <add key="myo_client_remote_port_2"    value="//0.0.0.0:16002"/>
 
-    <!-- User defined joint limits
+    <!-- User defined joint limits in *Degrees*
      Optionally limit the range of each joint prior to sending to the MPL
      Value format: "MinAngle, MaxAngle" (degrees)
      -->
@@ -103,6 +103,41 @@
 
     <!-- Joint direction parameters to flip joint direction +/- 1 -->    
     <add key="WRIST_FE_DIRECTION"        value="+1" />
+
+    <!-- Add joint offsets applied to correct offset fingers in *Degrees*-->
+    <add key="SHOULDER_FE_OFFSET"     value="0.0" />
+    <add key="SHOULDER_AB_AD_OFFSET"  value="0.0" />
+    <add key="HUMERAL_ROT_OFFSET"     value="0.0" />
+    <add key="ELBOW_OFFSET"           value="0.0" />
+
+    <add key="WRIST_ROT_OFFSET"       value="0.0" />
+    <add key="WRIST_AB_AD_OFFSET"     value="0.0" />
+    <add key="WRIST_FE_OFFSET"        value="0.0" />
+
+    <add key="INDEX_AB_AD_OFFSET"     value="0.0" />
+    <add key="INDEX_MCP_OFFSET"       value="0.0" />
+    <add key="INDEX_PIP_OFFSET"       value="0.0" />
+    <add key="INDEX_DIP_OFFSET"       value="0.0" />
+
+    <add key="MIDDLE_AB_AD_OFFSET"    value="0.0" />
+    <add key="MIDDLE_MCP_OFFSET"      value="0.0" />
+    <add key="MIDDLE_PIP_OFFSET"      value="0.0" />
+    <add key="MIDDLE_DIP_OFFSET"      value="0.0" />
+
+    <add key="RING_AB_AD_OFFSET"      value="0.0" />
+    <add key="RING_MCP_OFFSET"        value="0.0" />
+    <add key="RING_PIP_OFFSET"        value="0.0" />
+    <add key="RING_DIP_OFFSET"        value="0.0" />
+
+    <add key="LITTLE_AB_AD_OFFSET"    value="0.0" />
+    <add key="LITTLE_MCP_OFFSET"      value="0.0" />
+    <add key="LITTLE_PIP_OFFSET"      value="0.0" />
+    <add key="LITTLE_DIP_OFFSET"      value="0.0" />
+
+    <add key="THUMB_CMC_AB_AD_OFFSET" value="0.0" />
+    <add key="THUMB_CMC_FE_OFFSET"    value="0.0" />
+    <add key="THUMB_MCP_OFFSET"       value="0.0" />
+    <add key="THUMB_DIP_OFFSET"       value="0.0" />
 
     <!-- Joint impedance parameters -->    
     <add key="SHOULDER_FE_STIFFNESS_HIGH"     value="40.0" />

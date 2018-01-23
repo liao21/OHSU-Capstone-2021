@@ -76,6 +76,8 @@ class NfuUdp(DataSink):
 
         self.stiffness_high = None
         self.stiffness_low = None
+        self.joint_offset = None
+
         self.shutdown_voltage = None
         # RSA: moved this parameter out of the load function to not overwrite on reload from app
         # self.enable_impedance = None
@@ -98,6 +100,7 @@ class NfuUdp(DataSink):
         for i in range(num_upper_arm_joints):
             self.stiffness_high[i] = get_user_config_var(MplId(i).name + '_STIFFNESS_HIGH', 40.0)
             self.stiffness_low[i] = get_user_config_var(MplId(i).name + '_STIFFNESS_LOW', 20.0)
+            self.joint_offset[i] = np.deg2rad(get_user_config_var(MplId(i).name + '_OFFSET', 0.0))
 
         # Hand
         if not get_user_config_var('GLOBAL_HAND_STIFFNESS_HIGH_ENABLE', 0):
@@ -344,6 +347,7 @@ class NfuUdp(DataSink):
         # values[mpl.JointEnum.MIDDLE_PIP] = 0.35
         # values[mpl.JointEnum.MIDDLE_DIP] = 0.35
         # values[mpl.JointEnum.THUMB_CMC_FE] = values[mpl.JointEnum.THUMB_CMC_AB_AD] + 0.5
+        values += self.joint_offset
 
         # velocity is currently unused, but need to assign value for correct transmission
         if self.reset_impedance:

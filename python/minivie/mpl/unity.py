@@ -60,43 +60,61 @@ from mpl.data_sink import DataSink
 from utilities import Udp
 
 
-def get_percepts(data):
+def extract_percepts(data):
     """
     Get sensor data from vMPL (returns tuple)
 
     :return:
 
-        joint_data - [27x3] matrix of position velocity and torque for each joint
-        contact_data - Contact pad data
-        segment_data - FTSN Data (old/new)
+        percepts['jointPercepts']['position'] array [27] of joint position
+        percepts['jointPercepts']['velocity'] array [27] of joint velocity
+        percepts['jointPercepts']['torque'] array [27] of joint torque
+
+        # ContactPerceptsType   74 (37 values (2 bytes each), so (2x37) enum for each of potential contact sensors)
+        percepts['segmentPercepts']['contactPercepts'] - Contact pad data
+
+        # FtsnForcePerceptsType 60 (3-axis x 32-bit values (3 x 4 bytes) for each of 5 fingers, so (3x4x5 = 60))
+        # FtsnAccelPerceptsType 60 (3-axis x 32-bit values (3 x 4 bytes) for each of 5 fingers, so (3x4x5 = 60))
+        # FtsnTempPerceptsType  20 (1 x 32-bit value (1 x 4 bytes) for each of 5 fingers, so (1x4x5 = 20))
+        percepts['segmentPercepts']['ftsn'] - FTSN Data (old/new)
 
     """
-    joint_data = None
-    contact_data = None
-    segment_data = None
+    # this is the return value
+    percepts = dict()
 
     # Convert raw bytes
 
     # Upper Arm Joints = 7 Joints * 3 values per joint * 4 bytes per value = 84 bytes)... bytes 0-84
     # Fingers and Thumb = 20 Joints * 3 values per joint * 4 bytes per value = 240 bytes)... bytes 85-324
+    #
+    # Float32Type angles;		// radians
+    # Float32Type velocities;    // radians/second
+    # Float32Type torques;       // Expect NaN from vMPLEnv.
+
     if len(data) >= 324:
         joint_data = struct.unpack('%df' % MplId.NUM_JOINTS * 3, data[0:324])
+        percepts['jointPercepts'] = dict()
+        percepts['jointPercepts']['position'] = joint_data[0::3]
+        percepts['jointPercepts']['velocity'] = joint_data[1::3]
+        percepts['jointPercepts']['torque'] = joint_data[2::3]
+        percepts['jointPercepts']['temperature'] = [float('nan')] * 27
 
     # ContactPerceptsType   74 (37 values (2 bytes each), so (2x37) enum for each of potential contact sensors)
     # FtsnForcePerceptsType 60 (3-axis x 32-bit values (3 x 4 bytes) for each of 5 fingers, so (3x4x5 = 60))
     # FtsnAccelPerceptsType 60 (3-axis x 32-bit values (3 x 4 bytes) for each of 5 fingers, so (3x4x5 = 60))
     # FtsnTempPerceptsType  20 (1 x 32-bit value (1 x 4 bytes) for each of 5 fingers, so (1x4x5 = 20))
     if len(data) >= 398:
-        contact_data = struct.unpack('%dH' % 37, data[324:398])
+        percepts['segmentPercepts'] = dict()
+        percepts['segmentPercepts']['contactPercepts'] = struct.unpack('%dH' % 37, data[324:398])
 
     # Segment forces (OLD) = 5 sensors * 3 axes/values per sensor * 4 bytes per value = 60 bytes)... bytes 399-458
     # Segment forces (NEW) = 5 sensors * 14 pads/values per sensor * 4 bytes per value = 280 bytes)... bytes 399-678
     if len(data) >= 678:
-        segment_data = struct.unpack('%df' % 70, data[398:678])
+        percepts['segmentPercepts']['ftsn'] = struct.unpack('%df' % 70, data[398:678])
     elif len(data) >= 458:
-        segment_data = struct.unpack('%df' % 15, data[398:458])
+        percepts['segmentPercepts']['ftsn'] = struct.unpack('%df' % 15, data[398:458])
 
-    return joint_data, contact_data, segment_data
+    return percepts
 
 
 class UnityUdp(Udp, DataSink):
@@ -116,14 +134,15 @@ class UnityUdp(Udp, DataSink):
         Udp.__init__(self, local_address=local_address, remote_address=remote_address)
         self.name = "UnityUdp"
         self.onmessage = self.message_handler
+        self.percepts = None
         pass
 
     def message_handler(self, data):
 
-        joint_data, contact_data, segment_data = get_percepts(data)
+        self.percepts = extract_percepts(data)
         try:
-            self.position['last_percept'] = joint_data[0::3]
-        except TypeError:
+            self.position['last_percept'] = self.percepts['jointPercepts']['position']
+        except TypeError or KeyError:
             self.position['last_percept'] = None
 
     def get_status_msg(self):
@@ -173,3 +192,6 @@ class UnityUdp(Udp, DataSink):
             self.send(packed_data)
         else:
             print('Socket disconnected')
+
+    def get_percepts(self):
+        return self.percepts

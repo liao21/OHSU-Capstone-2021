@@ -24,8 +24,7 @@ import numpy as np
 import mpl
 import controls
 from mpl.data_sink import DataSink
-from mpl import JointEnum as MplId
-from utilities import extract_percepts
+from mpl import JointEnum as MplId, extract_percepts
 from utilities.user_config import read_user_config, get_user_config_var
 
 

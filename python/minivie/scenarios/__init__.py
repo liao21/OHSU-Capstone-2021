@@ -591,14 +591,25 @@ class MplScenario(Scenario):
                         self.TrainingInterface.send_message("jointCmd", msg)
                     if counter == 10:
                         p = self.DataSink.get_percepts()
-                        msg = ','.join(['%.2f' % elem for elem in p['jointPercepts']['position']])
-                        self.TrainingInterface.send_message("jointPos", msg)
+                        try:
+                            msg = ','.join(['%.2f' % elem for elem in p['jointPercepts']['position']])
+                            self.TrainingInterface.send_message("jointPos", msg)
+                        except TypeError or KeyError:
+                            pass
                     if counter == 15:
-                        msg = ','.join(['%.1f' % elem for elem in p['jointPercepts']['torque']])
-                        self.TrainingInterface.send_message("jointTorque", msg)
+                        p = self.DataSink.get_percepts()
+                        try:
+                            msg = ','.join(['%.1f' % elem for elem in p['jointPercepts']['torque']])
+                            self.TrainingInterface.send_message("jointTorque", msg)
+                        except TypeError or KeyError:
+                            pass
                     if counter == 20:
-                        msg = ','.join(['%.0f' % elem for elem in p['jointPercepts']['temperature']])
-                        self.TrainingInterface.send_message("jointTemp", msg)
+                        p = self.DataSink.get_percepts()
+                        try:
+                            msg = ','.join(['%.0f' % elem for elem in p['jointPercepts']['temperature']])
+                            self.TrainingInterface.send_message("jointTemp", msg)
+                        except TypeError or KeyError:
+                            pass
                         counter = 0
 
                 time_end = time.time()

@@ -102,6 +102,8 @@ class NfuUdp(DataSink):
         for i in range(num_upper_arm_joints):
             self.stiffness_high[i] = get_user_config_var(MplId(i).name + '_STIFFNESS_HIGH', 40.0)
             self.stiffness_low[i] = get_user_config_var(MplId(i).name + '_STIFFNESS_LOW', 20.0)
+
+        for i in range(MplId.NUM_JOINTS):
             self.joint_offset[i] = np.deg2rad(get_user_config_var(MplId(i).name + '_OFFSET', 0.0))
 
         # Hand

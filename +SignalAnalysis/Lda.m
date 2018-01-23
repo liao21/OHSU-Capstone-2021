@@ -25,9 +25,12 @@ classdef Lda < SignalAnalysis.Classifier
             features3D = obj.TrainingData.getFeatureData();
             featureColumns = obj.convertfeaturedata(features3D);
             
+            dataCount = zeros(1,obj.NumClasses);
+            
             fprintf('Training LDA with %d Samples (',size(featureColumns,2));
             for iClass = 1:obj.NumClasses
-                fprintf('%d = %d; ',iClass,sum(dataLabels == iClass));
+                dataCount(iClass) = sum(dataLabels == iClass);
+                fprintf('%d = %d; ',iClass,dataCount(iClass));
             end
             fprintf(')\n');
             
@@ -39,7 +42,11 @@ classdef Lda < SignalAnalysis.Classifier
             
             % If classes have no data we can leave these as NaN.  When classifying
             % max( feats * w + c , [], 2) will return the max real number
-            hasNoData = ~sum(abs(w),1);
+            % RSA 1/23/2018: Changing approach for finding no data.  It is
+            % possible for No Movement to have all zeros, so base this on
+            % the data input count instead
+            % hasNoData = ~sum(abs(w),1);
+            hasNoData = ~dataCount;
             if any(hasNoData)
                 fprintf(['[%s] Classes with no data [ ' repmat('%d ',1,sum(hasNoData)) '] \n'],mfilename,find(hasNoData));
             end

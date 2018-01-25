@@ -41,12 +41,13 @@ def main():
     # Setup MPL scenario
     # A Scenario is the fundamental building blocks of the VIE: Inputs, Signal Analysis, System Plant, and Output Sink
     vie = scenarios.MplScenario()
-    vie.setup()
 
     # setup web interface
     vie.TrainingInterface = training.TrainingManagerWebsocket()
     vie.TrainingInterface.setup(port=uc.get_user_config_var('mpl_app_port', 9090))
     vie.TrainingInterface.add_message_handler(vie.command_string)
+
+    vie.setup()
 
     # Setup Assessments
     tac = assessment.TargetAchievementControl(vie, vie.TrainingInterface)

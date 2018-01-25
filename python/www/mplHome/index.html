@@ -97,8 +97,8 @@
   <script src="jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
   <script src="lib/offline.min.js"></script>
   <!-- <script src="lib/offline-simulate-ui.min.js"></script> -->
-  <!--<script src="mplHome.min.js"></script>-->
-  <script src="mplHome.js"></script>
+  <script src="mplHome.min.js"></script>
+  <!--<script src="mplHome.js"></script>-->
 </head>
 
 <body class="container">
@@ -241,6 +241,14 @@
           <option value="On" selected="selected">On</option>
         </select>
       </div>
+      <!-- Toggle AutoOpen -->
+      <div class="ui-field-contain">
+        <label for="autoOpen">Auto Open:</label>
+        <select type="checkbox" id="autoOpen" data-role="flipswitch">
+          <option value="Off" selected="selected">Off</option>
+          <option value="On">On</option>
+        </select>
+      </div>
       <!-- Toggle Torque Rezero -->
       <div class="ui-field-contain">
         <label for="resetTorque">Torque Zero:</label>
@@ -264,7 +272,8 @@
           <option value="Low">Low</option>
           <option value="High" selected="selected">High</option>
         </select>
-      </div> <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_RELOAD_ROC">Reload Configuration Files</a>
+      </div>
+      <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_RELOAD_ROC">Reload Configuration Files</a>
       <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_REBOOT">Reboot Limb Controller</a>
       <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_GOTO_HOME">Limb Go-To Home Position</a>
       <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_GOTO_PARK">Limb Go-To Park Position</a>
@@ -298,15 +307,69 @@
           <tr><td>Ring MCP</td><th><span id="3MCP_Cmd"></span></th><th><span id="3MCP_Pos"></span></th><th><span id="3MCP_Torque"></span></th><th><span id="3MCP_Temp"></span></th></tr>
           <!--<tr><td>Ring PIP</td><th><span id="3PIP_Cmd"></span></th><th><span id="3PIP_Pos"></span></th><th><span id="3PIP_Torque"></span></th><th><span id="3PIP_Temp"></span></th></tr>-->
           <!--<tr><td>Ring DIP</td><th><span id="3DIP_Cmd"></span></th><th><span id="3DIP_Pos"></span></th><th><span id="3DIP_Torque"></span></th><th><span id="3DIP_Temp"></span></th></tr>-->
-          <tr><td>Little AA</td><th><span id="4AA_Cmd"></span></th><th><span id="4AA_Pos"></span></th><th><span id="4AA_Torque"></span></th><th><span id="4AA_Temp"></span></th></tr>
           <tr><td>Little MCP</td><th><span id="4MCP_Cmd"></span></th><th><span id="4MCP_Pos"></span></th><th><span id="4MCP_Torque"></span></th><th><span id="4MCP_Temp"></span></th></tr>
           <!--<tr><td>Little PIP</td><th><span id="4PIP_Cmd"></span></th><th><span id="4PIP_Pos"></span></th><th><span id="4PIP_Torque"></span></th><th><span id="4PIP_Temp"></span></th></tr>-->
           <!--<tr><td>Little DIP</td><th><span id="4DIP_Cmd"></span></th><th><span id="4DIP_Pos"></span></th><th><span id="4DIP_Torque"></span></th><th><span id="4DIP_Temp"></span></th></tr>-->
+          <tr><td>Little AA</td><th><span id="4AA_Cmd"></span></th><th><span id="4AA_Pos"></span></th><th><span id="4AA_Torque"></span></th><th><span id="4AA_Temp"></span></th></tr>
           <tr><td>Thumb CMC AA</td><th><span id="5AA_Cmd"></span></th><th><span id="5AA_Pos"></span></th><th><span id="5AA_Torque"></span></th><th><span id="5AA_Temp"></span></th></tr>
           <tr><td>Thumb CMC FE</td><th><span id="5CMC_Cmd"></span></th><th><span id="5CMC_Pos"></span></th><th><span id="5CMC_Torque"></span></th><th><span id="5CMC_Temp"></span></th></tr>
           <tr><td>Thumb MCP</td><th><span id="5MCP_Cmd"></span></th><th><span id="5MCP_Pos"></span></th><th><span id="5MCP_Torque"></span></th><th><span id="5MCP_Temp"></span></th></tr>
           <tr><td>Thumb IP</td><th><span id="5DIP_Cmd"></span></th><th><span id="5DIP_Pos"></span></th><th><span id="5DIP_Torque"></span></th><th><span id="5DIP_Temp"></span></th></tr>
         </table>
+        <!-- Toggle Manual Control -->
+        <div class="ui-field-contain">
+          <label for="manualControl">Manual Ctrl:</label>
+          <select type="checkbox" id="manualControl" data-role="flipswitch">
+            <option value="Off" selected="selected">Off</option>
+            <option value="On">On</option>
+          </select>
+        </div>
+
+        <a href="#" class="ui-btn" id="MAN_Stop1">Stop</a>
+        <fieldset class="ui-grid-a">
+          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_ElbowFlex">Elbow Up</a></div>
+          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_ElbowExtend">Elbow Down</a></div>
+        </fieldset>
+        <fieldset class="ui-grid-a">
+          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_Supinate">Wrist Rotate Out</a></div>
+          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_Pronate">Wrist Rotate In</a></div>
+        </fieldset>
+        <fieldset class="ui-grid-a">
+          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_WristFlex">Wrist Flex</a></div>
+          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_WristExtend">Wrist Extend</a></div>
+        </fieldset>
+        <a href="#" class="ui-btn" id="MAN_HandOpen1">Hand Open</a>
+        <fieldset class="ui-grid-a">
+          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_Spherical">Spherical Grasp</a></div>
+          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_Tip">Tip Grasp</a></div>
+        </fieldset>
+        <fieldset class="ui-grid-a">
+          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_ThreeFingerPinch">Three Finger Pinch</a></div>
+          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_Lateral">Lateral Grasp</a></div>
+        </fieldset>
+        <fieldset class="ui-grid-a">
+          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_Cylindrical">Cylindrical Grasp</a></div>
+          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_Point">Point Grasp</a></div>
+        </fieldset>
+        <a href="#" class="ui-btn" id="MAN_HandOpen2">Hand Open</a>
+        <fieldset class="ui-grid-a">
+          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_Index">Index</a></div>
+          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_Middle">Middle</a></div>
+        </fieldset>
+        <fieldset class="ui-grid-a">
+          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_Ring">Ring</a></div>
+          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_Little">Little</a></div>
+        </fieldset>
+        <fieldset class="ui-grid-a">
+          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_Thumb">Thumb</a></div>
+          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_RingMiddle">Ring-Middle</a></div>
+        </fieldset>
+        <fieldset class="ui-grid-a">
+          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_TheBird">TheBird</a></div>
+        </fieldset>
+        <a href="#" class="ui-btn" id="MAN_Stop2">Stop</a>
+
+
     </div>
     <!-- /content -->
   </div>

@@ -1,10 +1,12 @@
 import time
+from numpy import rad2deg
 import logging
 import utilities
 from utilities.user_config import read_user_config, get_user_config_var
 from utilities import get_address
 import mpl
 from collections import Counter, deque
+from controls.plant import class_map
 
 
 class Scenario(object):
@@ -31,20 +33,25 @@ class Scenario(object):
         # self.DebugSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         # Training parameters
-        self.add_data = False
+        self.add_data = False  # Control whether to add data samples on the current timestep
         self.add_data_last = False  # Track whether data added on previous update, necessary to know when to autosave
         self.auto_save = True  # Boolean, if true, will save out training data every time new data finished being added
-        self.training_motion = 'No Movement'
-        self.training_id = 0
+        self.training_motion = 'No Movement'  # Store the current motion name
+        self.training_id = 0  # Store the current motion id
 
         self.num_channels = 0
+        self.auto_open = False  # Automatically open hand if in rest state
 
+        # Create a buffer for storing recent class decisions for majority voting
         self.decision_buffer = deque([], get_user_config_var('NumMajorityVotes', 25))
 
         self.output = None  # Will contain latest status message
 
         # User should access values through the is_paused method
         self.__pause = {'All': False, 'Arm': False, 'Hand': False}
+
+        # When set, this bypasses the classifier and add data methods to only send joint commands
+        self.manual_override = False
 
         # Control gains and speeds for precision control mode
         self.precision_mode = False
@@ -220,6 +227,16 @@ class Scenario(object):
             elif cmd_data == 'ResetTorqueOff':
                 self.DataSink.reset_impedance = False
 
+            elif cmd_data == 'ManualControlOn':
+                self.manual_override = True
+            elif cmd_data == 'ManualControlOff':
+                self.manual_override = False
+
+            elif cmd_data == 'AutoOpenOn':
+                self.auto_open = True
+            elif cmd_data == 'AutoOpenOff':
+                self.auto_open = False
+
             elif cmd_data == 'ImpedanceOn':
                 self.DataSink.enable_impedance = 1
             elif cmd_data == 'ImpedanceOff':
@@ -335,6 +352,25 @@ class Scenario(object):
                 # logging.info('Unknown scenario command: ' + cmd_data)
                 pass
 
+        elif cmd_type == 'Man':
+            # Parse Manual Motion Command Message Type
+            # Note the commands from the web app must match the Class Names
+
+            self.Plant.new_step()
+
+            # parse manual command type as arm, grasp, etc
+            class_info = class_map(cmd_data)
+
+            if class_info['IsGrasp']:
+                # the motion class is either a grasp type or hand open
+                if class_info['GraspId'] is not None and self.Plant.grasp_position < 0.2:
+                    # change the grasp state if still early in the grasp motion
+                    self.Plant.grasp_id = class_info['GraspId']
+                self.Plant.set_grasp_velocity(class_info['Direction'] * self.hand_gain_value)
+            else:
+                # the motion class is an arm movement
+                self.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * self.gain_value)
+
     def attach_source(self, input_source):
         # Pass in a list of signal sources and they will be added to the scenario
 
@@ -362,11 +398,19 @@ class Scenario(object):
             output = {'status': 'RUNNING', 'features': None, 'decision': 'None'}
 
         """
-        from controls.plant import class_map
         # import struct
 
         # initialize output
         self.output = {'status': 'RUNNING', 'features': None, 'decision': 'None', 'vote': None}
+
+        if self.manual_override:
+            self.Plant.update()
+            self.output['status'] = 'MANUAL'
+            # transmit output
+            if self.DataSink is not None:
+                # self.Plant.joint_velocity[mpl.JointEnum.MIDDLE_MCP] = self.Plant.grasp_velocity
+                self.DataSink.send_joint_angles(self.Plant.joint_position, self.Plant.joint_velocity)
+            return self.output
 
         # get data / features
         self.output['features'], f, imu = self.FeatureExtract.get_features(self.SignalSource)
@@ -434,6 +478,10 @@ class Scenario(object):
         if not class_info['IsGrasp'] and not pause_arm:
             # the motion class is an arm movement
             self.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * self.gain_value)
+
+        # Automatically open hand if auto open set and no movement class
+        if self.TrainingData.motion_names[decision_id] == 'No Movement' and self.auto_open:
+            self.Plant.set_grasp_velocity(-self.hand_gain_value)
 
         self.Plant.update()
 
@@ -587,12 +635,12 @@ class MplScenario(Scenario):
                 if self.TrainingInterface is not None:
                     counter += 1
                     if counter == 5:
-                        msg = ','.join(['%.2f' % elem for elem in self.Plant.joint_position])
+                        msg = ','.join(['%.f' % rad2deg(elem) for elem in self.Plant.joint_position])
                         self.TrainingInterface.send_message("jointCmd", msg)
                     if counter == 10:
                         p = self.DataSink.get_percepts()
                         try:
-                            msg = ','.join(['%.2f' % elem for elem in p['jointPercepts']['position']])
+                            msg = ','.join(['%.f' % rad2deg(elem) for elem in p['jointPercepts']['position']])
                             self.TrainingInterface.send_message("jointPos", msg)
                         except TypeError or KeyError:
                             pass

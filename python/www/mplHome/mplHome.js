@@ -285,6 +285,31 @@ function setupCallbacks() {
   $("#ID_GOTO_HOME").on("mousedown", function() {sendCmd("Cmd:GotoHome")} );
   $("#ID_GOTO_PARK").on("mousedown", function() {sendCmd("Cmd:GotoPark")} );
 
+  $("#MAN_ElbowFlex").on("mousedown", function() {sendCmd("Man:Elbow Flexion")} );
+  $("#MAN_ElbowExtend").on("mousedown", function() {sendCmd("Man:Elbow Extension")} );
+  $("#MAN_Pronate").on("mousedown", function() {sendCmd("Man:Wrist Rotate In")} );
+  $("#MAN_Supinate").on("mousedown", function() {sendCmd("Man:Wrist Rotate Out")} );
+  $("#MAN_WristFlex").on("mousedown", function() {sendCmd("Man:Wrist Flex In")} );
+  $("#MAN_WristExtend").on("mousedown", function() {sendCmd("Man:Wrist Extend Out")} );
+  $("#MAN_HandOpen1").on("mousedown", function() {sendCmd("Man:Hand Open")} );
+  $("#MAN_HandOpen2").on("mousedown", function() {sendCmd("Man:Hand Open")} );
+  $("#MAN_Spherical").on("mousedown", function() {sendCmd("Man:Spherical Grasp")} );
+  $("#MAN_Tip").on("mousedown", function() {sendCmd("Man:Tip Grasp")} );
+  $("#MAN_ThreeFingerPinch").on("mousedown", function() {sendCmd("Man:Three Finger Pinch Grasp")} );
+  $("#MAN_Lateral").on("mousedown", function() {sendCmd("Man:Lateral Grasp")} );
+  $("#MAN_Cylindrical").on("mousedown", function() {sendCmd("Man:Cylindrical Grasp")} );
+  $("#MAN_Point").on("mousedown", function() {sendCmd("Man:Point Grasp")} );
+  $("#MAN_Index").on("mousedown", function() {sendCmd("Man:Index")} );
+  $("#MAN_Middle").on("mousedown", function() {sendCmd("Man:Middle")} );
+  $("#MAN_Ring").on("mousedown", function() {sendCmd("Man:Ring")} );
+  $("#MAN_Little").on("mousedown", function() {sendCmd("Man:Little")} );
+  $("#MAN_Thumb").on("mousedown", function() {sendCmd("Man:Thumb")} );
+  $("#MAN_RingMiddle").on("mousedown", function() {sendCmd("Man:Ring-Middle")} );
+  $("#MAN_TheBird").on("mousedown", function() {sendCmd("Man:The Bird")} );
+  $("#MAN_Stop1").on("mousedown", function() {sendCmd("Man:Stop")} );
+  $("#MAN_Stop2").on("mousedown", function() {sendCmd("Man:Stop")} );
+
+
   // Create checkbox based switch listeners:
   $('#trainSwitch').on("change", function() { this.checked === true ? sendCmd("Cmd:Add") : sendCmd("Cmd:Stop"); });
   $('#precisionMode').on("change", function() { this.checked === true ? sendCmd("Cmd:PrecisionModeOn") : sendCmd("Cmd:PrecisionModeOff"); });
@@ -296,6 +321,8 @@ function setupCallbacks() {
   $('#enableImpedance').on("change", function() { this.value == "On" ? sendCmd("Cmd:ImpedanceOn") : sendCmd("Cmd:ImpedanceOff"); });
   $('#impedanceLevel').on("change", function() { this.value == "Low" ? sendCmd("Cmd:ImpedanceLow") : sendCmd("Cmd:ImpedanceHigh"); });
   $('#autoSave').on("change", function() { this.value == "On" ? sendCmd("Cmd:AutoSaveOn") : sendCmd("Cmd:AutoSaveOff"); });
+  $('#autoOpen').on("change", function() { this.value == "On" ? sendCmd("Cmd:AutoOpenOn") : sendCmd("Cmd:AutoOpenOff"); });
+  $('#manualControl').on("change", function() { this.value == "On" ? sendCmd("Cmd:ManualControlOn") : sendCmd("Cmd:ManualControlOff"); });
 }  // setupCallbacks
 
 function submitLogMessage() {

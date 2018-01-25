@@ -351,7 +351,7 @@ class NfuUdp(DataSink):
         # values[mpl.JointEnum.MIDDLE_PIP] = 0.35
         # values[mpl.JointEnum.MIDDLE_DIP] = 0.35
         # values[mpl.JointEnum.THUMB_CMC_FE] = values[mpl.JointEnum.THUMB_CMC_AB_AD] + 0.5
-        values += self.joint_offset
+        values = np.array(values) + self.joint_offset
 
         # velocity is currently unused, but need to assign value for correct transmission
         if self.reset_impedance:

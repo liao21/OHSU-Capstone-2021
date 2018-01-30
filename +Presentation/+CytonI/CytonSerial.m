@@ -351,8 +351,11 @@ classdef CytonSerial < handle
             %   CytonSerial.encode_lynxterm_cmd([5 10],[1600 750],500);
             
             % check if velocity provided
-            isVelocityProvided = (nargin >= 3);
-            
+            if nargin < 3
+                % set default velocity 
+                movementSpeed = 150;
+            end
+
             % get number of channels
             numChannels = length(channelId);
             
@@ -364,27 +367,26 @@ classdef CytonSerial < handle
             assert(isequal(numChannels,length(pulseWidth)),...
                 'Array sizes for channelIds and pulseWidth must be equal for nonscalar inputs');
             
-            if isVelocityProvided
-                % check velocity
-                if (numChannels > 1) && isscalar(movementSpeed)
-                    % expand movementSpeed command
-                    movementSpeed = repmat(movementSpeed,size(channelId));
-                end
-                % array sizes must be equal
-                assert(isequal(numChannels,length(movementSpeed)),...
-                    'Array sizes for channelIds and movementSpeed must be equal for nonscalar inputs');
+            % check velocity
+            if (numChannels > 1) && isscalar(movementSpeed)
+                % expand movementSpeed command
+                movementSpeed = repmat(movementSpeed,size(channelId));
             end
+            % array sizes must be equal
+            assert(isequal(numChannels,length(movementSpeed)),...
+                'Array sizes for channelIds and movementSpeed must be equal for nonscalar inputs');
             
             % Create command string
             cmdString = '';
             for iChannel = 1:numChannels
                 
-                % format message with or without velocity
-                if isVelocityProvided
-                    servoCmd = sprintf('#%d P%d S%d ',channelId(iChannel),pulseWidth(iChannel),movementSpeed(iChannel));
-                else
-                    servoCmd = sprintf('#%d P%d ',channelId(iChannel),pulseWidth(iChannel));
-                end
+                % format message with velocity
+                servoCmd = sprintf('#%d P%d S%d ',channelId(iChannel),pulseWidth(iChannel),movementSpeed(iChannel));
+                
+                % Note: sending position commands without velocity is too
+                % hard on the motors to be effective, resulting in
+                % controller / servo brown-outs
+                % servoCmd = sprintf('#%d P%d ',channelId(iChannel),pulseWidth(iChannel));
                 
                 % append commands for group move
                 cmdString = cat(2,cmdString,servoCmd); %#ok<*AGROW>

@@ -152,7 +152,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             dataLabel = [thisFile '_classEmg'];
             
             % filter the data
-            chEmg = TrainingDataAnalysis.filter_data(emgDataRaw);
+            chEmg = TrainingDataAnalysis.filter_data(emgDataRaw,0);
                         
             classNames = obj.ClassNames;
             

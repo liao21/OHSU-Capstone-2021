@@ -444,6 +444,8 @@ classdef MiniVIE < Common.MiniVieObj
                         h = Inputs.OpenBciChipKit('COM3');
                     case 'ThalmicLabs MyoUdp'
                         h = Inputs.MyoUdp.getInstance();
+                        %h.addfilter(Inputs.MAV());
+                        
                     otherwise
                         % None
                         h = [];

@@ -221,7 +221,7 @@ classdef TrainingData < handle
             
             signalData = reshape(s(channels,:,sortOrder),length(channels),[])';
         end
-        function [signalData, signalLabel] = getStichedData(obj,channels,sortOrder)
+        function [signalData, signalLabel] = getStichedData(obj,channels,doSort)
             % The objective here is to get the Raw signals, which start out
             % as data frames, then align them so that ovrelapping portions
             % are removed resulting in a continuous time history
@@ -232,41 +232,47 @@ classdef TrainingData < handle
             %   but only those specified by the ActiveChannels property
             %   will be returned
             %
-            %   sort - [Optional] true/false whether results should be
+            %   doSort - [Optional] true/false whether results should be
             %   grouped by classname.  Since multiple repitions of the same
             %   movement might be contained in the same data set, this will
             %   consolidate each to a single pool. Default is unsorted
             %
 
-            % Rather then accessing the raw data property directly (which
+            % Initialize output arguments
+            signalData = [];
+            signalLabel = [];
+
+            % Check input arguments
+            if nargin < 2
+                channels = obj.ActiveChannels;
+            end
+            if nargin < 3
+                %sortOrder = 1:obj.SampleCount;
+                doSort = false;
+            end
+
+            % Rather than accessing the raw data property directly (which
             % is buffered with NaNs for speed.  use the get method, but
             % note this will only apply to 'enabled' data samples
             %s = obj.SignalDataRaw;
             s = obj.getRawSignals();
             if isempty(s)
                 warning('No Raw Data Found');
-                signalData = [];
-                signalLabel = [];
                 return
             end
-
-            if nargin < 2
-                channels = obj.ActiveChannels;
-            end
-            if nargin < 3
-                %sortOrder = 1:obj.SampleCount;
-                sortOrder = false;
-            end
             
-            if sortOrder
-                % get the labels
-                classLabelId = obj.getClassLabels;
-                [~, sortOrder] = sort(classLabelId);
+            % get the labels
+            classLabelId = obj.getClassLabels;
+            if doSort
+                [sortedClasses, sortOrder] = sort(classLabelId);
                 s = s(channels,:,sortOrder);
             else
                 s = s(channels,:,:);
+                sortedClasses = classLabelId;
             end
             
+            % for every sample of emg, perform cross correlation to see if
+            % it is an exact overlay of the adjacent sample
             lag = zeros(1,size(s,3)-1);
             warning('off','signal:finddelay:noSignificantCorrelationVector');
             for i = 1:size(s,3)-1
@@ -295,7 +301,7 @@ classdef TrainingData < handle
                     newData = s(:,1+end-L:end,i+1);
                 end
                 emgWave = cat(2,emgWave,newData);
-                thisClass = classLabelId(sortOrder(i));
+                thisClass = sortedClasses(i);
                 emgLabel = cat(2,emgLabel,thisClass*ones(1,size(newData,2)));
             end
             

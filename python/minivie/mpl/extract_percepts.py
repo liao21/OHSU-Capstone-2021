@@ -135,7 +135,7 @@ def extract(packet):
             feedbackData['segmentPercepts']['ftsnAccel'] = numpy.zeros(
                 (NUM_FTSN_DATA_MAX_NUMBER_VALUES, NUM_FTSN_SEGMENTS))
             feedbackData['segmentPercepts']['ftsnTemp'] = numpy.zeros(
-                (NUM_FTSN_DATA_MAX_NUMBER_VALUES, NUM_FTSN_SEGMENTS))
+                (NUM_FTSN_SEGMENTS, 1))
 
             # fill in force vals
             for segmentId in range(NUM_FTSN_SEGMENTS):
@@ -153,10 +153,9 @@ def extract(packet):
 
             # fill in temp vals
             for segmentId in range(NUM_FTSN_SEGMENTS):
-                for axisId in range(NUM_FTSN_DATA_MAX_NUMBER_VALUES):
-                    temp_temp = struct.unpack(endian + 'f', packet[ind:ind + 4])[0]
-                    ind += 4
-                    feedbackData['segmentPercepts']['ftsnTemp'][axisId, segmentId] = temp_temp
+                temp_temp = struct.unpack(endian + 'f', packet[ind:ind + 4])[0]
+                ind += 4
+                feedbackData['segmentPercepts']['ftsnTemp'][segmentId] = temp_temp
 
         # extract the segment percepts, this is the current mode in use
         elif SegmentPerceptsType == CONTACT_FORCEv2_ACCEL_TEMP:

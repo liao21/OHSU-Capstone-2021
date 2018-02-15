@@ -53,6 +53,9 @@ class Scenario(object):
         # When set, this bypasses the classifier and add data methods to only send joint commands
         self.manual_override = False
 
+        # Control whether percepts should be streamed via websocket to app (high bandwidth)
+        self.enable_percept_stream = False
+
         # Control gains and speeds for precision control mode
         self.precision_mode = False
         self.gain_value = 1.4
@@ -231,6 +234,11 @@ class Scenario(object):
                 self.manual_override = True
             elif cmd_data == 'ManualControlOff':
                 self.manual_override = False
+
+            elif cmd_data == 'JointPerceptsOn':
+                self.enable_percept_stream = True
+            elif cmd_data == 'JointPerceptsOff':
+                self.enable_percept_stream = False
 
             elif cmd_data == 'AutoOpenOn':
                 self.auto_open = True
@@ -632,7 +640,7 @@ class MplScenario(Scenario):
                                                round(self.TrainingData.get_totals(self.training_id), -1))
                     self.TrainingInterface.send_message("strTrainingMotion", msg)
 
-                if self.TrainingInterface is not None:
+                if self.TrainingInterface is not None and self.enable_percept_stream:
                     counter += 1
                     if counter == 5:
                         msg = ','.join(['%.f' % rad2deg(elem) for elem in self.Plant.joint_position])

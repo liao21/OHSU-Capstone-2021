@@ -285,7 +285,14 @@
         <p>Devices: <span id="msg_status_opt"></span>
         </p>
 
-        <p>Joint Percepts:</p>
+        <!-- Toggle Joint Percepts -->
+        <div class="ui-field-contain">
+          <label for="streamPercepts">Joint Percepts:</label>
+          <select type="checkbox" id="streamPercepts" data-role="flipswitch">
+            <option value="Off" selected="selected">Off</option>
+            <option value="On">On</option>
+          </select>
+        </div>
         <table>
           <tr><th>Joint Name</th><th>Cmd</th><th>Pos</th><th>Torque</th><th>Temp</th></tr>
           <!--<tr><td>Shoulder FE</td><th><span id="SHFE_Cmd"></span></th><th><span id="SHFE_Pos"></span></th><th><span id="SHFE_Torque"></span></th><th><span id="SHFE_Temp"></span></th></tr>-->

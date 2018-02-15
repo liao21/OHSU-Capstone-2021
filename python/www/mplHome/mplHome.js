@@ -322,7 +322,9 @@ function setupCallbacks() {
   $('#impedanceLevel').on("change", function() { this.value == "Low" ? sendCmd("Cmd:ImpedanceLow") : sendCmd("Cmd:ImpedanceHigh"); });
   $('#autoSave').on("change", function() { this.value == "On" ? sendCmd("Cmd:AutoSaveOn") : sendCmd("Cmd:AutoSaveOff"); });
   $('#autoOpen').on("change", function() { this.value == "On" ? sendCmd("Cmd:AutoOpenOn") : sendCmd("Cmd:AutoOpenOff"); });
+
   $('#manualControl').on("change", function() { this.value == "On" ? sendCmd("Cmd:ManualControlOn") : sendCmd("Cmd:ManualControlOff"); });
+  $('#streamPercepts').on("change", function() { this.value == "On" ? sendCmd("Cmd:JointPerceptsOn") : sendCmd("Cmd:JointPerceptsOff"); });
 }  // setupCallbacks
 
 function submitLogMessage() {

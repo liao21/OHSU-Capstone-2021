@@ -612,6 +612,7 @@ class MplScenario(Scenario):
         # Run the control loop
         # ##########################
         time_elapsed = 0.0
+        last_time = time.strftime("%c")
         counter = 0
         dt = self.Plant.dt
         print(dt)
@@ -625,14 +626,20 @@ class MplScenario(Scenario):
 
                 # send gui updates
                 if self.TrainingInterface is not None:
-                    msg = '<br>' + self.DataSink.get_status_msg()  # Limb Status
-                    msg += ' ' + output['status']  # Classifier Status
-                    for src in self.SignalSource:
-                        msg += '<br>MYO:' + src.get_status_msg()
-                    msg += '<br>' + time.strftime("%c")
+                    # Send new status only once a second based on date string changing
+                    current_time = time.strftime("%c")
+                    if current_time != last_time:
+                        last_time = current_time
+                        msg = '<br>' + self.DataSink.get_status_msg()  # Limb Status
+                        msg += ' ' + output['status']  # Classifier Status
+                        for src in self.SignalSource:
+                            msg += '<br>MYO:' + src.get_status_msg()
+                        msg += '<br>' + 'Step Time: {:.0f}'.format(time_elapsed*1000) + 'ms'
+                        msg += '<br>' + time.strftime("%c")
 
-                    # Forward status message (voltage, temp, etc) to mobile app
-                    self.TrainingInterface.send_message("strStatus", msg)
+                        # Forward status message (voltage, temp, etc) to mobile app
+                        self.TrainingInterface.send_message("strStatus", msg)
+
                     # Send classifier output to mobile app (e.g. Elbow Flexion)
                     self.TrainingInterface.send_message("strOutputMotion", output['decision'])
                     # Send motion training status to mobile app (e.g. No Movement [70]

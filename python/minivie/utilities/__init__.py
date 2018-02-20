@@ -35,6 +35,7 @@ class Udp(threading.Thread):
         logging.info("{} local port: {}:{}".format(self.name, self.udp['LocalHostname'], self.udp['LocalPort']))
         logging.info("{} remote port: {}:{}".format(self.name, self.udp['RemoteHostname'], self.udp['RemotePort']))
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1) # Enable broadcasting
         self.sock.bind((self.udp['LocalHostname'], self.udp['LocalPort']))
         self.sock.settimeout(self.timeout)
         self.is_connected = True

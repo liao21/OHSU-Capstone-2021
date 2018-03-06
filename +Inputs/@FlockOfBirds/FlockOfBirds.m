@@ -10,7 +10,20 @@ classdef FlockOfBirds < handle
     %   Usage:
     %     obj = Inputs.FlockOfBirds;
     %     obj.initialize('COM1');
-    %     [pos, ang] = obj.getBirdGroup;
+    %     birdData = obj.getBirdGroup;
+    %
+    %   Where:
+    %     x = birdData(1);
+    %     y = birdData(2);
+    %     z = birdData(3);
+    %     Rz = birdData(4);
+    %     Ry = birdData(5);
+    %     Rx = birdData(6);
+    %     idBird = birdData(7);
+    %     F = makehgtform('translate',[x y z],...
+    %         'zrotate',Rz,...
+    %         'yrotate',Ry,...
+    %         'xrotate',Rx);
     %
     %   Note: For USB to serial devices on windows: Check the latency
     %   setting under COM port settings.  A value of 2ms works well
@@ -69,7 +82,7 @@ classdef FlockOfBirds < handle
                 numBirds = obj.NumSensors + 1;
             else
                 numBirds = obj.NumSensors;
-            end                
+            end
 
             % Set mode
             for i = 1:numBirds
@@ -104,10 +117,23 @@ classdef FlockOfBirds < handle
         end
                 
         function birdData = getBirdGroup(obj)
-            %[pos, ang] = getBirdGroup(obj)
+            %birdData = getBirdGroup(obj)
             % get the position and angle of the flock of birds sensor(s).
             % This assumes that stream mode is active and that there is new
             % data available.
+            %
+            %     x = birdData(1);
+            %     y = birdData(2);
+            %     z = birdData(3);
+            %     Rz = birdData(4);
+            %     Ry = birdData(5);
+            %     Rx = birdData(6);
+            %     idBird = birdData(7);
+            %     F = makehgtform('translate',[x y z],...
+            %         'zrotate',Rz,...
+            %         'yrotate',Ry,...
+            %         'xrotate',Rx);
+
 
             birdData = [];
 

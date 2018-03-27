@@ -34,6 +34,18 @@
     <!-- enable_dcell strain gauge logging-->
     <add key="dcell_enable"         value="0"/>
     <add key="dcell_serial_port"    value="/dev/ttymxc2"/>
+	
+	<!-- arm and configuration
+		 Arm: 
+			left: Left Arm Prosthetic
+			right: Right Arm Prosthetic
+		 Configurations:
+			ae8: Above Elbow 8 Channels (1 Myo)
+			ae16: Above Elbow 16 Channels (2 Myos)
+			be: Below Elbow 16 Channels (2 Myos)
+			daq: National Instruments DAQ -->
+	<add key="arm"					value="right"/>
+	<add key="configuration"		value="be"/>
 
     <!--Pattern Recognition Parameters-->
     <add key="NumMajorityVotes" value="25"/>
@@ -48,7 +60,7 @@
     <add key="myo_mac_address_2"    value="xx:xx:xx:xx:xx:xx"/>
     <add key="myo_local_port_1"     value="//127.0.0.1:16001"/>
     <add key="myo_local_port_2"     value="//127.0.0.1:16002"/>
-    <add key="myo_remote_port_1"    value="//127.0.0.1:15001"/>
+	<add key="myo_remote_port_1"    value="//127.0.0.1:15001"/>
     <add key="myo_remote_port_2"    value="//127.0.0.1:15002"/>
 
     <!-- Myo Data Client Streaming Ports
@@ -60,6 +72,10 @@
     <add key="myo_client_local_port_2"     value="//0.0.0.0:15002"/>
     <add key="myo_client_remote_port_1"    value="//0.0.0.0:16001"/>
     <add key="myo_client_remote_port_2"    value="//0.0.0.0:16002"/>
+	
+	<!-- DAQ Data Client
+        Use these parameters for reading from a DAQ Data Source in a client application  -->
+	<add key="device_name_and_channels" value="Dev1/ai0:7"/>
 
     <!-- User defined joint limits in *Degrees*
      Optionally limit the range of each joint prior to sending to the MPL

@@ -38,6 +38,9 @@ class FeatureExtract(object):
         self.zc_thresh = zc_thresh
         self.ssc_thresh = ssc_thresh
         self.sample_rate = sample_rate
+        self.Fref = np.eye(4)
+        self.myo = 0
+        self.normalized_orientation = None
 
     def get_features(self, data_input):
         """
@@ -50,11 +53,12 @@ class FeatureExtract(object):
 
         if data_input is None:
             # Can't get features
-            return None, None, None
+            return None, None, None, None
         elif isinstance(data_input, np.ndarray):
             # Extract features from the data provided
             f = feature_extract(data_input, self.zc_thresh, self.ssc_thresh, self.sample_rate)
             imu = None
+            rot_mat = None
         else:
             # input is a data source so call it's get_data method
 
@@ -65,12 +69,23 @@ class FeatureExtract(object):
 
             imu = np.array([])
             for s in data_input:
-                result = s.get_imu()
-                imu = np.append(imu, result['quat'])
-                imu = np.append(imu, result['accel'])
-                imu = np.append(imu, result['gyro'])
-                # add imu to features
-                #f = np.append(f, imu)
+                if hasattr(s, 'get_imu'):
+                    result = s.get_imu()
+                    imu = np.append(imu, result['quat'])
+                    imu = np.append(imu, result['accel'])
+                    imu = np.append(imu, result['gyro'])
+                    # add imu to features
+                    # f = np.append(f, imu)
+                else:
+                    imu = None
+
+            rot_mat = []
+            for s in data_input:
+                if hasattr(s, 'get_rotationMatrix'):
+                    result = s.get_rotationMatrix()
+                    rot_mat.append(result)
+                else:
+                    rot_mat = None
 
         feature_list = f.tolist()
 
@@ -78,77 +93,88 @@ class FeatureExtract(object):
         f = np.squeeze(f)
         feature_learn = f.reshape(1, -1)
 
-        return feature_list, feature_learn, imu
+        return feature_list, feature_learn, imu, rot_mat
+
+    def normalize_orientation(self, orientation):
+        self.normalized_orientation = orientation
 
 
-def feature_extract(y, zc_thresh=0.15, ssc_thresh=0.15, sample_rate=200):
-    """
-    Created on Mon Jan 25 16:25:14 2016
+    def feature_extract(self, y, zc_thresh=0.15, ssc_thresh=0.15, sample_rate=200):
+        """
+        Created on Mon Jan 25 16:25:14 2016
 
-    Perform feature extraction, vectorized
+        Perform feature extraction, vectorized
 
-    @author: R. Armiger
-    # compute features
-    #
-    # Input:
-    # data buffer to compute features
-    # y = numpy.zeros((numSamples, numChannels))
-    # E.g. numpy.zeros((50, 8))
-    #
-    # Optional:
-    # Thresholds for computing zero crossing and slope sign change features
-    #
-    # Output: feature vector should be [1,nChan*nFeat]
-    # data ordering is as follows
-    # [ch1f1, ch1f2, ch1f3, ch1f4, ch2f1, ch2f2, ch2f3, ch2f4, ... chNf4]
-    """
+        @author: R. Armiger
+        # compute features
+        #
+        # Input:
+        # data buffer to compute features
+        # y = numpy.zeros((numSamples, numChannels))
+        # E.g. numpy.zeros((50, 8))
+        #
+        # Optional:
+        # Thresholds for computing zero crossing and slope sign change features
+        #
+        # Output: feature vector should be [1,nChan*nFeat]
+        # data ordering is as follows
+        # [ch1f1, ch1f2, ch1f3, ch1f4, ch2f1, ch2f2, ch2f3, ch2f4, ... chNf4]
+        """
 
-    # Number of Samples
-    n = y.shape[0]
+        # normalize features
+        if self.normalized_orientation is not None:
+            # normalize incoming data according to myo
+            y = np.roll(y, self.normalized_orientation[self.myo])
 
-    # Normalize features so they are independent of the window size
-    fs = sample_rate
+        # update myo
+        self.myo += 1
 
-    # Value to compute 'zero-crossing' around
-    t = 0.0
+        # Number of Samples
+        n = y.shape[0]
 
-    # Compute mav across all samples (axis=0)
-    mav = np.mean(abs(y), 0)  # mav shouldn't be normalized
+        # Normalize features so they are independent of the window size
+        fs = sample_rate
 
-    # Curve length is the sum of the absolute value of the derivative of the
-    # signal, normalized by the sample rate
-    curve_len = np.sum(abs(np.diff(y, axis=0)), axis=0) * fs / n
+        # Value to compute 'zero-crossing' around
+        t = 0.0
 
-    # Criteria for crossing zero
-    # zeroCross=(y[iSample] - t > 0 and y[iSample + 1] - t < 0) or (y[iSample] - t < 0 and y[iSample + 1] - t > 0)
-    # overThreshold=abs(y[iSample] - t - y[iSample + 1] - t) > zc_thresh
-    # if zeroCross and overThreshold:
-    #     # Count a zero cross
-    #     zc[iChannel]=zc[iChannel] + 1
-    zc = np.sum(
-        ((y[0:n - 1, :] - t > 0) & (y[1:n, :] - t < 0) |
-         (y[0:n - 1, :] - t < 0) & (y[1:n, :] - t > 0)) &
-        (abs(y[0:n - 1, :] - t - y[1:n, :] - t) > zc_thresh),
-        axis=0) * fs / n
+        # Compute mav across all samples (axis=0)
+        mav = np.mean(abs(y), 0)  # mav shouldn't be normalized
 
-    # Criteria for counting slope sign changes
-    # signChange = (y[iSample] > y[iSample - 1]) and (y[iSample] > y[iSample + 1]) or (y[iSample] < y[iSample - 1]) and
-    #       (y[iSample] < y[iSample + 1])
-    # overThreshold=abs(y[iSample] - y[iSample + 1]) > ssc_thresh or abs(y[iSample] - y[iSample - 1]) > ssc_thresh
-    # if signChange and overThreshold:
-    #     # Count a slope change
-    #     ssc[iChannel]=ssc[iChannel] + 1
-    ssc = np.sum(
-        ((y[1:n - 1, :] > y[0:n - 2, :]) & (y[1:n - 1, :] > y[2:n, :]) |
-         (y[1:n - 1, :] < y[0:n - 2, :]) & (y[1:n - 1, :] < y[2:n, :])) &
-        ((abs(y[1:n - 1, :] - y[2:n, :]) > ssc_thresh) | (abs(y[1:n - 1, :] - y[0:n - 2, :]) > ssc_thresh)),
-        axis=0) * fs / n
+        # Curve length is the sum of the absolute value of the derivative of the
+        # signal, normalized by the sample rate
+        curve_len = np.sum(abs(np.diff(y, axis=0)), axis=0) * fs / n
 
-    # VAR = np.var(y,axis=0) * fs / n
+        # Criteria for crossing zero
+        # zeroCross=(y[iSample] - t > 0 and y[iSample + 1] - t < 0) or (y[iSample] - t < 0 and y[iSample + 1] - t > 0)
+        # overThreshold=abs(y[iSample] - t - y[iSample + 1] - t) > zc_thresh
+        # if zeroCross and overThreshold:
+        #     # Count a zero cross
+        #     zc[iChannel]=zc[iChannel] + 1
+        zc = np.sum(
+            ((y[0:n - 1, :] - t > 0) & (y[1:n, :] - t < 0) |
+             (y[0:n - 1, :] - t < 0) & (y[1:n, :] - t > 0)) &
+            (abs(y[0:n - 1, :] - t - y[1:n, :] - t) > zc_thresh),
+            axis=0) * fs / n
 
-    features = np.vstack((mav, curve_len, zc, ssc))
+        # Criteria for counting slope sign changes
+        # signChange = (y[iSample] > y[iSample - 1]) and (y[iSample] > y[iSample + 1]) or (y[iSample] < y[iSample - 1]) and
+        #       (y[iSample] < y[iSample + 1])
+        # overThreshold=abs(y[iSample] - y[iSample + 1]) > ssc_thresh or abs(y[iSample] - y[iSample - 1]) > ssc_thresh
+        # if signChange and overThreshold:
+        #     # Count a slope change
+        #     ssc[iChannel]=ssc[iChannel] + 1
+        ssc = np.sum(
+            ((y[1:n - 1, :] > y[0:n - 2, :]) & (y[1:n - 1, :] > y[2:n, :]) |
+             (y[1:n - 1, :] < y[0:n - 2, :]) & (y[1:n - 1, :] < y[2:n, :])) &
+            ((abs(y[1:n - 1, :] - y[2:n, :]) > ssc_thresh) | (abs(y[1:n - 1, :] - y[0:n - 2, :]) > ssc_thresh)),
+            axis=0) * fs / n
 
-    return features.T.reshape(1, 32)
+        # VAR = np.var(y,axis=0) * fs / n
+
+        features = np.vstack((mav, curve_len, zc, ssc))
+
+        return features.T.reshape(1, 32)
 
 
 def test_feature_extract():

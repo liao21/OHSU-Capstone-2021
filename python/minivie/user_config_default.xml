@@ -63,6 +63,13 @@
     <add key="myo_client_remote_port_1"    value="//0.0.0.0:16001"/>
     <add key="myo_client_remote_port_2"    value="//0.0.0.0:16002"/>
 
+
+    <!-- MPL Motion Speeds -->
+    <add key="MPL.ArmSpeedMin"    value="0.1"/>
+    <add key="MPL.ArmSpeedMax"    value="5"/>
+    <add key="MPL.HandSpeedMin"    value="0.1"/>
+    <add key="MPL.HandSpeedMax"    value="5"/>
+
     <!-- User defined joint limits in *Degrees*
      Optionally limit the range of each joint prior to sending to the MPL
      Value format: "MinAngle, MaxAngle" (degrees)

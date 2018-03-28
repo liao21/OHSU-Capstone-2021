@@ -1,6 +1,7 @@
 #
 # Use this file to specify motion names and map to image files for UI display
 # Note comments are supported so use (#) to disable classes
+# Note also case sensitivity on linux systems
 #
 Motion Name,Image File 
 No Movement,img_arm_motions/No_Movement.png
@@ -34,7 +35,7 @@ Little,img_grasps/GEN3_Little.png
 Thumb,img_grasps/GEN3_Thumb.png
 Ring-Middle,img_grasps/GEN3_RingMiddle.png
 The Bird,img_grasps/GEN3_Bird.png
-Hang Loose,img_grasps/GEN3_Hang_Loose.png
-Thumbs Up,img_grasps/GEN3_Thumbs_Up.png
-Peace,img_grasps/GEN3_Peace.png
+Hang Loose,img_grasps/GEN3_Hang_Loose.PNG
+Thumbs Up,img_grasps/GEN3_Thumbs_Up.PNG
+Peace,img_grasps/GEN3_Peace.PNG
 Hand Open,img_grasps/Hand_Open.png

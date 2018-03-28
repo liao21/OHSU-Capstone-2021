@@ -121,18 +121,18 @@ class Scenario(object):
     def gain(self, factor):
         # Increase the speed of the arm and apply max / min constraints
         self.gain_value *= factor
-        if self.gain_value < 0.1:
-            self.gain_value = 0.1
-        if self.gain_value > 5:
-            self.gain_value = 5
+        if self.gain_value < get_user_config_var('MPL.ArmSpeedMin', '0.1'):
+            self.gain_value = get_user_config_var('MPL.ArmSpeedMin', '0.1')
+        if self.gain_value > get_user_config_var('MPL.ArmSpeedMax', '5'):
+            self.gain_value = get_user_config_var('MPL.ArmSpeedMax', '5')
 
     def hand_gain(self, factor):
         # Increase the speed of the hand and apply max / min constraints
         self.hand_gain_value *= factor
-        if self.hand_gain_value < 0.1:
-            self.hand_gain_value = 0.1
-        if self.hand_gain_value > 5:
-            self.hand_gain_value = 5
+        if self.hand_gain_value < get_user_config_var('MPL.HandSpeedMin', '0.1'):
+            self.hand_gain_value = get_user_config_var('MPL.HandSpeedMin', '0.1')
+        if self.hand_gain_value > get_user_config_var('MPL.HandSpeedMax', '5'):
+            self.hand_gain_value = get_user_config_var('MPL.HandSpeedMax', '5')
 
     def command_string(self, value):
         """

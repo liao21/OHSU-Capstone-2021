@@ -440,7 +440,7 @@ class TargetAchievementControl(AssessmentInterface):
             return
 
         # Determine which classes have been trained
-        all_class_names = self.vie.TrainingData.motion_names;
+        all_class_names = self.vie.TrainingData.motion_names
         totals = self.vie.TrainingData.get_totals()
         trained_classes = [all_class_names[i] for i, e in enumerate(totals) if e != 0]
 
@@ -474,13 +474,12 @@ class TargetAchievementControl(AssessmentInterface):
         joints_to_assess = []
         is_grasp = []
         # For TAC1, we will just assess all joints and/or grasps independently
-        if condition==1:
+        if condition == 1:
             joints_to_assess = list(trained_joints) + list(trained_grasps)
             is_grasp = [False]*len(trained_joints) + [True]*len(trained_grasps)
 
-
         # For TAC3, we will require simultaneous assess elbow, one wist motion, and one grasp
-        if condition==3:
+        if condition == 3:
             # First verify elbow is trained
             if 'ELBOW' in trained_joints:
                 joints_to_assess.append('ELBOW')

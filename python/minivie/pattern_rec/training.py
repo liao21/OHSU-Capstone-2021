@@ -7,12 +7,13 @@ This class is designed to receive training commands. Training commands can be fo
 @author: R. Armiger
 """
 
-from pattern_rec.training_interface import TrainingInterface
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
 import tornado.template
+from pattern_rec.training_interface import TrainingInterface
 import logging
+from utilities.user_config import get_user_config_var
 
 
 class TrainingUdp(object):
@@ -80,6 +81,18 @@ class TrainingUdp(object):
 wss = []  # list of websockets send commands
 func_handle = []  # list of callbacks for message recv
 
+# store the last messages so we don't re-transmit a lot of repeated data
+message_history = {'strStatus': '', 'strOutputMotion': '', 'strTrainingMotion': '', 'strMotionTester': '',
+                 'strTAC': '', 'strMotionTesterProgress': '', 'strMotionTesterImage': '',
+                 'strTACJoint1Bar': '', 'strTACJoint1Target': '', 'strTACJoint1Error': '',
+                 'strTACJoint1Name': '',
+                 'strTACJoint2Bar': '', 'strTACJoint2Target': '', 'strTACJoint2Error': '',
+                 'strTACJoint2Name': '',
+                 'strTACJoint3Bar': '', 'strTACJoint3Target': '', 'strTACJoint3Error': '',
+                 'strTACJoint3Name': '',
+                 'jointCmd': '', 'jointPos': '', 'jointTorque': '', 'jointTemp': '',
+                 }
+
 
 class WSHandler(tornado.websocket.WebSocketHandler):
     def open(self):
@@ -100,8 +113,9 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
+        homepage = get_user_config_var('mobile_app_homepage', "../www/mplHome/index.html")
         loader = tornado.template.Loader(".")
-        self.write(loader.load("../www/mplHome/index.html").generate())
+        self.write(loader.load(homepage).generate())
 
 
 class TrainingManagerWebsocket(TrainingInterface):
@@ -116,24 +130,17 @@ class TrainingManagerWebsocket(TrainingInterface):
         # Initialize superclass
         super(TrainingInterface, self).__init__()
 
+        homepath = get_user_config_var('mobile_app_path',"../www/mplHome")
+
         # handle to websocket interface
         self.application = tornado.web.Application([
             (r'/ws', WSHandler),
             (r'/', MainHandler),
-            (r"/(.*)", tornado.web.StaticFileHandler, {"path": "../www/mplHome"}),
+            (r"/(.*)", tornado.web.StaticFileHandler, {"path": homepath}),
         ])
 
         # store the last messages so we don't re-transmit a lot of repeated data
-        self.last_msg = {'strStatus': '', 'strOutputMotion': '', 'strTrainingMotion': '', 'strMotionTester': '',
-                         'strTAC': '', 'strMotionTesterProgress': '', 'strMotionTesterImage': '',
-                         'strTACJoint1Bar': '', 'strTACJoint1Target': '', 'strTACJoint1Error': '',
-                         'strTACJoint1Name': '',
-                         'strTACJoint2Bar': '', 'strTACJoint2Target': '', 'strTACJoint2Error': '',
-                         'strTACJoint2Name': '',
-                         'strTACJoint3Bar': '', 'strTACJoint3Target': '', 'strTACJoint3Error': '',
-                         'strTACJoint3Name': '',
-                         'jointCmd': '', 'jointPos': '', 'jointTorque': '', 'jointTemp': '',
-                         }
+        self.last_msg = message_history
 
         # keep count of skipped messages so we can send at some nominal rate
         self.msg_skip_count = 0
@@ -185,3 +192,68 @@ class TrainingManagerWebsocket(TrainingInterface):
 
     def close(self):
         pass
+
+
+class TrainingManagerSpacebrew(TrainingInterface):
+    """
+    This Training manager uses websockets provided through the spacebrew interface to manager training commands
+
+    """
+
+    def __init__(self):
+
+        # Initialize superclass
+        super(TrainingInterface, self).__init__()
+
+        # handle to spacebrew websocket interface
+        self.brew = None
+
+        # store the last messages so we don't re-transmit a lot of repeated data
+        self.last_msg = message_history
+
+        # keep count of skipped messages so we can send at some nominal rate
+        self.msg_skip_count = 0
+
+    def setup(self, description="JHU/APL Embedded Controller", server="192.168.1.1", port=9000):
+        from pySpacebrew.spacebrew import Spacebrew
+
+        # setup web interface
+        self.brew = Spacebrew("MPL Embedded", description, server, port)
+        self.brew.addSubscriber("cmdString", "string")
+        self.brew.addPublisher("statusString", "string")
+        self.brew.start()
+
+    def add_message_handler(self, func):
+        # attach a function to receive commands from websocket
+        self.brew.subscribe("cmdString", func)
+
+    def send_message(self, msg_id, msg):
+        # send message but only when the string changes (or timeout occurs)
+
+        if not self.last_msg[msg_id] == msg:
+            self.last_msg[msg_id] = msg
+            try:
+                self.brew.publish('statusString', msg_id + ':' + msg)
+            except Exception as e:
+                print(e)
+
+            return
+        else:
+            self.msg_skip_count += 1
+
+        # add a timeout so that we get 'some' messages as a nominal rate
+
+        if self.msg_skip_count > 300:
+
+            # re-send all messages
+            for key, val in self.last_msg.items():
+                try:
+                    self.brew.publish('statusString', key + ':' + val)
+                except Exception as e:
+                    print(e)
+
+            # reset counter
+            self.msg_skip_count = 0
+
+    def close(self):
+        self.brew.stop()

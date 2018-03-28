@@ -271,6 +271,9 @@ class TrainingData:
             'Thumb',
             'Ring-Middle',
             'The Bird',
+            'Hang Loose',
+            'Thumbs Up',
+            'Peace',
         )
 
         # Create lock to control write access to training data
@@ -479,7 +482,8 @@ class TrainingData:
         mapped_motion_names = []
         mapped_image_names = []
         with open(map_path, 'rt', encoding='ascii') as csvfile:
-            rows = csv.reader(csvfile, delimiter=',')
+            # RSA: Updated to allow comments in motion_name_image_map file
+            rows = csv.reader(filter(lambda row: row[0] != '#', csvfile), delimiter=',')
             for row in rows:
                 mapped_motion_names.append(row[0])
                 mapped_image_names.append(row[1])

@@ -76,7 +76,7 @@ dynamic real-time updates of the website for streaming information like the curr
 of websockets uses the Spacebrew project, though this may be removed in future versions in favor of more low-level communcations.
 All commands and messages between the device and the controller are handled through formatted web-sockets allowing bi-directional communcation
 
-Dubugging via command line
+Debugging via command line
 --------------------------
 src:http://swimminginthought.com/putty-ssh-dark-blue-directory-listing-unreadable-quick-fix/
 If you use putty (as do I), here’s the quick solution to fixing that horrible Dark Blue Color for those directory entries.
@@ -172,26 +172,16 @@ Adding a New Grasp to web interface:
 1) Add image file (bmp or png) to folder
     E.g.
         img_grasps/GEN3_Index.png
-2) Update gallery-links.js with description and filename
-    E.g.
-        {
-        title: 'Index',
-        href:  'img_grasps/GEN3_Index.png',
-        },
-    Note: Title will be the name of the class command
-        sendCmd("Cls:Index"); break;
-4) Update motion names in  pattern_rec\__init__.py class TrainingData
-    E.g.
-        self.motion_names = (
-            ....
-            'Index Grasp',
-            ....
-    Note: Training Class Selection comes from:
-        a. gallery-links.js
-        b. scenarios\__init__.py\command_string
-        c. class name matched to motion names
-5) Verify that the trained class maps to a motion in: controls\plant class_map()
-6) Update Index,img_grasps/GEN3_Index.png
+3) Update image list in motion_name_image_map.csv
+    E.g. Index,img_grasps/GEN3_Index.png
+
+UPDATE Completed: RSA overhauled and simplified simplify this.  At the core the needed information 
+is the ROC entry itself, and the path to the image file
+If the gallery-links was populated with the classname and image map, this would save a step
+Also if the display name matched the class name, this would also save a step
+Finally, the training object should add new grasps as needed
+
+
 
 
 Referencing MPL Joint Enumerations:

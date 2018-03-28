@@ -55,9 +55,11 @@ Created on Sat Jan 23 20:36:50 2016
 
 import struct
 import logging
+import numpy as np
 from mpl import JointEnum as MplId
 from mpl.data_sink import DataSink
 from utilities import Udp
+from utilities.user_config import get_user_config_var
 
 
 def extract_percepts(data):
@@ -135,7 +137,15 @@ class UnityUdp(Udp, DataSink):
         self.name = "UnityUdp"
         self.onmessage = self.message_handler
         self.percepts = None
-        pass
+        self.joint_offset = None
+        self.load_config_parameters()
+
+    def load_config_parameters(self):
+        # Load parameters from xml config file
+
+        self.joint_offset = [0.0] * MplId.NUM_JOINTS
+        for i in range(MplId.NUM_JOINTS):
+            self.joint_offset[i] = np.deg2rad(get_user_config_var(MplId(i).name + '_OFFSET', 0.0))
 
     def message_handler(self, data):
 
@@ -173,14 +183,15 @@ class UnityUdp(Udp, DataSink):
             logging.warning('Connection closed.  Call connect() first')
             return
 
-        if len(values) == MplId.NUM_JOINTS:
-            pass
-        elif len(values) == 7:
+        if len(values) == 7:
             # Only upper arm angles passed.  Use zeros for hand angles
             values = values + 20 * [0.0]
-        else:
+        elif len(values) != MplId.NUM_JOINTS:
             logging.info('Invalid command size for send_joint_angles(): len=' + str(len(values)))
             return
+
+        # Apply joint offsets if needed
+        values = np.array(values) + self.joint_offset
 
         # Send data
         msg = 'Joint Command: ' + ','.join(['%d' % elem for elem in values])

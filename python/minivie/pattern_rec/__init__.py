@@ -34,13 +34,10 @@ class FeatureExtract(object):
         17NOV2016 Armiger: Created
 
     """
-    def __init__(self, zc_thresh=0.15, ssc_thresh=0.15, sample_rate=200):
-        self.zc_thresh = zc_thresh
-        self.ssc_thresh = ssc_thresh
-        self.sample_rate = sample_rate
-        self.Fref = np.eye(4)
+    def __init__(self):
         self.myo = 0
         self.normalized_orientation = None
+        self.attached_features = []
 
     def get_features(self, data_input):
         """
@@ -56,7 +53,7 @@ class FeatureExtract(object):
             return None, None, None, None
         elif isinstance(data_input, np.ndarray):
             # Extract features from the data provided
-            f = self.feature_extract(data_input, self.zc_thresh, self.ssc_thresh, self.sample_rate)
+            f = self.feature_extract(data_input)
             imu = None
             rot_mat = None
         else:
@@ -65,7 +62,7 @@ class FeatureExtract(object):
             # Get features from emg data
             f = np.array([])
             for s in data_input:
-                f = np.append(f,self.feature_extract(s.get_data()*0.01, self.zc_thresh, self.ssc_thresh, self.sample_rate))
+                f = np.append(f,self.feature_extract(s.get_data()*0.01))
 
             imu = np.array([])
             for s in data_input:
@@ -98,8 +95,34 @@ class FeatureExtract(object):
     def normalize_orientation(self, orientation):
         self.normalized_orientation = orientation
 
+    def attachFeature(self, instance):
 
-    def feature_extract(self, y, zc_thresh=0.15, ssc_thresh=0.15, sample_rate=200):
+        #attaches feature class instance to attached_features list
+        if not isinstance(instance, EMGFeatures):
+            return self.attached_features
+        elif instance in self.attached_features:
+            return self.attached_features
+        else:
+            return self.attached_features.append(instance)
+
+    def get_featurenames(self):
+        #return an list with the names of all features being used
+        names = []
+        for instance in self.attached_features:
+            featurename = instance.feature_name()
+            #if name is a list, append each element individually
+            if type(featurename) is list:
+                for i in featurename:
+                    names.append(i)
+            else:
+                names.append(featurename)
+        return names
+
+    def clear_features(self):
+        del self.attached_features[:]
+
+
+    def feature_extract(self, y):
         """
         Created on Mon Jan 25 16:25:14 2016
 
@@ -132,49 +155,23 @@ class FeatureExtract(object):
         # Number of Samples
         n = y.shape[0]
 
-        # Normalize features so they are independent of the window size
-        fs = sample_rate
+        features_array = []
 
-        # Value to compute 'zero-crossing' around
-        t = 0.0
+        # loops through instaces and extractes features
+        for instance in self.attached_features:
+            new_feature = instance.extract_features(data_input)
+            features_array.append(new_feature)
 
-        # Compute mav across all samples (axis=0)
-        mav = np.mean(abs(y), 0)  # mav shouldn't be normalized
+        if len(features_array) > 0:
+            vstack_features_array = np.vstack(features_array)
 
-        # Curve length is the sum of the absolute value of the derivative of the
-        # signal, normalized by the sample rate
-        curve_len = np.sum(abs(np.diff(y, axis=0)), axis=0) * fs / n
+            # determines total number of elements in array
+            size = 1
+            for dim in np.shape(vstack_features_array): size *= dim
 
-        # Criteria for crossing zero
-        # zeroCross=(y[iSample] - t > 0 and y[iSample + 1] - t < 0) or (y[iSample] - t < 0 and y[iSample + 1] - t > 0)
-        # overThreshold=abs(y[iSample] - t - y[iSample + 1] - t) > zc_thresh
-        # if zeroCross and overThreshold:
-        #     # Count a zero cross
-        #     zc[iChannel]=zc[iChannel] + 1
-        zc = np.sum(
-            ((y[0:n - 1, :] - t > 0) & (y[1:n, :] - t < 0) |
-             (y[0:n - 1, :] - t < 0) & (y[1:n, :] - t > 0)) &
-            (abs(y[0:n - 1, :] - t - y[1:n, :] - t) > zc_thresh),
-            axis=0) * fs / n
-
-        # Criteria for counting slope sign changes
-        # signChange = (y[iSample] > y[iSample - 1]) and (y[iSample] > y[iSample + 1]) or (y[iSample] < y[iSample - 1]) and
-        #       (y[iSample] < y[iSample + 1])
-        # overThreshold=abs(y[iSample] - y[iSample + 1]) > ssc_thresh or abs(y[iSample] - y[iSample - 1]) > ssc_thresh
-        # if signChange and overThreshold:
-        #     # Count a slope change
-        #     ssc[iChannel]=ssc[iChannel] + 1
-        ssc = np.sum(
-            ((y[1:n - 1, :] > y[0:n - 2, :]) & (y[1:n - 1, :] > y[2:n, :]) |
-             (y[1:n - 1, :] < y[0:n - 2, :]) & (y[1:n - 1, :] < y[2:n, :])) &
-            ((abs(y[1:n - 1, :] - y[2:n, :]) > ssc_thresh) | (abs(y[1:n - 1, :] - y[0:n - 2, :]) > ssc_thresh)),
-            axis=0) * fs / n
-
-        # VAR = np.var(y,axis=0) * fs / n
-
-        features = np.vstack((mav, curve_len, zc, ssc))
-
-        return features.T.reshape(1, 32)
+            return vstack_features_array.T.reshape(1, size)
+        else:
+            return None
 
 
 def test_feature_extract():

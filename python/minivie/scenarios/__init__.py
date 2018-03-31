@@ -494,7 +494,8 @@ class Scenario(object):
             self.Plant.set_grasp_velocity(-self.hand_gain_value)
 
         #track residual
-        self.Plant.trackResidual(self.arm, self.shoulder, self.elbow, rot_mat)
+        if rot_mat is not None:
+            self.Plant.trackResidual(self.arm, self.shoulder, self.elbow, rot_mat)
 
         #update positions
         self.Plant.update()
@@ -524,12 +525,6 @@ class MplScenario(Scenario):
     """
 
     from scenarios import Scenario
-
-    def __int__(self):
-
-        self.arm = None
-        self.shoulder = None
-        self.elbow = None
 
     def setup(self):
         """
@@ -594,12 +589,6 @@ class MplScenario(Scenario):
         self.TrainingData = pr.TrainingData()
         self.TrainingData.load()
         self.TrainingData.num_channels = self.num_channels
-
-        # Setup feature extract and properties
-        self.FeatureExtract = pr.FeatureExtract()
-        self.FeatureExtract.zc_thresh = get_user_config_var('FeatureExtract.zcThreshold', 0.05)
-        self.FeatureExtract.ssc_thresh = get_user_config_var('FeatureExtract.sscThreshold', 0.05)
-        self.FeatureExtract.sample_rate = get_user_config_var('FeatureExtract.sample_rate', 200)
 
         # Classifier parameters
         self.SignalClassifier = pr.Classifier(self.TrainingData)

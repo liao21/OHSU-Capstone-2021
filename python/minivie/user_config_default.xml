@@ -20,7 +20,7 @@
 
     <add key="mpl_connection_check"        value="1"/>
 
-    <add key="mpl_app_port"         value="9090"/>
+    <add key="mpl_app_port"             value="9090"/>
 
     <!--Specify the timestep in seconds -->
     <add key="timestep"         value="0.02"/>
@@ -42,7 +42,7 @@
 		 Configurations:
 			ae8: Above Elbow 8 Channels (1 Myo)
 			ae16: Above Elbow 16 Channels (2 Myos)
-			be: Below Elbow 16 Channels (2 Myos)
+			be: Below Elbow 16 Channels (2 Myos, 1 Myo below Elbow & 1 Myo Above Elbow)
 			daq: National Instruments DAQ -->
 	<add key="arm"					value="right"/>
 	<add key="configuration"		value="be"/>
@@ -51,7 +51,22 @@
     <add key="NumMajorityVotes" value="25"/>
     <add key="FeatureExtract.zcThreshold" value="0.05"/>
     <add key="FeatureExtract.sscThreshold" value="0.05"/>
+	<add key="FeatureExtract.wampThreshold" value="0.05"/>
     <add key="FeatureExtract.sample_rate" value="200"/>
+	
+	<!-- Feature Extraction Techniques  
+		Use this to set what feature extraction techniques will be used-->
+	<add key="mav"    		value="True"/>
+	<add key="curve_len"    value="True"/>
+	<add key="zc"  			value="True"/>
+	<add key="ssc"    		value="True"/>
+	<add key="wamp"    		value="False"/>
+	<add key="var"    		value="False"/>
+	<add key="vorder"    	value="False"/>
+	<add key="logdetect"    value="False"/>
+	<add key="emghist"    	value="False"/>
+	<add key="ar"    		value="False"/>
+	<add key="ceps"    		value="False"/>
 
     <!-- Myo Data Server Streaming Ports
         Use these for establishing a Myo UDP Server that reads from BTLE and forwards

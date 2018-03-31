@@ -56,7 +56,7 @@ class FeatureExtract(object):
             return None, None, None, None
         elif isinstance(data_input, np.ndarray):
             # Extract features from the data provided
-            f = feature_extract(data_input, self.zc_thresh, self.ssc_thresh, self.sample_rate)
+            f = self.feature_extract(data_input, self.zc_thresh, self.ssc_thresh, self.sample_rate)
             imu = None
             rot_mat = None
         else:
@@ -65,7 +65,7 @@ class FeatureExtract(object):
             # Get features from emg data
             f = np.array([])
             for s in data_input:
-                f = np.append(f,feature_extract(s.get_data()*0.01, self.zc_thresh, self.ssc_thresh, self.sample_rate))
+                f = np.append(f,self.feature_extract(s.get_data()*0.01, self.zc_thresh, self.ssc_thresh, self.sample_rate))
 
             imu = np.array([])
             for s in data_input:

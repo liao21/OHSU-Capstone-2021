@@ -134,6 +134,7 @@ import binascii
 
 
 from transforms3d.euler import quat2euler
+from transforms3d.quaternions import quat2mat
 
 # The following is only supported under linux (transmit mode)
 if platform.system() is 'Linux':
@@ -465,6 +466,13 @@ class MyoUdp(SignalInput):
         # convert the stored quaternions to angles
         with self.__lock:
             return quat2euler(self.__quat)
+
+    def get_rotationMatrix(self):
+        """ Return rotation matrix computed from Myo quaternion"""
+        with self.__lock:
+            rot_mat = quat2mat(self.__quat)
+            [U, s, V] = np.linalg.svd(rot_mat)
+            return np.dot(U, V)
 
     def get_imu(self):
         """ Return IMU data as a dictionary 

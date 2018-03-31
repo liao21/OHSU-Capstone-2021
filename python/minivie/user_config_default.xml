@@ -12,13 +12,13 @@
     <add key="rocTable"         value="../../WrRocDefaults.xml"/>
 
     <!--Specify the Output Module [UnityUdp | NfuUdp] -->
-    <add key="DataSink"         value="NfuUdp"/>
+    <add key="DataSink"         value="UnityUdp"/>
     <add key="NfuUdp.remote_address" value="//127.0.0.1:9027"/>
     <add key="NfuUdp.local_address" value="//0.0.0.0:9028"/>
     <add key="UnityUdp.remote_address" value="//127.0.0.1:25000"/>
     <add key="UnityUdp.local_address" value="//0.0.0.0:25001"/>
 
-    <add key="mpl_connection_check"         value="1"/>
+    <add key="mpl_connection_check"        value="1"/>
 
     <add key="mpl_app_port"         value="9090"/>
 

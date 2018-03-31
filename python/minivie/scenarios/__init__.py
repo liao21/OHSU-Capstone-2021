@@ -8,7 +8,6 @@ from utilities import get_address
 import mpl
 from collections import Counter, deque
 from controls.plant import class_map
-from transforms3d.euler import mat2euler
 from inputs import myo, daqEMGDevice
 
 
@@ -31,9 +30,6 @@ class Scenario(object):
         self.TrainingInterface = None
         self.Plant = None
         self.DataSink = None
-        self.arm = None
-        self.shoulder = None
-        self.elbow = None
 
         # Debug socket for streaming Features
         # self.DebugSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -44,9 +40,6 @@ class Scenario(object):
         self.auto_save = True  # Boolean, if true, will save out training data every time new data finished being added
         self.training_motion = 'No Movement'  # Store the current motion name
         self.training_id = 0  # Store the current motion id
-
-        self.Fref = np.eye(4)  # offset
-        self.Fref2 = np.eye(4)
 
         self.num_channels = 0
         self.auto_open = False  # Automatically open hand if in rest state
@@ -430,7 +423,7 @@ class Scenario(object):
             return self.output
 
         # get data / features
-        self.output['features'], f, imu = self.FeatureExtract.get_features(self.SignalSource)
+        self.output['features'], f, imu, rot_mat = self.FeatureExtract.get_features(self.SignalSource)
 
         # Debug stream:
         # values = self.output['features']
@@ -482,50 +475,6 @@ class Scenario(object):
         elif self.is_paused('Hand'):
             self.output['status'] = 'HAND PAUSED'
 
-        if self.shoulder:
-            # Create 4x4 matrix from 3x3 rotation matrix
-            with_col = np.insert(rot_mat[0], 3, 0, axis=1)
-            F = np.insert(with_col, 3, [0, 0, 0, 1], axis=0)
-
-            # set offset first time through
-            if np.array_equal(self.Fref, np.eye(4)):
-                self.Fref = F
-
-            # compute shoulder angles
-            newXYZ = (mat2euler(np.dot(np.linalg.pinv(self.Fref), F)))
-
-            # is second myo present, calculate elbow position in relation to shoulder position
-            if self.elbow:
-                # Create 4x4 matrix from 3x3 rotation matrix
-                with_col2 = np.insert(rot_mat[1], 3, 0, axis=1)
-                F2 = np.insert(with_col2, 3, [0, 0, 0, 1], axis=0)
-
-                # set offset first time through
-                if np.array_equal(self.Fref2, np.eye(4)):
-                    self.Fref2 = F2
-
-                # compute euler angles
-                # pinv(pinv(obj.Fref)*F)*pinv(obj.Fref2)*F2)
-                relXYZ = (mat2euler(np.dot(np.linalg.pinv(np.dot(np.linalg.pinv(self.Fref), F)),
-                                           np.dot(np.linalg.pinv(self.Fref2), F2))))
-                el = relXYZ[2]
-
-            if (self.arm == 'right'):
-                # use imu data to control position of residual limb (right)
-                self.Plant.JointPosition[0] = newXYZ[2]
-                self.Plant.JointPosition[1] = -newXYZ[1]
-                self.Plant.JointPosition[2] = newXYZ[0]
-                if self.elbow:
-                    self.Plant.JointPosition[3] = el
-
-            elif (self.arm == 'left'):
-                # use imu data to control position of residual limb (left)
-                self.Plant.JointPosition[0] = -newXYZ[2]
-                self.Plant.JointPosition[1] = -newXYZ[1]
-                self.Plant.JointPosition[2] = -newXYZ[0]
-                if self.elbow:
-                    self.Plant.JointPosition[3] = -el
-
         # set the mapped class into either a hand or arm motion
         pause_hand = self.is_paused('Hand') or self.is_paused('All')
         if class_info['IsGrasp'] and not pause_hand:
@@ -544,6 +493,10 @@ class Scenario(object):
         if self.TrainingData.motion_names[decision_id] == 'No Movement' and self.auto_open:
             self.Plant.set_grasp_velocity(-self.hand_gain_value)
 
+        #track residual
+        self.Plant.trackResidual(self.arm, self.shoulder, self.elbow, rot_mat)
+
+        #update positions
         self.Plant.update()
 
         # transmit output
@@ -572,6 +525,12 @@ class MplScenario(Scenario):
 
     from scenarios import Scenario
 
+    def __int__(self):
+
+        self.arm = None
+        self.shoulder = None
+        self.elbow = None
+
     def setup(self):
         """
         Create the building blocks of the MiniVIE
@@ -595,45 +554,40 @@ class MplScenario(Scenario):
         if get_user_config_var('myo_client_number_of_devices', 1) > 1:
             local_port_2 = get_user_config_var('myo_client_local_port_2', '//0.0.0.0:15002')
 
-
         # set arm
-        arm = get_user_config_var('arm', 'right')
+        self.arm = get_user_config_var('arm', 'right')
 
         #get configuration
         configuration = get_user_config_var('configuration', 'ae8')
 
         #Set joints for motion tracking and input streams with configuration from config xml
         if configuration == 'ae8':
-            shoulder = True
-            elbow = False
+            self.shoulder = True
+            self.elbow = False
             source_list = [myo.MyoUdp(source=local_port_1)]
 
         elif configuration == 'ae16':
-            shoulder = True
-            elbow = False
+            self.shoulder = True
+            self.elbow = False
             source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
 
         elif configuration == 'be':
-            shoulder = True
-            elbow = True
+            self.shoulder = True
+            self.elbow = True
             source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
 
         elif configuration == 'daq':
-            shoulder = False
-            elbow = False
+            self.shoulder = False
+            self.elbow = False
             source_list = [daqEMGDevice.DaqEMGDevice(get_user_config_var('device_name_and_channels', 'Dev1/ai0:7'))]
 
         else:
-            shoulder = True
-            elbow = True
+            self.shoulder = True
+            self.elbow = True
             source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
 
         self.attach_source(source_list)
 
-        # set residual joints to control with motion tracking in Scenario
-        Scenario.arm = arm
-        Scenario.shoulder = shoulder
-        Scenario.elbow = elbow
 
         # Training Data holds data labels
         # training data manager

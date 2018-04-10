@@ -52,8 +52,20 @@ function setupWebsockets(){
       socket.close
     }  //socket.onclose
 
+    socket.onopen = function(){
+    // Perform browser based date syncronization
+
+      console.log('Websockets are ready')
+      var today = new Date();
+      console.log(today.getTime());
+      console.log('Done')
+      // getTime() always uses UTC for time representation. For example, a client browser in one timezone,
+      // getTime() will be the same as a client browser in any other timezone.
+      sendCmd('Time:' + today.getTime())
+    } //socket.onopen
+
   } else {
-    console.log("invalid socket");
+    console.log("Invalid socket");
   }
 
 } // setupWebsockets

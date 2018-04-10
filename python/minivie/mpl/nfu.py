@@ -513,7 +513,7 @@ def connection_manager(nfu):
 
 
     """
-    from utilities import ping
+    from utilities.sys_cmd import ping
 
     ip = nfu.udp['Hostname']
 

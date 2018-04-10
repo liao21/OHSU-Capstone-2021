@@ -2,6 +2,7 @@ import time
 from numpy import rad2deg
 import logging
 import utilities
+import utilities.sys_cmd
 from utilities.user_config import read_user_config, get_user_config_var
 from utilities import get_address
 import mpl
@@ -193,6 +194,13 @@ class Scenario(object):
             print("User inserted log message: " + cmd_data)
             logging.critical("User inserted log message: " + cmd_data)
 
+        elif cmd_type == 'Time':
+
+            # convert milliseconds string to decimal seconds
+            browser_time = float(cmd_data) / 1000
+
+            utilities.sys_cmd.set_system_time(browser_time)
+
         elif cmd_type == 'Cmd':
 
             ###################
@@ -287,13 +295,13 @@ class Scenario(object):
             # Myo Control Options
             ######################
             elif cmd_data == 'RestartMyo1':
-                utilities.restart_myo(1)
+                utilities.sys_cmd.restart_myo(1)
             elif cmd_data == 'RestartMyo2':
-                utilities.restart_myo(2)
+                utilities.sys_cmd.restart_myo(2)
             elif cmd_data == 'ChangeMyoSet1':
-                utilities.change_myo(1)
+                utilities.sys_cmd.change_myo(1)
             elif cmd_data == 'ChangeMyoSet2':
-                utilities.change_myo(2)
+                utilities.sys_cmd.change_myo(2)
 
             #################
             # System Options

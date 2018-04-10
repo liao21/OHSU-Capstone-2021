@@ -55,8 +55,8 @@ function readCsv(allText) {
           })
       }
   }
-console.log(global_motion_class_data)
-console.log('Here!!!!!!!!!!!!!!!!!')
+
+
 
   setupGalley();
   setupCallbacks();

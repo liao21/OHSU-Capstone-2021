@@ -14,6 +14,7 @@ from builtins import input
 import logging
 
 import utilities
+import utilities.sys_cmd
 from mpl.open_nfu import NfuUdp
 # from mpl.unity import UnityUdp
 import mpl.roc as roc
@@ -57,7 +58,7 @@ if choice == 1:
 
     result = 0
     while not result:
-        result = utilities.ping('192.168.1.111')
+        result = utilities.sys_cmd.ping('192.168.1.111')
     print(result)
 
 elif choice == 2:

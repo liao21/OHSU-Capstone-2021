@@ -83,8 +83,8 @@ def set_system_time(date_num, time_error=30.0):
     system_time = time.time()
     user_time = date_num
 
-    system_time_str = time.strftime('%H:%M:%S %Y-%m-%d', time.gmtime(system_time) )
-    user_time_str = time.strftime('%H:%M:%S %Y-%m-%d', time.gmtime(user_time) )
+    system_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(system_time) )
+    user_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(user_time) )
 
     e_time = system_time - user_time
 
@@ -97,7 +97,8 @@ def set_system_time(date_num, time_error=30.0):
     if abs(e_time) > time_error:
         logging.critical('Time Error is out of bounds.  Resetting time: ' + str(e_time))
         # timedatectl set-time '16:10:40 2015-11-20'
-        send_system_command("sudo timedatectl set-time '" + system_time_str + "'")
+        send_system_command("sudo timedatectl set-ntp 0")
+        send_system_command("sudo timedatectl set-time '" + user_time_str + "'")
         send_system_command("sudo hwclock --systohc")
         send_system_command("sudo hwclock --systohc")
 
@@ -106,7 +107,7 @@ def send_system_command(cmd):
 
     logging.critical('SysCmd: ' + cmd)
 
-    if platform.system() is 'Linux':
+    if platform.system() == 'Linux':
         return os.system(cmd)
     else:
         logging.critical('System command not permitted on this platform')

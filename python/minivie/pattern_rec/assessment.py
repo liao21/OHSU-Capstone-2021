@@ -163,7 +163,7 @@ class MotionTester(AssessmentInterface):
 
         # Reset GUI to no-motion image
         image_name = self.vie.TrainingData.get_motion_image('No Movement')
-        self.trainer.send_message("strMotionTesterImage", image_name)
+        self.trainer.send_message("motion_test_setup", image_name)
         # Save out stored data
         self.save_results()
         # Send status
@@ -177,7 +177,7 @@ class MotionTester(AssessmentInterface):
         # Update GUI image
         image_name = self.vie.TrainingData.get_motion_image(class_name)
         if image_name:
-            self.trainer.send_message("strMotionTesterImage", image_name)
+            self.trainer.send_message("motion_test_setup", image_name)
 
         # # Give countdown
         # countdown_time = 3;
@@ -188,7 +188,7 @@ class MotionTester(AssessmentInterface):
         #     time.sleep(dt)
 
         # Start once user goes to no-movement, then first non- no movement classification is given
-        self.send_status('Testing Class - ' + class_name + ' - Return to "No Movement" and Begin')
+        self.send_status('Testing Class - <b>' + class_name + '</b> - Return to "No Movement" and Begin')
         entered_no_movement = False
         while True:
             current_class = self.vie.output['decision']
@@ -197,8 +197,8 @@ class MotionTester(AssessmentInterface):
             # Kill if stop button pressed
             if stop_assessment():
                 self.send_status('Assessment aborted')
-                sys.exit() # Stop current thread
-            time.sleep(0.1) # Necessary to sleep, otherwise output gets backlogged
+                sys.exit()  # Stop current thread
+            time.sleep(0.1)  # Necessary to sleep, otherwise output gets backlogged
 
         dt = 0.1  # 100ms RIC JAMA
         timeout = self.timeout
@@ -226,7 +226,7 @@ class MotionTester(AssessmentInterface):
                 num_wrong += 1.0
 
             # print status
-            self.send_status('Testing Class - ' + class_name + ' - ' + str(num_correct) + '/' +
+            self.send_status('Testing Class -  <b>' + class_name + '</b> - ' + str(num_correct) + '/' +
                              str(max_correct) + ' Correct Classifications')
 
             # update data for output
@@ -247,13 +247,13 @@ class MotionTester(AssessmentInterface):
 
     def update_gui_progress(self,  num_correct, max_correct):
         # Method to update the progress bar in the web-based GUI
-        self.trainer.send_message("strMotionTesterProgress", str(int(round((float(num_correct)/max_correct)*100))))
+        self.trainer.send_message("motion_test_update", str(int(round((float(num_correct)/max_correct)*100))))
 
     def send_status(self, status):
         # Method to send more verbose status updates for command line users and logging purposes
         print(status)
         logging.info(status)
-        self.trainer.send_message("strMotionTester", status)
+        self.trainer.send_message("motion_test_status", status)
 
     def add_data(self, class_name_to_test, current_class):
         # Method to add data following each assessment
@@ -280,7 +280,7 @@ class MotionTester(AssessmentInterface):
 
         t = dtime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         f = t + '_' + self.filename + self.file_ext
-        counter = 1;
+        counter = 1
         while os.path.exists(f):
             f = t + '_' + self.filename + str(counter) + self.file_ext
             counter=counter+1
@@ -429,11 +429,11 @@ class TargetAchievementControl(AssessmentInterface):
         self._condition = condition
 
         # Set condition specific parameters
-        if condition==1:
-            self.filename='TAC1_LOG'
-        elif condition==2:
+        if condition == 1:
+            self.filename = 'TAC1_LOG'
+        elif condition == 2:
             self.filename = 'TAC2_LOG'
-        elif condition==3:
+        elif condition == 3:
             self.filename = 'TAC3_LOG'
         else:
             print('Condition should be 1,2, or 3.\n')
@@ -508,7 +508,7 @@ class TargetAchievementControl(AssessmentInterface):
                 joints_to_assess.append(list(trained_grasps)[0])
                 is_grasp.append(True)
             else:
-                self.send_status('One GRASP  as well as Hand Open must be fully trained to begin TAC3. Stopping assessment.')
+                self.send_status('One GRASP as well as Hand Open must be fully trained to begin TAC3. Stopping assessment.')
                 return
 
         # Assess joints and grasps
@@ -516,12 +516,12 @@ class TargetAchievementControl(AssessmentInterface):
             self.send_status('New TAC Assessment Trial')
 
             # For TAC1, assess one joint at a time
-            if condition==1:
-                for i,joint in enumerate(joints_to_assess):
-                    is_complete = self.assess_joint([joint], [is_grasp[i]], stop_assessment) # Need to be passed in as list
+            if condition == 1:
+                for i, joint in enumerate(joints_to_assess):
+                    is_complete = self.assess_joint([joint], [is_grasp[i]], stop_assessment)  # Need to be passed in as list
 
             # For TAC3, assess all joints simultaneously
-            if condition==3:
+            if condition == 3:
                 is_complete = self.assess_joint(joints_to_assess, is_grasp, stop_assessment)
 
         self.send_status('TAC Assessment Completed')
@@ -530,15 +530,15 @@ class TargetAchievementControl(AssessmentInterface):
     def assess_joint(self, joint_name_list, is_grasp_list=[False], stop_assessment=False):
 
         # Set TAC parameters
-        dt = 0.2 # Time between assessment queries
-        dwell_time = self.dwell_time # Time in target before pass
+        dt = 0.2  # Time between assessment queries
+        dwell_time = self.dwell_time  # Time in target before pass
         timeout = self.timeout
-        move_complete = False # Flag for move completion
+        move_complete = False  # Flag for move completion
 
         # Set joint-specific parameters
-        target_error_list = [] # Error range allowed
-        lower_limit_list = [] # Lower limit for joint
-        upper_limit_list = [] # Upper limit for joint
+        target_error_list = []  # Error range allowed
+        lower_limit_list = []  # Lower limit for joint
+        upper_limit_list = []  # Upper limit for joint
         target_position_list = [] # Target joint positions
         for i, joint_name in enumerate(joint_name_list):
             is_grasp = is_grasp_list[i]
@@ -593,10 +593,7 @@ class TargetAchievementControl(AssessmentInterface):
         position_row = np.empty([1, len(joint_name_list)])
 
         # Update web gui
-        self.update_gui_joint_target(1)
-        if self._condition==2 or self._condition==3:
-            self.update_gui_joint_target(2)
-            self.update_gui_joint_target(3)
+        self.update_gui_joint_target(self._condition)
 
         time_elapsed = 0.0
         time_in_target = 0.0
@@ -647,10 +644,7 @@ class TargetAchievementControl(AssessmentInterface):
             self.time_history.append(time_elapsed)  # time list
 
             # Update web gui
-            self.update_gui_joint(1)
-            if self._condition==2 or self._condition==3:
-                self.update_gui_joint(2)
-                self.update_gui_joint(3)
+            self.update_gui_joint(self._condition)
 
             # Start once user goes to no-movement, then first non- no movement classification is given
             if start_sequence:
@@ -693,33 +687,42 @@ class TargetAchievementControl(AssessmentInterface):
 
         return move_complete
 
-    def update_gui_joint(self, joint_num):
+    def update_gui_joint(self, num_dof):
         # Will set joint bar display on web interface
 
-        #pull from position_time_history so we are displaying what is being recorded/tested
-        raw_pos = self.position_time_history[-1, joint_num-1]
-        normalized_joint_position = (raw_pos - self.lower_limit[joint_num-1])/(self.upper_limit[joint_num-1] - self.lower_limit[joint_num-1]) * 100
-        print("strTACJoint" + str(joint_num) + "Bar", str(normalized_joint_position))
-        self.trainer.send_message("strTACJoint" + str(joint_num) + "Bar", str(normalized_joint_position))
+        # format message:
+        payload = str(num_dof)
+        for joint_num in range(num_dof):
+            # pull from position_time_history so we are displaying what is being recorded/tested
+            raw_pos = self.position_time_history[-1, joint_num]
+            normalized_joint_position = (raw_pos - self.lower_limit[joint_num]) / (
+                        self.upper_limit[joint_num] - self.lower_limit[joint_num]) * 100
 
-    def update_gui_joint_target(self, joint_num):
+            payload += ",{bar:.2f}".format(
+                id=joint_num, bar=normalized_joint_position)
+        self.trainer.send_message("TAC_update", payload)
+
+    def update_gui_joint_target(self, num_dof):
         # Will set joint bar display on web interface
-        print("strTACJoint" + str(joint_num) + "Name", self.target_joint[joint_num-1])
-        self.trainer.send_message("strTACJoint" + str(joint_num) + "Name", self.target_joint[joint_num-1])
-        normalized_target_position = (self.target_position[joint_num-1] - self.lower_limit[joint_num-1]) / (
-        self.upper_limit[joint_num-1] - self.lower_limit[joint_num-1]) * 100.0
-        normalized_target_error = (self.target_error[joint_num-1]) / (
-        self.upper_limit[joint_num-1] - self.lower_limit[joint_num-1]) * 100.0
-        print("strTACJoint" + str(joint_num) + "Error", str(normalized_target_error))
-        print("strTACJoint" + str(joint_num) + "Target", str(normalized_target_position))
-        self.trainer.send_message("strTACJoint" + str(joint_num) + "Error", str(normalized_target_error))
-        self.trainer.send_message("strTACJoint" + str(joint_num) + "Target", str(normalized_target_position))
+
+        # format message:
+        payload = str(num_dof)
+        for joint_num in range(num_dof):
+            normalized_target_position = (self.target_position[joint_num] - self.lower_limit[joint_num]) / (
+                    self.upper_limit[joint_num] - self.lower_limit[joint_num]) * 100.0
+
+            normalized_target_error = (self.target_error[joint_num]) / (
+                    self.upper_limit[joint_num] - self.lower_limit[joint_num]) * 100.0
+
+            payload += ",{name},{target:.2f},{error:.2f}".format(
+                name=self.target_joint[joint_num],target=normalized_target_position, error=normalized_target_error)
+        self.trainer.send_message("TAC_setup", payload)
 
     def send_status(self, status):
         # Method to send more verbose status updates for command line users and logging purposes
         print(status)
         logging.info(status)
-        self.trainer.send_message("strTAC", status)
+        self.trainer.send_message("TAC_status", status)
 
     def add_data(self):
         # Method to add data from single jon assessment to overall output data block
@@ -742,7 +745,7 @@ class TargetAchievementControl(AssessmentInterface):
 
         t = dtime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         f = t + '_' + self.filename + self.file_ext
-        counter = 1;
+        counter = 1
         while os.path.exists(f):
             f = t + '_' + self.filename + str(counter) + self.file_ext
             counter = counter + 1

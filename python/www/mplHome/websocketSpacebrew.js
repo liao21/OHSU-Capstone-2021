@@ -28,12 +28,13 @@ function setupSpacebrew() {
     sb.addPublish("cmdString", "string", "");
     sb.addSubscribe("statusString", "string");
 
+    // connect to Spacebrew
+    sb.connect();
+
     // override Spacebrew events - this is how you catch events coming from Spacebrew
     sb.onStringMessage = onStringMessage;
     sb.onOpen = onOpen;
 
-    // connect to Spacebrew
-    sb.connect();
 
 } // setupSpacebrew
 
@@ -67,4 +68,18 @@ function onOpen() {
         message += "<br>You can customize this app's name in the query string by adding <strong>name=your_app_name</strong>."
     }
     $("#statusMsg").html(message);
+
+    // Perform browser based date synchronization
+    console.log('Websockets are ready')
+    var today = new Date();
+    // getTime() always uses UTC for time representation. For example, a client browser in one timezone,
+    // getTime() will be the same as a client browser in any other timezone.
+
+    var delayInMilliseconds = 500;
+
+    setTimeout(function() {
+      //code executed after delay time
+      sendCmd('Time:' + today.getTime())
+    }, delayInMilliseconds);
+
 }

@@ -69,7 +69,7 @@ def main(args):
 
     # setup web interface
     vie.TrainingInterface = training.TrainingManagerWebsocket()
-    vie.TrainingInterface.setup(port=uc.get_user_config_var('mpl_app_port', 9090))
+    vie.TrainingInterface.setup(port=uc.get_user_config_var('MobileApp.port', 9090))
     vie.TrainingInterface.add_message_handler(vie.command_string)
 
     vie.setup()
@@ -90,19 +90,19 @@ def main(args):
         msg += '<br>' + time.strftime("%c")
 
         # Forward status message (voltage, temp, etc) to mobile app
-        vie.TrainingInterface.send_message("strStatus", msg)
+        vie.TrainingInterface.send_message("sys_status", msg)
         # Send classifier output to mobile app (e.g. Elbow Flexion)
-        vie.TrainingInterface.send_message("strOutputMotion", output['decision'])
+        vie.TrainingInterface.send_message("output_class", output['decision'])
         # Send motion training status to mobile app (e.g. No Movement [70]
         msg = '{} [{:.0f}]'.format(vie.training_motion,
                                    round(vie.TrainingData.get_totals(vie.training_id), -1))
-        vie.TrainingInterface.send_message("strTrainingMotion", msg)
+        vie.TrainingInterface.send_message("training_class", msg)
 
         custom_output.update(output['decision'])
 
     looper.loop(loop_func)
 
-    vie.TrainingInterface.send_message("strStatus", 'CLOSED')
+    vie.TrainingInterface.send_message("sys_status", 'CLOSED')
 
     vie.close()
 

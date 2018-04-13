@@ -1,6 +1,6 @@
 The objective of the PythonVIE is to provide the essential BioSignal Acquisition, processing, and output modules to 
 control prosthetic limb ranging in complexity from open source 3d printed arms, to advanced dexterous arms such as 
-the JHUAPL Modualr Prosthetic limb.
+the JHUAPL Modular Prosthetic limb.
 
 
 -------------------------
@@ -182,6 +182,39 @@ Also if the display name matched the class name, this would also save a step
 Finally, the training object should add new grasps as needed
 
 
+Switching between Spacebrew and Tornado
+---------------------------------------
+
+There are multiple websocket interfaces supported.  One uses the third-party Spacebrew python and javascript code.  The
+other uses a python based tornado server and javascript.  In order to select one package or the other:
+
+To Enable Tornado:
+  Set the user_config parameter: MobileApp.ws_server to Tornado
+      <add key="MobileApp.ws_server"      value="Tornado"/>    <!-- [Tornado | Spacebrew | None] -->
+  Set index.html to load the websocketNative javascript and disbale spacebrew:
+      <script src="mplHome.js"></script>
+      <script src="websocketNative.js"></script>
+      <!--<script src="spacebrew.js/sb-1.4.1.min.js"></script>-->
+      <!--<script src="websocketSpacebrew.js"></script>-->
+  Launch webpage:
+    http://localhost:9090/
+
+To Enable Spacebrew:
+  Set the user_config parameter: MobileApp.ws_server to Spacebrew
+      <add key="MobileApp.ws_server"      value="Spacebrew"/>    <!-- [Tornado | Spacebrew | None] -->
+  Set index.html to load the websocketSpacebrew javascript and disable native websockets:
+      <script src="mplHome.js"></script>
+      <!--<script src="websocketNative.js"></script>-->
+      <script src="spacebrew.js/sb-1.4.1.min.js"></script>
+      <script src="websocketSpacebrew.js"></script>
+  Start spacebrew and web server:
+    start /D C:\git\spacebrew_server /B node node_server_forever.js
+    start /D C:\git\minivie\python\www\mplHome /B http-server -c-1
+  Launch webpages:
+    http://localhost:9000/
+    http://localhost:8081/?name=MPL
+
+
 
 
 Referencing MPL Joint Enumerations:
@@ -196,6 +229,5 @@ Formatting arrays of floats:
 msg = 'Torque: ' + ','.join([ '%.1f' % elem for elem in values])
 
 # Note this was found to be 5-10x faster than np.array2string
-
 
 

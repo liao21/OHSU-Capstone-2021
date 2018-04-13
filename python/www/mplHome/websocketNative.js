@@ -30,7 +30,7 @@ jQuery(function($){
 function setupWebsockets(){
   // Create websocket connection
   var host = "ws://" + document.location.hostname + ":" + document.location.port + "/ws";
-  console.log(host)
+  console.log(host);
   socket = new WebSocket(host);
 
   console.log("socket status: " + socket.readyState);
@@ -39,29 +39,26 @@ function setupWebsockets(){
   if(socket){
     socket.onmessage = function(msg){
       value = msg.data;
-      console.log("[onStringMessage] new message received ", value);
-      var split_id = value.indexOf(":")
+      console.log("[onMessage]", value);
+      var split_id = value.indexOf(":");
       var cmd_type = value.slice(0,split_id);
       var cmd_data = value.slice(split_id+1);
-      routeMessage(cmd_type, cmd_data)
+      routeMessage(cmd_type, cmd_data);
     }  // socket.onmessage
 
     socket.onclose = function(){
       //alert("connection closed....");
       console.log("The connection has been closed.");
-      socket.close
+      socket.close();
     }  //socket.onclose
 
     socket.onopen = function(){
-    // Perform browser based date syncronization
-
-      console.log('Websockets are ready')
+      // Perform browser based date synchronization
+      console.log('Websockets are ready');
       var today = new Date();
-      console.log(today.getTime());
-      console.log('Done')
       // getTime() always uses UTC for time representation. For example, a client browser in one timezone,
       // getTime() will be the same as a client browser in any other timezone.
-      sendCmd('Time:' + today.getTime())
+      sendCmd('Time:' + today.getTime());
     } //socket.onopen
 
   } else {

@@ -182,11 +182,13 @@ class Scenario(object):
 
         if cmd_type == 'Cls':
             # Parse a Class Message
-            try:
-                self.training_id = self.TrainingData.motion_names.index(cmd_data)
-                self.training_motion = cmd_data
-            except ValueError:
-                logging.error('Unmatched training class name: {}'.format(cmd_data))
+
+            #if cmd_data not in self.TrainingData.motion_names:
+            #    self.TrainingData.add_class(cmd_data)
+
+            self.training_id = self.TrainingData.motion_names.index(cmd_data)
+            self.training_motion = cmd_data
+
             self.add_data = False
 
         elif cmd_type == 'Log':
@@ -646,39 +648,39 @@ class MplScenario(Scenario):
                         msg += '<br>' + time.strftime("%c")
 
                         # Forward status message (voltage, temp, etc) to mobile app
-                        self.TrainingInterface.send_message("strStatus", msg)
+                        self.TrainingInterface.send_message("sys_status", msg)
 
                     # Send classifier output to mobile app (e.g. Elbow Flexion)
-                    self.TrainingInterface.send_message("strOutputMotion", output['decision'])
+                    self.TrainingInterface.send_message("output_class", output['decision'])
                     # Send motion training status to mobile app (e.g. No Movement [70]
                     msg = '{} [{:.0f}]'.format(self.training_motion,
                                                round(self.TrainingData.get_totals(self.training_id), -1))
-                    self.TrainingInterface.send_message("strTrainingMotion", msg)
+                    self.TrainingInterface.send_message("training_class", msg)
 
                 if self.TrainingInterface is not None and self.enable_percept_stream:
                     counter += 1
                     if counter == 5:
                         msg = ','.join(['%.f' % rad2deg(elem) for elem in self.Plant.joint_position])
-                        self.TrainingInterface.send_message("jointCmd", msg)
+                        self.TrainingInterface.send_message("joint_cmd", msg)
                     if counter == 10:
                         p = self.DataSink.get_percepts()
                         try:
                             msg = ','.join(['%.f' % rad2deg(elem) for elem in p['jointPercepts']['position']])
-                            self.TrainingInterface.send_message("jointPos", msg)
+                            self.TrainingInterface.send_message("joint_pos", msg)
                         except TypeError or KeyError:
                             pass
                     if counter == 15:
                         p = self.DataSink.get_percepts()
                         try:
                             msg = ','.join(['%.1f' % elem for elem in p['jointPercepts']['torque']])
-                            self.TrainingInterface.send_message("jointTorque", msg)
+                            self.TrainingInterface.send_message("joint_torque", msg)
                         except TypeError or KeyError:
                             pass
                     if counter == 20:
                         p = self.DataSink.get_percepts()
                         try:
                             msg = ','.join(['%.0f' % elem for elem in p['jointPercepts']['temperature']])
-                            self.TrainingInterface.send_message("jointTemp", msg)
+                            self.TrainingInterface.send_message("joint_temp", msg)
                         except TypeError or KeyError:
                             pass
                         counter = 0

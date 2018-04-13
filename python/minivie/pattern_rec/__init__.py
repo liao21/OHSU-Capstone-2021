@@ -246,6 +246,9 @@ class TrainingData:
         self.filename = 'TRAINING_DATA'
         self.file_ext = '.hdf5'
 
+        # # Store class names
+        # self.motion_names = 'No Movement'
+        # TODO: Eliminate separate list for motion names
         # Names of potentially trained classes
         self.motion_names = (
             'No Movement',
@@ -398,6 +401,8 @@ class TrainingData:
                 self.time_stamp = time_stamp
                 self.imu = imu
                 self.num_samples = num_samples
+
+                # self.motion_names = motion_name
         else:
             logging.error('Invalid training data with mismatched data lengths')
 
@@ -424,7 +429,7 @@ class TrainingData:
         group.create_dataset('name', data=encoded)
         group.create_dataset('data', data=self.data)
         group.create_dataset('imu', data=self.imu)
-        group.create_dataset('motion_names', data=[a.encode('utf8') for a in self.motion_names]) #utf-8
+        group.create_dataset('motion_names', data=[a.encode('utf8') for a in self.motion_names]) # utf-8
         h5.close()
         print('Saved ' + self.filename)
 

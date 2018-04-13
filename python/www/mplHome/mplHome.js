@@ -66,70 +66,69 @@ function routeMessage(cmd_type, cmd_data) {
   // Route the message to the appropriate section of the html page
   // based on the cmd_type.  Pass the target function the cmd_data
 
-  if (cmd_type == "strStatus") {
+  if (cmd_type == "sys_status") {
     $("#msg_status").html(cmd_data);
     $("#msg_status_opt").html(cmd_data);
     $("#msg_status_myo").html(cmd_data);
   }
-  if (cmd_type == "strTrainingMotion") {
+  if (cmd_type == "training_class") {
     $("#msg_train").text(cmd_data);
   }
-  if (cmd_type == "strOutputMotion") {
+  if (cmd_type == "output_class") {
      $("#main_output").text(cmd_data);
      $("#mt_output").text(cmd_data);
      $("#tac_output").text(cmd_data);
   }
-  if (cmd_type == "strMotionTester") {
-    $("#mt_status").text(cmd_data);
+  if (cmd_type == "motion_test_status") {
+    $("#mt_status").html(cmd_data);
   }
-  if (cmd_type == "strMotionTesterProgress") {
+  if (cmd_type == "motion_test_update") {
     updateMTProgressBar(cmd_data);
   }
-  if (cmd_type == "strMotionTesterImage") {
+  if (cmd_type == "motion_test_setup") {
     updateMTImage(cmd_data);
   }
-  if (cmd_type == "strTAC") {
+  if (cmd_type == "TAC_status") {
     $("#tac_status").text(cmd_data);
   }
-  if (cmd_type == "strTACJoint1Name") {
-    $("#tacJoint1Name").text(cmd_data);
+  if (cmd_type == "TAC_setup") {
+
+    // Further parse response (comma separated)
+    var data = cmd_data.split(",");
+
+    if (data[0] > 0) {
+      $("#tacJoint1Name").text(data[1]);
+      updateTACJointTarget(data[2], "tacJoint1Target");
+      updateTACJointError(data[3], "tacJoint1Target");
+    }
+    if (data[0] > 1) {
+      $("#tacJoint2Name").text(data[4]);
+      updateTACJointTarget(data[5], "tacJoint2Target");
+      updateTACJointError(data[6], "tacJoint2Target");
+    }
+    if (data[0] > 2) {
+      $("#tacJoint3Name").text(data[7]);
+      updateTACJointTarget(data[8], "tacJoint3Target");
+      updateTACJointError(data[9], "tacJoint3Target");
+    }
   }
-  if (cmd_type == "strTACJoint1Bar") {
-    updateTACJointBar(cmd_data, "tacJoint1Bar", "tacJoint1Label");
-  }
-  if (cmd_type == "strTACJoint1Target") {
-    updateTACJointTarget(cmd_data, "tacJoint1Target");
-  }
-  if (cmd_type == "strTACJoint1Error") {
-    updateTACJointError(cmd_data, "tacJoint1Target");
-  }
-  if (cmd_type == "strTACJoint2Name") {
-    $("#tacJoint2Name").text(cmd_data);
-  }
-  if (cmd_type == "strTACJoint2Bar") {
-    updateTACJointBar(cmd_data, "tacJoint2Bar", "tacJoint2Label");
-  }
-  if (cmd_type == "strTACJoint2Target") {
-    updateTACJointTarget(cmd_data, "tacJoint2Target");
-  }
-  if (cmd_type == "strTACJoint2Error") {
-    updateTACJointError(cmd_data, "tacJoint2Target");
-  }
-  if (cmd_type == "strTACJoint3Name") {
-    $("#tacJoint3Name").text(cmd_data);
-  }
-  if (cmd_type == "strTACJoint3Bar") {
-    updateTACJointBar(cmd_data, "tacJoint3Bar", "tacJoint3Label");
-  }
-  if (cmd_type == "strTACJoint3Target") {
-    updateTACJointTarget(cmd_data, "tacJoint3Target");
-  }
-  if (cmd_type == "strTACJoint3Error") {
-    updateTACJointError(cmd_data, "tacJoint3Target");
+
+  if (cmd_type == "TAC_update") {
+    // Further parse response (comma separated)
+    var data = cmd_data.split(",");
+    if (data[0] > 0) {
+      updateTACJointBar(data[1], "tacJoint1Bar", "tacJoint1Label");
+    }
+    if (data[0] > 1) {
+      updateTACJointBar(data[2], "tacJoint2Bar", "tacJoint2Label");
+    }
+    if (data[0] > 2) {
+      updateTACJointBar(data[3], "tacJoint3Bar", "tacJoint3Label");
+    }
   }
 
   // route joint percept message
-  if (cmd_type == "jointCmd") {
+  if (cmd_type == "joint_cmd") {
     var values = cmd_data.split(',');
     $("#SHFE_Cmd").html(values[0]);
     $("#SHAA_Cmd").html(values[1]);
@@ -159,7 +158,7 @@ function routeMessage(cmd_type, cmd_data) {
     $("#5MCP_Cmd").html(values[25]);
     $("#5DIP_Cmd").html(values[26]);
   }
-  if (cmd_type == "jointPos") {
+  if (cmd_type == "joint_pos") {
     var values = cmd_data.split(',');
     $("#SHFE_Pos").html(values[0]);
     $("#SHAA_Pos").html(values[1]);
@@ -189,7 +188,7 @@ function routeMessage(cmd_type, cmd_data) {
     $("#5MCP_Pos").html(values[25]);
     $("#5DIP_Pos").html(values[26]);
   }
-  if (cmd_type == "jointTorque") {
+  if (cmd_type == "joint_torque") {
     var values = cmd_data.split(',');
     $("#SHFE_Torque").html(values[0]);
     $("#SHAA_Torque").html(values[1]);
@@ -219,7 +218,7 @@ function routeMessage(cmd_type, cmd_data) {
     $("#5MCP_Torque").html(values[25]);
     $("#5DIP_Torque").html(values[26]);
   }
-  if (cmd_type == "jointTemp") {
+  if (cmd_type == "joint_temp") {
     var values = cmd_data.split(',');
     $("#SHFE_Temp").html(values[0]);
     $("#SHAA_Temp").html(values[1]);

@@ -82,16 +82,11 @@ wss = []  # list of websockets send commands
 func_handle = []  # list of callbacks for message recv
 
 # store the last messages so we don't re-transmit a lot of repeated data
-message_history = {'strStatus': '', 'strOutputMotion': '', 'strTrainingMotion': '', 'strMotionTester': '',
-                 'strTAC': '', 'strMotionTesterProgress': '', 'strMotionTesterImage': '',
-                 'strTACJoint1Bar': '', 'strTACJoint1Target': '', 'strTACJoint1Error': '',
-                 'strTACJoint1Name': '',
-                 'strTACJoint2Bar': '', 'strTACJoint2Target': '', 'strTACJoint2Error': '',
-                 'strTACJoint2Name': '',
-                 'strTACJoint3Bar': '', 'strTACJoint3Target': '', 'strTACJoint3Error': '',
-                 'strTACJoint3Name': '',
-                 'jointCmd': '', 'jointPos': '', 'jointTorque': '', 'jointTemp': '',
-                 }
+message_history = {'sys_status': '', 'output_class': '', 'training_class': '',
+                   'motion_test_status': '', 'motion_test_setup': '', 'motion_test_update': '',
+                   'TAC_status': '', 'TAC_setup': '', 'TAC_update': '',
+                   'joint_cmd': '', 'joint_pos': '', 'joint_torque': '', 'joint_temp': '',
+                   }
 
 
 class WSHandler(tornado.websocket.WebSocketHandler):
@@ -113,9 +108,12 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        homepage = get_user_config_var('mobile_app_homepage', "../www/mplHome/index.html")
+        from os import path
+        homepath = get_user_config_var('MobileApp.path', "../www/mplHome")
+        homepage = get_user_config_var('MobileApp.homepage', "index.html")
+        homepage_path = path.join(homepath,homepage)
         loader = tornado.template.Loader(".")
-        self.write(loader.load(homepage).generate())
+        self.write(loader.load(homepage_path).generate())
 
 
 class TrainingManagerWebsocket(TrainingInterface):
@@ -130,7 +128,7 @@ class TrainingManagerWebsocket(TrainingInterface):
         # Initialize superclass
         super(TrainingInterface, self).__init__()
 
-        homepath = get_user_config_var('mobile_app_path',"../www/mplHome")
+        homepath = get_user_config_var('MobileApp.path', "../www/mplHome")
 
         # handle to websocket interface
         self.application = tornado.web.Application([
@@ -214,7 +212,7 @@ class TrainingManagerSpacebrew(TrainingInterface):
         # keep count of skipped messages so we can send at some nominal rate
         self.msg_skip_count = 0
 
-    def setup(self, description="JHU/APL Embedded Controller", server="192.168.1.1", port=9000):
+    def setup(self, description="JHU/APL Embedded Controller", server="127.0.0.1", port=9000):
         from pySpacebrew.spacebrew import Spacebrew
 
         # setup web interface

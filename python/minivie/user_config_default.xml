@@ -12,7 +12,7 @@
     <add key="rocTable"         value="../../WrRocDefaults.xml"/>
 
     <!--Specify the Output Module [UnityUdp | NfuUdp] -->
-    <add key="DataSink"         value="NfuUdp"/>
+    <add key="DataSink"         value="UnityUdp"/>
     <add key="NfuUdp.remote_address" value="//127.0.0.1:9027"/>
     <add key="NfuUdp.local_address" value="//0.0.0.0:9028"/>
     <add key="UnityUdp.remote_address" value="//127.0.0.1:25000"/>
@@ -20,9 +20,11 @@
 
     <add key="mpl_connection_check"         value="1"/>
 
-    <add key="mpl_app_port"         value="9090"/>
-    <add key="mobile_app_homepage"  value="../www/mplHome/basic.html"/>
-    <add key="mobile_app_path"  value="../www/mplHome"/>
+    <!-- Control MPL App Settings -->
+    <add key="MobileApp.port"           value="9090"/>
+    <add key="MobileApp.homepage"       value="index.html"/>
+    <add key="MobileApp.path"           value="../www/mplHome"/>
+    <add key="MobileApp.ws_server"      value="Tornado"/>    <!-- [Tornado | Spacebrew | None] -->
 
     <!--Specify the timestep in seconds -->
     <add key="timestep"         value="0.02"/>
@@ -34,8 +36,8 @@
     <add key="enable_impedance"         value="1"/>
 
     <!-- enable_dcell strain gauge logging-->
-    <add key="dcell_enable"         value="0"/>
-    <add key="dcell_serial_port"    value="/dev/ttymxc2"/>
+    <add key="DCell.enable"         value="0"/>
+    <add key="DCell.serial_port"    value="/dev/ttymxc2"/>
 
     <!--Pattern Recognition Parameters-->
     <add key="NumMajorityVotes" value="25"/>

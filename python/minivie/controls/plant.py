@@ -171,50 +171,51 @@ class Plant(object):
         if joint_id is not None:
             self.joint_velocity[joint_id] = joint_velocity
 
-    def trackResidual(self, arm, shoulder, elbow, rot_mat):
-        if shoulder:
-            # Create 4x4 matrix from 3x3 rotation matrix
-            with_col = np.insert(rot_mat[0], 3, 0, axis=1)
-            F = np.insert(with_col, 3, [0, 0, 0, 1], axis=0)
-
-            # set offset first time through
-            if np.array_equal(self.Fref, np.eye(4)):
-                self.Fref = F
-
-            # compute shoulder angles
-            newXYZ = (mat2euler(np.dot(np.linalg.pinv(self.Fref), F)))
-
-            # is second myo present, calculate elbow position in relation to shoulder position
-            if elbow:
+    def trackResidual(self, arm, shoulder, elbow, track, rot_mat):
+        if track:
+            if shoulder:
                 # Create 4x4 matrix from 3x3 rotation matrix
-                with_col2 = np.insert(rot_mat[1], 3, 0, axis=1)
-                F2 = np.insert(with_col2, 3, [0, 0, 0, 1], axis=0)
+                with_col = np.insert(rot_mat[0], 3, 0, axis=1)
+                F = np.insert(with_col, 3, [0, 0, 0, 1], axis=0)
 
                 # set offset first time through
-                if np.array_equal(self.Fref2, np.eye(4)):
-                    self.Fref2 = F2
+                if np.array_equal(self.Fref, np.eye(4)):
+                    self.Fref = F
 
-                # compute euler angles
-                # pinv(pinv(obj.Fref)*F)*pinv(obj.Fref2)*F2)
-                relXYZ = (mat2euler(np.dot(np.linalg.pinv(np.dot(np.linalg.pinv(self.Fref), F)),
-                                           np.dot(np.linalg.pinv(self.Fref2), F2))))
-                el = relXYZ[2]
+                # compute shoulder angles
+                newXYZ = (mat2euler(np.dot(np.linalg.pinv(self.Fref), F)))
 
-            if (arm == 'right'):
-                # use imu data to control position of residual limb (right)
-                self.joint_position[0] = newXYZ[2]
-                self.joint_position[1] = -newXYZ[1]
-                self.joint_position[2] = newXYZ[0]
+                # is second myo present, calculate elbow position in relation to shoulder position
                 if elbow:
-                    self.joint_position[3] = el
+                    # Create 4x4 matrix from 3x3 rotation matrix
+                    with_col2 = np.insert(rot_mat[1], 3, 0, axis=1)
+                    F2 = np.insert(with_col2, 3, [0, 0, 0, 1], axis=0)
 
-            elif (arm == 'left'):
-                # use imu data to control position of residual limb (left)
-                self.joint_position[0] = -newXYZ[2]
-                self.joint_position[1] = -newXYZ[1]
-                self.joint_position[2] = -newXYZ[0]
-                if elbow:
-                    self.joint_position[3] = -el
+                    # set offset first time through
+                    if np.array_equal(self.Fref2, np.eye(4)):
+                        self.Fref2 = F2
+
+                    # compute euler angles
+                    # pinv(pinv(obj.Fref)*F)*pinv(obj.Fref2)*F2)
+                    relXYZ = (mat2euler(np.dot(np.linalg.pinv(np.dot(np.linalg.pinv(self.Fref), F)),
+                                               np.dot(np.linalg.pinv(self.Fref2), F2))))
+                    el = relXYZ[2]
+
+                if (arm == 'right'):
+                    # use imu data to control position of residual limb (right)
+                    self.joint_position[0] = newXYZ[2]
+                    self.joint_position[1] = -newXYZ[1]
+                    self.joint_position[2] = newXYZ[0]
+                    if elbow:
+                        self.joint_position[3] = el
+
+                elif (arm == 'left'):
+                    # use imu data to control position of residual limb (left)
+                    self.joint_position[0] = -newXYZ[2]
+                    self.joint_position[1] = -newXYZ[1]
+                    self.joint_position[2] = -newXYZ[0]
+                    if elbow:
+                        self.joint_position[3] = -el
 
     def update(self):
         # perform time integration based on elapsed time, dt

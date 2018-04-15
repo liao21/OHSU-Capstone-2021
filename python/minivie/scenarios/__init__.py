@@ -495,7 +495,7 @@ class Scenario(object):
 
         #track residual
         if rot_mat is not None:
-            self.Plant.trackResidual(self.arm, self.shoulder, self.elbow, rot_mat)
+            self.Plant.trackResidual(self.arm, self.shoulder, self.elbow, self.track, rot_mat)
 
         #update positions
         self.Plant.update()
@@ -590,6 +590,9 @@ class MplScenario(Scenario):
         self.TrainingData.load()
         self.TrainingData.num_channels = self.num_channels
 
+        #Feature Extraction
+        self.FeatureExtract = pr.FeatureExtract()
+
         # Classifier parameters
         self.SignalClassifier = pr.Classifier(self.TrainingData)
         self.SignalClassifier.fit()
@@ -603,11 +606,13 @@ class MplScenario(Scenario):
         # For MPL, this might be: real MPL/NFU, Virtual Arm, etc.
         data_sink = get_user_config_var('DataSink', 'Unity')
         if data_sink in ['Unity', 'UnityUdp']:
+            self.track = True
             local_address = get_user_config_var('UnityUdp.local_address', '//0.0.0.0:25001')
             remote_address = get_user_config_var('UnityUdp.remote_address', '//127.0.0.1:25000')
             sink = UnityUdp(local_address=local_address, remote_address=remote_address)
             sink.connect()
         elif data_sink == 'NfuUdp':
+            self.track = False
             local_hostname, local_port = get_address(get_user_config_var('NfuUdp.local_address', '//0.0.0.0:9028'))
             remote_hostname, remote_port = get_address(get_user_config_var('NfuUdp.remote_address', '//127.0.0.1:9027'))
             sink = NfuUdp(hostname=remote_hostname, udp_telem_port=local_port, udp_command_port=remote_port)

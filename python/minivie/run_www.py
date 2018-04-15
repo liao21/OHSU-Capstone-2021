@@ -14,7 +14,7 @@ import logging
 import utilities.user_config as uc
 import scenarios
 import inputs.dcell
-from pattern_rec import training, assessment, features, features_selected
+from pattern_rec import training, assessment, features_selected, FeatureExtract, features
 
 
 def main():
@@ -49,15 +49,16 @@ def main():
 
     vie.setup()
 
+    # Setup Feature Extraction
+    select_features = features_selected.Features_selected(vie)
+    select_features.create_instance_list()
+
     # Setup Assessments
     tac = assessment.TargetAchievementControl(vie, vie.TrainingInterface)
     vie.TrainingInterface.add_message_handler(tac.command_string)
     motion_test = assessment.MotionTester(vie, vie.TrainingInterface)
     vie.TrainingInterface.add_message_handler(motion_test.command_string)
 
-    # setup feature extraction
-    select_features = features_selected.Features_selected(vie)
-    vie.TrainingInterface.add_message_handler(select_features.command_string)
 
     # Setup Additional Logging
     if uc.get_user_config_var('dcell_enable', 0):

@@ -12,6 +12,7 @@ import threading
 import numpy as np
 
 
+
 class FeatureExtract(object):
     """
     Class for setting feature extract parameters and calling the feature extract process
@@ -35,7 +36,7 @@ class FeatureExtract(object):
 
     """
     def __init__(self):
-        self.myo = 0
+        self.input_source = 0
         self.normalized_orientation = None
         self.attached_features = []
 
@@ -98,9 +99,7 @@ class FeatureExtract(object):
     def attachFeature(self, instance):
 
         #attaches feature class instance to attached_features list
-        if not isinstance(instance, EMGFeatures):
-            return self.attached_features
-        elif instance in self.attached_features:
+        if instance in self.attached_features:
             return self.attached_features
         else:
             return self.attached_features.append(instance)
@@ -109,7 +108,7 @@ class FeatureExtract(object):
         #return an list with the names of all features being used
         names = []
         for instance in self.attached_features:
-            featurename = instance.feature_name()
+            featurename = instance.getName()
             #if name is a list, append each element individually
             if type(featurename) is list:
                 for i in featurename:
@@ -125,6 +124,7 @@ class FeatureExtract(object):
     def feature_extract(self, y):
         """
         Created on Mon Jan 25 16:25:14 2016
+        Updated on Sat Apr 15 12:48:00 2018
 
         Perform feature extraction, vectorized
 
@@ -147,10 +147,10 @@ class FeatureExtract(object):
         # normalize features
         if self.normalized_orientation is not None:
             # normalize incoming data according to myo
-            y = np.roll(y, self.normalized_orientation[self.myo])
+            y = np.roll(y, self.normalized_orientation[self.input_source])
 
-        # update myo
-        self.myo += 1
+        # update input source (ex. myo)
+        self.input_source += 1
 
         # Number of Samples
         n = y.shape[0]
@@ -159,7 +159,7 @@ class FeatureExtract(object):
 
         # loops through instaces and extractes features
         for instance in self.attached_features:
-            new_feature = instance.extract_features(data_input)
+            new_feature = instance.extract_features(y)
             features_array.append(new_feature)
 
         if len(features_array) > 0:
@@ -172,6 +172,8 @@ class FeatureExtract(object):
             return vstack_features_array.T.reshape(1, size)
         else:
             return None
+
+
 
 
 def test_feature_extract():
@@ -190,7 +192,7 @@ def test_feature_extract():
 
     start_time = timeit.default_timer()
     # code you want to evaluate
-    f = feature_extract(emg_buffer)
+    f = FeatureExtract.feature_extract(emg_buffer)
     # code you want to evaluate
     elapsed = timeit.default_timer() - start_time
     print(elapsed)

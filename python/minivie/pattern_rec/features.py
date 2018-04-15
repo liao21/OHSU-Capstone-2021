@@ -1,8 +1,24 @@
-from pattern_rec.EMGFeatures import EMGFeatures
+from abc import ABCMeta, abstractmethod
 import numpy as np
 import math
 import spectrum #will need to install spectrum lib with pip install
 from utilities.user_config import read_user_config, get_user_config_var
+
+#Abstract base class
+class EMGFeatures(object):
+    __metaclass__ = ABCMeta
+
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def getName(self):
+        pass
+
+    # All methods with this decorator must be overloaded
+    @abstractmethod
+    def extract_features(self):
+        pass
 
 class Mav(EMGFeatures):
     def __init__(self):
@@ -20,10 +36,10 @@ class Mav(EMGFeatures):
         return mav_feature
 
 class Curve_len(EMGFeatures):
-    def __init__(self):
+    def __init__(self, fs=200):
         super(Curve_len, self).__init__()
 
-        self.fs = get_user_config_var('FeatureExtract.sample_rate', 200)
+        self.fs = fs
         self.name = "Curve_len"
 
     def name(self):
@@ -40,14 +56,14 @@ class Curve_len(EMGFeatures):
         return curve_len_feature
 
 class Zc(EMGFeatures):
-    def __init__(self):
+    def __init__(self, fs=200, zc_thresh=0.05):
         super(Zc, self).__init__()
 
-        self.fs = get_user_config_var('FeatureExtract.sample_rate', 200)
-        self.zc_thresh = get_user_config_var('FeatureExtract.zcThreshold', 0.05)
+        self.fs = fs
+        self.zc_thresh = zc_thresh
         self.name = "Zc"
 
-    def name(self):
+    def getName(self):
         return self.name
 
     def extract_features(self, data_input):
@@ -72,14 +88,14 @@ class Zc(EMGFeatures):
         return zc_feature
 
 class Ssc(EMGFeatures):
-    def __init__(self, fs = 200, ssc_thresh=0.15):
+    def __init__(self, fs=200, ssc_thresh=0.15):
         super(Ssc, self).__init__()
 
-        self.fs = get_user_config_var('FeatureExtract.sample_rate', 200)
-        self.ssc_thresh = get_user_config_var('FeatureExtract.sscThreshold', 0.05)
+        self.fs = fs
+        self.ssc_thresh = ssc_thresh
         self.name = "Ssc"
 
-    def name(self):
+    def getName(self):
         return self.name
 
     def extract_features(self, data_input):
@@ -102,14 +118,14 @@ class Ssc(EMGFeatures):
         return ssc_feature
 
 class Wamp(EMGFeatures):
-    def __init__(self):
+    def __init__(self, fs=200, wamp_thresh=0.05):
         super(Wamp, self).__init__()
 
-        self.fs = get_user_config_var('FeatureExtract.sample_rate', 200)
-        self.wamp_thresh = get_user_config_var('FeatureExtract.wampThreshold', 0.05)
+        self.fs = fs
+        self.wamp_thresh = wamp_thresh
         self.name = "Wamp"
 
-    def name(self):
+    def getName(self):
         return self.name
 
     def extract_features(self, data_input):
@@ -136,7 +152,7 @@ class Var(EMGFeatures):
 
         self.name = "Var"
 
-    def name(self):
+    def getName(self):
         return self.name
 
     def extract_features(self, data_input):
@@ -159,7 +175,7 @@ class Vorder(EMGFeatures):
 
         self.name = "Vorder"
 
-    def name(self):
+    def getName(self):
         return self.name
 
     def extract_features(self, data_input):
@@ -190,7 +206,7 @@ class Logdetect(EMGFeatures):
 
         self.name = "Logdetect"
 
-    def name(self):
+    def getName(self):
         return self.name
 
     def extract_features(self, data_input):
@@ -210,7 +226,7 @@ class EMGhist(EMGFeatures):
 
         self.name = "EMGhist"
 
-    def name(self):
+    def getName(self):
         return self.name
 
     def extract_features(self, data_input):
@@ -243,7 +259,7 @@ class AR(EMGFeatures):
 
         self.name = "AR"
 
-    def name(self):
+    def getName(self):
         return self.name
 
     def extract_features(self, data_input):
@@ -273,7 +289,7 @@ class Ceps(EMGFeatures):
 
         self.name = "Ceps"
 
-    def name(self):
+    def getName(self):
         return self.name
 
     def extract_features(self, data_input):
@@ -297,3 +313,5 @@ class Ceps(EMGFeatures):
             ceps_feature.append(ceps_coefficient)
 
         return ceps_feature
+
+

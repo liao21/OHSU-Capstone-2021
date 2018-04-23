@@ -58,7 +58,7 @@ if choice == 1:
 
     result = 0
     while not result:
-        result = utilities.sys_cmd.ping('192.168.1.111')
+        result = utilities.sys_cmd.ping('192.168.8.1')
     print(result)
 
 elif choice == 2:

@@ -1,5 +1,5 @@
 # localize system command calls
-import os
+import subprocess
 import time
 import logging
 import platform
@@ -18,7 +18,7 @@ def ping(host):
     ping_str = "-n 1" if platform.system().lower() == "windows" else "-c 1"
 
     # Ping
-    return send_system_command("ping " + ping_str + " " + host) == 0
+    return subprocess.Popen("ping " + ping_str + " " + host).wait() == 0
 
 
 def restart_myo(unused):
@@ -48,7 +48,7 @@ def change_myo(val):
 
 
 def reboot():
-    os.system("sudo shutdown -r now")
+    send_system_command("sudo shutdown -r now")
 
 
 def shutdown():
@@ -102,13 +102,17 @@ def set_system_time(date_num, time_error=30.0):
         send_system_command("sudo hwclock --systohc")
         send_system_command("sudo hwclock --systohc")
 
+
 def send_system_command(cmd):
     # Route all os.system calls through here to allow system checks and ensure these are enabled:
 
     logging.critical('SysCmd: ' + cmd)
 
     if platform.system() == 'Linux':
-        return os.system(cmd)
+        # os.system(cmd)
+        # calling without .wait() option to ensure system responds promptly
+        subprocess.Popen(cmd)
+        return
     else:
         logging.critical('System command not permitted on this platform')
         return None

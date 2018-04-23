@@ -187,7 +187,7 @@
     
     <!-- The Global hand STIFFNESS_HIGH will overwrite values above!!-->
     <add key="GLOBAL_HAND_STIFFNESS_HIGH_ENABLE"     value="1" />
-    <add key="GLOBAL_HAND_STIFFNESS_HIGH"            value="2.0" />
+    <add key="GLOBAL_HAND_STIFFNESS_HIGH"            value="0.4" />
 
     <!-- Joint impedance parameters -->
     <add key="SHOULDER_FE_STIFFNESS_LOW"     value="20.0" />
@@ -226,7 +226,7 @@
 
     <!-- The Global hand STIFFNESS_LOW will overwrite values above!!-->
     <add key="GLOBAL_HAND_STIFFNESS_LOW_ENABLE"     value="1" />
-    <add key="GLOBAL_HAND_STIFFNESS_LOW"            value="1.0" />
+    <add key="GLOBAL_HAND_STIFFNESS_LOW"            value="0.2" />
 
     <!-- Set Park Position in degrees -->
     <add key="SHOULDER_FE_POS_PARK"     value="0.00"/>

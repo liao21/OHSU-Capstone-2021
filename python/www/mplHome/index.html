@@ -163,9 +163,6 @@
           <li><a href="#ID_MYO_OPTIONS_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-edit">MYO Configuration...</a>
           </li>
           <li><a href="#ID_ADVANCED_OPTIONS_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-edit">MPL Configuration...</a>
-          </li>
-		  <li><a href="#ID_FEATURES_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-edit">Features...</a>
-		  </li>
         </ul>
       </div>
       <!-- Confirmation Dialog: Shutdown -->
@@ -394,12 +391,36 @@
       <a href="#" class="ui-btn ui-btn-icon-right ui-icon-check" id="ID_SELECT_MYO_SET_2">Select BACKUP Myo Set</a>
       <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_MYO1">Restart Myo #1</a>
       <a href="#" class="ui-btn ui-btn-icon-right ui-icon-refresh" id="ID_MYO2">Restart Myo #2</a>
+	  <a href="#ID_NORMALIZE_MYO_POSITION_PAGE" data-transition="slidefade" class="ui-btn ui-btn-icon-right ui-icon-star" id="ID_Normalize_MYOS">Normalize Myos</a>
       <!-- Status Messages -->
       <p>Devices: <span id="msg_status_myo"></span>
       </p>
     </div>
     <!-- /content -->
   </div>
+      <div data-role="page" id="ID_NORMALIZE_MYO_POSITION_PAGE">
+        <div data-role="header" data-theme="b" >
+            <h1>Normalize Myo Position</h1>
+            <a href="#ID_MAIN_PAGE" data-role="button" data-icon="arrow-l">Back</a>
+        </div><!-- /header -->
+        <div data-role="content">
+            <a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_NORMALIZE_MYO_POSITION">Start Normalization</a>
+			<div data-role="collapsible" data-collapsed-icon="bullets" data-expanded-icon="bullets">
+                <h4>Normalization Class</h4>
+                <ul data-role="listview" data-inset="false">
+                <div class="ui-field-contain">
+					<label for="ID_WEO"> Wrist Extend Out </label>
+					<input type="radio" name="normalization_class" id="ID_WEO" value="Wrist_Extend_Out" checked>
+					<label for="ID_EF"> Elbow Flexion </label>
+					<input type="radio" name="normalization_class" id="ID_EF" value="Elbow_Flextion">
+                </div>
+			</div>
+            <p>Status: <span id="nmp_status"></span></p>
+            <img style="max-width: 100%;" src="img_arm_motions/No_Movement.png" id="ID_NMP_IMAGE" alt="Motion Image">
+			<a href="#" class="ui-btn ui-btn-icon-right ui-icon-arrow-r" id="ID_Reset_MYO_POSITION">Reset Orientation</a>
+            </div>			
+        </div><!-- /content -->
+	</div><!-- /page -->
   <!-- Motion Tester Page -->
   <div data-role="page" id="ID_MT_PAGE">
     <div data-role="header" data-theme="b">

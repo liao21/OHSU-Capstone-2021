@@ -15,6 +15,7 @@ import utilities.user_config as uc
 import scenarios
 import inputs.dcell
 from pattern_rec import training, assessment, features_selected, FeatureExtract, features
+from inputs import normalization
 
 
 def main():
@@ -59,6 +60,9 @@ def main():
     motion_test = assessment.MotionTester(vie, vie.TrainingInterface)
     vie.TrainingInterface.add_message_handler(motion_test.command_string)
 
+    # Setup Normalization
+    myoNorm = normalization.MyoNormalization(vie, vie.TrainingInterface)
+    vie.TrainingInterface.add_message_handler(myoNorm.command_string)
 
     # Setup Additional Logging
     if uc.get_user_config_var('dcell_enable', 0):

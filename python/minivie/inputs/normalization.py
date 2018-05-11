@@ -2,15 +2,37 @@ import logging
 import threading
 import numpy as np
 import time
+from abc import ABCMeta, abstractmethod
 import operator
 import os
 import os.path
 import h5py
 
-class NormalizeMyoPosition(object):
+class NormalizationInterface(object):
+    __metaclass__ = ABCMeta
+
+    def __init__(self):
+        pass
+
+    # All methods with this decorator must be overloaded
+    @abstractmethod
+    def start_normalization(self):
+        pass
+
+    @abstractmethod
+    def save_results(self):
+        pass
+
+
+
+class MyoNormalization(object):
 # Method to perform myo normalization
 
     def __init__(self, vie, trainer):
+
+        # Initialize superclass
+        super(NormalizationInterface, self).__init__()
+
         self.vie = vie
         self.trainer = trainer
         self.thread = None
@@ -67,7 +89,7 @@ class NormalizeMyoPosition(object):
                 self.thread.name = 'NormalizeMyoPosition'
                 self.thread.start()
 
-            if 'ResetOrientation' in cmd_data:
+            elif 'ResetOrientation' in cmd_data:
                 self.reset_orientation()
 
     def start_normalization(self):
@@ -121,7 +143,7 @@ class NormalizeMyoPosition(object):
         # Send status
         self.send_status('Myo Normalization Completed.')
         #set orientation
-        self.return_orientation()
+        self.save_normalization()
         # Unlock limb
         self.vie.pause('All', False)
 
@@ -260,11 +282,11 @@ class NormalizeMyoPosition(object):
         self.reset()
 
     #adjust future data for orientation
-    def return_orientation(self):
+    def save_normalization(self):
         self.vie.FeatureExtract.normalize_orientation(self.normalized_orientation)
 
     #rest orientation and adjust future data
     def reset_orientation(self):
         self.send_status('Myo Orientation Reset')
         self.normalized_orientation = [0,0]
-        self.vie.FeatureExtract.normalize_orientation(self.normalized_orientation)
+        self.save_normalization()

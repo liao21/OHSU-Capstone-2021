@@ -18,7 +18,6 @@ if os.path.split(os.getcwd())[1] == 'gui':
 from inputs import myo
 
 
-
 # Setup Data Source
 m = myo.MyoUdp(source='//127.0.0.1:15001', num_samples=600)
 m.connect()
@@ -43,5 +42,5 @@ def animate(i):
     # print('{:0.2f}'.format(m.get_data_rate_emg()))
 
 
-ani = animation.FuncAnimation(fig, animate, interval=50)
+ani = animation.FuncAnimation(fig, animate, interval=150)
 plt.show()

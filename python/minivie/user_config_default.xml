@@ -18,9 +18,14 @@
     <add key="UnityUdp.remote_address" value="//127.0.0.1:25000"/>
     <add key="UnityUdp.local_address" value="//0.0.0.0:25001"/>
 
-    <add key="mpl_connection_check"        value="1"/>
+    <add key="mpl_connection_check"         value="1"/>
 
-    <add key="mpl_app_port"             value="9090"/>
+
+    <!-- Control MPL App Settings -->
+    <add key="MobileApp.port"           value="9090"/>
+    <add key="MobileApp.homepage"       value="index.html"/>
+    <add key="MobileApp.path"           value="../www/mplHome"/>
+    <add key="MobileApp.ws_server"      value="Tornado"/>    <!-- [Tornado | Spacebrew | None] -->
 
     <!--Specify the timestep in seconds -->
     <add key="timestep"         value="0.02"/>
@@ -32,8 +37,8 @@
     <add key="enable_impedance"         value="1"/>
 
     <!-- enable_dcell strain gauge logging-->
-    <add key="dcell_enable"         value="0"/>
-    <add key="dcell_serial_port"    value="/dev/ttymxc2"/>
+	<add key="DCell.enable"         value="0"/>
+    <add key="DCell.serial_port"    value="/dev/ttymxc2"/>
 	
 	<!-- arm and configuration
 		 Arm: 
@@ -46,6 +51,7 @@
 			daq: National Instruments DAQ -->
 	<add key="arm"					value="right"/>
 	<add key="configuration"		value="be"/>
+
 
     <!--Pattern Recognition Parameters-->
     <add key="NumMajorityVotes" value="25"/>
@@ -91,6 +97,13 @@
 	<!-- DAQ Data Client
         Use these parameters for reading from a DAQ Data Source in a client application  -->
 	<add key="device_name_and_channels" value="Dev1/ai0:7"/>
+
+
+    <!-- MPL Motion Speeds -->
+    <add key="MPL.ArmSpeedMin"    value="0.1"/>
+    <add key="MPL.ArmSpeedMax"    value="5"/>
+    <add key="MPL.HandSpeedMin"    value="0.1"/>
+    <add key="MPL.HandSpeedMax"    value="5"/>
 
     <!-- User defined joint limits in *Degrees*
      Optionally limit the range of each joint prior to sending to the MPL
@@ -207,7 +220,7 @@
     
     <!-- The Global hand STIFFNESS_HIGH will overwrite values above!!-->
     <add key="GLOBAL_HAND_STIFFNESS_HIGH_ENABLE"     value="1" />
-    <add key="GLOBAL_HAND_STIFFNESS_HIGH"            value="2.0" />
+    <add key="GLOBAL_HAND_STIFFNESS_HIGH"            value="0.4" />
 
     <!-- Joint impedance parameters -->
     <add key="SHOULDER_FE_STIFFNESS_LOW"     value="20.0" />
@@ -246,7 +259,7 @@
 
     <!-- The Global hand STIFFNESS_LOW will overwrite values above!!-->
     <add key="GLOBAL_HAND_STIFFNESS_LOW_ENABLE"     value="1" />
-    <add key="GLOBAL_HAND_STIFFNESS_LOW"            value="1.0" />
+    <add key="GLOBAL_HAND_STIFFNESS_LOW"            value="0.2" />
 
     <!-- Set Park Position in degrees -->
     <add key="SHOULDER_FE_POS_PARK"     value="0.00"/>

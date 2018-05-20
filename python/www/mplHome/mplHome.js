@@ -1,136 +1,130 @@
 // mplHome.js contains all the javascript for messaging between the mobile app webpage and the MPL Python VIE
-// Websockets are used for communications so that status messages etc can be streamed from python to webpage
+// This script file should be used in conjunction with either websocketSpacebrew or websocketNative for low-level messaging
 //
 // Revisions:
 //  28DEC2017 Armiger - Created initial revision and removed prior spacebrew implementation
+//  24FEB2018 Armiger - Modularized for either spacebrew or direct websockets
+//  27MAR2018 Armiger - Added CSV parsing as basic source of info for classes
+
+// Load the class motion map info as CSV and store as global to generate images and UI buttons
+var global_motion_class_data = [];
+
+$(function() {
+
+  jQuery.ajax({
+    type: "GET",
+    dataType: "text",
+    url: "./motion_name_image_map.csv",
+    success: function(data) {readCsv(data);}
+   });
+});
 
 
-// global handle to websocket for send / receive commands
-var socket;
+function readCsv(allText) {
+  // Parse the CSV and create image gallery
 
-jQuery(function($){
-  // function invoked when the document has been loaded and the DOM is ready to be manipulated
+  // Create CSV arrays
+  var allTextLines = allText.split(/\r\n|\n/);
+  var dataLines = [];
+  var headerLine = [];
 
-  if (!("WebSocket" in window)) {
-    alert("Your browser does not support web sockets");
-  } else {
-    setupWebsockets();
+  for (var i=0; i < allTextLines.length; i++) {
+      var thisLine = allTextLines[i]
+
+      // Always ignore comment or blank lines
+      if (thisLine[0] == "#" | thisLine.length < 1) continue;
+
+      // Split on comma
+      var splitLine = thisLine.split(',');
+
+      // populate header
+      if (headerLine.length == 0) {
+        headerLine = splitLine;
+        continue;
+      }
+
+      // Populate gallery data for valid entries
+      if (splitLine.length == headerLine.length) {
+        var className = splitLine[0]
+        var classImagePath = splitLine[1]
+        global_motion_class_data.push({
+            title: className,
+            href:  classImagePath,
+            type: 'image/' + classImagePath.split('.').pop(),
+            thumbnail: classImagePath
+          })
+      }
   }
 
-  // Setup Offline Monitor
-  var run = function(){
-  if (Offline.state === 'up')
-    Offline.check();
-  }
-  setInterval(run, 3000);
 
-  // On html reconnect, reload websockets
-  Offline.on('up',setupWebsockets);
 
-});  // jQuery
-
-function setupWebsockets(){
-  // Create websocket connection
-  var host = "ws://" + document.location.hostname + ":" + document.location.port + "/ws";
-  console.log(host)
-  socket = new WebSocket(host);
-
-  console.log("socket status: " + socket.readyState);
-
-  // event handlers for websocket
-  if(socket){
-    socket.onmessage = function(msg){
-      value = msg.data;
-      console.log("[onStringMessage] new message received ", value);
-      var split_id = value.indexOf(":")
-      var cmd_type = value.slice(0,split_id);
-      var cmd_data = value.slice(split_id+1);
-      routeMessage(cmd_type, cmd_data)
-    }  // socket.onmessage
-
-    socket.onclose = function(){
-      //alert("connection closed....");
-      console.log("The connection has been closed.");
-      socket.close
-    }  //socket.onclose
-
-  } else {
-    console.log("invalid socket");
-  }
-
-  setupCallbacks()
-} // setupWebsockets
-
-function sendCmd(cmd) {
-  // global sendCmd function called from index.html and galleryLinks.js
-  console.log("SEND:" + cmd);
-  socket.send(cmd);
-}  // sendCmd
+  setupGalley();
+  setupCallbacks();
+}
 
 function routeMessage(cmd_type, cmd_data) {
   // Route the message to the appropriate section of the html page
   // based on the cmd_type.  Pass the target function the cmd_data
 
-  if (cmd_type == "strStatus") {
+  if (cmd_type == "sys_status") {
     $("#msg_status").html(cmd_data);
     $("#msg_status_opt").html(cmd_data);
     $("#msg_status_myo").html(cmd_data);
   }
-  if (cmd_type == "strTrainingMotion") {
+  if (cmd_type == "training_class") {
     $("#msg_train").text(cmd_data);
   }
-  if (cmd_type == "strOutputMotion") {
+  if (cmd_type == "output_class") {
      $("#main_output").text(cmd_data);
      $("#mt_output").text(cmd_data);
      $("#tac_output").text(cmd_data);
   }
-  if (cmd_type == "strMotionTester") {
-    $("#mt_status").text(cmd_data);
+  if (cmd_type == "motion_test_status") {
+    $("#mt_status").html(cmd_data);
   }
-  if (cmd_type == "strMotionTesterProgress") {
+  if (cmd_type == "motion_test_update") {
     updateMTProgressBar(cmd_data);
   }
-  if (cmd_type == "strMotionTesterImage") {
+  if (cmd_type == "motion_test_setup") {
     updateMTImage(cmd_data);
   }
-  if (cmd_type == "strTAC") {
+  if (cmd_type == "TAC_status") {
     $("#tac_status").text(cmd_data);
   }
-  if (cmd_type == "strTACJoint1Name") {
-    $("#tacJoint1Name").text(cmd_data);
+  if (cmd_type == "TAC_setup") {
+
+    // Further parse response (comma separated)
+    var data = cmd_data.split(",");
+
+    if (data[0] > 0) {
+      $("#tacJoint1Name").text(data[1]);
+      updateTACJointTarget(data[2], "tacJoint1Target");
+      updateTACJointError(data[3], "tacJoint1Target");
+    }
+    if (data[0] > 1) {
+      $("#tacJoint2Name").text(data[4]);
+      updateTACJointTarget(data[5], "tacJoint2Target");
+      updateTACJointError(data[6], "tacJoint2Target");
+    }
+    if (data[0] > 2) {
+      $("#tacJoint3Name").text(data[7]);
+      updateTACJointTarget(data[8], "tacJoint3Target");
+      updateTACJointError(data[9], "tacJoint3Target");
+    }
   }
-  if (cmd_type == "strTACJoint1Bar") {
-    updateTACJointBar(cmd_data, "tacJoint1Bar", "tacJoint1Label");
-  }
-  if (cmd_type == "strTACJoint1Target") {
-    updateTACJointTarget(cmd_data, "tacJoint1Target");
-  }
-  if (cmd_type == "strTACJoint1Error") {
-    updateTACJointError(cmd_data, "tacJoint1Target");
-  }
-  if (cmd_type == "strTACJoint2Name") {
-    $("#tacJoint2Name").text(cmd_data);
-  }
-  if (cmd_type == "strTACJoint2Bar") {
-    updateTACJointBar(cmd_data, "tacJoint2Bar", "tacJoint2Label");
-  }
-  if (cmd_type == "strTACJoint2Target") {
-    updateTACJointTarget(cmd_data, "tacJoint2Target");
-  }
-  if (cmd_type == "strTACJoint2Error") {
-    updateTACJointError(cmd_data, "tacJoint2Target");
-  }
-  if (cmd_type == "strTACJoint3Name") {
-    $("#tacJoint3Name").text(cmd_data);
-  }
-  if (cmd_type == "strTACJoint3Bar") {
-    updateTACJointBar(cmd_data, "tacJoint3Bar", "tacJoint3Label");
-  }
-  if (cmd_type == "strTACJoint3Target") {
-    updateTACJointTarget(cmd_data, "tacJoint3Target");
-  }
-  if (cmd_type == "strTACJoint3Error") {
-    updateTACJointError(cmd_data, "tacJoint3Target");
+
+  if (cmd_type == "TAC_update") {
+    // Further parse response (comma separated)
+    var data = cmd_data.split(",");
+    if (data[0] > 0) {
+      updateTACJointBar(data[1], "tacJoint1Bar", "tacJoint1Label");
+    }
+    if (data[0] > 1) {
+      updateTACJointBar(data[2], "tacJoint2Bar", "tacJoint2Label");
+    }
+    if (data[0] > 2) {
+      updateTACJointBar(data[3], "tacJoint3Bar", "tacJoint3Label");
+    }
   }
   if (cmd_type == "strNormalizeMyoPosition") {
 	  $("#nmp_status").text(cmd_data);
@@ -140,7 +134,7 @@ function routeMessage(cmd_type, cmd_data) {
   }
 
   // route joint percept message
-  if (cmd_type == "jointCmd") {
+  if (cmd_type == "joint_cmd") {
     var values = cmd_data.split(',');
     $("#SHFE_Cmd").html(values[0]);
     $("#SHAA_Cmd").html(values[1]);
@@ -170,7 +164,7 @@ function routeMessage(cmd_type, cmd_data) {
     $("#5MCP_Cmd").html(values[25]);
     $("#5DIP_Cmd").html(values[26]);
   }
-  if (cmd_type == "jointPos") {
+  if (cmd_type == "joint_pos") {
     var values = cmd_data.split(',');
     $("#SHFE_Pos").html(values[0]);
     $("#SHAA_Pos").html(values[1]);
@@ -200,7 +194,7 @@ function routeMessage(cmd_type, cmd_data) {
     $("#5MCP_Pos").html(values[25]);
     $("#5DIP_Pos").html(values[26]);
   }
-  if (cmd_type == "jointTorque") {
+  if (cmd_type == "joint_torque") {
     var values = cmd_data.split(',');
     $("#SHFE_Torque").html(values[0]);
     $("#SHAA_Torque").html(values[1]);
@@ -230,7 +224,7 @@ function routeMessage(cmd_type, cmd_data) {
     $("#5MCP_Torque").html(values[25]);
     $("#5DIP_Torque").html(values[26]);
   }
-  if (cmd_type == "jointTemp") {
+  if (cmd_type == "joint_temp") {
     var values = cmd_data.split(',');
     $("#SHFE_Temp").html(values[0]);
     $("#SHAA_Temp").html(values[1]);
@@ -293,27 +287,66 @@ function setupCallbacks() {
   $("#ID_GOTO_HOME").on("mousedown", function() {sendCmd("Cmd:GotoHome")} );
   $("#ID_GOTO_PARK").on("mousedown", function() {sendCmd("Cmd:GotoPark")} );
 
-  $("#MAN_ElbowFlex").on("mousedown", function() {sendCmd("Man:Elbow Flexion")} );
-  $("#MAN_ElbowExtend").on("mousedown", function() {sendCmd("Man:Elbow Extension")} );
-  $("#MAN_Pronate").on("mousedown", function() {sendCmd("Man:Wrist Rotate In")} );
-  $("#MAN_Supinate").on("mousedown", function() {sendCmd("Man:Wrist Rotate Out")} );
-  $("#MAN_WristFlex").on("mousedown", function() {sendCmd("Man:Wrist Flex In")} );
-  $("#MAN_WristExtend").on("mousedown", function() {sendCmd("Man:Wrist Extend Out")} );
-  $("#MAN_HandOpen1").on("mousedown", function() {sendCmd("Man:Hand Open")} );
-  $("#MAN_HandOpen2").on("mousedown", function() {sendCmd("Man:Hand Open")} );
-  $("#MAN_Spherical").on("mousedown", function() {sendCmd("Man:Spherical Grasp")} );
-  $("#MAN_Tip").on("mousedown", function() {sendCmd("Man:Tip Grasp")} );
-  $("#MAN_ThreeFingerPinch").on("mousedown", function() {sendCmd("Man:Three Finger Pinch Grasp")} );
-  $("#MAN_Lateral").on("mousedown", function() {sendCmd("Man:Lateral Grasp")} );
-  $("#MAN_Cylindrical").on("mousedown", function() {sendCmd("Man:Cylindrical Grasp")} );
-  $("#MAN_Point").on("mousedown", function() {sendCmd("Man:Point Grasp")} );
-  $("#MAN_Index").on("mousedown", function() {sendCmd("Man:Index")} );
-  $("#MAN_Middle").on("mousedown", function() {sendCmd("Man:Middle")} );
-  $("#MAN_Ring").on("mousedown", function() {sendCmd("Man:Ring")} );
-  $("#MAN_Little").on("mousedown", function() {sendCmd("Man:Little")} );
-  $("#MAN_Thumb").on("mousedown", function() {sendCmd("Man:Thumb")} );
-  $("#MAN_RingMiddle").on("mousedown", function() {sendCmd("Man:Ring-Middle")} );
-  $("#MAN_TheBird").on("mousedown", function() {sendCmd("Man:The Bird")} );
+  // Generate the HTML required to setup buttons for manual control
+  var message = []  // append this to create HTML
+  var id_list = []  // Maintain a list of DOM id tags
+  var name_list = [] // Maintain a list of classes
+  // Add stop bar
+  message += '<a href="#" class="ui-btn" id="MAN_Stop1">Stop</a>';
+
+  // Loop through classes and create motion pairs
+  var side = 0
+  for (var i = 0; i < global_motion_class_data.length; i++ ){
+    id = 'MAN_' + global_motion_class_data[i].title.replace(/ /g,"_") // changes spaces to underscores
+    name = global_motion_class_data[i].title
+
+    if (name == 'No Movement') {
+      continue;
+    } else {
+      var new_id = 0
+      while (id_list.includes(id)) {
+        // generate a new ID
+        new_id += 1
+        id = id + new_id.toString();
+      }
+      id_list.push(id)
+      name_list.push(name)
+//      console.log(id_list)
+    }
+
+    if (global_motion_class_data[i].title == 'Hand Open') {
+      message += '<a href="#" class="ui-btn" id="'+id+'">'+name+'</a>';
+      continue
+    }
+
+    if (side == 0) {
+      message += '<fieldset class="ui-grid-a">';
+      message +=  '<div class="ui-block-a"><a href="#" class="ui-btn" id="' + id + '">' + name + '</a></div>';
+      side += 1;
+    } else {
+      message += '<div class="ui-block-b"><a href="#" class="ui-btn" id="' + id + '">' + name + '</a></div>';
+      message += '</fieldset>';
+      side = 0;
+    }
+
+  }
+  // Add stop bar
+  message += '<a href="#" class="ui-btn" id="MAN_Stop2">Stop</a>';
+
+  // Now add HTML to the UI page:
+  var myElement = document.getElementById("ID_MANUAL_CONTROL");
+  var myNewElement = document.createElement("div");
+  myNewElement.innerHTML = message;
+  myElement.appendChild(myNewElement);
+
+  // Generate Button Callbacks
+  for (var i = 0; i < id_list.length; i++ ){
+    $("#" + id_list[i]).mousedown("Man:"+name_list[i], function(cmd) {
+      sendCmd(cmd.data)
+    } );
+  }
+
+  // Generate Button Callbacks
   $("#MAN_Stop1").on("mousedown", function() {sendCmd("Man:Stop")} );
   $("#MAN_Stop2").on("mousedown", function() {sendCmd("Man:Stop")} );
 

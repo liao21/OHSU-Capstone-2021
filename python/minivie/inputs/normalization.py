@@ -25,7 +25,7 @@ class NormalizationInterface(object):
 
 
 
-class MyoNormalization(object):
+class MyoNormalization(NormalizationInterface):
 # Method to perform myo normalization
 
     def __init__(self, vie, trainer):

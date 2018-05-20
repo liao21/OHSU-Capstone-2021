@@ -271,6 +271,9 @@ class TrainingData:
         self.filename = 'TRAINING_DATA'
         self.file_ext = '.hdf5'
 
+        # # Store class names
+        # self.motion_names = 'No Movement'
+        # TODO: Eliminate separate list for motion names
         # Names of potentially trained classes
         self.motion_names = (
             'No Movement',
@@ -296,6 +299,9 @@ class TrainingData:
             'Thumb',
             'Ring-Middle',
             'The Bird',
+            'Hang Loose',
+            'Thumbs Up',
+            'Peace',
         )
 
         # Create lock to control write access to training data
@@ -420,6 +426,8 @@ class TrainingData:
                 self.time_stamp = time_stamp
                 self.imu = imu
                 self.num_samples = num_samples
+
+                # self.motion_names = motion_name
         else:
             logging.error('Invalid training data with mismatched data lengths')
 
@@ -448,7 +456,7 @@ class TrainingData:
         group.create_dataset('name', data=encoded)
         group.create_dataset('data', data=self.data)
         group.create_dataset('imu', data=self.imu)
-        group.create_dataset('motion_names', data=[a.encode('utf8') for a in self.motion_names]) #utf-8
+        group.create_dataset('motion_names', data=[a.encode('utf8') for a in self.motion_names]) # utf-8
         h5.close()
         print('Saved ' + self.filename)
 
@@ -506,7 +514,8 @@ class TrainingData:
         mapped_motion_names = []
         mapped_image_names = []
         with open(map_path, 'rt', encoding='ascii') as csvfile:
-            rows = csv.reader(csvfile, delimiter=',')
+            # RSA: Updated to allow comments in motion_name_image_map file
+            rows = csv.reader(filter(lambda row: row[0] != '#', csvfile), delimiter=',')
             for row in rows:
                 mapped_motion_names.append(row[0])
                 mapped_image_names.append(row[1])

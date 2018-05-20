@@ -3,6 +3,7 @@ from numpy import rad2deg
 import numpy as np
 import logging
 import utilities
+import utilities.sys_cmd
 from utilities.user_config import read_user_config, get_user_config_var
 from utilities import get_address
 import mpl
@@ -123,18 +124,18 @@ class Scenario(object):
     def gain(self, factor):
         # Increase the speed of the arm and apply max / min constraints
         self.gain_value *= factor
-        if self.gain_value < 0.1:
-            self.gain_value = 0.1
-        if self.gain_value > 5:
-            self.gain_value = 5
+        if self.gain_value < get_user_config_var('MPL.ArmSpeedMin', '0.1'):
+            self.gain_value = get_user_config_var('MPL.ArmSpeedMin', '0.1')
+        if self.gain_value > get_user_config_var('MPL.ArmSpeedMax', '5'):
+            self.gain_value = get_user_config_var('MPL.ArmSpeedMax', '5')
 
     def hand_gain(self, factor):
         # Increase the speed of the hand and apply max / min constraints
         self.hand_gain_value *= factor
-        if self.hand_gain_value < 0.1:
-            self.hand_gain_value = 0.1
-        if self.hand_gain_value > 5:
-            self.hand_gain_value = 5
+        if self.hand_gain_value < get_user_config_var('MPL.HandSpeedMin', '0.1'):
+            self.hand_gain_value = get_user_config_var('MPL.HandSpeedMin', '0.1')
+        if self.hand_gain_value > get_user_config_var('MPL.HandSpeedMax', '5'):
+            self.hand_gain_value = get_user_config_var('MPL.HandSpeedMax', '5')
 
     def command_string(self, value):
         """
@@ -183,17 +184,26 @@ class Scenario(object):
 
         if cmd_type == 'Cls':
             # Parse a Class Message
-            try:
-                self.training_id = self.TrainingData.motion_names.index(cmd_data)
-                self.training_motion = cmd_data
-            except ValueError:
-                logging.error('Unmatched training class name: {}'.format(cmd_data))
+
+            #if cmd_data not in self.TrainingData.motion_names:
+            #    self.TrainingData.add_class(cmd_data)
+
+            self.training_id = self.TrainingData.motion_names.index(cmd_data)
+            self.training_motion = cmd_data
+
             self.add_data = False
 
         elif cmd_type == 'Log':
             # Parse a log message
             print("User inserted log message: " + cmd_data)
             logging.critical("User inserted log message: " + cmd_data)
+
+        elif cmd_type == 'Time':
+
+            # convert milliseconds string to decimal seconds
+            browser_time = float(cmd_data) / 1000
+
+            utilities.sys_cmd.set_system_time(browser_time)
 
         elif cmd_type == 'Cmd':
 
@@ -289,13 +299,13 @@ class Scenario(object):
             # Myo Control Options
             ######################
             elif cmd_data == 'RestartMyo1':
-                utilities.restart_myo(1)
+                utilities.sys_cmd.restart_myo(1)
             elif cmd_data == 'RestartMyo2':
-                utilities.restart_myo(2)
+                utilities.sys_cmd.restart_myo(2)
             elif cmd_data == 'ChangeMyoSet1':
-                utilities.change_myo(1)
+                utilities.sys_cmd.change_myo(1)
             elif cmd_data == 'ChangeMyoSet2':
-                utilities.change_myo(2)
+                utilities.sys_cmd.change_myo(2)
 
             #################
             # System Options
@@ -677,39 +687,39 @@ class MplScenario(Scenario):
                         msg += '<br>' + time.strftime("%c")
 
                         # Forward status message (voltage, temp, etc) to mobile app
-                        self.TrainingInterface.send_message("strStatus", msg)
+                        self.TrainingInterface.send_message("sys_status", msg)
 
                     # Send classifier output to mobile app (e.g. Elbow Flexion)
-                    self.TrainingInterface.send_message("strOutputMotion", output['decision'])
+                    self.TrainingInterface.send_message("output_class", output['decision'])
                     # Send motion training status to mobile app (e.g. No Movement [70]
                     msg = '{} [{:.0f}]'.format(self.training_motion,
                                                round(self.TrainingData.get_totals(self.training_id), -1))
-                    self.TrainingInterface.send_message("strTrainingMotion", msg)
+                    self.TrainingInterface.send_message("training_class", msg)
 
                 if self.TrainingInterface is not None and self.enable_percept_stream:
                     counter += 1
                     if counter == 5:
                         msg = ','.join(['%.f' % rad2deg(elem) for elem in self.Plant.joint_position])
-                        self.TrainingInterface.send_message("jointCmd", msg)
+                        self.TrainingInterface.send_message("joint_cmd", msg)
                     if counter == 10:
                         p = self.DataSink.get_percepts()
                         try:
                             msg = ','.join(['%.f' % rad2deg(elem) for elem in p['jointPercepts']['position']])
-                            self.TrainingInterface.send_message("jointPos", msg)
+                            self.TrainingInterface.send_message("joint_pos", msg)
                         except TypeError or KeyError:
                             pass
                     if counter == 15:
                         p = self.DataSink.get_percepts()
                         try:
                             msg = ','.join(['%.1f' % elem for elem in p['jointPercepts']['torque']])
-                            self.TrainingInterface.send_message("jointTorque", msg)
+                            self.TrainingInterface.send_message("joint_torque", msg)
                         except TypeError or KeyError:
                             pass
                     if counter == 20:
                         p = self.DataSink.get_percepts()
                         try:
                             msg = ','.join(['%.0f' % elem for elem in p['jointPercepts']['temperature']])
-                            self.TrainingInterface.send_message("jointTemp", msg)
+                            self.TrainingInterface.send_message("joint_temp", msg)
                         except TypeError or KeyError:
                             pass
                         counter = 0

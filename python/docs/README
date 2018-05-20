@@ -1,6 +1,6 @@
 The objective of the PythonVIE is to provide the essential BioSignal Acquisition, processing, and output modules to 
 control prosthetic limb ranging in complexity from open source 3d printed arms, to advanced dexterous arms such as 
-the JHUAPL Modualr Prosthetic limb.
+the JHUAPL Modular Prosthetic limb.
 
 
 -------------------------
@@ -76,7 +76,7 @@ dynamic real-time updates of the website for streaming information like the curr
 of websockets uses the Spacebrew project, though this may be removed in future versions in favor of more low-level communcations.
 All commands and messages between the device and the controller are handled through formatted web-sockets allowing bi-directional communcation
 
-Dubugging via command line
+Debugging via command line
 --------------------------
 src:http://swimminginthought.com/putty-ssh-dark-blue-directory-listing-unreadable-quick-fix/
 If you use putty (as do I), here’s the quick solution to fixing that horrible Dark Blue Color for those directory entries.
@@ -172,26 +172,49 @@ Adding a New Grasp to web interface:
 1) Add image file (bmp or png) to folder
     E.g.
         img_grasps/GEN3_Index.png
-2) Update gallery-links.js with description and filename
-    E.g.
-        {
-        title: 'Index',
-        href:  'img_grasps/GEN3_Index.png',
-        },
-    Note: Title will be the name of the class command
-        sendCmd("Cls:Index"); break;
-4) Update motion names in  pattern_rec\__init__.py class TrainingData
-    E.g.
-        self.motion_names = (
-            ....
-            'Index Grasp',
-            ....
-    Note: Training Class Selection comes from:
-        a. gallery-links.js
-        b. scenarios\__init__.py\command_string
-        c. class name matched to motion names
-5) Verify that the trained class maps to a motion in: controls\plant class_map()
-6) Update Index,img_grasps/GEN3_Index.png
+3) Update image list in motion_name_image_map.csv
+    E.g. Index,img_grasps/GEN3_Index.png
+
+UPDATE Completed: RSA overhauled and simplified simplify this.  At the core the needed information 
+is the ROC entry itself, and the path to the image file
+If the gallery-links was populated with the classname and image map, this would save a step
+Also if the display name matched the class name, this would also save a step
+Finally, the training object should add new grasps as needed
+
+
+Switching between Spacebrew and Tornado
+---------------------------------------
+
+There are multiple websocket interfaces supported.  One uses the third-party Spacebrew python and javascript code.  The
+other uses a python based tornado server and javascript.  In order to select one package or the other:
+
+To Enable Tornado:
+  Set the user_config parameter: MobileApp.ws_server to Tornado
+      <add key="MobileApp.ws_server"      value="Tornado"/>    <!-- [Tornado | Spacebrew | None] -->
+  Set index.html to load the websocketNative javascript and disbale spacebrew:
+      <script src="mplHome.js"></script>
+      <script src="websocketNative.js"></script>
+      <!--<script src="spacebrew.js/sb-1.4.1.min.js"></script>-->
+      <!--<script src="websocketSpacebrew.js"></script>-->
+  Launch webpage:
+    http://localhost:9090/
+
+To Enable Spacebrew:
+  Set the user_config parameter: MobileApp.ws_server to Spacebrew
+      <add key="MobileApp.ws_server"      value="Spacebrew"/>    <!-- [Tornado | Spacebrew | None] -->
+  Set index.html to load the websocketSpacebrew javascript and disable native websockets:
+      <script src="mplHome.js"></script>
+      <!--<script src="websocketNative.js"></script>-->
+      <script src="spacebrew.js/sb-1.4.1.min.js"></script>
+      <script src="websocketSpacebrew.js"></script>
+  Start spacebrew and web server:
+    start /D C:\git\spacebrew_server /B node node_server_forever.js
+    start /D C:\git\minivie\python\www\mplHome /B http-server -c-1
+  Launch webpages:
+    http://localhost:9000/
+    http://localhost:8081/?name=MPL
+
+
 
 
 Referencing MPL Joint Enumerations:
@@ -206,6 +229,5 @@ Formatting arrays of floats:
 msg = 'Torque: ' + ','.join([ '%.1f' % elem for elem in values])
 
 # Note this was found to be 5-10x faster than np.array2string
-
 
 

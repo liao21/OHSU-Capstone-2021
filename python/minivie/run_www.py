@@ -48,26 +48,29 @@ def main():
     vie.TrainingInterface.setup(port=uc.get_user_config_var('mpl_app_port', 9090))
     vie.TrainingInterface.add_message_handler(vie.command_string)
 
+    if vie.TrainingInterface is not None:
+        # Setup Assessments
+        tac = assessment.TargetAchievementControl(vie, vie.TrainingInterface)
+        motion_test = assessment.MotionTester(vie, vie.TrainingInterface)
+        myoNorm = normalization.MyoNormalization(vie, vie.TrainingInterface)
+
+        # assign message callbacks
+        vie.TrainingInterface.add_message_handler(vie.command_string)
+        vie.TrainingInterface.add_message_handler(tac.command_string)
+        vie.TrainingInterface.add_message_handler(motion_test.command_string)
+        vie.TrainingInterface.add_message_handler(myoNorm.command_string)
+
     vie.setup()
 
     # Setup Feature Extraction
     select_features = features_selected.Features_selected(vie)
     select_features.create_instance_list()
 
-    # Setup Assessments
-    tac = assessment.TargetAchievementControl(vie, vie.TrainingInterface)
-    vie.TrainingInterface.add_message_handler(tac.command_string)
-    motion_test = assessment.MotionTester(vie, vie.TrainingInterface)
-    vie.TrainingInterface.add_message_handler(motion_test.command_string)
-
-    # Setup Normalization
-    myoNorm = normalization.MyoNormalization(vie, vie.TrainingInterface)
-    vie.TrainingInterface.add_message_handler(myoNorm.command_string)
 
     # Setup Additional Logging
-    if uc.get_user_config_var('dcell_enable', 0):
+    if uc.get_user_config_var('DCell.enable', 0):
         # Start DCell Streaming
-        port = uc.get_user_config_var('dcell_serial_port', '/dev/ttymxc2')
+        port = uc.get_user_config_var('DCell.serial_port', '/dev/ttymxc2')
         dc = inputs.dcell.DCellSerial(port)
         # Connect and start streaming
         dc.enable_data_logging = True

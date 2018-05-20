@@ -232,7 +232,22 @@ def emulate_myo_unix(destination='//127.0.0.1:15001'):
 
     """
 
+    # Multicast Demo
+    # ANY = "0.0.0.0"
+    # SENDERPORT = 32000
+    # MCAST_ADDR = "239.255.1.1"
+    # MCAST_PORT = 1600
+    #
+    # sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
+    #                      socket.IPPROTO_UDP)
+    # sock.bind((ANY, SENDERPORT))
+    # sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 255)
+    # sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    #
+    # address = (MCAST_ADDR, MCAST_PORT)
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
+    address = utilities.get_address(destination)
     counter = 0
     print('Running MyoUdp.exe Emulator to ' + destination)
     try:
@@ -242,14 +257,14 @@ def emulate_myo_unix(destination='//127.0.0.1:15001'):
             # generate random bytes matching the size of MyoUdp.exe streaming
             # Future: generate orientation data in valid range
             vals = np.random.randint(255, size=16).astype('uint8')
-            sock.sendto(vals.tostring(), utilities.get_address(destination))
+            sock.sendto(vals.tostring(), address)
             vals = np.random.randint(255, size=16).astype('uint8')
-            sock.sendto(vals.tostring(), utilities.get_address(destination))
+            sock.sendto(vals.tostring(), address)
 
             # simulate a battery level
             if counter > 500: # delay frequency of battery levels
                 # send battery levels
-                sock.sendto(bytes([98]), utilities.get_address(destination))
+                sock.sendto(bytes([98]), address)
                 counter = 0
 
             # create synthetic orientation data
@@ -259,7 +274,7 @@ def emulate_myo_unix(destination='//127.0.0.1:15001'):
 
             # np.array(q, dtype=int16).tostring
             vals = np.random.randint(255, size=20).astype('uint8')
-            sock.sendto(vals.tostring(), utilities.get_address(destination))
+            sock.sendto(vals.tostring(), address)
 
             time.sleep(0.02)  # 200Hz
 
@@ -321,7 +336,30 @@ class MyoUdp(SignalInput):
 
         """
         logger.info("Setting up MyoUdp socket {}".format(self.addr))
+
+        #
+        # Example of multicast variant below
+        #
+        # # Socket part
+        # ANY = "0.0.0.0"
+        # MCAST_ADDR = "239.255.1.1"
+        # MCAST_PORT = 1600
+        # # create a UDP socket
+        # sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        # # allow multiple sockets to use the same PORT number
+        # sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # # Bind to the port that we know will receive multicast data
+        # sock.bind((ANY, MCAST_PORT))
+        # # tell the kernel that we are a multicast socket
+        # sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 255)
+        # # Tell the kernel that we want to add ourselves to a multicast group
+        # # The address for the multicast group is the third param
+        # sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
+        #                 socket.inet_aton(MCAST_ADDR) + socket.inet_aton(ANY))
+        # self.__sock = sock
+
         self.__sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Internet, UDP
+        # self.__sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.__sock.bind(self.addr)
         self.__sock.settimeout(3.0)
 
@@ -353,6 +391,9 @@ class MyoUdp(SignalInput):
                 self.__count_emg = 0
                 self.__rate_emg = 0.0
                 continue
+            except OSError:
+                # occurs on windows system socket close
+                return
             except socket.error:
                 msg = "MyoUdp Socket Error during recvfrom() on IP={} Port={}. Error: {}".format(
                     self.addr[0], self.addr[1], socket.error)

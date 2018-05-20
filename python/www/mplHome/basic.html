@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>MPL Mobile Trainer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="jquery.mobile/jquery.mobile-1.4.5.min.css">
+  <link rel="stylesheet" href="blueimp-gallery/css/blueimp-gallery.css">
+  <link rel="stylesheet" href="lib/themes/offline-theme-chrome.css">
+  <link rel="stylesheet" href="lib/themes/offline-language-english.css">
+  <style type='text/css'>
+    html {
+          background-color: #333;
+        }
+        @media only screen and (min-width: 600px) {
+          .ui-page {
+            width: 480px !important;
+            margin: 0 auto !important;
+            position: relative !important;
+            border-right: 5px #666 outset !important;
+            border-left: 5px #666 outset !important;
+          }
+        }
+
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+
+        p {
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 18;
+        }
+
+        #mtProgressBackground {
+          width: 100%;
+          height: 30px;
+          background-color: #ddd;
+        }
+
+        #mtProgressBar {
+          width: 0%;
+          height: 100%;
+          background-color: #4CAF50;
+        }
+
+        #mtProgressLabel {
+          text-align: center;
+          line-height: 30px;
+          color: white;
+        }
+
+        #tacJoint1Background, #tacJoint2Background, #tacJoint3Background {
+          width: 100%;
+          height: 30px;
+          background-color: #ddd;
+          position:relative;
+        }
+
+        #tacJoint1Target, #tacJoint2Target , #tacJoint3Target{
+          width: 10%;
+          height: 100%;
+          background-color: #1E90FF;
+          margin-left: 0%;
+          position: absolute;
+        }
+
+        #tacJoint1Bar, #tacJoint2Bar, #tacJoint3Bar {
+          width: 5%;
+          height: 100%;
+          background-color: #4CAF50;
+          margin-left: 0%;
+          position: absolute;
+          z-index: 10;
+        }
+
+        #tacJoint1Label, #tacJoint2Label, #tacJoint3Label {
+          text-align: center;
+          line-height: 30px;
+          color: white;
+         }
+  </style>
+  <script src="jquery.mobile/jquery-1.11.1.min.js"></script>
+  <script src="jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
+  <script src="lib/offline.min.js"></script>
+  <!-- <script src="lib/offline-simulate-ui.min.js"></script> -->
+  <script src="mplHome.min.js"></script>
+  <!--<script src="mplHome.js"></script>-->
+</head>
+
+<body class="container">
+  <!-- Main Mobile Trainer Page -->
+  <div data-role="page" id="ID_MAIN_PAGE">
+    <!-- /header -->
+    <div data-role="header" data-theme="b">
+      <h1>MPL Mobile Trainer</h1>
+    </div>
+    <div data-role="content">
+      <!-- Training and Motion Selection Section -->
+      <p>Selected Motion: <span id="msg_train"></span>
+      </p>
+      <div id="blueimp-image-carousel" class="blueimp-gallery blueimp-gallery-controls blueimp-gallery-carousel">
+        <div class="slides"></div>
+        <h3 class="title"></h3>
+        <a class="prev">‹</a>
+        <a class="next">›</a>
+      </div>
+      <!-- Training Switch -->
+      <div class="ui-field-contain">
+        <label for="trainSwitch">Add_Data:</label>
+        <input type="checkbox" id="trainSwitch" data-role="flipswitch" />
+      </div>
+      <!-- Training Buttons -->
+      <br>
+      <div data-role="controlgroup" data-type="horizontal"> <a href="#" class="ui-btn" id="ID_CLEARCLASS">Clear</a>
+        <a href="#popupResetClassData" data-rel="popup" data-position-to="window" data-role="button" data-inline="true" data-transition="pop" data-theme="a">Reset</a>
+        <a href="#" class="ui-btn" id="ID_SAVE">Save</a>
+      </div>
+      <!-- Confirmation Dialog: Reset Class Data-->
+      <div data-role="popup" id="popupResetClassData" data-overlay-theme="a" data-theme="b" data-dismissible="false" style="max-width:400px;" class="ui-corner-all">
+        <div data-role="header" data-theme="a" class="ui-corner-top">
+          <h1>Confirm Reset</h1>
+        </div>
+        <div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+          <h3 class="ui-title">Reset?</h3>
+          <a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Cancel</a>
+          <a href="#" data-role="button" data-inline="true" data-rel="back" data-transition="flow" data-theme="b" id="ID_CLEARALL">OK</a>
+        </div>
+      </div>
+      <!-- Helper Scripts for Image Carousel -->
+      <script src="blueimp-gallery/js/blueimp-helper.js"></script>
+      <script src="blueimp-gallery/js/blueimp-gallery.js"></script>
+      <script src="blueimp-gallery/js/blueimp-gallery-fullscreen.js"></script>
+      <script src="blueimp-gallery/js/blueimp-gallery-indicator.js"></script>
+      <script src="blueimp-gallery/js/jquery.blueimp-gallery.js"></script>
+      <!--<script src="gallery-links.js"></script>-->
+      <script src="gallery-links-basic.js"></script>
+      <!-- Status Messages -->
+      <br>
+      <p><b>Status:</b>
+      </p>
+      <p>Classification: <span id="main_output"></span>
+      </p>
+      <p>Devices: <span id="msg_status"></span>
+      </p>
+    </div>
+  </div>
+</body>
+
+</html>

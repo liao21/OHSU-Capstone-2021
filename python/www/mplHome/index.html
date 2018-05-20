@@ -99,6 +99,9 @@
   <!-- <script src="lib/offline-simulate-ui.min.js"></script> -->
   <script src="mplHome.min.js"></script>
   <!--<script src="mplHome.js"></script>-->
+  <script src="websocketNative.js"></script>
+  <!--<script src="spacebrew.js/sb-1.4.1.min.js"></script>-->
+  <!--<script src="websocketSpacebrew.js"></script>-->
 </head>
 
 <body class="container">
@@ -216,12 +219,9 @@
       <script src="gallery-links.js"></script>
       <!-- Status Messages -->
       <br>
-      <p><b>Status:</b>
-      </p>
-      <p>Classification: <span id="main_output"></span>
-      </p>
-      <p>Devices: <span id="msg_status"></span>
-      </p>
+      <p><b>Status:</b></p>
+      <p>Classification: <span id="main_output"></span></p>
+      <p>Devices: <span id="msg_status"></span></p>
     </div>
   </div>
   <!-- Advanced Options Page -->
@@ -322,6 +322,7 @@
           <tr><td>Thumb MCP</td><th><span id="5MCP_Cmd"></span></th><th><span id="5MCP_Pos"></span></th><th><span id="5MCP_Torque"></span></th><th><span id="5MCP_Temp"></span></th></tr>
           <tr><td>Thumb IP</td><th><span id="5DIP_Cmd"></span></th><th><span id="5DIP_Pos"></span></th><th><span id="5DIP_Torque"></span></th><th><span id="5DIP_Temp"></span></th></tr>
         </table>
+
         <!-- Toggle Manual Control -->
         <div class="ui-field-contain">
           <label for="manualControl">Manual Ctrl:</label>
@@ -331,50 +332,9 @@
           </select>
         </div>
 
-        <a href="#" class="ui-btn" id="MAN_Stop1">Stop</a>
-        <fieldset class="ui-grid-a">
-          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_ElbowFlex">Elbow Up</a></div>
-          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_ElbowExtend">Elbow Down</a></div>
-        </fieldset>
-        <fieldset class="ui-grid-a">
-          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_Supinate">Wrist Rotate Out</a></div>
-          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_Pronate">Wrist Rotate In</a></div>
-        </fieldset>
-        <fieldset class="ui-grid-a">
-          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_WristFlex">Wrist Flex</a></div>
-          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_WristExtend">Wrist Extend</a></div>
-        </fieldset>
-        <a href="#" class="ui-btn" id="MAN_HandOpen1">Hand Open</a>
-        <fieldset class="ui-grid-a">
-          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_Spherical">Spherical Grasp</a></div>
-          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_Tip">Tip Grasp</a></div>
-        </fieldset>
-        <fieldset class="ui-grid-a">
-          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_ThreeFingerPinch">Three Finger Pinch</a></div>
-          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_Lateral">Lateral Grasp</a></div>
-        </fieldset>
-        <fieldset class="ui-grid-a">
-          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_Cylindrical">Cylindrical Grasp</a></div>
-          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_Point">Point Grasp</a></div>
-        </fieldset>
-        <a href="#" class="ui-btn" id="MAN_HandOpen2">Hand Open</a>
-        <fieldset class="ui-grid-a">
-          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_Index">Index</a></div>
-          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_Middle">Middle</a></div>
-        </fieldset>
-        <fieldset class="ui-grid-a">
-          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_Ring">Ring</a></div>
-          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_Little">Little</a></div>
-        </fieldset>
-        <fieldset class="ui-grid-a">
-          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_Thumb">Thumb</a></div>
-          <div class="ui-block-b"><a href="#" class="ui-btn" id="MAN_RingMiddle">Ring-Middle</a></div>
-        </fieldset>
-        <fieldset class="ui-grid-a">
-          <div class="ui-block-a"><a href="#" class="ui-btn" id="MAN_TheBird">TheBird</a></div>
-        </fieldset>
-        <a href="#" class="ui-btn" id="MAN_Stop2">Stop</a>
-
+        <!-- Dynamically populated buttons here.  See mplHome.js-->
+        <div id="ID_MANUAL_CONTROL">
+        </div>
 
     </div>
     <!-- /content -->

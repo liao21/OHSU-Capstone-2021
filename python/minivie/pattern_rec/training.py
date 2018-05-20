@@ -133,6 +133,7 @@ class TrainingManagerWebsocket(TrainingInterface):
                          'strTACJoint3Bar': '', 'strTACJoint3Target': '', 'strTACJoint3Error': '',
                          'strTACJoint3Name': '',
                          'jointCmd': '', 'jointPos': '', 'jointTorque': '', 'jointTemp': '',
+                         'strNormalizeMyoPosition': '', 'strNormalizeMyoPositionImage': ''
                          }
 
         # keep count of skipped messages so we can send at some nominal rate

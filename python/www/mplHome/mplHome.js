@@ -132,6 +132,12 @@ function routeMessage(cmd_type, cmd_data) {
   if (cmd_type == "strTACJoint3Error") {
     updateTACJointError(cmd_data, "tacJoint3Target");
   }
+  if (cmd_type == "strNormalizeMyoPosition") {
+	  $("#nmp_status").text(cmd_data);
+  }
+  if (cmd_type == "strNormalizeMyoPositionImage") {
+             updateNMPImage(cmd_data);
+  }
 
   // route joint percept message
   if (cmd_type == "jointCmd") {
@@ -350,10 +356,10 @@ function stopMT() {
 
  function startNMP() {
     // Gather parameters to send to myo normalize
-	if(document.getElementById('ID_WEO').checked) {
-	var norm_class= 'Wrist Extend Out'
-	}else if(document.getElementById('ID_EF').checked) {
-	var norm_class= 'Elbow Flexion'
+	if(document.getElementById("ID_WEO").checked) {
+		var norm_class = "Wrist Extend Out"
+	}else if(document.getElementById("ID_EF").checked) {
+		var norm_class = "Elbow Flexion"
 	}
     sendCmd("Cmd:StartNormalizeMyo-" + norm_class)
  }

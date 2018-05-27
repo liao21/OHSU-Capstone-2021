@@ -308,6 +308,7 @@ class TrainingData:
         self.__lock = threading.Lock()
 
         self.num_channels = 0
+        self.features = ['Mav', 'Curve_len', 'Zc', "Ssc"]
 
         self.data = []  # List of all feature extracted samples
         self.id = []  # List of class indices that each sample belongs to
@@ -448,8 +449,8 @@ class TrainingData:
         group = h5.create_group('data')
         group.attrs['description'] = t + 'Myo Armband Raw EMG Data'
         group.attrs['num_channels'] = self.num_channels
-        group.attrs['num_features'] = len(self.vie.FeatureExtract.get_featurenames())
-        group.attrs['feature_names'] = [a.encode('utf8') for a in self.vie.FeatureExtract.get_featurenames()]
+        group.attrs['num_features'] = len(self.features)
+        group.attrs['feature_names'] = [a.encode('utf8') for a in self.features]
         group.create_dataset('time_stamp', data=self.time_stamp)
         group.create_dataset('id', data=self.id)
         encoded = [a.encode('utf8') for a in self.name]

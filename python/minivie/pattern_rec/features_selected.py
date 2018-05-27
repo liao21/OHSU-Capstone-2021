@@ -16,47 +16,47 @@ class Features_selected(object):
 
         if uc.get_user_config_var("mav", "False") == "True":
             mav = pr.features.Mav()
-            self.vie.FeatureExtract.attachFeature(mav)
+            self.vie.attachFeature(mav)
 
         if uc.get_user_config_var("curve_len", "False") == "True":
             curve_len = pr.features.Curve_len(fs=uc.get_user_config_var('FeatureExtract.sample_rate', 200))
-            self.vie.FeatureExtract.attachFeature(curve_len)
+            self.vie.attachFeature(curve_len)
 
         if uc.get_user_config_var("zc", "False") == "True":
             zc = pr.features.Zc(fs=uc.get_user_config_var('FeatureExtract.sample_rate', 200), zc_thresh=uc.get_user_config_var('FeatureExtract.zcThreshold', 0.05))
-            self.vie.FeatureExtract.attachFeature(zc)
+            self.vie.attachFeature(zc)
 
         if uc.get_user_config_var("ssc", "False") == "True":
             ssc = pr.features.Ssc(fs=uc.get_user_config_var('FeatureExtract.sample_rate', 200), ssc_thresh=uc.get_user_config_var('FeatureExtract.zcThreshold', 0.05))
-            self.vie.FeatureExtract.attachFeature(ssc)
+            self.vie.attachFeature(ssc)
 
         if uc.get_user_config_var("wamp", "False") == "True":
             wamp = pr.features.Wamp(fs=uc.get_user_config_var('FeatureExtract.sample_rate', 200), wamp_thresh=uc.get_user_config_var('FeatureExtract.wampThreshold', 0.05))
-            self.vie.FeatureExtract.attachFeature(wamp)
+            self.vie.attachFeature(wamp)
 
         if uc.get_user_config_var("var", "False") == "True":
             var = pr.features.Var()
-            self.vie.FeatureExtract.attachFeature(var)
+            self.vie.attachFeature(var)
 
         if uc.get_user_config_var("vorder", "False") == "True":
             vorder = pr.features.Vorder()
-            self.vie.FeatureExtract.attachFeature(vorder)
+            self.vie.attachFeature(vorder)
 
         if uc.get_user_config_var("logdetect", "False") == "True":
             logdetect = pr.features.Logdetect()
-            self.vie.FeatureExtract.attachFeature(logdetect)
+            self.vie.attachFeature(logdetect)
 
         if uc.get_user_config_var("emghist", "False") == "True":
             emghist = pr.features.EMGhist()
-            self.vie.FeatureExtract.attachFeature(emghist)
+            self.vie.attachFeature(emghist)
 
         if uc.get_user_config_var("ar", "False") == "True":
             ar = pr.features.AR()
-            self.vie.FeatureExtract.attachFeature(ar)
+            self.vie.attachFeature(ar)
 
         if uc.get_user_config_var("ceps", "False") == "True":
             ceps = pr.features.Ceps()
-            self.vie.FeatureExtract.attachFeature(ceps)
+            self.vie.attachFeature(ceps)
 
 
 

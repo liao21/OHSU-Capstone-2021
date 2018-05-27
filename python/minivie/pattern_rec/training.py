@@ -86,7 +86,8 @@ message_history = {'sys_status': '', 'output_class': '', 'training_class': '',
                    'motion_test_status': '', 'motion_test_setup': '', 'motion_test_update': '',
                    'TAC_status': '', 'TAC_setup': '', 'TAC_update': '',
                    'joint_cmd': '', 'joint_pos': '', 'joint_torque': '', 'joint_temp': '',
-                   }
+                   'strNormalizeMyoPosition': '', 'strNormalizeMyoPositionImage': ''
+                         }
 
 
 class WSHandler(tornado.websocket.WebSocketHandler):
@@ -137,18 +138,6 @@ class TrainingManagerWebsocket(TrainingInterface):
             (r"/(.*)", tornado.web.StaticFileHandler, {"path": homepath}),
         ])
 
-        # store the last messages so we don't re-transmit a lot of repeated data
-        self.last_msg = {'strStatus': '', 'strOutputMotion': '', 'strTrainingMotion': '', 'strMotionTester': '',
-                         'strTAC': '', 'strMotionTesterProgress': '', 'strMotionTesterImage': '',
-                         'strTACJoint1Bar': '', 'strTACJoint1Target': '', 'strTACJoint1Error': '',
-                         'strTACJoint1Name': '',
-                         'strTACJoint2Bar': '', 'strTACJoint2Target': '', 'strTACJoint2Error': '',
-                         'strTACJoint2Name': '',
-                         'strTACJoint3Bar': '', 'strTACJoint3Target': '', 'strTACJoint3Error': '',
-                         'strTACJoint3Name': '',
-                         'jointCmd': '', 'jointPos': '', 'jointTorque': '', 'jointTemp': '',
-                         'strNormalizeMyoPosition': '', 'strNormalizeMyoPositionImage': ''
-                         }
         self.last_msg = message_history
 
         # keep count of skipped messages so we can send at some nominal rate

@@ -10,6 +10,7 @@ import mpl
 from collections import Counter, deque
 from controls.plant import class_map
 from inputs import myo, daqEMGDevice
+from pattern_rec import training, assessment, features_selected, FeatureExtract, features
 
 
 class Scenario(object):
@@ -602,6 +603,9 @@ class MplScenario(Scenario):
 
         #Feature Extraction
         self.FeatureExtract = pr.FeatureExtract()
+        select_features = features_selected.Features_selected(self.FeatureExtract)
+        select_features.create_instance_list()
+        #self.TrainingData.features = self.FeatureExtract.get_featurenames()
 
         # Classifier parameters
         self.SignalClassifier = pr.Classifier(self.TrainingData)

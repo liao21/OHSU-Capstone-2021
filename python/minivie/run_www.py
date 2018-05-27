@@ -62,11 +62,6 @@ def main():
 
     vie.setup()
 
-    # Setup Feature Extraction
-    select_features = features_selected.Features_selected(vie)
-    select_features.create_instance_list()
-
-
     # Setup Additional Logging
     if uc.get_user_config_var('DCell.enable', 0):
         # Start DCell Streaming

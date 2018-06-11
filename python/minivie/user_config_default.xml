@@ -39,19 +39,6 @@
     <!-- enable_dcell strain gauge logging-->
 	<add key="DCell.enable"         value="0"/>
     <add key="DCell.serial_port"    value="/dev/ttymxc2"/>
-	
-	<!-- arm and configuration
-		 Arm: 
-			left: Left Arm Prosthetic
-			right: Right Arm Prosthetic
-		 Configurations:
-			ae8: Above Elbow 8 Channels (1 Myo)
-			ae16: Above Elbow 16 Channels (2 Myos)
-			be: Below Elbow 16 Channels (2 Myos, 1 Myo below Elbow & 1 Myo Above Elbow)
-			daq: National Instruments DAQ -->
-	<add key="arm"					value="right"/>
-	<add key="configuration"		value="be"/>
-
 
     <!--Pattern Recognition Parameters-->
     <add key="NumMajorityVotes" value="25"/>
@@ -73,6 +60,19 @@
 	<add key="emghist"    	value="False"/>
 	<add key="ar"    		value="False"/>
 	<add key="ceps"    		value="False"/>
+	<add key="features"		value="Mav,Curve_Len,Zc,Ssc"/>
+	
+	<!-- Arm
+		Use this to select arm -->
+	<add key="arm"					value="right"/>
+	
+	<!-- Motion Track
+		Use this to enable motion tracking in the Unity Environment -->
+	<add key="track"				value="True"/>
+	
+	<!-- Input Type
+		Use this to set input type -->
+	<add key="input_type"				value="myo"/>
 
     <!-- Myo Data Server Streaming Ports
         Use these for establishing a Myo UDP Server that reads from BTLE and forwards
@@ -86,7 +86,7 @@
 
     <!-- Myo Data Client Streaming Ports
         Use these parameters for reading from a Myo Data Source in a client application  -->
-    <add key="myo_client_number_of_devices" value="2"/>
+    <add key="myo_client_number_of_devices" value="1"/>
     <add key="myo_client_mac_address_1"    value="xx:xx:xx:xx:xx:xx"/>
     <add key="myo_client_mac_address_2"    value="xx:xx:xx:xx:xx:xx"/>
     <add key="myo_client_local_port_1"     value="//0.0.0.0:15001"/>
@@ -94,10 +94,18 @@
     <add key="myo_client_remote_port_1"    value="//0.0.0.0:16001"/>
     <add key="myo_client_remote_port_2"    value="//0.0.0.0:16002"/>
 	
+	<!-- Myo Positions
+		Use these parameters to set the location of the myo armbands
+		(will not read second myo if only one is streaming, will assign 
+		above elbow to 15001 first if present)
+			AE: Above Elbow
+			BE: Below Elbow  -->
+	<add key="myo_position_1"    value="BE"/>
+    <add key="myo_position_2"    value="BE"/>
+	
 	<!-- DAQ Data Client
         Use these parameters for reading from a DAQ Data Source in a client application  -->
 	<add key="device_name_and_channels" value="Dev1/ai0:7"/>
-
 
     <!-- MPL Motion Speeds -->
     <add key="MPL.ArmSpeedMin"    value="0.1"/>

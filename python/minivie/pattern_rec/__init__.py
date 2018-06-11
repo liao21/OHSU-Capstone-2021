@@ -10,6 +10,7 @@ import csv
 import logging
 import threading
 import numpy as np
+from utilities.user_config import read_user_config, get_user_config_var
 
 
 
@@ -48,7 +49,7 @@ class FeatureExtract(object):
         which the source's get data method is called, then features are extracted
 
         """
-
+        self.input_source = 0
         if data_input is None:
             # Can't get features
             return None, None, None, None
@@ -144,6 +145,7 @@ class FeatureExtract(object):
         # [ch1f1, ch1f2, ch1f3, ch1f4, ch2f1, ch2f2, ch2f3, ch2f4, ... chNf4]
         """
 
+
         # normalize features
         if self.normalized_orientation is not None:
             # normalize incoming data according to myo
@@ -151,9 +153,6 @@ class FeatureExtract(object):
 
         # update input source (ex. myo)
         self.input_source += 1
-
-        # Number of Samples
-        n = y.shape[0]
 
         features_array = []
 
@@ -308,7 +307,7 @@ class TrainingData:
         self.__lock = threading.Lock()
 
         self.num_channels = 0
-        self.features = ['Mav', 'Curve_len', 'Zc', "Ssc"]
+        self.features = get_user_config_var("features", "Mav,Curve_Len,Zc,Ssc").split()
 
         self.data = []  # List of all feature extracted samples
         self.id = []  # List of class indices that each sample belongs to

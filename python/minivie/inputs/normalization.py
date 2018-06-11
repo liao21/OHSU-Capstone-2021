@@ -248,6 +248,7 @@ class MyoNormalization(NormalizationInterface):
                     (np.array(averaged_training_features_one_myo) + np.array(sample)) / (i + 1)).tolist()
             averaged_training_features.append(averaged_training_features_one_myo)
 
+
         #average normalization feature data
         averaged_normalization_features = []
         for i, data in enumerate(self.data[-1]['featureData']):
@@ -266,13 +267,13 @@ class MyoNormalization(NormalizationInterface):
                 #change orientation
                 rolled_normalization_data = np.roll(normalization_data, int(orientation*num_features))
                 myo_taining_features = averaged_training_features[myo]
-                #find sum of differences between rolled average and training average
-                difference_sum = sum(abs((np.array(myo_taining_features) - np.array(rolled_normalization_data))))
+                #find differences between rolled average and training average of first feature
+                difference = sum(abs((np.array(myo_taining_features[:8]) - np.array(rolled_normalization_data[:8]))))
                 if best_diff is None:
-                    best_diff = difference_sum
+                    best_diff = difference
                     best_orientation = orientation
-                elif difference_sum < best_diff:
-                    best_diff = difference_sum
+                elif difference < best_diff:
+                    best_diff = difference
                     best_orientation = orientation
             self.normalized_orientation.append(best_orientation)
 
@@ -288,5 +289,5 @@ class MyoNormalization(NormalizationInterface):
     #rest orientation and adjust future data
     def reset_orientation(self):
         self.send_status('Myo Orientation Reset')
-        self.normalized_orientation = [0,0]
+        self.normalized_orientation = None
         self.save_normalization()

@@ -286,6 +286,7 @@ function setupCallbacks() {
   $("#ID_ASSESSMENT_TAC_STOP").on("mousedown", function() {stopTAC()} );
   $("#ID_GOTO_HOME").on("mousedown", function() {sendCmd("Cmd:GotoHome")} );
   $("#ID_GOTO_PARK").on("mousedown", function() {sendCmd("Cmd:GotoPark")} );
+  $("#ID_NORMALIZE_UNITY_ORIENTATION").on("mousedown", function() {sendCmd("Cmd:NormUnity")} );
 
   // Generate the HTML required to setup buttons for manual control
   var message = []  // append this to create HTML
@@ -349,7 +350,6 @@ function setupCallbacks() {
   // Generate Button Callbacks
   $("#MAN_Stop1").on("mousedown", function() {sendCmd("Man:Stop")} );
   $("#MAN_Stop2").on("mousedown", function() {sendCmd("Man:Stop")} );
-
 
   // Create checkbox based switch listeners:
   $('#trainSwitch').on("change", function() { this.checked === true ? sendCmd("Cmd:Add") : sendCmd("Cmd:Stop"); });

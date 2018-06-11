@@ -307,6 +307,9 @@ class Scenario(object):
                 utilities.sys_cmd.change_myo(1)
             elif cmd_data == 'ChangeMyoSet2':
                 utilities.sys_cmd.change_myo(2)
+            elif cmd_data == 'NormUnity':
+                self.Plant.Fref = np.eye(4)
+                self.Plant.Fref2 = np.eye(4)
 
             #################
             # System Options
@@ -505,8 +508,8 @@ class Scenario(object):
             self.Plant.set_grasp_velocity(-self.hand_gain_value)
 
         #track residual
-        if rot_mat is not None:
-            self.Plant.trackResidual(self.arm, self.shoulder, self.elbow, self.track, rot_mat)
+        if self.track is True and rot_mat is not None:
+            self.Plant.trackResidual(self.arm, self.shoulder, self.elbow, rot_mat)
 
         #update positions
         self.Plant.update()
@@ -553,47 +556,50 @@ class MplScenario(Scenario):
         from controls.plant import Plant
         from scenarios import Scenario
 
-        # attach inputs
-        if get_user_config_var('myo_client_number_of_devices', 1) > 0:
-            local_port_1 = get_user_config_var('myo_client_local_port_1', '//0.0.0.0:15001')
-        # add second device
-        if get_user_config_var('myo_client_number_of_devices', 1) > 1:
-            local_port_2 = get_user_config_var('myo_client_local_port_2', '//0.0.0.0:15002')
-
         # set arm
         self.arm = get_user_config_var('arm', 'right')
 
-        #get configuration
-        configuration = get_user_config_var('configuration', 'ae8')
+        #configure input
+        if get_user_config_var('input_type', 'myo') == 'myo':
 
-        #Set joints for motion tracking and input streams with configuration from config xml
-        if configuration == 'ae8':
-            self.shoulder = True
-            self.elbow = False
-            source_list = [myo.MyoUdp(source=local_port_1)]
+            # get ports and configure joints based upon myo location
+            if get_user_config_var('myo_client_number_of_devices', 1) == 1:
+                local_port_1 = get_user_config_var('myo_client_local_port_1', '//0.0.0.0:15001')
+                if get_user_config_var('myo_position_1', 'AE') == 'AE':
+                    self.shoulder = True
+                    self.elbow = False
+                else:
+                    self.shoulder = False
+                    self.elbow = True
+                source_list = [myo.MyoUdp(source=local_port_1)]
 
-        elif configuration == 'ae16':
-            self.shoulder = True
-            self.elbow = False
-            source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
+            # add second device
+            elif get_user_config_var('myo_client_number_of_devices', 1) == 2:
+                local_port_1 = get_user_config_var('myo_client_local_port_1', '//0.0.0.0:15001')
+                local_port_2 = get_user_config_var('myo_client_local_port_2', '//0.0.0.0:15002')
 
-        elif configuration == 'be':
-            self.shoulder = True
-            self.elbow = True
-            source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
+                if (get_user_config_var('myo_position_1', 'AE') == 'AE') and (get_user_config_var('myo_position_2', 'AE') == 'AE'):
+                    self.shoulder = True
+                    self.elbow = False
+                    source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
 
-        elif configuration == 'daq':
+                elif (get_user_config_var('myo_position_1', 'AE') == 'BE') and (get_user_config_var('myo_position_2', 'AE') == 'BE'):
+                    self.shoulder = False
+                    self.elbow = True
+                    source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
+
+                else:
+                    if (get_user_config_var('myo_position_1', 'AE') == 'AE'):
+                        source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
+                    else:
+                        source_list = [myo.MyoUdp(source=local_port_2), myo.MyoUdp(source=local_port_1)]
+
+        elif get_user_config_var('input_type', 'myo') == 'daq':
             self.shoulder = False
             self.elbow = False
             source_list = [daqEMGDevice.DaqEMGDevice(get_user_config_var('device_name_and_channels', 'Dev1/ai0:7'))]
 
-        else:
-            self.shoulder = True
-            self.elbow = True
-            source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
-
         self.attach_source(source_list)
-
 
         # Training Data holds data labels
         # training data manager
@@ -605,7 +611,6 @@ class MplScenario(Scenario):
         self.FeatureExtract = pr.FeatureExtract()
         select_features = features_selected.Features_selected(self.FeatureExtract)
         select_features.create_instance_list()
-        #self.TrainingData.features = self.FeatureExtract.get_featurenames()
 
         # Classifier parameters
         self.SignalClassifier = pr.Classifier(self.TrainingData)
@@ -620,7 +625,10 @@ class MplScenario(Scenario):
         # For MPL, this might be: real MPL/NFU, Virtual Arm, etc.
         data_sink = get_user_config_var('DataSink', 'Unity')
         if data_sink in ['Unity', 'UnityUdp']:
-            self.track = True
+            if (get_user_config_var('track', 'False') == 'True'):
+                self.track = True
+            else:
+                self.track = False
             local_address = get_user_config_var('UnityUdp.local_address', '//0.0.0.0:25001')
             remote_address = get_user_config_var('UnityUdp.remote_address', '//127.0.0.1:25000')
             sink = UnityUdp(local_address=local_address, remote_address=remote_address)

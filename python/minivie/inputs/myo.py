@@ -512,8 +512,12 @@ class MyoUdp(SignalInput):
         """ Return rotation matrix computed from Myo quaternion"""
         with self.__lock:
             rot_mat = quat2mat(self.__quat)
-            [U, s, V] = np.linalg.svd(rot_mat)
-            return np.dot(U, V)
+            try:
+                [U, s, V] = np.linalg.svd(rot_mat)
+                return np.dot(U, V)
+            except:
+                return np.eye(3)
+
 
     def get_imu(self):
         """ Return IMU data as a dictionary 

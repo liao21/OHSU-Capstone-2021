@@ -285,6 +285,15 @@
         <p>Devices: <span id="msg_status_opt"></span>
         </p>
 
+        <!-- Toggle Manual Control -->
+        <div class="ui-field-contain">
+          <label for="manualControl">Manual Ctrl:</label>
+          <select type="checkbox" id="manualControl" data-role="flipswitch">
+            <option value="Off" selected="selected">Off</option>
+            <option value="On">On</option>
+          </select>
+        </div>
+
         <!-- Toggle Joint Percepts -->
         <div class="ui-field-contain">
           <label for="streamPercepts">Joint Percepts:</label>
@@ -323,15 +332,6 @@
           <tr><td>Thumb MCP</td><th><span id="5MCP_Cmd"></span></th><th><span id="5MCP_Pos"></span></th><th><span id="5MCP_Torque"></span></th><th><span id="5MCP_Temp"></span></th></tr>
           <tr><td>Thumb IP</td><th><span id="5DIP_Cmd"></span></th><th><span id="5DIP_Pos"></span></th><th><span id="5DIP_Torque"></span></th><th><span id="5DIP_Temp"></span></th></tr>
         </table>
-
-        <!-- Toggle Manual Control -->
-        <div class="ui-field-contain">
-          <label for="manualControl">Manual Ctrl:</label>
-          <select type="checkbox" id="manualControl" data-role="flipswitch">
-            <option value="Off" selected="selected">Off</option>
-            <option value="On">On</option>
-          </select>
-        </div>
 
         <!-- Dynamically populated buttons here.  See mplHome.js-->
         <div id="ID_MANUAL_CONTROL">

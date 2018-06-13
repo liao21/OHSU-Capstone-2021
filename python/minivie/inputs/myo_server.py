@@ -151,11 +151,13 @@ class MyoUdpServer(object):
 
         if handle_hex is None:
             logging.error('Connection not found while setting adapter rate')
+            return
 
         cmd_str = "hcitool -i hci{} cmd 0x08 0x0013 {} {} 06 00 06 00 00 00 90 01 01 00 07 00".format(
             self.iface, handle_hex[2:], handle_hex[:2])
         self.logger.info("Setting host adapter update rate: " + cmd_str)
-        subprocess.Popen(cmd_str, shell=True)
+        # subprocess.Popen(cmd_str, shell=True)
+        subprocess.run(cmd_str, shell=True)
 
     def connect(self):
         # connect bluetooth
@@ -198,12 +200,11 @@ class MyoUdpServer(object):
                 self.logger.warning('Missed Myo notification.')
                 self.peripheral.writeCharacteristic(0x19, struct.pack('<bbbbb', 1, 3, 3, 1, 0), 1)  # Tell the myo we want EMG, IMU
 
-
             if t_elapsed > status_msg_rate:
-                rate1 = self.delegate.counter['emg'] / t_elapsed
-                rate2 = self.delegate.counter['imu'] / t_elapsed
+                rate_myo = self.delegate.counter['emg'] / t_elapsed
+                rate_imu = self.delegate.counter['imu'] / t_elapsed
                 status = "MAC: %s Port: %d EMG: %4.1f Hz IMU: %4.1f Hz BattEvts: %d" % (
-                    self.mac_address, self.remote_port[1], rate1, rate2, self.delegate.counter['battery'])
+                    self.mac_address, self.remote_port[1], rate_myo, rate_imu, self.delegate.counter['battery'])
                 self.logger.info(status)
 
                 # reset timer and rate counters
@@ -271,28 +272,25 @@ class MyoDelegate(btle.DefaultDelegate):
         return
 
 
-def run_threads():
+def setup_threads():
 
     # get parameters from xml files and create Servers
     s1 = MyoUdpServer(iface=0,
-                      mac_address=uc.get_user_config_var('myo_mac_address_1', 'xx:xx:xx:xx:xx'),
-                      local_port=get_address(uc.get_user_config_var('myo_local_port_1', '//127.0.0.1:16001')),
-                      remote_port=get_address(uc.get_user_config_var('myo_remote_port_1', '//127.0.0.1:15001')),
+                      mac_address=uc.get_user_config_var('MyoUdpServer.mac_address_1', 'xx:xx:xx:xx:xx'),
+                      local_port=get_address(uc.get_user_config_var('MyoUdpServer.local_address_1', '//127.0.0.1:16001')),
+                      remote_port=get_address(uc.get_user_config_var('MyoUdpServer.remote_address_1', '//127.0.0.1:15001')),
                       data_logger=logging.getLogger('Myo1'),
                       name='Myo1')
 
     s2 = MyoUdpServer(iface=0,
-                      mac_address=uc.get_user_config_var('myo_mac_address_2', 'xx:xx:xx:xx:xx'),
-                      local_port=get_address(uc.get_user_config_var('myo_local_port_2', '//127.0.0.1:16002')),
-                      remote_port=get_address(uc.get_user_config_var('myo_remote_port_2', '//127.0.0.1:15002')),
+                      mac_address=uc.get_user_config_var('MyoUdpServer.mac_address_2', 'xx:xx:xx:xx:xx'),
+                      local_port=get_address(uc.get_user_config_var('MyoUdpServer.local_address_2', '//127.0.0.1:16002')),
+                      remote_port=get_address(uc.get_user_config_var('MyoUdpServer.remote_address_2', '//127.0.0.1:15002')),
                       data_logger=logging.getLogger('Myo2'),
                       name='Myo2')
 
-    # go live with connections
-    #s1.thread.start()
-    #time.sleep(0.1)
-    #s2.thread.start()
     return s1, s2
+
 
 def main():
     """Parse command line arguments into argparse model.
@@ -312,8 +310,7 @@ def main():
 
     if args.XML is not None:
         uc.read_user_config(file=args.XML)
-        #run_threads()
-        s1, s2 = run_threads()
+        s1, s2 = setup_threads()
 
         print('Connecting Device #1')
         s1.connect()
@@ -329,7 +326,6 @@ def main():
         s2.set_host_parameters()
         time.sleep(0.5)
         s1.set_host_parameters()
-
 
     print(sys.argv[0] + " Version: " + __version__)
 

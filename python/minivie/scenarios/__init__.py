@@ -44,7 +44,7 @@ class Scenario(object):
         self.auto_open = False  # Automatically open hand if in rest state
 
         # Create a buffer for storing recent class decisions for majority voting
-        self.decision_buffer = deque([], get_user_config_var('NumMajorityVotes', 25))
+        self.decision_buffer = deque([], get_user_config_var('PatternRec.num_majority_votes', 25))
 
         self.output = None  # Will contain latest status message
 
@@ -59,12 +59,12 @@ class Scenario(object):
 
         # Control gains and speeds for precision control mode
         self.precision_mode = False
-        self.gain_value = 1.4
+        self.gain_value = get_user_config_var('MPL.ArmSpeedDefault', 1.4)
         self.gain_value_last = self.gain_value
-        self.gain_value_precision = 0.2
-        self.hand_gain_value = 1.2
+        self.gain_value_precision = get_user_config_var('MPL.ArmSpeedPrecision', 0.2)
+        self.hand_gain_value = get_user_config_var('MPL.HandSpeedDefault', 1.2)
         self.hand_gain_value_last = self.hand_gain_value
-        self.hand_gain_value_precision = 0.15
+        self.hand_gain_value_precision = get_user_config_var('MPL.HandSpeedPrecision', 0.15)
 
     def set_precision_mode(self, value):
         # Select between precision mode or default mode.
@@ -122,18 +122,18 @@ class Scenario(object):
     def gain(self, factor):
         # Increase the speed of the arm and apply max / min constraints
         self.gain_value *= factor
-        if self.gain_value < get_user_config_var('MPL.ArmSpeedMin', '0.1'):
-            self.gain_value = get_user_config_var('MPL.ArmSpeedMin', '0.1')
-        if self.gain_value > get_user_config_var('MPL.ArmSpeedMax', '5'):
-            self.gain_value = get_user_config_var('MPL.ArmSpeedMax', '5')
+        if self.gain_value < get_user_config_var('MPL.ArmSpeedMin', 0.1):
+            self.gain_value = get_user_config_var('MPL.ArmSpeedMin', 0.1)
+        if self.gain_value > get_user_config_var('MPL.ArmSpeedMax', 5):
+            self.gain_value = get_user_config_var('MPL.ArmSpeedMax', 5)
 
     def hand_gain(self, factor):
         # Increase the speed of the hand and apply max / min constraints
         self.hand_gain_value *= factor
-        if self.hand_gain_value < get_user_config_var('MPL.HandSpeedMin', '0.1'):
-            self.hand_gain_value = get_user_config_var('MPL.HandSpeedMin', '0.1')
-        if self.hand_gain_value > get_user_config_var('MPL.HandSpeedMax', '5'):
-            self.hand_gain_value = get_user_config_var('MPL.HandSpeedMax', '5')
+        if self.hand_gain_value < get_user_config_var('MPL.HandSpeedMin', 0.1):
+            self.hand_gain_value = get_user_config_var('MPL.HandSpeedMin', 0.1)
+        if self.hand_gain_value > get_user_config_var('MPL.HandSpeedMax', 5):
+            self.hand_gain_value = get_user_config_var('MPL.HandSpeedMax', 5)
 
     def command_string(self, value):
         """
@@ -297,9 +297,9 @@ class Scenario(object):
             # Myo Control Options
             ######################
             elif cmd_data == 'RestartMyo1':
-                utilities.sys_cmd.restart_myo(1)
+                utilities.sys_cmd.restart_myo()
             elif cmd_data == 'RestartMyo2':
-                utilities.sys_cmd.restart_myo(2)
+                utilities.sys_cmd.restart_myo()
             elif cmd_data == 'ChangeMyoSet1':
                 utilities.sys_cmd.change_myo(1)
             elif cmd_data == 'ChangeMyoSet2':
@@ -546,12 +546,12 @@ class MplScenario(Scenario):
         from scenarios import Scenario
 
         # attach inputs
-        local_port_1 = get_user_config_var('myo_client_local_port_1', '//0.0.0.0:15001')
-        source_list = [myo.MyoUdp(source=local_port_1)]
+        local_address_1 = get_user_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
+        source_list = [myo.MyoUdp(source=local_address_1)]
         # add second device
-        if get_user_config_var('myo_client_number_of_devices', 1) > 1:
-            local_port_2 = get_user_config_var('myo_client_local_port_2', '//0.0.0.0:15002')
-            source_list.append(myo.MyoUdp(source=local_port_2))
+        if get_user_config_var('MyoUdpClient.num_devices', 1) > 1:
+            local_address_2 = get_user_config_var('MyoUdpClient.local_address_2', '//0.0.0.0:15002')
+            source_list.append(myo.MyoUdp(source=local_address_2))
         self.attach_source(source_list)
 
         # Training Data holds data labels
@@ -562,8 +562,8 @@ class MplScenario(Scenario):
 
         # Setup feature extract and properties
         self.FeatureExtract = pr.FeatureExtract()
-        self.FeatureExtract.zc_thresh = get_user_config_var('FeatureExtract.zcThreshold', 0.05)
-        self.FeatureExtract.ssc_thresh = get_user_config_var('FeatureExtract.sscThreshold', 0.05)
+        self.FeatureExtract.zc_thresh = get_user_config_var('FeatureExtract.zc_threshold', 0.05)
+        self.FeatureExtract.ssc_thresh = get_user_config_var('FeatureExtract.ssc_threshold', 0.05)
         self.FeatureExtract.sample_rate = get_user_config_var('FeatureExtract.sample_rate', 200)
 
         # Classifier parameters
@@ -571,7 +571,7 @@ class MplScenario(Scenario):
         self.SignalClassifier.fit()
 
         # Plant maintains current limb state (positions) during velocity control
-        filename = get_user_config_var('rocTable', '../../WrRocDefaults.xml')
+        filename = get_user_config_var('MPL.roc_table', '../../WrRocDefaults.xml')
         dt = get_user_config_var('timestep', 0.02)
         self.Plant = Plant(dt, filename)
 
@@ -596,7 +596,7 @@ class MplScenario(Scenario):
             sys.exit(1)
 
         # synchronize the data sink with the plant model
-        if get_user_config_var('mpl_connection_check', 1):
+        if get_user_config_var('MPL.connection_check', 1):
             sink.wait_for_connection()
         # Synchronize joint positions
         if sink.position['last_percept'] is not None:

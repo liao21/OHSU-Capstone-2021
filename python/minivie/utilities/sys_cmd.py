@@ -16,18 +16,33 @@ def ping(host):
     import platform
 
     # Ping parameters as function of OS
-    ping_str = "-n 1" if platform.system().lower() == "windows" else "-c 1"
+    ping_arg = "-n" if platform.system().lower() == "windows" else "-c"
 
-    # Ping
-    return os.system("ping " + ping_str + " " + host).wait() == 0
+    # Block for ping result
+    return subprocess.run(['ping', ping_arg, '1', host]).returncode
 
 
-def restart_myo(unused):
+def restart_myo():
     # Use this function to issue a restart command on the myo services.
     # Note this gets trickier when primary/back myo bands are used.
     # first check if the service is active, only then issue restart
-    os.system("sudo systemctl is-enabled mpl_myo1.service | grep 'enabled' > /dev/null && sudo systemctl stop mpl_myo1.service && sleep 3 && sudo systemctl start mpl_myo1.service")
-    os.system("sudo systemctl is-enabled mpl_myo2.service | grep 'enabled' > /dev/null && sudo systemctl stop mpl_myo2.service && sleep 3 && sudo systemctl start mpl_myo2.service")
+    #
+    # Function is only for use with Linux
+
+    if not platform.system().lower() == 'linux':
+        return
+    else:
+        logging.critical('Restarting MYO')
+
+    if not subprocess.run(['systemctl', 'is-enabled', 'mpl_myo1.service']).returncode:
+        subprocess.run(['sudo', 'systemctl', 'stop', 'mpl_myo1.service'])
+        subprocess.run(['sleep', '3'])
+        subprocess.run(['sudo', 'systemctl', 'start', 'mpl_myo1.service'])
+
+    if not subprocess.run(['systemctl', 'is-enabled', 'mpl_myo2.service']).returncode:
+        subprocess.run(['sudo', 'systemctl', 'stop', 'mpl_myo2.service'])
+        subprocess.run(['sleep', '3'])
+        subprocess.run(['sudo', 'systemctl', 'start', 'mpl_myo2.service'])
 
 
 def change_myo(val):
@@ -35,21 +50,24 @@ def change_myo(val):
     # This is accomplished by stopping/disabling and enabling/starting the respective services
     # Set one is mpl_myo1
     # Set two is mpl_myo2
+    #
+    # Function is only for use with Linux
+
+    if not platform.system().lower() == 'linux':
+        return
+    else:
+        logging.critical('Changing to MYO set: ' + str(val))
 
     if val == 1:
-        send_system_command(['sudo', 'systemctl', 'stop', 'mpl_myo2.service'])
-        send_system_command(['sudo', 'systemctl', 'disable', 'mpl_myo2.service'])
-        send_system_command(['sudo', 'systemctl', 'enable', 'mpl_myo1.service'])
-        send_system_command(['sudo', 'systemctl', 'start', 'mpl_myo1.service'])
+        subprocess.run(['sudo', 'systemctl', 'stop', 'mpl_myo2.service'])
+        subprocess.run(['sudo', 'systemctl', 'disable', 'mpl_myo2.service'])
+        subprocess.run(['sudo', 'systemctl', 'enable', 'mpl_myo1.service'])
+        subprocess.run(['sudo', 'systemctl', 'start', 'mpl_myo1.service'])
     elif val == 2:
-        send_system_command(['sudo', 'systemctl', 'stop', 'mpl_myo1.service'])
-        send_system_command(['sudo', 'systemctl', 'disable', 'mpl_myo1.service'])
-        send_system_command(['sudo', 'systemctl', 'enable', 'mpl_myo2.service'])
-        send_system_command(['sudo', 'systemctl', 'start', 'mpl_myo2.service'])
-
-
-def reboot():
-    send_system_command("sudo shutdown -r now")
+        subprocess.run(['sudo', 'systemctl', 'stop', 'mpl_myo1.service'])
+        subprocess.run(['sudo', 'systemctl', 'disable', 'mpl_myo1.service'])
+        subprocess.run(['sudo', 'systemctl', 'enable', 'mpl_myo2.service'])
+        subprocess.run(['sudo', 'systemctl', 'start', 'mpl_myo2.service'])
 
 
 def shutdown():
@@ -60,7 +78,7 @@ def shutdown():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     while True:
-        # Issue vibrate command for myo listenting on this port
+        # Issue vibrate command for myo listening on this port
         s.sendto(bytearray([1]), ('localhost', 16001))
         time.sleep(0.5)
         s.sendto(bytearray([1]), ('localhost', 16001))
@@ -105,7 +123,9 @@ def set_system_time(date_num, time_error=30.0):
 
 
 def send_system_command(cmd):
-    # Route all os.system calls through here to allow system checks and ensure these are enabled:
+    # Route all os.system calls through here to allow system checks and ensure these are enabled
+    #
+    # This function creates the subprocess immediately and is non-blocking
 
     logging.critical('SysCmd: ' + " ".join(cmd))
 
@@ -117,4 +137,3 @@ def send_system_command(cmd):
     else:
         logging.critical('System command not permitted on this platform')
         return None
-

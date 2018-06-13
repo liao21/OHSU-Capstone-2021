@@ -166,9 +166,9 @@ def setup_file_logging(prefix=None, log_level=logging.INFO):
     logger.setLevel(log_level)
 
     if prefix is None:
-        prefix = get_user_config_var('userFilePrefix', 'MiniVIE_')
+        prefix = get_user_config_var('Logging.user_file_prefix', 'MiniVIE_')
 
-    use_combined_log = get_user_config_var('use_combined_log', 0)
+    use_combined_log = get_user_config_var('Logging.use_combined_log', 0)
     # create file handler which logs debug messages
     file_path = '.'
     if use_combined_log:
@@ -244,22 +244,22 @@ def main():
     read_user_config(filename)
     
     # check known types
-    get_user_config_var('rocTable', '')
-    get_user_config_var('FeatureExtract.zcThreshold', 0.0)
+    get_user_config_var('MPL.roc_table', '')
+    get_user_config_var('FeatureExtract.zc_threshold', 0.0)
     get_user_config_var('mplVulcanXCommandPort', 9000)
 
     # check invalid types
     get_user_config_var('TEST_INVALID_rocTable', '')
-    get_user_config_var('TEST_INVALID_FeatureExtract.zcThreshold', 0.0)
+    get_user_config_var('TEST_INVALID_FeatureExtract.zc_threshold', 0.0)
     get_user_config_var('TEST_INVALID_mplVulcanXCommandPort', 9000)
-    get_user_config_var('rocTable', None)
+    get_user_config_var('MPL.roc_table', None)
     
     get_user_config_var('ELBOW_LIMITS', (0.0, 140.0))
     get_user_config_var('TEST_INVALID_ELBOW_LIMITS', (0.0, 140.0))
 
     # overwrite old values
-    set_user_config_var('FeatureExtract.sscThreshold', '0.01')
-    set_user_config_var('FeatureExtract.zcThreshold', 0.01)
+    set_user_config_var('FeatureExtract.ssc_threshold', '0.01')
+    set_user_config_var('FeatureExtract.zc_threshold', 0.01)
 
     # add new key-value pairs
     set_user_config_var('Test Int Value', 1)

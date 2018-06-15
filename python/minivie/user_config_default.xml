@@ -68,7 +68,7 @@
 	
 	<!-- Motion Track
 		Use this to enable motion tracking in the Unity Environment -->
-	<add key="track"				value="True"/>
+	<add key="track"				value="True"/> <!-- [True | False] -->
 	
 	<!-- Input Type
 		Use this to set input type -->

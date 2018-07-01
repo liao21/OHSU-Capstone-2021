@@ -126,6 +126,12 @@ function routeMessage(cmd_type, cmd_data) {
       updateTACJointBar(data[3], "tacJoint3Bar", "tacJoint3Label");
     }
   }
+  if (cmd_type == "strNormalizeMyoPosition") {
+	  $("#nmp_status").text(cmd_data);
+  }
+  if (cmd_type == "strNormalizeMyoPositionImage") {
+             updateNMPImage(cmd_data);
+  }
 
   // route joint percept message
   if (cmd_type == "joint_cmd") {
@@ -273,11 +279,14 @@ function setupCallbacks() {
   $("#ID_SHUTDOWN").on("mousedown", function() {sendCmd("Cmd:Shutdown")} );
   $("#ID_ASSESSMENT_MT").on("mousedown", function() {startMT()} );
   $("#ID_ASSESSMENT_MT_STOP").on("mousedown", function() {stopMT()} );
+  $("#ID_NORMALIZE_MYO_POSITION").on("mousedown", function() {startNMP()} );
+  $("#ID_Reset_MYO_POSITION").on("mousedown", function() {sendCmd("Cmd:ResetOrientation")} );
   $("#ID_ASSESSMENT_TAC1").on("mousedown", function() {startTAC1()} );
   $("#ID_ASSESSMENT_TAC3").on("mousedown", function() {startTAC3()} );
   $("#ID_ASSESSMENT_TAC_STOP").on("mousedown", function() {stopTAC()} );
   $("#ID_GOTO_HOME").on("mousedown", function() {sendCmd("Cmd:GotoHome")} );
   $("#ID_GOTO_PARK").on("mousedown", function() {sendCmd("Cmd:GotoPark")} );
+  $("#ID_NORMALIZE_UNITY_ORIENTATION").on("mousedown", function() {sendCmd("Cmd:NormUnity")} );
 
   // Generate the HTML required to setup buttons for manual control
   var message = []  // append this to create HTML
@@ -342,7 +351,6 @@ function setupCallbacks() {
   $("#MAN_Stop1").on("mousedown", function() {sendCmd("Man:Stop")} );
   $("#MAN_Stop2").on("mousedown", function() {sendCmd("Man:Stop")} );
 
-
   // Create checkbox based switch listeners:
   $('#trainSwitch').on("change", function() { this.checked === true ? sendCmd("Cmd:Add") : sendCmd("Cmd:Stop"); });
   $('#precisionMode').on("change", function() { this.checked === true ? sendCmd("Cmd:PrecisionModeOn") : sendCmd("Cmd:PrecisionModeOff"); });
@@ -379,6 +387,16 @@ function stopMT() {
   sendCmd("Cmd:StopMotionTester")
 }
 
+ function startNMP() {
+    // Gather parameters to send to myo normalize
+	if(document.getElementById("ID_WEO").checked) {
+		var norm_class = "Wrist Extend Out"
+	}else if(document.getElementById("ID_EF").checked) {
+		var norm_class = "Elbow Flexion"
+	}
+    sendCmd("Cmd:StartNormalizeMyo-" + norm_class)
+ }
+
 function startTAC1() {
   // Gather parameters to send to TAC1
   var repetitions = $("#ID_REPETITIONS").val()
@@ -414,6 +432,11 @@ function updateMTProgressBar(percent) {
 function updateMTImage(imageFile){
   // Function to update motion tester image based on class being assessed
   document.getElementById("ID_MT_IMAGE").src=imageFile
+}
+
+// Function to update normalize myo position image based on class being assessed
+function updateNMPImage(imageFile){
+    document.getElementById("ID_NMP_IMAGE").src=imageFile
 }
 
 function updateTACJointBar(value, barId, labelId) {

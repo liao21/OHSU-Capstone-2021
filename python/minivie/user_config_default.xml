@@ -20,6 +20,7 @@
 
     <add key="MPL.connection_check"         value="1"/>
 
+
     <!-- Control MPL App Settings -->
     <add key="MobileApp.port"           value="9090"/>
     <add key="MobileApp.homepage"       value="index.html"/>
@@ -36,14 +37,42 @@
     <add key="MPL.enable_impedance"         value="1"/>
 
     <!-- enable_dcell strain gauge logging-->
-    <add key="DCell.enable"         value="0"/>
+	<add key="DCell.enable"         value="0"/>
     <add key="DCell.serial_port"    value="/dev/ttymxc2"/>
 
     <!--Pattern Recognition Parameters-->
     <add key="PatternRec.num_majority_votes" value="25"/>
     <add key="FeatureExtract.zc_threshold" value="0.05"/>
     <add key="FeatureExtract.ssc_threshold" value="0.05"/>
+	<add key="FeatureExtract.wampThreshold" value="0.05"/>
     <add key="FeatureExtract.sample_rate" value="200"/>
+	
+	<!-- Feature Extraction Techniques  
+		Use this to set what feature extraction techniques will be used-->
+	<add key="mav"    		value="True"/>
+	<add key="curve_len"    value="True"/>
+	<add key="zc"  			value="True"/>
+	<add key="ssc"    		value="True"/>
+	<add key="wamp"    		value="False"/>
+	<add key="var"    		value="False"/>
+	<add key="vorder"    	value="False"/>
+	<add key="logdetect"    value="False"/>
+	<add key="emghist"    	value="False"/>
+	<add key="ar"    		value="False"/>
+	<add key="ceps"    		value="False"/>
+	<add key="features"		value="Mav,Curve_Len,Zc,Ssc"/>
+	
+	<!-- Arm
+		Use this to select arm -->
+	<add key="arm"					value="right"/>
+	
+	<!-- Motion Track
+		Use this to enable motion tracking in the Unity Environment -->
+	<add key="track"				value="True"/> <!-- [True | False] -->
+	
+	<!-- Input Type
+		Use this to set input type -->
+	<add key="input_type"				value="myo"/>
 
     <!-- Myo Data Server Streaming Ports
         Use these for establishing a Myo UDP Server that reads from BTLE and forwards
@@ -64,7 +93,19 @@
     <add key="MyoUdpClient.local_address_2"     value="//0.0.0.0:15002"/>
     <add key="MyoUdpClient.remote_address_1"    value="//0.0.0.0:16001"/>
     <add key="MyoUdpClient.remote_address_2"    value="//0.0.0.0:16002"/>
-
+	
+	<!-- Myo Positions
+		Use these parameters to set the location of the myo armbands
+		(will not read second myo if only one is streaming, will assign 
+		above elbow to 15001 first if present)
+			AE: Above Elbow
+			BE: Below Elbow  -->
+	<add key="myo_position_1"    value="BE"/>
+    <add key="myo_position_2"    value="BE"/>
+	
+	<!-- DAQ Data Client
+        Use these parameters for reading from a DAQ Data Source in a client application  -->
+	<add key="device_name_and_channels" value="Dev1/ai0:7"/>
 
     <!-- MPL Motion Speeds -->
     <add key="MPL.ArmSpeedMin"    value="0.1"/>

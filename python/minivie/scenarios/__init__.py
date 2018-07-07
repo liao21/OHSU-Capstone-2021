@@ -563,7 +563,7 @@ class MplScenario(Scenario):
         if get_user_config_var('input_type', 'myo') == 'myo':
 
             # get ports and configure joints based upon myo location
-            if get_user_config_var('myo_client_number_of_devices', 1) == 1:
+            if get_user_config_var('MyoUdpClient.num_devices', 1) == 1:
                 local_port_1 = get_user_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
                 if get_user_config_var('myo_position_1', 'AE') == 'AE':
                     self.shoulder = True
@@ -574,7 +574,7 @@ class MplScenario(Scenario):
                 source_list = [myo.MyoUdp(source=local_port_1)]
 
             # add second device
-            elif get_user_config_var('myo_client_number_of_devices', 1) == 2:
+            elif get_user_config_var('MyoUdpClient.num_devices', 1) == 2:
                 local_port_1 = get_user_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
                 local_port_2 = get_user_config_var('MyoUdpClient.local_address_2', '//0.0.0.0:15002')
 

@@ -137,7 +137,7 @@ from transforms3d.euler import quat2euler
 from transforms3d.quaternions import quat2mat
 
 # The following is only supported under linux (transmit mode)
-if platform.system() is 'Linux':
+if platform.system() == 'Linux':
     from bluepy.btle import DefaultDelegate as btleDefaultDelegate
     from bluepy.btle import BTLEException as btleBTLEException
     from bluepy.btle import Peripheral as btlePeripheral

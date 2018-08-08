@@ -700,6 +700,25 @@ classdef TrainingData < handle
                 end
             end
             
+            
+            % check file size
+            sz = dir(fullFile);
+            if isempty(sz)
+                % file does not exist
+                fprintf('File does not exist: %s\n', fullFile);
+                return
+            elseif length(sz) > 1
+                % file is a directory
+                fprintf('Expected a file, got a directory: %s\n', fullFile);
+                return
+            elseif sz.bytes == 0
+                % file is zero bytes
+                fprintf('File is empty (0 bytes): %s\n', fullFile);
+                return
+            end
+            
+            
+            
             try
                 %% Load data
                 % print contents

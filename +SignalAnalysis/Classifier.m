@@ -63,12 +63,12 @@ classdef Classifier < Common.MiniVieObj
             % data init occurs before params, since these depend on
             % TrainingData params
             obj.TrainingData = hTrainingData;
-
-
+            
+            
             % set feature extract thresholds
             obj.ZcThresh = UserConfig.getUserConfigVar('FeatureExtract.zcThreshold',obj.ZcThresh);
             obj.SscThresh = UserConfig.getUserConfigVar('FeatureExtract.sscThreshold',obj.SscThresh);
-
+            
         end
         function assertInit(obj)
             % Use to verify any methods that depend on training data
@@ -239,7 +239,7 @@ classdef Classifier < Common.MiniVieObj
             normMat = confuseMat ./ repmat(classSum,1,obj.NumClasses);
             % should not occur, but if divided by zero, set to zero
             normMat(isnan(normMat)) = 0;
-
+            
         end
         function [normalizedError, classAccuracy] = computeError(obj,hData)
             %[normalizedError, classAccuracy] = computeError(obj,hData)
@@ -371,7 +371,7 @@ classdef Classifier < Common.MiniVieObj
         end
         function success = savePythonClassifierData(obj, pyDir)
             % Save Classifier Data for python
-                        
+            
             %python directory
             if nargin < 2
                 %pyDir = 'C:\git\MiniVIE\python';
@@ -381,7 +381,7 @@ classdef Classifier < Common.MiniVieObj
             % Get Data directly from TrainingData object.
             pyWeights = obj.Wg; %#ok<NASGU>
             pyCenters = obj.Cg; %#ok<NASGU>
-            pyClassNames = obj.TrainingData.ClassNames; 
+            pyClassNames = obj.TrainingData.ClassNames;
             pyZcThresh = obj.ZcThresh; %#ok<NASGU>
             pySscThresh = obj.SscThresh; %#ok<NASGU>
             
@@ -398,11 +398,11 @@ classdef Classifier < Common.MiniVieObj
                 fprintf(fileID,formatSpec,pyClassNames{row,:});
             end
             fclose(fileID);
-
+            
             success = true;
             
         end
-
+        
     end
     methods (Static = true)
         function voteDecision = majority_vote(classDecision, numVotes, ...
@@ -492,6 +492,124 @@ classdef Classifier < Common.MiniVieObj
             end
             
         end
+        function test_majority_vote
+            %% Test function for majority vote -- single output version
+            
+            % create class time history
+            targetClasses = repmat([0 1 0 2 0 3 0 4 0 5 0 6 0 7 0],10,1);
+            targetClasses = targetClasses(:)+1;  % ideal output
+            targetClasses2 = targetClasses; % noisy output
+            targetClasses3 = targetClasses; % filtered output
+            
+            % create classes with noise
+            idx_rand = randi(length(targetClasses),1,100);
+            targetClasses2(idx_rand) = randi(7,1,100);
+            
+            numVotes = 7;
+            numClasses = 8;
+            numClassifiers = 1;
+            currentClassifier = 1;
+            for i = 1:length( targetClasses)
+                voteDecision = SignalAnalysis.Classifier.majority_vote(targetClasses(i), numVotes, ...
+                    numClasses, numClassifiers, currentClassifier);
+                targetClasses3(i) = voteDecision;
+            end
+            
+            clf
+            hold on
+            plot(targetClasses(:),'k-')
+            plot(targetClasses2(:),'r.')
+            plot(targetClasses3(:),'bo')
+            
+            legend('Ideal Output','Noisy Output','Majority Vote Output','Location','NorthWest')
+            
+        end
+        function test_majority_vote_multi
+            %% Test function for majority vote -- multiple parallel classifiers
+            
+            % create class time history
+            targetClassesA = repmat([0 1 0 2 0 3 0 4 0 5 0 6 0 7 0],10,1);
+            targetClassesA = targetClassesA(:)+1;  % ideal output
+            targetClassesA2 = targetClassesA; % noisy output
+            targetClassesA3 = targetClassesA; % filtered output
+            
+            targetClassesB = repmat([0 7 0 6 0 5 0 4 0 3 0 2 0 1 0],10,1);
+            targetClassesB = targetClassesB(:)+1;  % ideal output
+            targetClassesB2 = targetClassesB; % noisy output
+            targetClassesB3 = targetClassesB; % filtered output
+            
+            targetClassesC = repmat([0 1 0 7 0 2 0 6 0 3 0 5 0 4 0],10,1);
+            targetClassesC = targetClassesC(:)+1;  % ideal output
+            targetClassesC2 = targetClassesC; % noisy output
+            targetClassesC3 = targetClassesC; % filtered output
+            
+            
+            targetClassesD = repmat([0 7 0 6 0 1 0 2 0 5 0 4 0 3 0],10,1);
+            targetClassesD = targetClassesD(:)+1;  % ideal output
+            targetClassesD2 = targetClassesD; % noisy output
+            targetClassesD3 = targetClassesD; % filtered output
+            
+            % create classes with noise
+            idx_rand = randi(length(targetClassesA),1,100);
+            targetClassesA2(idx_rand) = randi(7,1,100);
+            
+            idx_rand = randi(length(targetClassesB),1,100);
+            targetClassesB2(idx_rand) = randi(7,1,100);
+            
+            idx_rand = randi(length(targetClassesC),1,100);
+            targetClassesC2(idx_rand) = randi(7,1,100);
+            
+            idx_rand = randi(length(targetClassesD),1,100);
+            targetClassesD2(idx_rand) = randi(7,1,100);
+            
+            numVotes = 7;
+            numClasses = 8;
+            numClassifiers = 4;
+            for iClassifier = 1:numClassifiers
+                for i = 1:length( targetClassesA)
+                    switch iClassifier
+                        case 1
+                            targetClassesA3(i) = SignalAnalysis.Classifier.majority_vote(targetClassesA2(i), numVotes, ...
+                                numClasses, numClassifiers, iClassifier);
+                        case 2
+                            targetClassesB3(i) = SignalAnalysis.Classifier.majority_vote(targetClassesB2(i), numVotes, ...
+                                numClasses, numClassifiers, iClassifier);
+                        case 3
+                            targetClassesC3(i) = SignalAnalysis.Classifier.majority_vote(targetClassesC2(i), numVotes, ...
+                                numClasses, numClassifiers, iClassifier);
+                        case 4
+                            targetClassesD3(i) = SignalAnalysis.Classifier.majority_vote(targetClassesD2(i), numVotes, ...
+                                numClasses, numClassifiers, iClassifier);
+                    end
+                end
+            end
+            
+            clf
+            subplot(4,1,1)
+            hold on
+            plot(targetClassesA(:),'k-')
+            plot(targetClassesA2(:),'r.')
+            plot(targetClassesA3(:),'bo')
+            subplot(4,1,2)
+            hold on
+            plot(targetClassesB(:),'k-')
+            plot(targetClassesB2(:),'r.')
+            plot(targetClassesB3(:),'bo')
+            subplot(4,1,3)
+            hold on
+            plot(targetClassesC(:),'k-')
+            plot(targetClassesC2(:),'r.')
+            plot(targetClassesC3(:),'bo')
+            subplot(4,1,4)
+            hold on
+            plot(targetClassesD(:),'k-')
+            plot(targetClassesD2(:),'r.')
+            plot(targetClassesD3(:),'bo')
+            
+            legend('Ideal Output','Noisy Output','Majority Vote Output','OutsideLocation','NorthWest')
+            
+        end
+        
         function featureData2D = reshapeFeatures(featureData3D,activeChannels)
             %featureData2D = SignalAnalysis.Classifier.reshapeFeatures(featureData3D,activeChannels)
             % Reshape data according to how the UNB algorithm wants to see it.  That is

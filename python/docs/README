@@ -29,8 +29,21 @@ Presentation:  The 'presentation' refers generically to the output of the system
 Scenario: Scenario objects contain different combinations of the above modules to develop specific use-cases.  This could be wireless electrodes
     controlling a virtual limb system, or synthetic (stored) data used to control a physical arm for testing, or any combination thereof.
 
-    
-    
+
+-------------------------------------
+Notes on PyCharm Community Edition IDE
+-------------------------------------
+If installing on a new windows build and you don;t have other IDE preferences:
+Download and Install PyCharmCE
+Download and Install Python3.6+
+Open Pycharm and select the MiniVIE project directory (e.g. c:\git\minivie)
+Set Project Settings (File->Settings...)
+    Project Structure
+    Content Root Default: c:\git\minivie\python
+    Sources Root Default: minivie
+Once launched, pycharm should check for and install project dependencies (Note on windows bluepy is not supported)
+    Click Install requirements
+
     
     
     

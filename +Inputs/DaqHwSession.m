@@ -39,6 +39,7 @@ classdef DaqHwSession < Inputs.SignalInput
         AnalogInput = [];
         AnalogInputName = '';
         Buffer
+        IsInitialized = false;
     end
     methods
         function obj = DaqHwSession(deviceName,deviceId,channelIds)
@@ -70,6 +71,11 @@ classdef DaqHwSession < Inputs.SignalInput
             % channels to single ended, specifies the range, and starts the
             % background session (which updates an internal buffer with new
             % data)
+            
+            if obj.IsInitialized
+                disp('Device already initialized. Use close() first')
+                return
+            end
 
             % Check properties
             assert(ischar(obj.DaqDeviceName),'Expected "DaqDeviceName" to be a character array');
@@ -95,10 +101,11 @@ classdef DaqHwSession < Inputs.SignalInput
 
             % Create analog input voltage channels
             nChannels = length(obj.ChannelIds);
-            s.addAnalogInputChannel(obj.DaqDeviceId,obj.ChannelIds,'Voltage');
             for i = 1:nChannels
-                s.Channels(i).InputType = 'SingleEnded';
-                s.Channels(i).Range = obj.ChannelInputRange;
+                ch = s.addAnalogInputChannel(obj.DaqDeviceId,obj.ChannelIds(i),'Voltage');
+                %ch.InputType = 'SingleEnded';
+                ch.Range = obj.ChannelInputRange;
+                ch.TerminalConfig = 'SingleEnded';
             end
             s.IsContinuous = 1;
             s.Rate = 1000;
@@ -114,6 +121,8 @@ classdef DaqHwSession < Inputs.SignalInput
                 fprintf('Done\n');
             end
             
+            obj.IsInitialized = true;
+
         end
         function data = getData(obj,numSamples,idxChannel)
             %data = getData(obj,numSamples,idxChannel)
@@ -166,6 +175,8 @@ classdef DaqHwSession < Inputs.SignalInput
             stop(obj);
             delete(obj.AnalogInput);
             obj.AnalogInput = [];
+            obj.IsInitialized = 0;
+
         end
     end
 end

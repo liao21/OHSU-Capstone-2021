@@ -1,5 +1,6 @@
 import time
 from numpy import rad2deg
+import numpy as np
 import logging
 import utilities
 import utilities.sys_cmd
@@ -8,6 +9,8 @@ from utilities import get_address
 import mpl
 from collections import Counter, deque
 from controls.plant import class_map
+from inputs import myo, daqEMGDevice
+from pattern_rec import training, assessment, features_selected, FeatureExtract, features
 
 
 class Scenario(object):
@@ -304,6 +307,9 @@ class Scenario(object):
                 utilities.sys_cmd.change_myo(1)
             elif cmd_data == 'ChangeMyoSet2':
                 utilities.sys_cmd.change_myo(2)
+            elif cmd_data == 'NormUnity':
+                self.Plant.Fref = np.eye(4)
+                self.Plant.Fref2 = np.eye(4)
 
             #################
             # System Options
@@ -431,7 +437,7 @@ class Scenario(object):
             return self.output
 
         # get data / features
-        self.output['features'], f, imu = self.FeatureExtract.get_features(self.SignalSource)
+        self.output['features'], f, imu, rot_mat = self.FeatureExtract.get_features(self.SignalSource)
 
         # Debug stream:
         # values = self.output['features']
@@ -501,6 +507,11 @@ class Scenario(object):
         if self.TrainingData.motion_names[decision_id] == 'No Movement' and self.auto_open:
             self.Plant.set_grasp_velocity(-self.hand_gain_value)
 
+        #track residual
+        if self.track is True and rot_mat is not None:
+            self.Plant.trackResidual(self.arm, self.shoulder, self.elbow, rot_mat)
+
+        #update positions
         self.Plant.update()
 
         # transmit output
@@ -545,13 +556,49 @@ class MplScenario(Scenario):
         from controls.plant import Plant
         from scenarios import Scenario
 
-        # attach inputs
-        local_address_1 = get_user_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
-        source_list = [myo.MyoUdp(source=local_address_1)]
-        # add second device
-        if get_user_config_var('MyoUdpClient.num_devices', 1) > 1:
-            local_address_2 = get_user_config_var('MyoUdpClient.local_address_2', '//0.0.0.0:15002')
-            source_list.append(myo.MyoUdp(source=local_address_2))
+        # set arm
+        self.arm = get_user_config_var('arm', 'right')
+
+        #configure input
+        if get_user_config_var('input_type', 'myo') == 'myo':
+
+            # get ports and configure joints based upon myo location
+            if get_user_config_var('MyoUdpClient.num_devices', 1) == 1:
+                local_port_1 = get_user_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
+                if get_user_config_var('myo_position_1', 'AE') == 'AE':
+                    self.shoulder = True
+                    self.elbow = False
+                else:
+                    self.shoulder = False
+                    self.elbow = True
+                source_list = [myo.MyoUdp(source=local_port_1)]
+
+            # add second device
+            elif get_user_config_var('MyoUdpClient.num_devices', 1) == 2:
+                local_port_1 = get_user_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
+                local_port_2 = get_user_config_var('MyoUdpClient.local_address_2', '//0.0.0.0:15002')
+
+                if (get_user_config_var('myo_position_1', 'AE') == 'AE') and (get_user_config_var('myo_position_2', 'AE') == 'AE'):
+                    self.shoulder = True
+                    self.elbow = False
+                    source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
+
+                elif (get_user_config_var('myo_position_1', 'AE') == 'BE') and (get_user_config_var('myo_position_2', 'AE') == 'BE'):
+                    self.shoulder = False
+                    self.elbow = True
+                    source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
+
+                else:
+                    if (get_user_config_var('myo_position_1', 'AE') == 'AE'):
+                        source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
+                    else:
+                        source_list = [myo.MyoUdp(source=local_port_2), myo.MyoUdp(source=local_port_1)]
+
+        elif get_user_config_var('input_type', 'myo') == 'daq':
+            self.shoulder = False
+            self.elbow = False
+            source_list = [daqEMGDevice.DaqEMGDevice(get_user_config_var('device_name_and_channels', 'Dev1/ai0:7'))]
+
         self.attach_source(source_list)
 
         # Training Data holds data labels
@@ -560,11 +607,10 @@ class MplScenario(Scenario):
         self.TrainingData.load()
         self.TrainingData.num_channels = self.num_channels
 
-        # Setup feature extract and properties
+        #Feature Extraction
         self.FeatureExtract = pr.FeatureExtract()
-        self.FeatureExtract.zc_thresh = get_user_config_var('FeatureExtract.zc_threshold', 0.05)
-        self.FeatureExtract.ssc_thresh = get_user_config_var('FeatureExtract.ssc_threshold', 0.05)
-        self.FeatureExtract.sample_rate = get_user_config_var('FeatureExtract.sample_rate', 200)
+        select_features = features_selected.Features_selected(self.FeatureExtract)
+        select_features.create_instance_list()
 
         # Classifier parameters
         self.SignalClassifier = pr.Classifier(self.TrainingData)
@@ -579,11 +625,16 @@ class MplScenario(Scenario):
         # For MPL, this might be: real MPL/NFU, Virtual Arm, etc.
         data_sink = get_user_config_var('DataSink', 'Unity')
         if data_sink in ['Unity', 'UnityUdp']:
+            if (get_user_config_var('track', 'False') == 'True'):
+                self.track = True
+            else:
+                self.track = False
             local_address = get_user_config_var('UnityUdp.local_address', '//0.0.0.0:25001')
             remote_address = get_user_config_var('UnityUdp.remote_address', '//127.0.0.1:25000')
             sink = UnityUdp(local_address=local_address, remote_address=remote_address)
             sink.connect()
         elif data_sink == 'NfuUdp':
+            self.track = False
             local_hostname, local_port = get_address(get_user_config_var('NfuUdp.local_address', '//0.0.0.0:9028'))
             remote_hostname, remote_port = get_address(get_user_config_var('NfuUdp.remote_address', '//127.0.0.1:9027'))
             sink = NfuUdp(hostname=remote_hostname, udp_telem_port=local_port, udp_command_port=remote_port)

@@ -11,10 +11,11 @@
 #
 
 import logging
-from utilities.user_config import get_user_config_var, read_user_config, setup_file_logging
+import utilities.user_config as uc
 import scenarios
 import inputs.dcell
-from pattern_rec import training, assessment
+from pattern_rec import training, assessment, features_selected, FeatureExtract, features
+from inputs import normalization
 
 
 def main():
@@ -35,39 +36,36 @@ def main():
     args = parser.parse_args()
 
     # setup logging.  This will create a log file like: USER_2016-02-11_11-28-21.log to which all 'logging' calls go
-    read_user_config(file=args.XML)
-    setup_file_logging(log_level=args.logLevel)
+    uc.read_user_config(file=args.XML)
+    uc.setup_file_logging(log_level=args.logLevel)
 
     # Setup MPL scenario
     # A Scenario is the fundamental building blocks of the VIE: Inputs, Signal Analysis, System Plant, and Output Sink
     vie = scenarios.MplScenario()
 
     # setup web interface
-    if get_user_config_var('MobileApp.ws_server', 'None') == 'Tornado':
-        vie.TrainingInterface = training.TrainingManagerWebsocket()
-        vie.TrainingInterface.setup(port=get_user_config_var('MobileApp.port', 9090))
-    elif get_user_config_var('MobileApp.ws_server', 'None') == 'Spacebrew':
-        vie.TrainingInterface = training.TrainingManagerSpacebrew()
-        vie.TrainingInterface.setup(description="JHU/APL Embedded Controller", server="127.0.0.1", port=9000)
-    else:
-        vie.TrainingInterface = None
+    vie.TrainingInterface = training.TrainingManagerWebsocket()
+    vie.TrainingInterface.setup(port=uc.get_user_config_var('mpl_app_port', 9090))
+    vie.TrainingInterface.add_message_handler(vie.command_string)
 
     if vie.TrainingInterface is not None:
         # Setup Assessments
         tac = assessment.TargetAchievementControl(vie, vie.TrainingInterface)
         motion_test = assessment.MotionTester(vie, vie.TrainingInterface)
+        myoNorm = normalization.MyoNormalization(vie, vie.TrainingInterface)
 
         # assign message callbacks
         vie.TrainingInterface.add_message_handler(vie.command_string)
         vie.TrainingInterface.add_message_handler(tac.command_string)
         vie.TrainingInterface.add_message_handler(motion_test.command_string)
+        vie.TrainingInterface.add_message_handler(myoNorm.command_string)
 
     vie.setup()
 
     # Setup Additional Logging
-    if get_user_config_var('DCell.enable', 0):
+    if uc.get_user_config_var('DCell.enable', 0):
         # Start DCell Streaming
-        port = get_user_config_var('DCell.serial_port', '/dev/ttymxc2')
+        port = uc.get_user_config_var('DCell.serial_port', '/dev/ttymxc2')
         dc = inputs.dcell.DCellSerial(port)
         # Connect and start streaming
         dc.enable_data_logging = True

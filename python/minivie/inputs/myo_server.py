@@ -5,7 +5,6 @@
 #
 #
 import os
-import sys
 import logging
 import time
 import socket
@@ -22,7 +21,7 @@ from utilities import get_address
 
 #logger = logging.getLogger(__name__)
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 
 class MyoUdpServer(object):
@@ -275,14 +274,17 @@ class MyoDelegate(btle.DefaultDelegate):
 def setup_threads():
 
     # get parameters from xml files and create Servers
-    s1 = MyoUdpServer(iface=0,
+    s1 = MyoUdpServer(iface=uc.get_user_config_var('MyoUdpServer.iface_1', 0),
                       mac_address=uc.get_user_config_var('MyoUdpServer.mac_address_1', 'xx:xx:xx:xx:xx'),
                       local_port=get_address(uc.get_user_config_var('MyoUdpServer.local_address_1', '//127.0.0.1:16001')),
                       remote_port=get_address(uc.get_user_config_var('MyoUdpServer.remote_address_1', '//127.0.0.1:15001')),
                       data_logger=logging.getLogger('Myo1'),
                       name='Myo1')
 
-    s2 = MyoUdpServer(iface=0,
+    if uc.get_user_config_var('MyoUdpServer.num_devices', 2) < 2:
+        return
+
+    s2 = MyoUdpServer(iface=uc.get_user_config_var('MyoUdpServer.iface_2', 0),
                       mac_address=uc.get_user_config_var('MyoUdpServer.mac_address_2', 'xx:xx:xx:xx:xx'),
                       local_port=get_address(uc.get_user_config_var('MyoUdpServer.local_address_2', '//127.0.0.1:16002')),
                       remote_port=get_address(uc.get_user_config_var('MyoUdpServer.remote_address_2', '//127.0.0.1:15002')),

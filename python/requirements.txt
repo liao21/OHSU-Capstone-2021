@@ -13,7 +13,6 @@ numpy
 scipy
 scikit-learn
 tornado
-enum34
 h5py
 six
 transforms3d

@@ -77,6 +77,9 @@
     <!-- Myo Data Server Streaming Ports
         Use these for establishing a Myo UDP Server that reads from BTLE and forwards
         Packets to UDP from the local port to the remote port -->
+    <add key="MyoUdpServer.num_devices" value="2"/>
+    <add key="MyoUdpServer.iface_1"    value="0"/>
+    <add key="MyoUdpServer.iface_2"    value="0"/>
     <add key="MyoUdpServer.mac_address_1"    value="xx:xx:xx:xx:xx:xx"/>
     <add key="MyoUdpServer.mac_address_2"    value="xx:xx:xx:xx:xx:xx"/>
     <add key="MyoUdpServer.local_address_1"     value="//127.0.0.1:16001"/>

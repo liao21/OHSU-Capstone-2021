@@ -19,7 +19,7 @@
 #define VERSION "Version  2.0.5  2003-09-16"
 
 /*
-%   This file(s) is part of the tcp_udp_ip toolbox (C) Peter Rydesäter et al.
+%   This file(s) is part of the tcp_udp_ip toolbox (C) Peter Rydesater et al.
 %   et al.  1998-2003 for running in MATLAB(R) as scripts and/or plug-ins.
 %
 %   This program is free software; you can redistribute it and/or modify
@@ -36,7 +36,7 @@
 %   along with this program; if not, write to the Free Software
 %   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 %
-%   In addition, as a SPECIAL EXCEPTION, Peter Rydesäter, SWEDEN,
+%   In addition, as a SPECIAL EXCEPTION, Peter Rydesater, SWEDEN,
 %   gives permission to link the code of this program with any library,
 %   and distribute linked combinations of it. You must obey the GNU
 %   General Public License in all respects for all of the code in the
@@ -63,7 +63,7 @@
   
   
   == Main Authour ==           == Windows support ==      == Earlie/Basic UDP support ==
-  Peter Rydesäter              Mario Bergeron             Mike Medeiros at 23-Jan-2001.
+  Peter Rydesater              Mario Bergeron             Mike Medeiros at 23-Jan-2001.
                                LYRtech
   Östersund, Sweden            Québec, Canada
   +46 70 560 68 16             
@@ -197,13 +197,13 @@ unsigned long mex_call_counter=0;  /* Counter that counts how many calls that ha
 
 /***********************************************************************/
 void Print_Start_Message(){
-    mexPrintf("\nLoaded pnet " VERSION " Copyright (C) Peter Rydesäter, Sweden, et al., 1998 - 2003\n");
+    mexPrintf("\nLoaded pnet " VERSION " Copyright (C) Peter Rydesater, Sweden, et al., 1998 - 2003\n");
     return;
     mexPrintf("\n===============================================================================\n"
 	      "Loaded pnet MEX-file for the tcp/udp/ip-toolbox Compiled @ "
 	      __DATE__ " " __TIME__  "\n"
 	      VERSION "\n"
-	      "Copyright (C) Peter Rydesäter, Sweden, et al. , 1998 - 2003\n"
+	      "Copyright (C) Peter Rydesater, Sweden, et al. , 1998 - 2003\n"
 	      "GNU General Public License, se license.txt for full license notis.\n"
 	      "You are allowed to (dynamicaly) link this file with non-free code. \n\n"
 	      "   http://www.rydesater.com \n\n"
@@ -660,12 +660,12 @@ void my_mexReturnArrayFromBuff(const int argno,io_buff *buff,const int line)
 {
     const int maxelements=my_mexInputSize(argno);
     const mxClassID id=str2classid(my_mexInputOptionString(argno+1));
-    int dims[20]={0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0 };
+    mwSize dims[20]={0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0 };
     const int si=classid2size(id);
     int returnelements= ( (buff->pos/si)< maxelements )?(buff->pos/si):maxelements;
     int deleteelements=returnelements;
     int swap=2;
-    int return_no_dims= my_mexIsInputArgOK(argno) && !mxIsChar(my_mexInputArg(argno))?mxGetNumberOfElements(my_mexInputArg(argno)):1;
+    mwSize return_no_dims= my_mexIsInputArgOK(argno) && !mxIsChar(my_mexInputArg(argno))?mxGetNumberOfElements(my_mexInputArg(argno)):1;
 
     if(my_mexFindInputOption(argno+1,"NATIVE"))  swap=0;
     if(my_mexFindInputOption(argno+1,"SWAP"))    swap=1;
@@ -866,13 +866,17 @@ int read2buff(const int len,int newline,int noblock)
     const double timeoutat=my_now()+con[con_index].readtimeout;
     int retval=-1;
 
-    if(len<con[con_index].read.pos)              /* If enouth in buffer then return */
-	return len;
-    if(0==IS_STATUS_IO_OK(con[con_index].status))/* If not read/write fid (broken pipe) then exit.*/
-	if(len<con[con_index].read.pos)
-	    return len;
-	else
-	    return con[con_index].read.pos;
+    if(len<con[con_index].read.pos) {             /* If enouth in buffer then return */
+        return len;
+    }
+    
+    if(0==IS_STATUS_IO_OK(con[con_index].status)) {/* If not read/write fid (broken pipe) then exit.*/
+        if(len<con[con_index].read.pos) {
+            return len; 
+        } else {
+            return con[con_index].read.pos;
+        }
+    }
 
     /* Resize readbuffer to needed size */
     if(con[con_index].read.len<len)

@@ -79,10 +79,6 @@ classdef MyoUdp < Inputs.SignalInput
     %                      computers)
     %   5/09/2016 Armiger: Updated documentation
     properties
-        % Note the streaming ports are read in the user_config.xml file on
-        % initialize
-        UdpPortNum8 = 10001;     % stream port for channels 1-8
-        UdpPortNum16 = 10002;    % stream port for channels 9-16
         
         EMG_GAIN = 0.01;  %Scaling from int8 to voltage
         
@@ -92,6 +88,12 @@ classdef MyoUdp < Inputs.SignalInput
         IsInitialized = 0;
         UdpSocket8;
         UdpSocket16;
+
+        % Note the streaming ports are read in the user_config.xml file on
+        % initialize
+        UdpPortNum8 = 10001;     % stream port for channels 1-8
+        UdpPortNum16 = 10002;    % stream port for channels 9-16
+        
         Buffer
         numPacketsReceived = 0;
         numValidPackets = 0;
@@ -137,6 +139,7 @@ classdef MyoUdp < Inputs.SignalInput
             if ~obj.UdpSocket8.initialize()
                 fprintf(2,'[%s] Failed to initialize udp socket\n',mfilename);
                 status = -1;
+                obj.IsInitialized = false;
                 return
             elseif (obj.UdpSocket8.hSocket ~= 0)
                 fprintf(2,'[%s] Expected receive socket id == 0, got socket id == %d\n',mfilename,obj.UdpSocket8.hSocket);
@@ -144,6 +147,7 @@ classdef MyoUdp < Inputs.SignalInput
             if ~obj.UdpSocket16.initialize()
                 fprintf(2,'[%s] Failed to initialize udp socket\n',mfilename);
                 status = -1;
+                obj.IsInitialized = false;
                 return
             end
             
@@ -154,17 +158,17 @@ classdef MyoUdp < Inputs.SignalInput
             else
                 fprintf('[%s] UDP Data Stream 1-8 NOT Detected\n', mfilename);
                 
-                f = fullfile(fileparts(which('MiniVIE')),'+Inputs','MyoUdp.exe');
-                fprintf('[%s] UDP Data Stream NOT Detected\n', mfilename);
-                
-                reply = questdlg({'UDP Data not detected.' ...
-                    'Launch MyoUdp.exe to begin streaming?'...
-                    '(Ensure that Myo Armband is connected before proceeding)'},...
-                    'Launch MyoUdp.exe','OK','Cancel','OK');
-                if strcmp(reply,'OK')
-                    fprintf('[%s] Launching %s\n', mfilename, f);
-                    system(strcat(f,' &'));
-                end
+                % f = fullfile(fileparts(which('MiniVIE')),'+Inputs','MyoUdp.exe');
+                % fprintf('[%s] UDP Data Stream NOT Detected\n', mfilename);
+                % 
+                % reply = questdlg({'UDP Data not detected.' ...
+                %     'Launch MyoUdp.exe to begin streaming?'...
+                %     '(Ensure that Myo Armband is connected before proceeding)'},...
+                %     'Launch MyoUdp.exe','OK','Cancel','OK');
+                % if strcmp(reply,'OK')
+                %     fprintf('[%s] Launching %s\n', mfilename, f);
+                %     system(strcat(f,' &'));
+                % end
             end
             [~, numReads] = obj.UdpSocket16.getAllData(1e6);
             if numReads > 0
@@ -197,8 +201,14 @@ classdef MyoUdp < Inputs.SignalInput
             if nargin < 3
                 idxChannel = 1:obj.NumChannels;
             end
-            
+
+            if isempty(obj.Buffer)
+                obj.IsInitialized = false;
+                error('Signal Buffer is not initialized')
+            end
+
             obj.update();
+            
             
             if obj.UdpPortNum8 == 15001 || obj.UdpPortNum8 == 15002 || ...
                     obj.UdpPortNum8 == 15003 || obj.UdpPortNum8 == 15004
@@ -583,7 +593,7 @@ classdef MyoUdp < Inputs.SignalInput
                     localObj.UdpSocket8.close();
                 end
                 try
-                    localObj.UdpCommandSocket.close();
+                    localObj.UdpSocket16.close();
                 end
                 %IsInitialized
                 localObj = [];
@@ -600,3 +610,91 @@ classdef MyoUdp < Inputs.SignalInput
         end
     end
 end
+
+
+
+
+
+
+
+
+
+% %%%%%%%%%%%%%%%
+% % Myo Udp Connection Debug Notes
+% %%%%%%%%%%%%%%%
+% % The commands below show the basic process of opening, running, and
+% % closing the udp based commands at 3 levels of abstraction:
+% % first is the device level: a Myo Udp receiver
+% % Next is at the Pnet Class level
+% % finally at the pnet direct interface level
+% 
+% %% Test Device Level
+% obj = Inputs.MyoUdp.getInstance();
+% status = obj.initialize();
+% if status < 0
+%     error('pnet setup failed')
+% end
+% 
+% obj.getData();
+% 
+% %%
+% 
+% obj.preview()
+% 
+% %%
+% 
+% obj.close()
+% 
+% Inputs.MyoUdp.getInstance(-1)
+% 
+% 
+% 
+% %% Test PnetClass
+% obj = PnetClass(15001);
+% obj.initialize()
+% obj.getData()
+% pause(0.1)
+% obj.getData()
+% 
+% %%
+% obj.close()
+% 
+% 
+% 
+% %%%%%%%%%%%%
+% %% Test Single pnet Socket
+% fprintf('\n\n\n\n\n\n')
+% hSocket = pnet('udpsocket',15001)
+% pnet(hSocket, 'setreadtimeout',0)
+% status = pnet(hSocket,'status')
+% len = pnet(hSocket,'readpacket','noblock')
+% pause(0.1)
+% count = -1;
+% len = 1;
+% while (len > 0)
+%     len = pnet(hSocket,'readpacket','noblock');
+%     count = count + 1;
+% end
+% count
+% pnet(hSocket,'close')
+% 
+% 
+% 
+% %% Test Multiple pnet sockets
+% fprintf('\n\n\n\n\n\n')
+% hSocket2 = pnet('udpsocket',15002)
+% hSocket3 = pnet('udpsocket',15003)
+% hSocket = pnet('udpsocket',15001)
+% pnet(hSocket, 'setreadtimeout',0)
+% status = pnet(hSocket,'status')
+% len = pnet(hSocket,'readpacket','noblock')
+% pause(0.1)
+% count = -1;
+% len = 1;
+% while (len > 0)
+%     len = pnet(hSocket,'readpacket','noblock');
+%     count = count + 1;
+% end
+% count
+% pnet(hSocket,'close')
+% 

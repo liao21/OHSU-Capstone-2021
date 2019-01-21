@@ -54,10 +54,6 @@ from datetime import datetime
 from inputs.signal_input import SignalInput
 import h5py
 import serial
-try:
-    import serial.rs485
-except ImportError:
-    logging.warning('Failed to load module: serial.rs485')
 
 
 class DCellSerial(SignalInput):
@@ -89,6 +85,10 @@ class DCellSerial(SignalInput):
 
     def connect(self, start_streaming=True):
         # Method to connect to serial port and optionally start streaming
+        try:
+            import serial.rs485
+        except ImportError:
+            logging.warning('Failed to load module: serial.rs485')
 
         logging.info("Setting up DCell serial comms {}".format(self.port))
 

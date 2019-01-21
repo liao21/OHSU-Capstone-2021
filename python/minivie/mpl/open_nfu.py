@@ -25,7 +25,7 @@ import mpl
 import controls
 from mpl.data_sink import DataSink
 from mpl import JointEnum as MplId, extract_percepts
-from utilities.user_config import read_user_config, get_user_config_var
+from utilities.user_config import read_user_config_file, get_user_config_var
 
 
 class NfuUdp(DataSink):
@@ -518,7 +518,7 @@ def main():
     # Note, ensure to make deep copies of joint angles, so no references are used
     import copy
 
-    read_user_config('../user_config_default.xml')
+    read_user_config_file('../user_config_default.xml')
     nfu = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
     nfu.connect()
 

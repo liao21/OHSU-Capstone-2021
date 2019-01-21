@@ -21,7 +21,7 @@ xml_file = None
 xml_force_default = True  # If there is a problem with the xml, revert to just returning config value defaults
 
 
-def read_user_config(file='../../user_config.xml', reload=False):
+def read_user_config_file(file='../../user_config.xml', reload=False):
     # function to read in xml file and store as dictionary
     #
     # Note this function uses the xml as a global variable such that any function in the system can make a direct call
@@ -54,7 +54,7 @@ def get_user_config_var(key, default_value):
     # Assume file is not loaded, try to load it
     if xml_root is None:
         logging.info('xml_root is unset')
-        read_user_config()
+        read_user_config_file()
 
     for element in xml_root.findall('add'):
         # child is an element, has tag and attributes
@@ -70,6 +70,16 @@ def get_user_config_var(key, default_value):
                 return int(str_value)
             elif type(default_value) is float:
                 return float(str_value)
+            elif type(default_value) is bool:
+                # accept strings 'True'|'False' and '0' '1'
+                try:
+                    str_value = int(str_value)
+                except ValueError:
+                    if str(str_value).lower().startswith('true'):
+                        str_value = True
+                    else:
+                        str_value = False
+                return bool(str_value)
             elif type(default_value) is tuple:
                 return tuple(float(i) for i in str_value.split(','))
             else:
@@ -91,7 +101,7 @@ def set_user_config_var(key, value):
 
     if xml_root is None:
         logging.info('xml_root is unset')
-        read_user_config()
+        read_user_config_file()
 
     # Format value as comma-separated list
     if type(value) is list or type(value) is tuple:
@@ -128,7 +138,7 @@ def save(file='../../user_config.xml'):
 
     if xml_root is None:
         logging.info('xml_root is unset')
-        read_user_config()
+        read_user_config_file()
 
     # Check if file already exists, and save with incremented name
     if os.path.isfile(file):
@@ -241,7 +251,7 @@ def main():
     if os.path.split(os.getcwd())[1] == 'utilities':
         filename = '../' + filename
         new_filename = '../' + new_filename
-    read_user_config(filename)
+    read_user_config_file(filename)
     
     # check known types
     get_user_config_var('MPL.roc_table', '')

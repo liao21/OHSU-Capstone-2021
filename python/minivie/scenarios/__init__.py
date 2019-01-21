@@ -1,16 +1,15 @@
-import time
-from numpy import rad2deg
-import numpy as np
 import logging
-import utilities
-import utilities.sys_cmd
-from utilities.user_config import read_user_config, get_user_config_var
-from utilities import get_address
-import mpl
+import time
+import numpy as np
 from collections import Counter, deque
-from controls.plant import class_map
-from inputs import myo, daqEMGDevice
-from pattern_rec import training, assessment, features_selected, FeatureExtract, features
+import utilities
+import utilities.user_config
+import utilities.sys_cmd
+import mpl
+import controls.plant
+from inputs import daqEMGDevice
+from pattern_rec import features_selected
+from utilities.user_config import get_user_config_var as get_config_var
 
 
 class Scenario(object):
@@ -36,6 +35,11 @@ class Scenario(object):
         # Debug socket for streaming Features
         # self.DebugSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+        # Loop control parameters
+        self.loop_time = time.strftime("%c")  # store the system time for timing status messages
+        self.loop_dt_last = 0.0  # store the duration of the last execution loop for monitoring processor load
+        self.loop_counter = 0  # count the number of loops to distribute messaging rate
+
         # Training parameters
         self.add_data = False  # Control whether to add data samples on the current timestep
         self.add_data_last = False  # Track whether data added on previous update, necessary to know when to autosave
@@ -47,7 +51,7 @@ class Scenario(object):
         self.auto_open = False  # Automatically open hand if in rest state
 
         # Create a buffer for storing recent class decisions for majority voting
-        self.decision_buffer = deque([], get_user_config_var('PatternRec.num_majority_votes', 25))
+        self.decision_buffer = deque([], get_config_var('PatternRec.num_majority_votes', 25))
 
         self.output = None  # Will contain latest status message
 
@@ -62,12 +66,21 @@ class Scenario(object):
 
         # Control gains and speeds for precision control mode
         self.precision_mode = False
-        self.gain_value = get_user_config_var('MPL.ArmSpeedDefault', 1.4)
+        self.gain_value = get_config_var('MPL.ArmSpeedDefault', 1.4)
         self.gain_value_last = self.gain_value
-        self.gain_value_precision = get_user_config_var('MPL.ArmSpeedPrecision', 0.2)
-        self.hand_gain_value = get_user_config_var('MPL.HandSpeedDefault', 1.2)
+        self.gain_value_precision = get_config_var('MPL.ArmSpeedPrecision', 0.2)
+        self.hand_gain_value = get_config_var('MPL.HandSpeedDefault', 1.2)
         self.hand_gain_value_last = self.hand_gain_value
-        self.hand_gain_value_precision = get_user_config_var('MPL.HandSpeedPrecision', 0.15)
+        self.hand_gain_value_precision = get_config_var('MPL.HandSpeedPrecision', 0.15)
+
+        # Motion Tracking parameters
+        self.motion_track_enable = get_config_var('MotionTrack.enable', False)
+        self.arm_side = get_config_var('MotionTrack.arm_side', 'Right')
+        self.shoulder = False
+        self.elbow = False
+
+        # Futures for event loop
+        self.futures = None
 
     def set_precision_mode(self, value):
         # Select between precision mode or default mode.
@@ -125,18 +138,18 @@ class Scenario(object):
     def gain(self, factor):
         # Increase the speed of the arm and apply max / min constraints
         self.gain_value *= factor
-        if self.gain_value < get_user_config_var('MPL.ArmSpeedMin', 0.1):
-            self.gain_value = get_user_config_var('MPL.ArmSpeedMin', 0.1)
-        if self.gain_value > get_user_config_var('MPL.ArmSpeedMax', 5):
-            self.gain_value = get_user_config_var('MPL.ArmSpeedMax', 5)
+        if self.gain_value < get_config_var('MPL.ArmSpeedMin', 0.1):
+            self.gain_value = get_config_var('MPL.ArmSpeedMin', 0.1)
+        if self.gain_value > get_config_var('MPL.ArmSpeedMax', 5):
+            self.gain_value = get_config_var('MPL.ArmSpeedMax', 5)
 
     def hand_gain(self, factor):
         # Increase the speed of the hand and apply max / min constraints
         self.hand_gain_value *= factor
-        if self.hand_gain_value < get_user_config_var('MPL.HandSpeedMin', 0.1):
-            self.hand_gain_value = get_user_config_var('MPL.HandSpeedMin', 0.1)
-        if self.hand_gain_value > get_user_config_var('MPL.HandSpeedMax', 5):
-            self.hand_gain_value = get_user_config_var('MPL.HandSpeedMax', 5)
+        if self.hand_gain_value < get_config_var('MPL.HandSpeedMin', 0.1):
+            self.hand_gain_value = get_config_var('MPL.HandSpeedMin', 0.1)
+        if self.hand_gain_value > get_config_var('MPL.HandSpeedMax', 5):
+            self.hand_gain_value = get_config_var('MPL.HandSpeedMax', 5)
 
     def command_string(self, value):
         """
@@ -186,7 +199,7 @@ class Scenario(object):
         if cmd_type == 'Cls':
             # Parse a Class Message
 
-            #if cmd_data not in self.TrainingData.motion_names:
+            # if cmd_data not in self.TrainingData.motion_names:
             #    self.TrainingData.add_class(cmd_data)
 
             self.training_id = self.TrainingData.motion_names.index(cmd_data)
@@ -271,7 +284,7 @@ class Scenario(object):
             elif cmd_data == 'ReloadRoc':
                 # Reload xml parameters and ROC Table
                 # RSA: Update reload both ROC and xml config parameters
-                read_user_config(reload=True)
+                utilities.user_config.read_user_config_file(reload=True)
                 self.Plant.load_roc()
                 self.Plant.load_config_parameters()
                 self.DataSink.load_config_parameters()
@@ -383,7 +396,7 @@ class Scenario(object):
             self.Plant.new_step()
 
             # parse manual command type as arm, grasp, etc
-            class_info = class_map(cmd_data)
+            class_info = controls.plant.class_map(cmd_data)
 
             if class_info['IsGrasp']:
                 # the motion class is either a grasp type or hand open
@@ -434,7 +447,7 @@ class Scenario(object):
             if self.DataSink is not None:
                 # self.Plant.joint_velocity[mpl.JointEnum.MIDDLE_MCP] = self.Plant.grasp_velocity
                 self.DataSink.send_joint_angles(self.Plant.joint_position, self.Plant.joint_velocity)
-            return self.output
+            return
 
         # get data / features
         self.output['features'], f, imu, rot_mat = self.FeatureExtract.get_features(self.SignalSource)
@@ -460,10 +473,10 @@ class Scenario(object):
         # classify
         decision_id, self.output['status'] = self.SignalClassifier.predict(f)
         if decision_id is None:
-            return self.output
+            return
 
         # perform majority vote
-        # Note Counter used here instead of statitstics.mode since that will raise error if equal frequency of values,
+        # Note Counter used here instead of statistics.mode since that will raise error if equal frequency of values,
         # which can happen even if the buffer length is odd
         self.decision_buffer.append(decision_id)
         counter = Counter(self.decision_buffer)
@@ -477,7 +490,7 @@ class Scenario(object):
         self.output['decision'] = class_decision
 
         # parse decision type as arm, grasp, etc
-        class_info = class_map(class_decision)
+        class_info = controls.plant.class_map(class_decision)
 
         # Set joint velocities
         self.Plant.new_step()
@@ -485,7 +498,7 @@ class Scenario(object):
         # pause if applicable
         if self.is_paused('All'):
             self.output['status'] = 'PAUSED'
-            return self.output
+            return
         elif self.is_paused('Hand'):
             self.output['status'] = 'HAND PAUSED'
 
@@ -507,11 +520,11 @@ class Scenario(object):
         if self.TrainingData.motion_names[decision_id] == 'No Movement' and self.auto_open:
             self.Plant.set_grasp_velocity(-self.hand_gain_value)
 
-        #track residual
-        if self.track is True and rot_mat is not None:
-            self.Plant.trackResidual(self.arm, self.shoulder, self.elbow, rot_mat)
+        # track arm motion
+        if self.motion_track_enable is True and rot_mat is not None:
+            self.Plant.trackResidual(self.arm_side, self.shoulder, self.elbow, rot_mat)
 
-        #update positions
+        # update positions
         self.Plant.update()
 
         # transmit output
@@ -519,7 +532,62 @@ class Scenario(object):
             # self.Plant.joint_velocity[mpl.JointEnum.MIDDLE_MCP] = self.Plant.grasp_velocity
             self.DataSink.send_joint_angles(self.Plant.joint_position, self.Plant.joint_velocity)
 
-        return self.output
+        return
+
+    def update_interface(self):
+        # send gui updates
+
+        if self.TrainingInterface is None:
+            return
+
+        # Send new status only once a second based on date string changing
+        current_time = time.strftime("%c")
+        if current_time != self.loop_time:
+            self.loop_time = current_time
+            msg = '<br>' + self.DataSink.get_status_msg()  # Limb Status
+            msg += ' ' + self.output['status']  # Classifier Status
+            for src in self.SignalSource:
+                msg += '<br>' + src.get_status_msg()
+            msg += '<br>' + 'Step Time: {:.0f}'.format(self.loop_dt_last * 1000) + 'ms'
+            msg += '<br>' + time.strftime("%c")
+
+            # Forward status message (voltage, temp, etc) to mobile app
+            self.TrainingInterface.send_message("sys_status", msg)
+
+        # Send classifier output to mobile app (e.g. Elbow Flexion)
+        self.TrainingInterface.send_message("output_class", self.output['decision'])
+        # Send motion training status to mobile app (e.g. No Movement [70]
+        msg = '{} [{:.0f}]'.format(self.training_motion,
+                                   round(self.TrainingData.get_totals(self.training_id), -1))
+        self.TrainingInterface.send_message("training_class", msg)
+
+        if self.enable_percept_stream:
+            self.loop_counter += 1
+            if self.loop_counter == 5:
+                msg = ','.join(['%.f' % np.rad2deg(elem) for elem in self.Plant.joint_position])
+                self.TrainingInterface.send_message("joint_cmd", msg)
+            if self.loop_counter == 10:
+                p = self.DataSink.get_percepts()
+                try:
+                    msg = ','.join(['%.f' % np.rad2deg(elem) for elem in p['jointPercepts']['position']])
+                    self.TrainingInterface.send_message("joint_pos", msg)
+                except TypeError or KeyError:
+                    pass
+            if self.loop_counter == 15:
+                p = self.DataSink.get_percepts()
+                try:
+                    msg = ','.join(['%.1f' % elem for elem in p['jointPercepts']['torque']])
+                    self.TrainingInterface.send_message("joint_torque", msg)
+                except TypeError or KeyError:
+                    pass
+            if self.loop_counter == 20:
+                p = self.DataSink.get_percepts()
+                try:
+                    msg = ','.join(['%.0f' % elem for elem in p['jointPercepts']['temperature']])
+                    self.TrainingInterface.send_message("joint_temp", msg)
+                except TypeError or KeyError:
+                    pass
+                self.loop_counter = 0
 
     def close(self):
         # Close input and output objects
@@ -540,6 +608,35 @@ class MplScenario(Scenario):
 
     from scenarios import Scenario
 
+    def setup_interfaces(self):
+        from pattern_rec import training, assessment
+        from inputs import normalization
+
+        # Setup web/websocket interface
+        server_type = get_config_var('MobileApp.server_type', 'None')
+        if server_type == 'Tornado':
+            port = get_config_var('MobileApp.port', 9090)
+            self.TrainingInterface = training.TrainingManagerWebsocket()
+            self.TrainingInterface.setup(port)
+            print(f'Starting webserver at http://localhost:{port}')
+
+        elif server_type == 'Spacebrew':
+            self.TrainingInterface = training.TrainingManagerSpacebrew()
+            self.TrainingInterface.setup()
+
+        # Assign modules to the app for assessments and rotational corrections
+        if self.TrainingInterface is not None:
+            # Setup Assessments
+            tac = assessment.TargetAchievementControl(self, self.TrainingInterface)
+            motion_test = assessment.MotionTester(self, self.TrainingInterface)
+            myo_norm = normalization.MyoNormalization(self, self.TrainingInterface)
+
+            # assign message callbacks
+            self.TrainingInterface.add_message_handler(self.command_string)
+            self.TrainingInterface.add_message_handler(tac.command_string)
+            self.TrainingInterface.add_message_handler(motion_test.command_string)
+            self.TrainingInterface.add_message_handler(myo_norm.command_string)
+
     def setup(self):
         """
         Create the building blocks of the MiniVIE
@@ -556,16 +653,17 @@ class MplScenario(Scenario):
         from controls.plant import Plant
         from scenarios import Scenario
 
-        # set arm
-        self.arm = get_user_config_var('arm', 'right')
-
-        #configure input
-        if get_user_config_var('input_type', 'myo') == 'myo':
+        # configure input
+        source_list = None
+        input_device = get_config_var('input_device', 'myo')
+        if input_device == 'myo':
+            myo_position_1 = get_config_var('myo_position_1', 'AE')
+            myo_position_2 = get_config_var('myo_position_2', 'AE')
 
             # get ports and configure joints based upon myo location
-            if get_user_config_var('MyoUdpClient.num_devices', 1) == 1:
-                local_port_1 = get_user_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
-                if get_user_config_var('myo_position_1', 'AE') == 'AE':
+            if get_config_var('MyoUdpClient.num_devices', 1) == 1:
+                local_port_1 = get_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
+                if myo_position_1 == 'AE':
                     self.shoulder = True
                     self.elbow = False
                 else:
@@ -574,32 +672,39 @@ class MplScenario(Scenario):
                 source_list = [myo.MyoUdp(source=local_port_1)]
 
             # add second device
-            elif get_user_config_var('MyoUdpClient.num_devices', 1) == 2:
-                local_port_1 = get_user_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
-                local_port_2 = get_user_config_var('MyoUdpClient.local_address_2', '//0.0.0.0:15002')
+            elif get_config_var('MyoUdpClient.num_devices', 1) == 2:
+                local_port_1 = get_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
+                local_port_2 = get_config_var('MyoUdpClient.local_address_2', '//0.0.0.0:15002')
 
-                if (get_user_config_var('myo_position_1', 'AE') == 'AE') and (get_user_config_var('myo_position_2', 'AE') == 'AE'):
+                if (myo_position_1 == 'AE') and (myo_position_2 == 'AE'):
                     self.shoulder = True
                     self.elbow = False
                     source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
 
-                elif (get_user_config_var('myo_position_1', 'AE') == 'BE') and (get_user_config_var('myo_position_2', 'AE') == 'BE'):
+                elif (myo_position_1 == 'BE') and (myo_position_2 == 'BE'):
                     self.shoulder = False
                     self.elbow = True
                     source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
 
                 else:
-                    if (get_user_config_var('myo_position_1', 'AE') == 'AE'):
+                    if myo_position_1 == 'AE':
                         source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
                     else:
                         source_list = [myo.MyoUdp(source=local_port_2), myo.MyoUdp(source=local_port_1)]
 
-        elif get_user_config_var('input_type', 'myo') == 'daq':
+            self.attach_source(source_list)
+        elif input_device == 'daq':
             self.shoulder = False
             self.elbow = False
-            source_list = [daqEMGDevice.DaqEMGDevice(get_user_config_var('device_name_and_channels', 'Dev1/ai0:7'))]
+            source_list = [daqEMGDevice.DaqEMGDevice(get_config_var('device_name_and_channels', 'Dev1/ai0:7'))]
 
-        self.attach_source(source_list)
+            self.attach_source(source_list)
+        elif input_device == 'ctrl':
+            from inputs import ctrl_client
+            src = ctrl_client.CtrlSocket(source='ws://localhost:5678', num_samples=125)
+            self.SignalSource = [src]
+            self.num_channels += src.num_channels
+            self.futures = src.connect
 
         # Training Data holds data labels
         # training data manager
@@ -607,7 +712,7 @@ class MplScenario(Scenario):
         self.TrainingData.load()
         self.TrainingData.num_channels = self.num_channels
 
-        #Feature Extraction
+        # Feature Extraction
         self.FeatureExtract = pr.FeatureExtract()
         select_features = features_selected.Features_selected(self.FeatureExtract)
         select_features.create_instance_list()
@@ -617,26 +722,22 @@ class MplScenario(Scenario):
         self.SignalClassifier.fit()
 
         # Plant maintains current limb state (positions) during velocity control
-        filename = get_user_config_var('MPL.roc_table', '../../WrRocDefaults.xml')
-        dt = get_user_config_var('timestep', 0.02)
+        filename = get_config_var('MPL.roc_table', '../../WrRocDefaults.xml')
+        dt = get_config_var('timestep', 0.02)
         self.Plant = Plant(dt, filename)
 
         # Sink is output to outside world (in this case to VIE)
         # For MPL, this might be: real MPL/NFU, Virtual Arm, etc.
-        data_sink = get_user_config_var('DataSink', 'Unity')
+        data_sink = get_config_var('DataSink', 'Unity')
         if data_sink in ['Unity', 'UnityUdp']:
-            if (get_user_config_var('track', 'False') == 'True'):
-                self.track = True
-            else:
-                self.track = False
-            local_address = get_user_config_var('UnityUdp.local_address', '//0.0.0.0:25001')
-            remote_address = get_user_config_var('UnityUdp.remote_address', '//127.0.0.1:25000')
+            local_address = get_config_var('UnityUdp.local_address', '//0.0.0.0:25001')
+            remote_address = get_config_var('UnityUdp.remote_address', '//127.0.0.1:25000')
             sink = UnityUdp(local_address=local_address, remote_address=remote_address)
             sink.connect()
         elif data_sink == 'NfuUdp':
-            self.track = False
-            local_hostname, local_port = get_address(get_user_config_var('NfuUdp.local_address', '//0.0.0.0:9028'))
-            remote_hostname, remote_port = get_address(get_user_config_var('NfuUdp.remote_address', '//127.0.0.1:9027'))
+            get_address = utilities.get_address
+            local_hostname, local_port = get_address(get_config_var('NfuUdp.local_address', '//0.0.0.0:9028'))
+            remote_hostname, remote_port = get_address(get_config_var('NfuUdp.remote_address', '//127.0.0.1:9027'))
             sink = NfuUdp(hostname=remote_hostname, udp_telem_port=local_port, udp_command_port=remote_port)
             sink.connect()
         else:
@@ -647,7 +748,7 @@ class MplScenario(Scenario):
             sys.exit(1)
 
         # synchronize the data sink with the plant model
-        if get_user_config_var('MPL.connection_check', 1):
+        if get_config_var('MPL.connection_check', 1):
             sink.wait_for_connection()
         # Synchronize joint positions
         if sink.position['last_percept'] is not None:
@@ -655,13 +756,31 @@ class MplScenario(Scenario):
                 self.Plant.joint_position[i] = sink.position['last_percept'][i]
         self.DataSink = sink
 
-    def run(self):
+    def setup_load_cell(self):
+        from inputs import dcell
+
+        # Setup Additional Logging
+        if get_config_var('DCell.enable', 0):
+            # Start DCell Streaming
+            port = get_config_var('DCell.serial_port', '/dev/ttymxc2')
+            dc = dcell.DCellSerial(port)
+            # Connect and start streaming
+            dc.enable_data_logging = True
+            try:
+                dc.connect()
+                logging.info('DCell streaming started successfully')
+            except Exception:
+                log = logging.getLogger()
+                log.exception('Error from DCELL:')
+
+    async def run(self):
         """
             Main function that involves setting up devices,
             looping at a fixed time interval, and performing cleanup
         """
         import sys
         import time
+        import asyncio
 
         # setup main loop control
         print("")
@@ -673,8 +792,7 @@ class MplScenario(Scenario):
         # Run the control loop
         # ##########################
         time_elapsed = 0.0
-        last_time = time.strftime("%c")
-        counter = 0
+        self.loop_time = time.strftime("%c")
         dt = self.Plant.dt
         print(dt)
         while True:
@@ -683,63 +801,14 @@ class MplScenario(Scenario):
                 time_begin = time.time()
 
                 # Run the actual model
-                output = self.update()
-
-                # send gui updates
-                if self.TrainingInterface is not None:
-                    # Send new status only once a second based on date string changing
-                    current_time = time.strftime("%c")
-                    if current_time != last_time:
-                        last_time = current_time
-                        msg = '<br>' + self.DataSink.get_status_msg()  # Limb Status
-                        msg += ' ' + output['status']  # Classifier Status
-                        for src in self.SignalSource:
-                            msg += '<br>MYO:' + src.get_status_msg()
-                        msg += '<br>' + 'Step Time: {:.0f}'.format(time_elapsed*1000) + 'ms'
-                        msg += '<br>' + time.strftime("%c")
-
-                        # Forward status message (voltage, temp, etc) to mobile app
-                        self.TrainingInterface.send_message("sys_status", msg)
-
-                    # Send classifier output to mobile app (e.g. Elbow Flexion)
-                    self.TrainingInterface.send_message("output_class", output['decision'])
-                    # Send motion training status to mobile app (e.g. No Movement [70]
-                    msg = '{} [{:.0f}]'.format(self.training_motion,
-                                               round(self.TrainingData.get_totals(self.training_id), -1))
-                    self.TrainingInterface.send_message("training_class", msg)
-
-                if self.TrainingInterface is not None and self.enable_percept_stream:
-                    counter += 1
-                    if counter == 5:
-                        msg = ','.join(['%.f' % rad2deg(elem) for elem in self.Plant.joint_position])
-                        self.TrainingInterface.send_message("joint_cmd", msg)
-                    if counter == 10:
-                        p = self.DataSink.get_percepts()
-                        try:
-                            msg = ','.join(['%.f' % rad2deg(elem) for elem in p['jointPercepts']['position']])
-                            self.TrainingInterface.send_message("joint_pos", msg)
-                        except TypeError or KeyError:
-                            pass
-                    if counter == 15:
-                        p = self.DataSink.get_percepts()
-                        try:
-                            msg = ','.join(['%.1f' % elem for elem in p['jointPercepts']['torque']])
-                            self.TrainingInterface.send_message("joint_torque", msg)
-                        except TypeError or KeyError:
-                            pass
-                    if counter == 20:
-                        p = self.DataSink.get_percepts()
-                        try:
-                            msg = ','.join(['%.0f' % elem for elem in p['jointPercepts']['temperature']])
-                            self.TrainingInterface.send_message("joint_temp", msg)
-                        except TypeError or KeyError:
-                            pass
-                        counter = 0
+                self.update()
+                self.update_interface()
 
                 time_end = time.time()
                 time_elapsed = time_end - time_begin
                 if dt > time_elapsed:
-                    time.sleep(dt - time_elapsed)
+                    # time.sleep(dt - time_elapsed)
+                    await asyncio.sleep(dt - time_elapsed)
                 else:
                     # print("Timing Overload: {}".format(time_elapsed))
                     pass

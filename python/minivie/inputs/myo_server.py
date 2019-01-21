@@ -19,8 +19,6 @@ if os.path.split(os.getcwd())[1] == 'inputs':
 from utilities import user_config as uc
 from utilities import get_address
 
-#logger = logging.getLogger(__name__)
-
 __version__ = "1.1.0"
 
 
@@ -282,7 +280,8 @@ def setup_threads():
                       name='Myo1')
 
     if uc.get_user_config_var('MyoUdpServer.num_devices', 2) < 2:
-        return
+        s2 = None
+        return s1, s2
 
     s2 = MyoUdpServer(iface=uc.get_user_config_var('MyoUdpServer.iface_2', 0),
                       mac_address=uc.get_user_config_var('MyoUdpServer.mac_address_2', 'xx:xx:xx:xx:xx'),
@@ -311,23 +310,31 @@ def main():
     args = parser.parse_args()
 
     if args.XML is not None:
-        uc.read_user_config(file=args.XML)
+        uc.read_user_config_file(file=args.XML)
         s1, s2 = setup_threads()
 
-        print('Connecting Device #1')
-        s1.connect()
-        print('Connecting Device #2')
-        s2.connect()
-        print('Both Connected')
+        if s2 is None:
+            print('Connecting Device #1')
+            s1.connect()
+            time.sleep(0.5)
+            s1.thread.start()
+            time.sleep(0.5)
+            s1.set_host_parameters()
+        else:
+            print('Connecting Device #1')
+            s1.connect()
+            print('Connecting Device #2')
+            s2.connect()
+            print('Both Connected')
 
-        time.sleep(0.5)
-        s1.thread.start()
-        time.sleep(0.5)
-        s2.thread.start()
-        time.sleep(1.5)
-        s2.set_host_parameters()
-        time.sleep(0.5)
-        s1.set_host_parameters()
+            time.sleep(0.5)
+            s1.thread.start()
+            time.sleep(0.5)
+            s2.thread.start()
+            time.sleep(1.5)
+            s2.set_host_parameters()
+            time.sleep(0.5)
+            s1.set_host_parameters()
 
     print(sys.argv[0] + " Version: " + __version__)
 

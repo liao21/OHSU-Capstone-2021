@@ -546,7 +546,7 @@ class MyoUdp(SignalInput):
         battery = self.get_battery()
         if battery < 0:
             battery = '--'
-        return '{:.0f}Hz {}%'.format(self.get_data_rate_emg(),battery)
+        return 'MYO: {:.0f}Hz {}%'.format(self.get_data_rate_emg(),battery)
 
     def close(self):
         """ Cleanup socket """

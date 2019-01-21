@@ -1,10 +1,10 @@
 from abc import ABCMeta, abstractmethod
 import numpy as np
 import math
-import spectrum #will need to install spectrum lib with pip install
-from utilities.user_config import read_user_config, get_user_config_var
+from spectrum import aryule
 
-#Abstract base class
+
+# Abstract base class
 class EMGFeatures(object):
     __metaclass__ = ABCMeta
 
@@ -20,6 +20,7 @@ class EMGFeatures(object):
     def extract_features(self):
         pass
 
+
 class Mav(EMGFeatures):
     def __init__(self):
         super(Mav, self).__init__()
@@ -34,6 +35,7 @@ class Mav(EMGFeatures):
 
         mav_feature = np.mean(abs(data_input),0)
         return mav_feature
+
 
 class Curve_len(EMGFeatures):
     def __init__(self, fs=200):
@@ -54,6 +56,7 @@ class Curve_len(EMGFeatures):
 
         curve_len_feature = np.sum(abs(np.diff(data_input, axis=0)), axis=0) * self.fs / n
         return curve_len_feature
+
 
 class Zc(EMGFeatures):
     def __init__(self, fs=200, zc_thresh=0.05):
@@ -87,6 +90,7 @@ class Zc(EMGFeatures):
             axis=0) * self.fs / n
         return zc_feature
 
+
 class Ssc(EMGFeatures):
     def __init__(self, fs=200, ssc_thresh=0.15):
         super(Ssc, self).__init__()
@@ -117,6 +121,7 @@ class Ssc(EMGFeatures):
             data_input[0:n - 2, :]) > self.ssc_thresh)),axis=0) * self.fs / n
         return ssc_feature
 
+
 class Wamp(EMGFeatures):
     def __init__(self, fs=200, wamp_thresh=0.05):
         super(Wamp, self).__init__()
@@ -146,6 +151,7 @@ class Wamp(EMGFeatures):
         wamp_feature = np.sum(((abs(data_input[1:n - 1, :] - data_input[0:n - 2, :])) > self.wamp_thresh), axis=0) * self.fs / n
         return wamp_feature
 
+
 class Var(EMGFeatures):
     def __index__(self):
         super(Var, self).__init__()
@@ -168,6 +174,7 @@ class Var(EMGFeatures):
 
         var_feature = np.sum(np.square(data_input), axis=0) / (n-1)
         return var_feature
+
 
 class Vorder(EMGFeatures):
     def __index__(self):
@@ -200,6 +207,7 @@ class Vorder(EMGFeatures):
         vorder_feature = np.sqrt(np.sum(np.square(data_input), axis=0) / (n-1))
         return vorder_feature
 
+
 class Logdetect(EMGFeatures):
     def __index__(self):
         super(Logdetect, self).__init__()
@@ -219,6 +227,7 @@ class Logdetect(EMGFeatures):
 
         logdetect_feature = math.e**(np.mean(np.log(abs(data_input)),axis=0))
         return logdetect_feature
+
 
 class EMGhist(EMGFeatures):
     def __index__(self):
@@ -277,11 +286,12 @@ class AR(EMGFeatures):
 
         ar_feature = []
         for channel in range(8):
-            ar_coefficient_array, noise, reflection = spectrum.aryule(np.hstack(data_input[:,channel:channel+1]), 1)
+            ar_coefficient_array, noise, reflection = aryule(np.hstack(data_input[:,channel:channel+1]), 1)
             ar_coefficient = ar_coefficient_array[0]
             ar_feature.append(ar_coefficient)
 
         return ar_feature
+
 
 class Ceps(EMGFeatures):
     def __index__(self):
@@ -307,11 +317,9 @@ class Ceps(EMGFeatures):
 
         ceps_feature = []
         for channel in range(8):
-            ar_coefficient_array, noise, reflection = spectrum.aryule(np.hstack(data_input[:,channel:channel+1]), 1)
+            ar_coefficient_array, noise, reflection = aryule(np.hstack(data_input[:,channel:channel+1]), 1)
             ar_coefficient = ar_coefficient_array[0]
             ceps_coefficient = -ar_coefficient
             ceps_feature.append(ceps_coefficient)
 
         return ceps_feature
-
-

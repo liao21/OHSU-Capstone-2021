@@ -13,7 +13,6 @@ import numpy as np
 from builtins import input
 import logging
 
-import utilities
 import utilities.sys_cmd
 from mpl.open_nfu import NfuUdp
 # from mpl.unity import UnityUdp

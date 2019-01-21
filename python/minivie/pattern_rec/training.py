@@ -112,7 +112,7 @@ class MainHandler(tornado.web.RequestHandler):
         from os import path
         homepath = get_user_config_var('MobileApp.path', "../www/mplHome")
         homepage = get_user_config_var('MobileApp.homepage', "index.html")
-        homepage_path = path.join(homepath,homepage)
+        homepage_path = path.join(homepath, homepage)
         loader = tornado.template.Loader(".")
         self.write(loader.load(homepage_path).generate())
 
@@ -143,12 +143,13 @@ class TrainingManagerWebsocket(TrainingInterface):
         # keep count of skipped messages so we can send at some nominal rate
         self.msg_skip_count = 0
 
-        self.thread = threading.Thread(target=tornado.ioloop.IOLoop.instance().start, name='WebThread')
+        #self.thread = threading.Thread(target=tornado.ioloop.IOLoop.instance().start, name='WebThread')
+        self.thread = tornado.ioloop.IOLoop.instance
 
     def setup(self, port=9090):
 
         self.application.listen(port)
-        self.thread.start()
+        #self.thread.start()
 
     def add_message_handler(self, func):
         # attach a function to receive commands from websocket

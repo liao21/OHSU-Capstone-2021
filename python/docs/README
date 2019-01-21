@@ -1,4 +1,4 @@
-The objective of the PythonVIE is to provide the essential BioSignal Acquisition, processing, and output modules to 
+The objective of the PythonVIE is to provide the essential BioSignal Acquisition, processing, and output modules to 
 control prosthetic limb ranging in complexity from open source 3d printed arms, to advanced dexterous arms such as 
 the JHUAPL Modular Prosthetic limb.
 
@@ -30,10 +30,56 @@ Scenario: Scenario objects contain different combinations of the above modules t
     controlling a virtual limb system, or synthetic (stored) data used to control a physical arm for testing, or any combination thereof.
 
 
+	
+	
+	
+	
+	
+------------------------
+About config files
+------------------------
+The PythonVIE can be run with default options only by calling the main program (run_www.py) from the command line directly.
+More likely however, a 'user_config.xml' file will be used to customize the program.
+
+The specific user_config.xml file is refernced when launching the run_www.py program using the -x option
+Example:
+python3 run_www.py -x my_config_file.xml
+
+This file contains info such as the joint limits, web app parameters, speed, and others.  This shouldbe familiar to VulcanX users
+as the config file mimics that config file format (those these are NOT interchangeable or necessarily compatible)
+
+Of note, the config file references a ROC Table file as follows:
+
+    <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
+    <add key="MPL.roc_table"         value="JHMI_TH01_L_ROC.xml"/>
+
+This can also include file path information as in:
+
+    <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
+    <add key="MPL.roc_table"         value="../../WrRocDefaults.xml"/>
+
+where the path is relative to the python working directory
+
+Lastly, run-time paramters such joint limits and speed or impedance settings can be updated while the system is running.
+To do so, select the following from the web-app:
+
+	Options-> MPL Configuration...-> Reload Configuration Parameters
+	
+For other parameters such as the web app port, the run_www.py program will beed to be restarted.  E.g.:
+	If running from a command line terminal:
+		CTRL+C, followed by python3 run_www.py
+	
+	Via an ssh terminal
+		>>> sudo systemctl restart mpl_run_www.service
+		
+	Or via a reboot / power cycle of the arm
+
+
+	
 -------------------------------------
 Notes on PyCharm Community Edition IDE
 -------------------------------------
-If installing on a new windows build and you don;t have other IDE preferences:
+If installing on a new windows build and you don't have other IDE preferences:
 Download and Install PyCharmCE
 Download and Install Python3.6+
 Open Pycharm and select the MiniVIE project directory (e.g. c:\git\minivie)
@@ -202,8 +248,8 @@ There are multiple websocket interfaces supported.  One uses the third-party Spa
 other uses a python based tornado server and javascript.  In order to select one package or the other:
 
 To Enable Tornado:
-  Set the user_config parameter: MobileApp.ws_server to Tornado
-      <add key="MobileApp.ws_server"      value="Tornado"/>    <!-- [Tornado | Spacebrew | None] -->
+  Set the user_config parameter: MobileApp.server_type to Tornado
+      <add key="MobileApp.server_type"      value="Tornado"/>    <!-- [Tornado | Spacebrew | None] -->
   Set index.html to load the websocketNative javascript and disbale spacebrew:
       <script src="mplHome.js"></script>
       <script src="websocketNative.js"></script>
@@ -213,8 +259,8 @@ To Enable Tornado:
     http://localhost:9090/
 
 To Enable Spacebrew:
-  Set the user_config parameter: MobileApp.ws_server to Spacebrew
-      <add key="MobileApp.ws_server"      value="Spacebrew"/>    <!-- [Tornado | Spacebrew | None] -->
+  Set the user_config parameter: MobileApp.server_type to Spacebrew
+      <add key="MobileApp.server_type"      value="Spacebrew"/>    <!-- [Tornado | Spacebrew | None] -->
   Set index.html to load the websocketSpacebrew javascript and disable native websockets:
       <script src="mplHome.js"></script>
       <!--<script src="websocketNative.js"></script>-->
@@ -244,3 +290,144 @@ msg = 'Torque: ' + ','.join([ '%.1f' % elem for elem in values])
 # Note this was found to be 5-10x faster than np.array2string
 
 
+
+Runtime build notes:
+----------------------------------
+Build test Jan 2019:
+
+Install pyinstaller as follows:
+    py -3 -m pip install pyinstaller
+    py -3 -m pip install pypiwin32
+
+add pyinstaller to Path (was done automatically):
+    C:\Users\_\AppData\Local\Programs\Python\Python37
+    C:\Users\_\AppData\Local\Programs\Python\Python37\Scripts
+
+Build with:
+    pyinstaller.exe ./build_run_www.py
+
+    
+Building on
+78 INFO: PyInstaller: 3.4
+78 INFO: Python: 3.7.2
+79 INFO: Platform: Windows-10-10.0.15063-SP0
+
+---------------------------------    
+When building the following problems encountered:
+---------------------------------    
+
+Build Warning:
+    33670 WARNING: Hidden import "sklearn.utils.sparsetools._graph_validation" not found!
+    33670 WARNING: Hidden import "sklearn.utils.sparsetools._graph_tools" not found!
+Runtime Error:
+    ModuleNotFoundError: No module named 'numpy.core._dtype_ctypes'
+Runtime Error:
+    pkg_resources.DistributionNotFound: The 'spectrum' distribution was not found and is required by the application
+    
+    
+---------------------------------    
+Fixes:
+---------------------------------    
+add lines to the following hook files in C:\Users\_\AppData\Local\Programs\Python\Python37\Lib\site-packages\PyInstaller\hooks:
+
+hook-sklearn.metrics.cluster.py (comment out everything else)
+    from PyInstaller.utils.hooks import collect_submodules
+    hiddenimports = collect_submodules('sklearn')
+
+hook-numpy.py (append to last line of file)
+    hiddenimports=['numpy.core._dtype_ctypes']
+
+hook-spectrum.py (create new file)
+    from PyInstaller.utils.hooks import copy_metadata
+    datas = copy_metadata('spectrum')  
+    
+Reference info here:
+    https://stackoverflow.com/questions/49559770/how-do-you-resolve-hidden-imports-not-found-warnings-in-pyinstaller-for-scipy
+    https://github.com/pyinstaller/pyinstaller/issues/3982
+    https://stackoverflow.com/questions/40076795/pyinstaller-file-fails-to-execute-script-distributionnotfound
+    https://stackoverflow.com/questions/9469932/app-created-with-pyinstaller-has-a-slow-startup
+   
+
+    
+---------------------------------    
+Onefile spec:  (note, the onefile build option starts up VERY slowly)
+---------------------------------    
+
+    # -*- mode: python -*-
+
+    block_cipher = None
+
+    added_files = [
+             ( 'C:\\Users\\armigrs1\\AppData\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\spectrum\\data\\*.wav', 'spectrum\\data' )
+             ]
+
+    a = Analysis(['run_www.py'],
+                 pathex=['C:\\git\\minivie\\python\\minivie'],
+                 binaries=[],
+                 datas=added_files,
+                 hiddenimports=[],
+                 hookspath=[],
+                 runtime_hooks=[],
+                 excludes=[],
+                 win_no_prefer_redirects=False,
+                 win_private_assemblies=False,
+                 cipher=block_cipher,
+                 noarchive=False)
+    pyz = PYZ(a.pure, a.zipped_data,
+                 cipher=block_cipher)
+    exe = EXE(pyz,
+              a.scripts,
+              a.binaries,
+              a.zipfiles,
+              a.datas,
+              [],
+              name='run_www',
+              debug=False,
+              bootloader_ignore_signals=False,
+              strip=False,
+              upx=True,
+              runtime_tmpdir=None,
+              console=True )
+
+---------------------------------    
+Build Directory spec:  (starts faster)
+---------------------------------    
+    # -*- mode: python -*-
+
+    block_cipher = None
+
+    added_files = [
+             ( 'C:\\Users\\armigrs1\\AppData\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\spectrum\\data\\*.wav', 'spectrum\\data' )
+             ]
+
+    a = Analysis(['run_www.py'],
+                 pathex=['C:\\git\\minivie\\python\\minivie'],
+                 binaries=[],
+                 datas=added_files,
+                 hiddenimports=[],
+                 hookspath=[],
+                 runtime_hooks=[],
+                 excludes=[],
+                 win_no_prefer_redirects=False,
+                 win_private_assemblies=False,
+                 cipher=block_cipher,
+                 noarchive=False)
+    pyz = PYZ(a.pure, a.zipped_data,
+                 cipher=block_cipher)
+    exe = EXE(pyz,
+              a.scripts,
+              [],
+              exclude_binaries=True,
+              name='run_www',
+              debug=False,
+              bootloader_ignore_signals=False,
+              strip=False,
+              upx=True,
+              console=True )
+    coll = COLLECT(exe,
+                   a.binaries,
+                   a.zipfiles,
+                   a.datas,
+                   strip=False,
+                   upx=True,
+                   name='run_www')

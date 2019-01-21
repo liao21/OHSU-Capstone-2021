@@ -48,19 +48,19 @@ classdef ParsePythonVieMainLog < handle
         function read_entire_file(obj,fullFilename)
             % Get filename and parse file
             
-            if nargin < 2
-                % Raise file selection dialog if no files provided
-                
-                % [obj.fileName, obj.filePath] = uigetfile('*.log','Select one or more log files','Multiselect','off');
-                
-                obj.filePath = '';
-                s = dir('*.log');
-                obj.fileName = s(end).name;
-            else
+%             if nargin < 2
+%                 % Raise file selection dialog if no files provided
+%                 
+%                 % [obj.fileName, obj.filePath] = uigetfile('*.log','Select one or more log files','Multiselect','off');
+%                 
+%                 obj.filePath = '';
+%                 s = dir('*.log');
+%                 obj.fileName = s(end).name;
+%             else
                 [p,f,e] = fileparts(fullFilename);
                 obj.filePath = p;
                 obj.fileName = [f e];
-            end
+%             end
             
             %%%%%%%%%%%%%%%%%
             % read the file
@@ -253,19 +253,18 @@ classdef ParsePythonVieMainLog < handle
             obj.maxVoltage = max(obj.heartbeatMsg.busVoltage);
             obj.minVoltage = min(obj.heartbeatMsg.busVoltage);
             
-            
-            %%
             % lc_software_state': '        ', 'nfu_ms_per_CMDDOM
             C = cellfun(@(x)regexp(x,'(?<=lc_software_state'':\s'')\w+','match'),statusLines);
-            lc_software_state = unique(C);
+            obj.heartbeatMsg.lc_software_states = unique(C);
+            obj.heartbeatMsg.lc_software_state = C;
             
             C = cellfun(@(x)regexp(x,'(?<=nfu_ms_per_CMDDOM'':\s)\d+.\d+','match'),statusLines);
             obj.heartbeatMsg.nfu_ms_per_CMDDOM = str2double(C);
             
             C = cellfun(@(x)regexp(x,'(?<=nfu_state'':\s'')\w+','match'),statusLines);
-            nfu_state = unique(C);
+            obj.heartbeatMsg.nfu_state = unique(C);
             
-            C = cellfun(@(x)regexp(x,'(?<=nfu_ms_per_ACTUATEMPL'':\s)\d+.\d+','match'),statusLines);
+            C = cellfun(@(x)regexp(x,'(?<=nfu_ms_per_ACTUATEMPL'':\s)-?\d+.\d+','match'),statusLines);
             obj.heartbeatMsg.nfu_ms_per_ACTUATEMPL = str2double(C);
             
             % ignore messages:

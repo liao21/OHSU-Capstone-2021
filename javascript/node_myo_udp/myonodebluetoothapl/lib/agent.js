@@ -6,10 +6,10 @@
  @license MIT
  @copyright Manuel Overdijk, 2015
  */
-"use strict"
+"use strict";
 
 var MyoProtocol = require('./myoProtocol');
-var noble = require('noble');
+var noble = require('noble-uwp');
 var Armband = require('./armband/armband');
 var EventEmitter = require("events").EventEmitter;
 
@@ -23,10 +23,10 @@ class Agent extends EventEmitter{
         this.myoProtocol = new MyoProtocol();
         this.MAACaddress = "111111111";
         this._armbands = [];
-        this.startDiscover();
+        //this.startDiscover();
         this.port = 1;
         this.ipAdd = "localhost";
-        this.debug = 0;
+        this.debug = 2;
     }
 
     /**
@@ -62,12 +62,13 @@ class Agent extends EventEmitter{
         console.log('Starting to scan for MYO devices');
         if(this.debug >= 1){
             console.log("In discovery: " + addr);
-            console.log("Noble connection state: " + noble.state);
+            console.log("Noble connection state - Bob: " + noble.state);
         }
-        noble.startScanning("d5060001a904deb947482c7f4a124842",false);
+        //noble.startScanning("d5060001a904deb947482c7f4a124842",false);
+        noble.startScanning([], false, function(error){console.log(error)} );
+        noble.startScanning([], false);
         noble.on('discover', function (peripheral) {
             console.log("Discovered an armband with ID: " + peripheral.id);
-            return;
 
             var idMatch = addr.indexOf(peripheral.id);  // -1 if no match
 

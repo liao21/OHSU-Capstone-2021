@@ -7,7 +7,7 @@
  @copyright Manuel Overdijk, 2015
  */
 
-"use strict"
+"use strict";
 
 var Deserialise = require('../util/deserialise');
 var Serialise =   require('../util/serialise');
@@ -187,36 +187,19 @@ class Communicator{
 
             setTimeout(function () {
                 this.emgService.discoverCharacteristics([], function (error, characteristics) {
-
                 if(characteristics.length  == 4) {
                         // TODO check UUID's
-                        for(var index = 0; index < 4; index++ /*in characteristics*/){
-                            //console.log(index);
-                            //let emgChar1 = characteristics[index];
-                            //console.log(characteristics[index]);
-                            //let emgChar1 = characteristics[index];
-                            let emgChar1 = characteristics[index];
-                            emgChar1.notify(true, function (error) {
-
+                        for(let index in characteristics){
+                            let char = characteristics[index];
+                            char.notify(true, function (error) {
                             if(error){
                                     throw new Error('emgChar: ', error);
                                 }
                             });
-                            emgChar1.on('read', function (data, isNotification) {
-                            if (this.debug == 2){
-                                console.log("EMG Sending data UDP..." + this.port);
-                            }
-                            var mess = Buffer.from('some bytes');
-                            try{
-                                if(this.debug == 2){
-                                    console.log("Sending to IP" + this.ipAdd);
-                                }
+                            char.on('read', function (data, isNotification) {
                                 client.send(data, this.port, this.ipAdd);
-                            }
-                            catch(err){
-                            }
-                        //      client.close();
                                 let emgData = this.deserialise.emg_data_t(data);
+                                console.log(index + emgData);
                                 callback({id: index, emgData: emgData});
                             }.bind(this));
                         }

@@ -1,7 +1,11 @@
 # Debug code only
 # Not fully functional
 
-
+import matplotlib.pyplot as plt
+import numpy as np
+import nidaqmx
+import time
+from nidaqmx.constants import TerminalConfiguration, VoltageUnits, Edge, AcquisitionType
 fig = plt.figure()
 ax1 = fig.add_subplot(211)
 ax2 = fig.add_subplot(212)
@@ -34,4 +38,4 @@ with nidaqmx.Task() as task:
         fig.show(0)
         plt.pause(0.000000001)
         t3 = (int(round(time.time() * 1000)))
-        print 't2-t1 = {}ms, t3-t2 ={}ms'.format(t2-t1, t3-t2)
+        print('t2-t1 = {}ms, t3-t2 ={}ms'.format(t2-t1, t3-t2))

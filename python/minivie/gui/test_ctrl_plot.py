@@ -17,11 +17,11 @@ import os
 if os.path.split(os.getcwd())[1] == 'gui':
     import sys
     sys.path.insert(0, os.path.abspath('..'))
-from inputs import ctrl_client
+from inputs import emg_device_client
 
 
 print('Running')
-a = ctrl_client.CtrlSocket(source='ws://localhost:5678', num_samples=125)
+a = emg_device_client.CtrlSocket(source='ws://localhost:5678', num_samples=125)
 
 style.use('dark_background')
 fig, ax = plt.subplots()

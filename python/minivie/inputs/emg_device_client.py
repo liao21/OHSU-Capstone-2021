@@ -50,7 +50,7 @@ class CtrlSocket(SignalInput):
         self.rate_counter = 0
         self.rate_last_time = time.time()
 
-        self.status_msg = 'CTRL: INITIALIZED'
+        self.status_msg = 'EMG: INITIALIZED'
 
     async def connect(self, port='ws://localhost:5678'):
         """
@@ -58,7 +58,7 @@ class CtrlSocket(SignalInput):
 
         """
 
-        logger.info("Setting up Ctrl socket {}".format(self.source))
+        logger.info("Setting up socket {}".format(self.source))
         while True:  # this outer loop will perpetually try to find connection
             try:
                 async with websockets.connect(port) as websocket:
@@ -84,13 +84,13 @@ class CtrlSocket(SignalInput):
                             self.rate = self.rate_counter / t_elapsed
                             self.rate_counter = 0  # reset counter
 
-                        self.status_msg = f'CTRL: {self.rate:.1f} Hz Packets: {self.num_packets}'
+                        self.status_msg = f'EMG: {self.rate:.1f} Hz Packets: {self.num_packets}'
 
             except OSError:
                 # OSError: Multiple exceptions: [Errno 10061] Connect call failed ('127.0.0.1', 5678),
                 #                               [Errno 10061] Connect call failed ('::1', 5678, 0, 0)
-                self.status_msg = f'CTRL: Server not found on port {port}'
-                logging.warning('No Data for CTRL Device')
+                self.status_msg = f'EMG: Server not found on port {port}'
+                logging.warning('No Data for EMG Device')
                 await asyncio.sleep(3.0)  # wait to reconnect after a few seconds
 
     def get_data(self):

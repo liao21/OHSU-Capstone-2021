@@ -700,8 +700,8 @@ class MplScenario(Scenario):
 
             self.attach_source(source_list)
         elif input_device == 'ctrl':
-            from inputs import ctrl_client
-            src = ctrl_client.CtrlSocket(source='ws://localhost:5678', num_samples=125)
+            from inputs import emg_device_client
+            src = emg_device_client.CtrlSocket(source='ws://localhost:5678', num_samples=125)
             self.SignalSource = [src]
             self.num_channels += src.num_channels
             self.futures = src.connect

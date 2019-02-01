@@ -14,9 +14,8 @@ scipy
 scikit-learn
 tornado
 h5py
-six
 transforms3d
-websocket-client
+websockets
 serial
 matplotlib
 bluepy

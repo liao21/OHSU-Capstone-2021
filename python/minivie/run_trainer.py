@@ -8,10 +8,9 @@
 # 2016OCT05 Armiger: Created
 
 # Python 2 and 3:
-from scenarios import mpl_nfu
+import scenarios
 from utilities import user_config
 import time
-from six.moves import input
 import numpy as np
 import pattern_rec as pr
 from mpl.open_nfu import NfuUdp

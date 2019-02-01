@@ -8,5 +8,4 @@ setup(
     url='http://www.bitbucket.org/rarmiger/minivie',
     author='Robert Armiger',
     author_email='robert[dot]armiger[a]jhuapl_edu',
-    install_requires=['bluepy', 'numpy'], #external packages as dependencies
 )

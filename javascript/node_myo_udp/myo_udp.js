@@ -1,6 +1,6 @@
 var MyoBluetooth  = require('MyoNodeBluetoothAPL');
 var MyoAgent = new MyoBluetooth();
-var maacAddress = ["f01ccda72c85"];
+var maacAddress = ["d85380ba2ebe"];
 var port = [15001];
 var ipAdd = ["127.0.0.1"];
 console.log("Number of arguments : " + process.argv.length);
@@ -54,6 +54,21 @@ MyoAgent.setPort(port);
 MyoAgent.setIP(ipAdd);
 MyoAgent.setDebug(debug);
 
+// Catch errors
+//
+MyoAgent.on('error', function(error) {
+  	console.log(error);
+  	MyoAgent.stopDiscovering();
+});
+
+
+// Log when discovered
+//
+MyoAgent.on('found', function(armband) {
+	console.log('INFO: Found an armband:');
+  	console.log(armband);
+});
+
 //Comment this out to remove logging. Logs MAAC addresses, ports, and IP addresses******
 console.log("Agent MAAC address:" + MyoAgent.MAACaddress);
 console.log("Port:" + MyoAgent.port);
@@ -62,11 +77,15 @@ if(debug > 0){
     console.log ("Debug Level:" + debug);
 }
 
+MyoAgent.startDiscover()
+
+
 /*************************************************************/
 MyoAgent.on('discovered', function(armband){
+	console.log('Discovered Something!!!!!  Next connecting...')
     armband.on('connect', function(connected){
 
-        // armband connected succesfully
+        // armband connected successfully
         if(connected){
             // discover all services/characteristics and enable emg/imu/classifier chars
             this.initStart();

@@ -10,7 +10,7 @@ import csv
 import logging
 import threading
 import numpy as np
-from utilities.user_config import read_user_config, get_user_config_var
+from utilities.user_config import read_user_config_file, get_user_config_var
 
 
 
@@ -64,7 +64,7 @@ class FeatureExtract(object):
             # Get features from emg data
             f = np.array([])
             for s in data_input:
-                f = np.append(f,self.feature_extract(s.get_data()*0.01))
+                f = np.append(f, self.feature_extract(s.get_data()*0.01))
 
             imu = np.array([])
             for s in data_input:
@@ -76,7 +76,7 @@ class FeatureExtract(object):
                     # add imu to features
                     # f = np.append(f, imu)
                 else:
-                    imu = None
+                    imu = float('nan')
 
             rot_mat = []
             for s in data_input:
@@ -456,7 +456,7 @@ class TrainingData:
         group.create_dataset('name', data=encoded)
         group.create_dataset('data', data=self.data)
         group.create_dataset('imu', data=self.imu)
-        group.create_dataset('motion_names', data=[a.encode('utf8') for a in self.motion_names]) # utf-8
+        group.create_dataset('motion_names', data=[a.encode('utf8') for a in self.motion_names])  # utf-8
         h5.close()
         print('Saved ' + self.filename)
 

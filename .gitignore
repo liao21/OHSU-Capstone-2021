@@ -12,5 +12,6 @@
 *.asv
 *.hdf5
 *.pyc
+*.pyo
 spacebrew_server
 node_modules

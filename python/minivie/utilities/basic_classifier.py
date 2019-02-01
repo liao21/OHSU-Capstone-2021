@@ -60,7 +60,7 @@ def parse_arguments():
 def main(args):
 
     # setup logging.  This will create a log file like: USER_2016-02-11_11-28-21.log to which all 'logging' calls go
-    uc.read_user_config(file=args.XML)
+    uc.read_user_config_file(file=args.XML)
     uc.setup_file_logging(log_level=args.logLevel)
 
     # Setup MPL scenario

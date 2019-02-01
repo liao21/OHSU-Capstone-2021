@@ -12,7 +12,7 @@ System.config({
     "bluebird": "npm:bluebird@2.9.25",
     "debug": "npm:debug@2.2.0",
     "events": "npm:events@1.0.2",
-    "noble": "npm:noble@0.3.14",
+    "noble-uwp": "npm:noble-uwp@0.6.2",
     "promiseq": "npm:promiseq@0.1.0",
     "ws": "npm:ws@0.7.1",
     "github:jspm/nodelibs-assert@0.1.0": {
@@ -247,7 +247,7 @@ System.config({
     "npm:nan@1.8.4": {
       "path": "github:jspm/nodelibs-path@0.1.0"
     },
-    "npm:noble@0.3.14": {
+    "npm:noble-uwp": {
       "bplist-parser": "npm:bplist-parser@0.0.6",
       "buffer": "github:jspm/nodelibs-buffer@0.1.0",
       "child_process": "github:jspm/nodelibs-child_process@0.1.0",

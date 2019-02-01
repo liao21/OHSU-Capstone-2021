@@ -46,6 +46,9 @@ AA = -0.3
 EL = 0
 armTestStart = [0, AA, 0, EL, 0, 0, 0]
 
+telem_port = 9029
+cmd_port = 9027
+
 # Take action as per selected menu-option #
 if choice == 0:
     pass
@@ -62,8 +65,8 @@ if choice == 1:
 
 elif choice == 2:
     print("Starting MPL Wrist...")
-    # hSink = UnityUdp()  commands on 9027, telem 9028
-    hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
+    # hSink = UnityUdp()  commands on cmd_port, telem 9028
+    hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=telem_port, udp_command_port=cmd_port)
     hSink.connect()
 
     hSink.send_joint_angles([0, AA, 0, EL, -0.7, -0.5, -0.5])
@@ -79,7 +82,7 @@ elif choice == 2:
 elif choice == 3:
     print("Starting MPL Grasps...")
     # hSink = UnityUdp()
-    hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
+    hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=telem_port, udp_command_port=cmd_port)
     hSink.connect()
 
     # Read ROC Table
@@ -108,7 +111,7 @@ elif choice == 3:
 
 elif choice == 4:
     logging.basicConfig(level=logging.INFO)
-    hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9028, udp_command_port=9027)
+    hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=telem_port, udp_command_port=cmd_port)
     hSink.connect()
     while True:
         try:
@@ -129,7 +132,7 @@ elif choice == 5:
 
     # hSink = UnityUdp()
     # By selecting a different port for telemetry, this can run while run_www is open
-    hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=9099, udp_command_port=9027)
+    hSink = NfuUdp(hostname="127.0.0.1", udp_telem_port=telem_port, udp_command_port=cmd_port)
     hSink.connect()
     time.sleep(1.5)
     #hSink.wait_for_connection()

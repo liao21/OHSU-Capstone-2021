@@ -89,7 +89,7 @@ async def send_data(websocket, _path):
 
         await websocket.send(json.dumps(data))
 
-start_server = websockets.serve(send_data, '127.0.0.1', 5678)
+start_server = websockets.serve(send_data, '127.0.0.1', 9999)
 asyncio.get_event_loop().run_until_complete(start_server)
 print('Ready to connect')
 asyncio.get_event_loop().run_forever()

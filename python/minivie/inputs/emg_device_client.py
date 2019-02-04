@@ -113,20 +113,45 @@ class EmgSocket(SignalInput):
             Connect to the websocket server and begin to receive packets in background
 
         """
-
+        port = 'ws://127.0.0.1:9999'
+        print('Connecting...')
+        print(port)
         logger.info("Setting up socket {}".format(self.source))
         while True:  # this outer loop will perpetually try to find connection
             try:
                 async with websockets.connect(port) as websocket:
+
+
+                    print('Sending Start')
+
+                    start_msg = {
+                        "api_version": "0.8.2",
+                        "api_request": {
+                            "request_id": 1,
+                            "start_stream_request": {
+                                "stream_id": "test_stream_id",
+                                "raw_emg_target": {}
+                            }
+                        }
+                    }
+
+                    await websocket.send(json.dumps(start_msg))
+                    print('Done Starting CTRL')
+                    print('Getting Response')
+                    msg = await websocket.recv()  # get websocket bytes
+                    print('Got Response')
+
                     while True:  # this inner loop will perpetually check for packets
                         try:
+                            #print('Getting Data')
                             msg = await websocket.recv()  # get websocket bytes
+                            #print('Got Data')
                         except websockets.exceptions.ConnectionClosed:
                             break
 
                         data = json.loads(msg)
-                        for sample in data['stream_batch']['raw_emg']['samples']:
-                            self.data_buffer.append(sample['data'])  # add data to internal buffer
+                        for sample in data['stream_batch']['raw_emg_batch']['samples']:
+                            self.data_buffer.append(sample['raw_emg'])  # add data to internal buffer
 
                         self.num_packets += 1  # count packets received
 

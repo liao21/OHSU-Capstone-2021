@@ -1,5 +1,14 @@
 % TEST_vMPL_Unity
 % See also: MPL.EnumArm for a list of joint enumerations
+
+% Tests basic function of MPL Unity wrappers as well as direct udp
+% communications (especially for 4 arm case (ghost targets)
+
+% Revisions:
+% 2019-Mar-09 Armiger: Added ghost arm test and all default ports
+
+
+% TEST using MPL Wrappers:
 hSink = MPL.MplUnitySink();
 hSink.setPortDefaults()
 % hSink.MplLocalPort = 9999
@@ -24,3 +33,102 @@ ang(3) = 17*pi/180;
 ang(4) = 63*pi/180;
 
 hSink.putData(ang)
+
+
+
+
+
+
+%%  NEW Test focused on controlling the 'quad arm' control case.
+% This varient includes two 'solid' vMPL arms (left/right) and two 'ghost'
+% vMPL arms (left/right).  The purpose ofthe ghost arms is to provide
+% 'targets' when evaluating prosthetic control
+
+% Typical Port Settings:
+% Right Arm Solid:
+%   Cmd Port: 25000
+%   Percept/Feedback Port: 25001
+% Left Arm Solid:
+%   Cmd Port: 25100
+%   Percept/Feedback Port: 25101
+% Right Arm Ghost:
+%   Cmd Port: 25010
+% Left Arm Ghost:
+%   Cmd Port: 25110
+
+% You can now change both the color of the ghost limbs and if they should
+% be enabled/disabled using the CONFIG file or using UDP communication.
+% The port to send the color and enable/disable values to is: 27000
+%
+% The enable/disable should be sent first: 1.0 == enabled,  0.0 == disabled
+%
+%
+% The color values should be sent next (R,G,B,A in this order) which need
+% to be between 0.0-1.0 since unity determines color on a 0-1 scale instead
+% of a 0-256 scale.
+%
+% If you would like any other features to be added or run into any issues
+% please let me know.
+
+% the right shadow accepts the commands on 27000 and the left on 27100
+
+% repo location:
+% https://bitbucket.xrcs.jhuapl.edu/scm/real/vmplv5room.git
+%
+
+% Running vMPLRoomShadow
+
+pnet('closeall')
+hRightSolid = PnetClass(25001,25000,'127.0.0.1');
+hRightSolid.initialize();
+hLeftSolid = PnetClass(25101,25100,'127.0.0.1');
+hLeftSolid.initialize();
+hRightGhost = PnetClass(25011,25010,'127.0.0.1');
+hRightGhost.initialize();
+hLeftGhost = PnetClass(25111,25110,'127.0.0.1');
+hLeftGhost.initialize();
+
+hRightGhostControl = PnetClass(27001,27000,'127.0.0.1');
+hRightGhostControl.initialize();
+hLeftGhostControl = PnetClass(27101,27100,'127.0.0.1');
+hLeftGhostControl.initialize();
+
+
+% Send some test commands to each arm
+%
+hRightSolid.putData(typecast(single(rand(27,1)),'uint8'))
+%
+hRightGhost.putData(typecast(single(rand(27,1)),'uint8'))
+%
+hLeftGhost.putData(typecast(single(rand(27,1)),'uint8'))
+%
+hLeftSolid.putData(typecast(single(rand(27,1)),'uint8'))
+%
+hLeftGhostControl.putData(typecast(single([1.0 ones(1,4)]),'uint8'))
+%
+hRightGhostControl.putData(typecast(single([1.0 rand(1,4)]),'uint8'))
+
+% Read percept data
+allPackets = hRightSolid.getAllData;
+if ~isempty(allPackets)
+    packets = allPackets{end};
+
+    % convert to joint angles and velocity
+    nJoints = 27;
+    nBytesPerFloat = 4;
+    floatData = typecast(packets(1:nJoints*nBytesPerFloat*3),'single');
+    % reshape to position velocity accel and convert to double
+    % precision floating point
+    floatData = double(reshape(floatData,3,nJoints));
+
+    %data = extract_mpl_percepts_v2(packets);
+    data.jointPercepts.position = floatData(1,:);
+    data.jointPercepts.velocity = floatData(2,:);
+
+    armDegrees = data.jointPercepts.position(1:7) * 180 / pi;
+    fprintf(['Arm Angles: SHFE=%6.1f | SHAA=%6.1f | HUM=%6.1f'...
+        '| EL=%6.1f | WR=%6.1f | DEV=%6.1f | WFE=%6.1f Degrees\n'],...
+        armDegrees);
+else
+    disp('No Data')
+end

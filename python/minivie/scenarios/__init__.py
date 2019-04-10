@@ -531,6 +531,15 @@ class Scenario(object):
         if self.DataSink is not None:
             # self.Plant.joint_velocity[mpl.JointEnum.MIDDLE_MCP] = self.Plant.grasp_velocity
             self.DataSink.send_joint_angles(self.Plant.joint_position, self.Plant.joint_velocity)
+            # enable = 1.0
+            # color = [0.3, 0.4, 0.5]
+            # alpha = 0.8
+            # try:
+            #     # only applicable for vMPL Unity models
+            #     # update the ghost arms
+            #     self.DataSink.send_config_command(enable, color, alpha)
+            # except AttributeError:
+            #     pass
 
         return
 
@@ -732,10 +741,24 @@ class MplScenario(Scenario):
         # For MPL, this might be: real MPL/NFU, Virtual Arm, etc.
         data_sink = get_config_var('DataSink', 'Unity')
         if data_sink in ['Unity', 'UnityUdp']:
+            # The main output is to unity here, however output also supports additional 'ghost' limb control
             local_address = get_config_var('UnityUdp.local_address', '//0.0.0.0:25001')
             remote_address = get_config_var('UnityUdp.remote_address', '//127.0.0.1:25000')
             sink = UnityUdp(local_address=local_address, remote_address=remote_address)
             sink.connect()
+            # send some default config parameters on setup for ghost arms (turn them off)
+            enable = get_config_var('UnityUdp.ghost_default_enable', 0.0)
+            color = get_config_var('UnityUdp.ghost_default_color', [0.3, 0.4, 0.5])
+            alpha = get_config_var('UnityUdp.ghost_default_alpha', 0.8)
+            # TODO: this is a hard-coding to force the arms off on startup.  not ideal...
+            sink.config_port = 27000
+            sink.send_config_command(enable, color, alpha)
+            sink.config_port = 27100
+            sink.send_config_command(enable, color, alpha)
+            # Now read the user parameter for which arm the user wants to control
+            sink.command_port = get_config_var('UnityUdp.ghost_command_port', 25010)
+            sink.config_port = get_config_var('UnityUdp.ghost_config_port', 27000)
+
         elif data_sink == 'NfuUdp':
             get_address = utilities.get_address
             local_hostname, local_port = get_address(get_config_var('NfuUdp.local_address', '//0.0.0.0:9028'))

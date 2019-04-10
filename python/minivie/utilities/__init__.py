@@ -71,7 +71,7 @@ class Udp(threading.Thread):
             try:
                 # receive call will error if socket closed externally (i.e. on exit)
                 # blocks until timeout or socket closed
-                bytes, address = self.sock.recvfrom(self.read_buffer_size)
+                data_bytes, address = self.sock.recvfrom(self.read_buffer_size)
 
                 # if the above function returns (without error) it means we have a connection
                 if not self.is_data_received:
@@ -94,16 +94,36 @@ class Udp(threading.Thread):
                 break
 
             # Execute the callback function assigned to self.onmessage
-            self.onmessage(bytes)
+            self.onmessage(data_bytes)
 
-    def send(self, msg_bytes):
+    def send(self, msg_bytes, address=None):
+        """
+        Send msg_bytes to remote host using either the established parameters stored as properties, or those
+        parameters provided to the function call
+        :param msg_bytes:
+            encoded message bytes to be sent via socket
+        :param address:
+            address is a tuple (host, port)
+        :return:
+            None
+        """
+
+        address = address if address is not None else (self.udp['RemoteHostname'], self.udp['RemotePort'])
+
         if self.is_connected:
-            self.sock.sendto(msg_bytes, (self.udp['RemoteHostname'], self.udp['RemotePort']))
+            self.sock.sendto(msg_bytes, address)
         else:
             logging.warning('Socket disconnected')
 
     def close(self):
-        """ Cleanup socket """
+        """
+            Cleanup socket
+            close the socket
+            disable the run control loop and join receive thread to main
+
+        :return:
+            None
+        """
         self.run_control = False
         if self.sock is not None:
             logging.info("{} Closing Socket IP={} Port={} to IP={} Port={}".format(
@@ -121,7 +141,7 @@ class FixedRateLoop(object):
         2018FEB16 Armiger: Created
     """
 
-    def __init__(self,dt):
+    def __init__(self, dt):
         self.dt = dt
         self.enabled = True
 
@@ -155,12 +175,19 @@ class FixedRateLoop(object):
 
 
 def get_address(url):
-    # convert address url string to get hostname and port as tuple for socket interface
-    # error checking port is native to urlparse
-    #
-    # E.g. //127.0.0.1:1234 becomes:
-    #   hostname = 127.0.0.1
-    #   port = 1234
+    """
+    convert address url string to get hostname and port as tuple for socket interface
+    error checking port is native to urlparse
+
+       # E.g. //127.0.0.1:1234 becomes:
+       hostname = 127.0.0.1
+       port = 1234
+
+    :param url:
+        url string in format '//0.0.0.0:80'
+    :return:
+        tuple of (hostname, port)
+    """
     a = urlparse(url)
 
     return a.hostname, a.port

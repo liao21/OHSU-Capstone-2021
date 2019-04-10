@@ -8,18 +8,26 @@ JHUAPL vMPL Unity Communications Info:
     Data should be sent in little endian format.
 
     Message               Transmission Type	Source	Target	Port
-    Left vMPL Command             Broadcast	VULCANX	vMPLEnv	25100
     Right vMPL Command            Broadcast	VULCANX	vMPLEnv	25000
-    Left vMPL Percepts            Broadcast	vMPLEnv	VULCANX	25101
     Right vMPL Percepts           Broadcast	vMPLEnv	VULCANX	25001
-    Left Virtual Hand Command     Broadcast	VULCANX	vMPLEnv	25300
+    Left vMPL Command             Broadcast	VULCANX	vMPLEnv	25100
+    Left vMPL Percepts            Broadcast	vMPLEnv	VULCANX	25101
     Right Virtual Hand Command	  Broadcast	VULCANX	vMPLEnv	25200
-    Left Virtual Hand Percepts	  Broadcast	vMPLEnv	VULCANX	25301
     Right Virtual Hand Percepts	  Broadcast	vMPLEnv	VULCANX	25201
+    Left Virtual Hand Command     Broadcast	VULCANX	vMPLEnv	25300
+    Left Virtual Hand Percepts	  Broadcast	vMPLEnv	VULCANX	25301
+
+    ** New as of 7/2019 **
+    These command ports send data to control the position and color config of the transparent 'ghost' arms
+    Right vMPL Ghost Command      Broadcast	VULCANX	vMPLEnv	25010
+    Left vMPL Ghost Command       Broadcast	VULCANX	vMPLEnv	25110
+    Right vMPL Ghost Control      Broadcast	VULCANX	vMPLEnv	27000
+    Left vMPL Ghost Control       Broadcast	VULCANX	vMPLEnv	27100
+
 
 Inputs: 
-    UDP_IP - string of IP address of destination (running Unity) default = "127.0.0.1"
-    UDP_PORT - integer port number for unity communications default= 25000
+    remote_address - string of IP address and port of destination (running Unity) default = '//127.0.0.1:25000'
+    local_address - string of IP address and port to receive percepts default = '//127.0.0.1:25001'
 
 Methods:
     sendJointAngles - accept a 7 element or 27 element array of joint angles in radians 
@@ -134,6 +142,8 @@ class UnityUdp(Udp, DataSink):
     def __init__(self, local_address='//0.0.0.0:25001', remote_address='//127.0.0.1:25000'):
         DataSink.__init__(self)
         Udp.__init__(self, local_address=local_address, remote_address=remote_address)
+        self.command_port = 25010  # integer port for ghost arm position commands
+        self.config_port = 27000    # integer port for ghost arm display commands
         self.name = "UnityUdp"
         self.onmessage = self.message_handler
         self.percepts = None
@@ -160,12 +170,12 @@ class UnityUdp(Udp, DataSink):
         # e.g. ' 22.5V 72.6C'
         return 'vMPL'
 
-    def send_joint_angles(self, values, velocity=[0.0] * MplId.NUM_JOINTS):
+    def send_joint_angles(self, values, velocity=[0.0] * MplId.NUM_JOINTS, send_to_ghost=False):
         """
 
         send_joint_angles
 
-        encode and transmit MPL joint angles to unity.
+        encode and transmit MPL joint angles to unity using command port
 
         :param values:
          Array of joint angles in radians.  Ordering is specified in mpl.JointEnum
@@ -173,6 +183,9 @@ class UnityUdp(Udp, DataSink):
 
         :param velocity:
          Array of joint velocities.  Unused in unity
+
+        :param send_to_ghost:
+         Optional boolean operator to send data to alternate (ghost) arm as opposed to primary arm visualization
 
         :return:
          None
@@ -200,7 +213,49 @@ class UnityUdp(Udp, DataSink):
         packer = struct.Struct('27f')
         packed_data = packer.pack(*values)
         if self.is_connected:
-            self.send(packed_data)
+            if send_to_ghost:
+                self.send(packed_data, (self.remote_hostname, self.command_port))
+            else:
+                self.send(packed_data)
+        else:
+            print('Socket disconnected')
+
+    def send_config_command(self, enable=0.0, color=[0.3, 0.4, 0.5], alpha=0.8):
+        """
+
+        send_config_command
+
+        encode and transmit MPL joint angles to unity.  The destination port for this function is stored in the
+        self.config_port parameter
+
+        :param enable:
+         float indicating 1.0 show or 0.0 hide ghost limb
+
+        :param color:
+         float array (3 by 1) limb RGB color normalized 0.0-1.0
+
+        :param alpha:
+         float array limb transparency normalized 0.0-1.0
+
+        :return:
+         None
+
+        """
+
+        if not self.is_connected:
+            logging.warning('Connection closed.  Call connect() first')
+            return
+
+        values = [enable] + color + [alpha]
+
+        # Send data
+        msg = 'vMPL Config Command: ' + ','.join(['%d' % elem for elem in values])
+        logging.debug(msg)  # 60 us
+
+        packer = struct.Struct('5f')
+        packed_data = packer.pack(*values)
+        if self.is_connected:
+            self.send(packed_data, (self.udp['RemoteHostname'], self.config_port))
         else:
             print('Socket disconnected')
 

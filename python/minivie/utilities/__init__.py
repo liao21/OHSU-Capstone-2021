@@ -111,7 +111,11 @@ class Udp(threading.Thread):
         address = address if address is not None else (self.udp['RemoteHostname'], self.udp['RemotePort'])
 
         if self.is_connected:
-            self.sock.sendto(msg_bytes, address)
+            # Note this command can error if socket disconnected
+            try:
+                self.sock.sendto(msg_bytes, address)
+            except Exception as e:
+                logging.ERROR(e)
         else:
             logging.warning('Socket disconnected')
 

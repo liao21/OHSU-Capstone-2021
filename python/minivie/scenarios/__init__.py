@@ -447,6 +447,19 @@ class Scenario(object):
             if self.DataSink is not None:
                 # self.Plant.joint_velocity[mpl.JointEnum.MIDDLE_MCP] = self.Plant.grasp_velocity
                 self.DataSink.send_joint_angles(self.Plant.joint_position, self.Plant.joint_velocity)
+                # send some default config parameters on setup for ghost arms (turn them off)
+                enable = get_config_var('UnityUdp.ghost_default_enable', 0.0)
+                color = get_config_var('UnityUdp.ghost_default_color', (0.3, 0.4, 0.5))
+                alpha = get_config_var('UnityUdp.ghost_default_alpha', 0.8)
+                # TODO: this is a hard-coding to force the arms off on startup.  not ideal...
+                self.DataSink.config_port = 27000
+                self.DataSink.send_config_command(enable, color, alpha)
+                self.DataSink.config_port = 27100
+                self.DataSink.send_config_command(enable, color, alpha)
+                # Now read the user parameter for which arm the user wants to control
+                self.DataSink.command_port = get_config_var('UnityUdp.ghost_command_port', 25010)
+                self.DataSink.config_port = get_config_var('UnityUdp.ghost_config_port', 27000)
+
             return
 
         # get data / features
@@ -531,15 +544,6 @@ class Scenario(object):
         if self.DataSink is not None:
             # self.Plant.joint_velocity[mpl.JointEnum.MIDDLE_MCP] = self.Plant.grasp_velocity
             self.DataSink.send_joint_angles(self.Plant.joint_position, self.Plant.joint_velocity)
-            # enable = 1.0
-            # color = [0.3, 0.4, 0.5]
-            # alpha = 0.8
-            # try:
-            #     # only applicable for vMPL Unity models
-            #     # update the ghost arms
-            #     self.DataSink.send_config_command(enable, color, alpha)
-            # except AttributeError:
-            #     pass
 
         return
 
@@ -748,7 +752,7 @@ class MplScenario(Scenario):
             sink.connect()
             # send some default config parameters on setup for ghost arms (turn them off)
             enable = get_config_var('UnityUdp.ghost_default_enable', 0.0)
-            color = get_config_var('UnityUdp.ghost_default_color', [0.3, 0.4, 0.5])
+            color = get_config_var('UnityUdp.ghost_default_color', (0.3, 0.4, 0.5))
             alpha = get_config_var('UnityUdp.ghost_default_alpha', 0.8)
             # TODO: this is a hard-coding to force the arms off on startup.  not ideal...
             sink.config_port = 27000

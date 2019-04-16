@@ -220,7 +220,7 @@ class UnityUdp(Udp, DataSink):
         else:
             print('Socket disconnected')
 
-    def send_config_command(self, enable=0.0, color=[0.3, 0.4, 0.5], alpha=0.8):
+    def send_config_command(self, enable=0.0, color=(0.3, 0.4, 0.5), alpha=0.8):
         """
 
         send_config_command

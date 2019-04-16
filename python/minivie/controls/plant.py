@@ -230,7 +230,6 @@ class Plant(object):
             elif (arm == 'left'):
                 self.joint_position[3] = -el
 
-
     def update(self):
         # perform time integration based on elapsed time, dt
 

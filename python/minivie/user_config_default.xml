@@ -20,7 +20,7 @@
     <add key="UnityUdp.ghost_command_port" value="25010"/>
     <add key="UnityUdp.ghost_config_port" value="27000"/>
     <add key="UnityUdp.ghost_default_enable" value="1"/>
-    <add key="UnityUdp.ghost_default_color" value="[0.5, 0.5, 0.5]"/>
+    <add key="UnityUdp.ghost_default_color" value="0.5, 0.5, 0.5"/>
     <add key="UnityUdp.ghost_default_alpha" value="0.8"/>
 
     <!-- Control MPL App Settings -->

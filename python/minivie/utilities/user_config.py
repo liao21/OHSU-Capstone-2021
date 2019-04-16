@@ -169,7 +169,6 @@ def setup_file_logging(prefix=None, log_level=logging.INFO):
 
     # Notes:  The logging level specified as inputs maps to the verbosity of the log file.  The log level of the console
     # is set to WARNING
-    # TODO: It's unclear why the setLevel for the file handler appear to have no effect
 
     # start message log
     logger = logging.getLogger('')
@@ -179,6 +178,7 @@ def setup_file_logging(prefix=None, log_level=logging.INFO):
         prefix = get_user_config_var('Logging.user_file_prefix', 'MiniVIE_')
 
     use_combined_log = get_user_config_var('Logging.use_combined_log', 0)
+
     # create file handler which logs debug messages
     file_path = '.'
     if use_combined_log:
@@ -187,7 +187,8 @@ def setup_file_logging(prefix=None, log_level=logging.INFO):
         file_name = str(prefix) + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
     fh = logging.FileHandler(os.path.join(file_path, file_name))
     # fh.setLevel(logging.DEBUG)
-    fh.setLevel(logging.INFO)
+    # fh.setLevel(logging.INFO)
+    fh.setLevel(log_level)
 
     # create console handler with a higher log level
     ch = logging.StreamHandler()
@@ -206,22 +207,6 @@ def setup_file_logging(prefix=None, log_level=logging.INFO):
     logging.critical('-----------------------------------------------')
     logging.critical('Starting Log File "{}" with level: {}'.format(file_name, logging.getLevelName(log_level)))
     logging.critical('-----------------------------------------------')
-
-    '''
-    Code snip for parsing command line
-
-    numeric_level = getattr(logging, loglevel.upper(), None)
-    if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % loglevel)
-    # assuming loglevel is bound to the string value obtained from the
-    # command line argument. Convert to upper case to allow the user to
-    # specify --log=DEBUG or --log=debug
-    parser = argparse.ArgumentParser(description='Main OpenNFU function')
-    parser.add_argument('--log', dest='loglevel',
-                        default='INFO',
-                        help='Set loglevel as DEBUG INFO WARNING ERROR CRITICAL (default is INFO)')
-    args = parser.parse_args()
-    '''
 
 
 def indent(elem, level=0):

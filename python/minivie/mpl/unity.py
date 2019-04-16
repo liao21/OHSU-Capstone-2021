@@ -170,7 +170,7 @@ class UnityUdp(Udp, DataSink):
         # e.g. ' 22.5V 72.6C'
         return 'vMPL'
 
-    def send_joint_angles(self, values, velocity=[0.0] * MplId.NUM_JOINTS, send_to_ghost=False):
+    def send_joint_angles(self, values, velocity=None, send_to_ghost=False):
         """
 
         send_joint_angles
@@ -207,7 +207,9 @@ class UnityUdp(Udp, DataSink):
         values = np.array(values) + self.joint_offset
 
         # Send data
-        msg = 'Joint Command: ' + ','.join(['%d' % elem for elem in values])
+        rad_to_deg = 57.2957795  # 180/pi
+        # log command in degrees as this is the most efficient way to pack data
+        msg = 'JointCmd: ' + ','.join(['%d' % int(elem*rad_to_deg) for elem in values])
         logging.debug(msg)  # 60 us
 
         packer = struct.Struct('27f')
@@ -246,10 +248,10 @@ class UnityUdp(Udp, DataSink):
             logging.warning('Connection closed.  Call connect() first')
             return
 
-        values = [enable] + color + [alpha]
+        values = [enable] + list(color) + [alpha]
 
         # Send data
-        msg = 'vMPL Config Command: ' + ','.join(['%d' % elem for elem in values])
+        msg = 'vMPL Config Command: ' + ','.join(['%.1f' % elem for elem in values])
         logging.debug(msg)  # 60 us
 
         packer = struct.Struct('5f')

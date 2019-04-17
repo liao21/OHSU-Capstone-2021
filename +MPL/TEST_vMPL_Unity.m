@@ -112,7 +112,7 @@ hRightGhostControl.putData(typecast(single([1.0 rand(1,4)]),'uint8'))
 allPackets = hRightSolid.getAllData;
 if ~isempty(allPackets)
     packets = allPackets{end};
-
+    
     % convert to joint angles and velocity
     nJoints = 27;
     nBytesPerFloat = 4;
@@ -120,11 +120,11 @@ if ~isempty(allPackets)
     % reshape to position velocity accel and convert to double
     % precision floating point
     floatData = double(reshape(floatData,3,nJoints));
-
+    
     %data = extract_mpl_percepts_v2(packets);
     data.jointPercepts.position = floatData(1,:);
     data.jointPercepts.velocity = floatData(2,:);
-
+    
     armDegrees = data.jointPercepts.position(1:7) * 180 / pi;
     fprintf(['Arm Angles: SHFE=%6.1f | SHAA=%6.1f | HUM=%6.1f'...
         '| EL=%6.1f | WR=%6.1f | DEV=%6.1f | WFE=%6.1f Degrees\n'],...
@@ -132,3 +132,66 @@ if ~isempty(allPackets)
 else
     disp('No Data')
 end
+
+
+%%  Demo controlling 2 arms
+
+pnet('closeall')
+hRightSolid = PnetClass(25001,25000,'127.0.0.1');
+hRightSolid.initialize();
+hLeftSolid = PnetClass(25101,25100,'127.0.0.1');
+hLeftSolid.initialize();
+hRightGhost = PnetClass(25011,25010,'127.0.0.1');
+hRightGhost.initialize();
+hLeftGhost = PnetClass(25111,25110,'127.0.0.1');
+hLeftGhost.initialize();
+
+hRightGhostControl = PnetClass(27001,27000,'127.0.0.1');
+hRightGhostControl.initialize();
+hLeftGhostControl = PnetClass(27101,27100,'127.0.0.1');
+hLeftGhostControl.initialize();
+
+%% Start with ghost arms off
+hLeftGhostControl.putData(typecast(single([0.0 ones(1,4)]),'uint8'))
+hRightGhostControl.putData(typecast(single([0.0 rand(1,4)]),'uint8'))
+
+%%
+% Send some test commands to each arm
+%
+% visual params with colormap 
+alpha_val = 0.6;
+N = 256;
+c_map = [jet(N/2); flipud(jet(N/2))];
+ang = zeros(27,1);
+ang2 = zeros(27,1);
+
+hRightGhost.putData(typecast(single(ang),'uint8'))
+hRightSolid.putData(typecast(single(ang2),'uint8'))
+
+%% 
+% fade in
+for i = linspace(0.0,alpha_val,50)
+    hRightGhostControl.putData(typecast(single([1.0 c_map(1,:) i]),'uint8'))
+    pause(0.02)
+end
+
+% run haversine curve with phase lag
+for i = 1:size(c_map,1)
+    % generate haversine curves
+    val = 135*pi/180*(-0.5*cos(2*pi*i/N)+0.5);
+    val2 = 135*pi/180*(-0.5*cos(2*pi*(i/N - 0.05))+0.5);
+    ang(MPL.EnumArm.ELBOW) = val;
+    ang2 = ang;
+    ang2(MPL.EnumArm.ELBOW) = val2;
+    hRightGhost.putData(typecast(single(ang),'uint8'))
+    hRightGhostControl.putData(typecast(single([1.0 c_map(i,:) 0.6]),'uint8'))
+    hRightSolid.putData(typecast(single(ang2),'uint8'))
+    pause(0.02)
+end
+
+% fade out
+for i = linspace(0.6,0.0,50)
+    hRightGhostControl.putData(typecast(single([1.0 c_map(end,:) i]),'uint8'))
+    pause(0.02)
+end
+

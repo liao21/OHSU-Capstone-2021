@@ -835,6 +835,7 @@ class MplScenario(Scenario):
 
                 time_end = time.time()
                 time_elapsed = time_end - time_begin
+                self.loop_dt_last = time_elapsed
                 if dt > time_elapsed:
                     # time.sleep(dt - time_elapsed)
                     await asyncio.sleep(dt - time_elapsed)

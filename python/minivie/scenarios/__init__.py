@@ -733,7 +733,7 @@ class MplScenario(Scenario):
         # Configure Pattern Recognition Classifier and Feature Extraction
         ################################################
         self.FeatureExtract = pr.FeatureExtract()
-        select_features = features_selected.Features_selected(self.FeatureExtract)
+        select_features = features_selected.FeaturesSelected(self.FeatureExtract)
         select_features.create_instance_list()
 
         # Classifier parameters

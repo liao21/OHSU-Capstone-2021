@@ -24,14 +24,15 @@ m.connect()
 
 style.use('dark_background')
 fig = plt.figure()
-ax1 = fig.add_subplot(1,1,1)
+ax1 = fig.add_subplot(1, 1, 1)
 fig.canvas.set_window_title('EMG Preview')
 
-def animate(i):
-    d = m.get_data() / 128  # *1 for a shallow copy
+
+def animate(_):
+    d = m.get_data() * 0.01  # *1 for a shallow copy
 
     for iChannel in range(0, 8):
-        d[:, iChannel] = d[::-1, iChannel] + (1 * (iChannel + 1) )
+        d[:, iChannel] = d[::-1, iChannel] + (1 * (iChannel + 1))
 
     ax1.clear()
     ax1.plot(d)

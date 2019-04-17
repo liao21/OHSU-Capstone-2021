@@ -1,63 +1,59 @@
-#recieves commands from web interface and creates a list of class instances with each selected feature
+# receives commands from web interface and creates a list of class instances with each selected feature
 
-import pattern_rec as pr
 from pattern_rec import features
-import logging
-import threading
-import time
-import utilities.user_config as uc
+from utilities.user_config import get_user_config_var
 
-class Features_selected(object):
 
-    def __init__(self,vie):
+class FeaturesSelected(object):
+
+    def __init__(self, vie):
 
         self.vie = vie
 
     def create_instance_list(self):
 
-        if uc.get_user_config_var("mav", "False") == "True":
+        sample_rate = get_user_config_var('FeatureExtract.sample_rate', 200)
+
+        if get_user_config_var("mav", True):
             mav = features.Mav()
             self.vie.attach_feature(mav)
 
-        if uc.get_user_config_var("curve_len", "False") == "True":
-            curve_len = features.CurveLen(fs=uc.get_user_config_var('FeatureExtract.sample_rate', 200))
+        if get_user_config_var("curve_len", True):
+            curve_len = features.CurveLen()
             self.vie.attach_feature(curve_len)
 
-        if uc.get_user_config_var("zc", "False") == "True":
-            zc = features.Zc(fs=uc.get_user_config_var('FeatureExtract.sample_rate', 200), zc_thresh=uc.get_user_config_var('FeatureExtract.zcThreshold', 0.05))
+        if get_user_config_var("zc", True):
+            zc = features.Zc(fs=sample_rate, zc_thresh=get_user_config_var('FeatureExtract.zc_threshold', 0.05))
             self.vie.attach_feature(zc)
 
-        if uc.get_user_config_var("ssc", "False") == "True":
-            ssc = features.Ssc(fs=uc.get_user_config_var('FeatureExtract.sample_rate', 200), ssc_thresh=uc.get_user_config_var('FeatureExtract.zc_threshold', 0.05))
+        if get_user_config_var("ssc", True):
+            ssc = features.Ssc(fs=sample_rate, ssc_thresh=get_user_config_var('FeatureExtract.ssc_threshold', 0.05))
             self.vie.attach_feature(ssc)
 
-        if uc.get_user_config_var("wamp", "False") == "True":
-            wamp = features.Wamp(fs=uc.get_user_config_var('FeatureExtract.sample_rate', 200), wamp_thresh=uc.get_user_config_var('FeatureExtract.wamp_threshold', 0.05))
+        if get_user_config_var("wamp", False):
+            wamp = features.Wamp(fs=sample_rate, wamp_thresh=get_user_config_var('FeatureExtract.wamp_threshold', 0.05))
             self.vie.attach_feature(wamp)
 
-        if uc.get_user_config_var("var", "False") == "True":
+        if get_user_config_var("var", False):
             var = features.Var()
             self.vie.attach_feature(var)
 
-        if uc.get_user_config_var("vorder", "False") == "True":
+        if get_user_config_var("vorder", False):
             vorder = features.Vorder()
             self.vie.attach_feature(vorder)
 
-        if uc.get_user_config_var("logdetect", "False") == "True":
+        if get_user_config_var("logdetect", False):
             logdetect = features.LogDetect()
             self.vie.attach_feature(logdetect)
 
-        if uc.get_user_config_var("emghist", "False") == "True":
+        if get_user_config_var("emghist", False):
             emghist = features.EmgHist()
             self.vie.attach_feature(emghist)
 
-        if uc.get_user_config_var("ar", "False") == "True":
+        if get_user_config_var("ar", False):
             ar = features.AR()
             self.vie.attach_feature(ar)
 
-        if uc.get_user_config_var("ceps", "False") == "True":
+        if get_user_config_var("ceps", False):
             ceps = features.Ceps()
             self.vie.attach_feature(ceps)
-
-
-

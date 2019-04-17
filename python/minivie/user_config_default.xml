@@ -42,10 +42,10 @@
     <add key="DCell.serial_port"    value="/dev/ttymxc2"/>
 
     <!--Pattern Recognition Parameters-->
-    <add key="PatternRec.num_majority_votes" value="25"/>
-    <add key="FeatureExtract.zc_threshold" value="0.05"/>
-    <add key="FeatureExtract.ssc_threshold" value="0.05"/>
-	<add key="FeatureExtract.wamp_threshold" value="0.05"/>
+    <add key="PatternRec.num_majority_votes" value="5"/>
+    <add key="FeatureExtract.zc_threshold" value="0.2"/>
+    <add key="FeatureExtract.ssc_threshold" value="0.2"/>
+	<add key="FeatureExtract.wamp_threshold" value="0.2"/>
     <add key="FeatureExtract.sample_rate" value="200"/>
 
     <!-- Feature Extraction Techniques

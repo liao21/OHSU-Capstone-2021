@@ -619,8 +619,6 @@ class MplScenario(Scenario):
     @author: R. Armiger
     """
 
-    from scenarios import Scenario
-
     def setup_interfaces(self):
         from pattern_rec import training, assessment
         from inputs import normalization
@@ -664,7 +662,6 @@ class MplScenario(Scenario):
         from mpl.unity import UnityUdp
         from mpl.open_nfu import NfuUdp
         from controls.plant import Plant
-        from scenarios import Scenario
 
         # configure input
         source_list = None

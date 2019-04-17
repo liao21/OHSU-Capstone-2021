@@ -10,8 +10,7 @@ import csv
 import logging
 import threading
 import numpy as np
-from utilities.user_config import read_user_config_file, get_user_config_var
-
+from utilities.user_config import get_user_config_var
 
 
 class FeatureExtract(object):
@@ -97,20 +96,20 @@ class FeatureExtract(object):
     def normalize_orientation(self, orientation):
         self.normalized_orientation = orientation
 
-    def attachFeature(self, instance):
+    def attach_feature(self, instance):
 
-        #attaches feature class instance to attached_features list
+        # attaches feature class instance to attached_features list
         if instance in self.attached_features:
             return self.attached_features
         else:
             return self.attached_features.append(instance)
 
     def get_featurenames(self):
-        #return an list with the names of all features being used
+        # return an list with the names of all features being used
         names = []
         for instance in self.attached_features:
-            featurename = instance.getName()
-            #if name is a list, append each element individually
+            featurename = instance.get_name()
+            # if name is a list, append each element individually
             if type(featurename) is list:
                 for i in featurename:
                     names.append(i)
@@ -120,7 +119,6 @@ class FeatureExtract(object):
 
     def clear_features(self):
         del self.attached_features[:]
-
 
     def feature_extract(self, y):
         """
@@ -145,7 +143,6 @@ class FeatureExtract(object):
         # [ch1f1, ch1f2, ch1f3, ch1f4, ch2f1, ch2f2, ch2f3, ch2f4, ... chNf4]
         """
 
-
         # normalize features
         if self.normalized_orientation is not None:
             # normalize incoming data according to myo
@@ -156,9 +153,9 @@ class FeatureExtract(object):
 
         features_array = []
 
-        # loops through instaces and extractes features
-        for instance in self.attached_features:
-            new_feature = instance.extract_features(y)
+        # loops through instances and extracts features
+        for feature in self.attached_features:
+            new_feature = feature.extract_features(y)
             features_array.append(new_feature)
 
         if len(features_array) > 0:
@@ -166,13 +163,12 @@ class FeatureExtract(object):
 
             # determines total number of elements in array
             size = 1
-            for dim in np.shape(vstack_features_array): size *= dim
+            for dim in np.shape(vstack_features_array):
+                size *= dim
 
             return vstack_features_array.T.reshape(1, size)
         else:
             return None
-
-
 
 
 def test_feature_extract():
@@ -307,7 +303,9 @@ class TrainingData:
         self.__lock = threading.Lock()
 
         self.num_channels = 0
-        self.features = get_user_config_var("features", "Mav,Curve_Len,Zc,Ssc").split()
+        # TODO: For now this was missing a split on comma.  Future should get features based on what is enabled
+        # self.features = get_user_config_var("features", "Mav,Curve_Len,Zc,Ssc").split()
+        self.features = get_user_config_var("features", "Mav,Curve_Len,Zc,Ssc").split(',')
 
         self.data = []  # List of all feature extracted samples
         self.id = []  # List of class indices that each sample belongs to
@@ -449,6 +447,7 @@ class TrainingData:
         group.attrs['description'] = t + 'Myo Armband Raw EMG Data'
         group.attrs['num_channels'] = self.num_channels
         group.attrs['num_features'] = len(self.features)
+        group.attrs['num_samples'] = self.num_samples
         group.attrs['feature_names'] = [a.encode('utf8') for a in self.features]
         group.create_dataset('time_stamp', data=self.time_stamp)
         group.create_dataset('id', data=self.id)
@@ -498,27 +497,25 @@ class TrainingData:
             print('Failed to delete file: ' + f)
 
     def get_motion_image(self, motion_name):
-        # Method to return motion image filename relative to www/mplHome directoy
+        # Method to return motion image filename relative to www/mplHome directory
 
         # Ensure class name exists
         try:
-            idx_motion = self.motion_names.index(motion_name)
+            self.motion_names.index(motion_name)
         except ValueError:
             print('Motion name ' + motion_name + ' does not exist')
             return None
 
         # Parse motion name - image map file
-        #pattern_rec_dir = os.path.dirname(os.path.abspath(__file__))
-        #map_path = pattern_rec_dir + '\\..\\..\\www\\mplHome\\motion_name_image_map.csv'
         map_path = os.path.join(os.path.dirname(__file__), '..', '..', 'www', 'mplHome', 'motion_name_image_map.csv')
         mapped_motion_names = []
         mapped_image_names = []
         with open(map_path, 'rt', encoding='ascii') as csvfile:
             # RSA: Updated to allow comments in motion_name_image_map file
             rows = csv.reader(filter(lambda row: row[0] != '#', csvfile), delimiter=',')
-            for row in rows:
-                mapped_motion_names.append(row[0])
-                mapped_image_names.append(row[1])
+            for this_row in rows:
+                mapped_motion_names.append(this_row[0])
+                mapped_image_names.append(this_row[1])
 
         # Check if queried motion name is in map file
         if motion_name not in mapped_motion_names:

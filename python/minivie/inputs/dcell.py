@@ -46,14 +46,11 @@ cd /home/pi/git/minivie/python/minivie/inputs/
 sudo ./dcell.py --PORT COM4 &
 """
 import time
-import os
 import threading
 import logging
 import numpy as np
 from datetime import datetime
 from inputs.signal_input import SignalInput
-import h5py
-import serial
 
 
 class DCellSerial(SignalInput):
@@ -96,12 +93,12 @@ class DCellSerial(SignalInput):
         self.ser = serial.Serial(
             port=self.port,
             baudrate=115200,
-            #parity=serial.PARITY_NONE,
-            #stopbits=serial.STOPBITS_ONE,
-            #bytesize=serial.EIGHTBITS,
-            #xonxoff=False,
-            #rtscts=True,
-            #dsrdtr=False,
+            # parity=serial.PARITY_NONE,
+            # stopbits=serial.STOPBITS_ONE,
+            # bytesize=serial.EIGHTBITS,
+            # xonxoff=False,
+            # rtscts=True,
+            # dsrdtr=False,
             timeout=1
         )
         self.ser.rs485_mode = serial.rs485.RS485Settings()
@@ -143,33 +140,32 @@ class DCellSerial(SignalInput):
         eol_string = eol_byte.decode()
         leneol_string = len(eol_string)
         line = ''
-        #line = bytearray()
-        #line = b''
+        # line = bytearray()
+        # line = b''
         while True:
             c_byte = self.ser.read(1)  # Read one byte
             if c_byte:
                 # line += str(c)
-                c_string = c_byte.decode("ascii","replace")
+                c_string = c_byte.decode("ascii", "replace")
                 # print('byte:')
                 # print(c_byte)
                 # print('byte.decode("ascii","replace"):')
                 # print(c_string)
                 # print('byte[0]')
                 # print(c_byte[0])
-               
-               
-                line += c_string 
+
+                line += c_string
                 if c_byte == eol_byte:  # Break once EOL, in this case carriage return, is issued
                     logging.debug('Breaking because of carriage return')
                     break
                     
             else:  # Break if nothing read back
-                #time.sleep(0.05) # dcell manual says response should come within 50ms
+                # time.sleep(0.05) # dcell manual says response should come within 50ms
                 # timeout occurs on ser.read
                 logging.debug('Breaking because nothing read back')
                 break
                 
-        #print(line[0:-leneol])  # Return line without EOL
+        # print(line[0:-leneol])  # Return line without EOL
         return line[0:-leneol_string]  # Return line without EOL
 
     def _set_defaults(self):
@@ -289,7 +285,7 @@ def main():
     args = parser.parse_args()
     
     # Logging
-    f = 'dcell-' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")+ '.log'
+    f = 'dcell-' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.log'
     logging.basicConfig(filename=f, level=logging.DEBUG, format='%(asctime)s %(message)s')
 
     # Initialize object
@@ -301,4 +297,4 @@ def main():
 
 if __name__ == '__main__':
     interactive_testing('/dev/ttymxc2')
-    #main()
+    # main()

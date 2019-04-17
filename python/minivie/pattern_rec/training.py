@@ -97,7 +97,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
             wss.append(self)
 
     def on_message(self, message):
-        logging.debug('Received:', message)
+        logging.debug('Received:' + message)
         for func in func_handle:
             func(message)
 
@@ -124,8 +124,6 @@ class TrainingManagerWebsocket(TrainingInterface):
     """
 
     def __init__(self):
-        import threading
-
         # Initialize superclass
         super(TrainingInterface, self).__init__()
 
@@ -143,13 +141,10 @@ class TrainingManagerWebsocket(TrainingInterface):
         # keep count of skipped messages so we can send at some nominal rate
         self.msg_skip_count = 0
 
-        #self.thread = threading.Thread(target=tornado.ioloop.IOLoop.instance().start, name='WebThread')
         self.thread = tornado.ioloop.IOLoop.instance
 
     def setup(self, port=9090):
-
         self.application.listen(port)
-        #self.thread.start()
 
     def add_message_handler(self, func):
         # attach a function to receive commands from websocket

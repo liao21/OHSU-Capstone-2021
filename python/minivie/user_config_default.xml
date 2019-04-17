@@ -85,7 +85,7 @@
 
     <!-- DAQ Data Client
         Use these parameters for reading from a DAQ Data Source in a client application  -->
-    <add key="device_name_and_channels" value="Dev1/ai0:7"/>
+    <add key="DaqDevice.device_name_and_channels" value="Dev1/ai0:7"/>
 
     <!-- Myo Data Server Streaming Ports
         Use these for establishing a Myo UDP Server that reads from BTLE and forwards

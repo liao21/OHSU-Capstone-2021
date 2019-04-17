@@ -614,7 +614,7 @@ class MplScenario(Scenario):
     """
     Created on Tue Jan 23 10:17:58 2016
 
-    Initial pass at simulating MiniVIE processing using python so that this runs on an embedded device
+    Configure and run MiniVIE processing using python (runs on an embedded device)
 
     @author: R. Armiger
     """
@@ -663,7 +663,9 @@ class MplScenario(Scenario):
         from mpl.open_nfu import NfuUdp
         from controls.plant import Plant
 
-        # configure input
+        ################################################
+        # Configure Inputs
+        ################################################
         source_list = None
         input_device = get_config_var('input_device', 'myo')
         if input_device == 'myo':
@@ -672,6 +674,7 @@ class MplScenario(Scenario):
 
             # get ports and configure joints based upon myo location
             if get_config_var('MyoUdpClient.num_devices', 1) == 1:
+                # Single Armband Case
                 local_port_1 = get_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
                 if myo_position_1 == 'AE':
                     self.shoulder = True
@@ -683,6 +686,7 @@ class MplScenario(Scenario):
 
             # add second device
             elif get_config_var('MyoUdpClient.num_devices', 1) == 2:
+                # Dual Armband Case
                 local_port_1 = get_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
                 local_port_2 = get_config_var('MyoUdpClient.local_address_2', '//0.0.0.0:15002')
 
@@ -706,9 +710,9 @@ class MplScenario(Scenario):
         elif input_device == 'daq':
             self.shoulder = False
             self.elbow = False
-            source_list = [daqEMGDevice.DaqEMGDevice(get_config_var('device_name_and_channels', 'Dev1/ai0:7'))]
+            src = daqEMGDevice.DaqEMGDevice(get_config_var('DaqDevice.device_name_and_channels', 'Dev1/ai0:7'))
 
-            self.attach_source(source_list)
+            self.attach_source([src])
         elif input_device == 'ctrl':
             from inputs import emg_device_client
             ws_address = get_config_var('EmgDevice.ws_address', 'ws://localhost:5678')
@@ -718,13 +722,16 @@ class MplScenario(Scenario):
             self.num_channels += src.num_channels
             self.futures = src.connect
 
-        # Training Data holds data labels
-        # training data manager
+        ################################################
+        # Configure Training Data Manager
+        ################################################
         self.TrainingData = pr.TrainingData()
         self.TrainingData.load()
         self.TrainingData.num_channels = self.num_channels
 
-        # Feature Extraction
+        ################################################
+        # Configure Pattern Recognition Classifier and Feature Extraction
+        ################################################
         self.FeatureExtract = pr.FeatureExtract()
         select_features = features_selected.Features_selected(self.FeatureExtract)
         select_features.create_instance_list()
@@ -733,12 +740,18 @@ class MplScenario(Scenario):
         self.SignalClassifier = pr.Classifier(self.TrainingData)
         self.SignalClassifier.fit()
 
+        ################################################
+        # Configure 'Plant' model to hold system state
+        ################################################
         # Plant maintains current limb state (positions) during velocity control
         filename = get_config_var('MPL.roc_table', '../../WrRocDefaults.xml')
         dt = get_config_var('timestep', 0.02)
         self.Plant = Plant(dt, filename)
 
-        # Sink is output to outside world (in this case to VIE)
+        ################################################
+        # Configure Data Sink
+        ################################################
+        # Sink is the output to outside world (in this case to VIE)
         # For MPL, this might be: real MPL/NFU, Virtual Arm, etc.
         data_sink = get_config_var('DataSink', 'Unity')
         if data_sink in ['Unity', 'UnityUdp']:
@@ -759,7 +772,6 @@ class MplScenario(Scenario):
             # Now read the user parameter for which arm the user wants to control
             sink.command_port = get_config_var('UnityUdp.ghost_command_port', 25010)
             sink.config_port = get_config_var('UnityUdp.ghost_config_port', 27000)
-
         elif data_sink == 'NfuUdp':
             get_address = utilities.get_address
             local_hostname, local_port = get_address(get_config_var('NfuUdp.local_address', '//0.0.0.0:9028'))

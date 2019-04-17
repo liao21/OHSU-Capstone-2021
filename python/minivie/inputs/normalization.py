@@ -3,10 +3,7 @@ import threading
 import numpy as np
 import time
 from abc import ABCMeta, abstractmethod
-import operator
-import os
-import os.path
-import h5py
+
 
 class NormalizationInterface(object):
     __metaclass__ = ABCMeta
@@ -20,13 +17,12 @@ class NormalizationInterface(object):
         pass
 
     @abstractmethod
-    def save_results(self):
+    def save_normalization(self):
         pass
 
 
-
 class MyoNormalization(NormalizationInterface):
-# Method to perform myo normalization
+    # Method to perform myo normalization
 
     def __init__(self, vie, trainer):
 
@@ -52,6 +48,7 @@ class MyoNormalization(NormalizationInterface):
         self.data = []  # List of dicts
         self.normalized_motion = None
         self.normalized_orientation = []
+        self.NextMotionButtonPushed = False
 
     def reset(self):
         # Method to reset all stored data
@@ -103,11 +100,10 @@ class MyoNormalization(NormalizationInterface):
         totals = self.vie.TrainingData.get_totals()
         trained_classes = [all_class_names[i] for i, e in enumerate(totals) if e != 0]
         # Remove no movement class
-        if 'No Movement' in trained_classes: trained_classes.remove('No Movement')
+        if 'No Movement' in trained_classes:
+            trained_classes.remove('No Movement')
 
-        class_to_normalize = None
-
-        if self.normalized_motion == 'Wrist Extend Out' :
+        if self.normalized_motion == 'Wrist Extend Out':
             if 'Wrist Extend Out' in trained_classes:
                 class_to_normalize = 'Wrist Extend Out'
             else:
@@ -127,7 +123,6 @@ class MyoNormalization(NormalizationInterface):
         self.vie.pause('All', True)
         self.send_status('Holdout')
 
-
         self.send_status('Starting Normalization')
         self.data.append({'targetClass': [], 'featureData': []})
 
@@ -142,11 +137,10 @@ class MyoNormalization(NormalizationInterface):
         self.compute_normalization()
         # Send status
         self.send_status('Myo Normalization Completed.')
-        #set orientation
+        # set orientation
         self.save_normalization()
         # Unlock limb
         self.vie.pause('All', False)
-
 
     def assess_class(self, class_name):
         # Method to assess a single class, display/save results for viewing
@@ -156,10 +150,10 @@ class MyoNormalization(NormalizationInterface):
         if image_name:
             self.trainer.send_message("strNormalizeMyoPositionImage", image_name)
 
-        ## Give countdown
+        # Give countdown
         countdown_time = 3
         dt = 1
-        tvec = np.linspace(countdown_time,0,int(round(countdown_time/dt)+1))
+        tvec = np.linspace(countdown_time, 0, int(round(countdown_time/dt)+1))
         for t in tvec:
             self.send_status('Normalizing Class - ' + class_name + ' - In ' + str(t) + ' Seconds')
             time.sleep(dt)
@@ -169,7 +163,7 @@ class MyoNormalization(NormalizationInterface):
         time_begin = time.time()
         time_elapsed = 0.0
 
-        while (time_elapsed < timeout):
+        while time_elapsed < timeout:
 
             features = []
             # get the features
@@ -187,9 +181,8 @@ class MyoNormalization(NormalizationInterface):
                     self.add_data(class_name, features)
 
             # print status
-            self.send_status('Normalizing Class: ' + class_name + ' - ' + ' Time Left: ' + str(int(timeout - time_elapsed)) + '.0 seconds')
-
-
+            time_remaining = str(int(timeout - time_elapsed))
+            self.send_status(f'Normalizing Class: {class_name} - Time Left: {time_remaining} .0 seconds')
 
             # Sleep before next assessed classification
             time.sleep(dt)
@@ -217,7 +210,7 @@ class MyoNormalization(NormalizationInterface):
         # Method to compute normalization from collected features
         self.send_status('Computing Myo Position Normalization')
 
-        #load training data
+        # load training data
         training_data = self.vie.TrainingData.data
         training_motion = self.vie.TrainingData.name
 
@@ -228,7 +221,7 @@ class MyoNormalization(NormalizationInterface):
         for myo, signal in enumerate(self.vie.SignalSource):
             myo_features = []
             for i, data in enumerate(training_data):
-                if (training_motion[i] == self.normalized_motion):
+                if training_motion[i] == self.normalized_motion:
                     # get the features data from training data
                     num_features = (len(data) / self.vie.TrainingData.num_channels)
                     front_index = int(myo * (8 * num_features))
@@ -245,11 +238,10 @@ class MyoNormalization(NormalizationInterface):
                     averaged_training_features_one_myo = sample
                 else:
                     averaged_training_features_one_myo = (
-                    (np.array(averaged_training_features_one_myo) + np.array(sample)) / (i + 1)).tolist()
+                        (np.array(averaged_training_features_one_myo) + np.array(sample)) / (i + 1)).tolist()
             averaged_training_features.append(averaged_training_features_one_myo)
 
-
-        #average normalization feature data
+        # average normalization feature data
         averaged_normalization_features = []
         for i, data in enumerate(self.data[-1]['featureData']):
             for myo, sample in enumerate(data):
@@ -257,17 +249,17 @@ class MyoNormalization(NormalizationInterface):
                     averaged_normalization_features.append(sample)
                 else:
                     averaged_normalization_features[myo] = (
-                    (np.array(averaged_normalization_features[myo]) + np.array(sample)) / (i + 1)).tolist()
+                        (np.array(averaged_normalization_features[myo]) + np.array(sample)) / (i + 1)).tolist()
 
         self.normalized_orientation = []
         for myo, normalization_data in enumerate(averaged_normalization_features):
             best_diff = None
             best_orientation = 0
             for orientation in range(8):
-                #change orientation
+                # change orientation
                 rolled_normalization_data = np.roll(normalization_data, int(orientation*num_features))
                 myo_taining_features = averaged_training_features[myo]
-                #find differences between rolled average and training average of first feature
+                # find differences between rolled average and training average of first feature
                 difference = sum(abs((np.array(myo_taining_features[:8]) - np.array(rolled_normalization_data[:8]))))
                 if best_diff is None:
                     best_diff = difference
@@ -282,12 +274,12 @@ class MyoNormalization(NormalizationInterface):
         # Clear data for next assessment
         self.reset()
 
-    #adjust future data for orientation
     def save_normalization(self):
+        # adjust future data for orientation
         self.vie.FeatureExtract.normalize_orientation(self.normalized_orientation)
 
-    #rest orientation and adjust future data
     def reset_orientation(self):
+        # reset orientation and adjust future data
         self.send_status('Myo Orientation Reset')
         self.normalized_orientation = None
         self.save_normalization()

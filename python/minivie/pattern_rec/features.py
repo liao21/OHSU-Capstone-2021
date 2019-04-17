@@ -12,12 +12,12 @@ class EMGFeatures(object):
         pass
 
     @abstractmethod
-    def getName(self):
+    def get_name(self):
         pass
 
     # All methods with this decorator must be overloaded
     @abstractmethod
-    def extract_features(self):
+    def extract_features(self, data_input):
         pass
 
 
@@ -27,29 +27,40 @@ class Mav(EMGFeatures):
 
         self.name = "Mav"
 
-    def name(self):
+    def get_name(self):
         return self.name
 
     def extract_features(self, data_input):
-        # Compute mav across all samples (axis=0)
+        """ Mean Absolute Value
 
-        mav_feature = np.mean(abs(data_input),0)
+        Compute mav across all samples (axis=0)
+
+        :param data_input: input samples to compute feature
+        :return: scalar feature value
+        """
+
+        mav_feature = np.mean(abs(data_input), 0)
         return mav_feature
 
 
-class Curve_len(EMGFeatures):
+class CurveLen(EMGFeatures):
     def __init__(self, fs=200):
-        super(Curve_len, self).__init__()
+        super(CurveLen, self).__init__()
 
         self.fs = fs
         self.name = "Curve_len"
 
-    def name(self):
+    def get_name(self):
         return self.name
 
     def extract_features(self, data_input):
-        # Curve length is the sum of the absolute value of the derivative of the
-        # signal, normalized by the sample rate
+        """ Curve Length Feature
+        Curve length is the sum of the absolute value of the derivative of the
+        signal, normalized by the sample rate
+
+        :param data_input: input samples to compute feature
+        :return: scalar feature value
+        """
 
         # Number of Samples
         n = data_input.shape[0]
@@ -66,17 +77,21 @@ class Zc(EMGFeatures):
         self.zc_thresh = zc_thresh
         self.name = "Zc"
 
-    def getName(self):
+    def get_name(self):
         return self.name
 
     def extract_features(self, data_input):
-        # Criteria for crossing zero
-        # zeroCross=(y[iSample] - t > 0 and y[iSample + 1] - t < 0) or (y[iSample] - t < 0 and y[iSample + 1] - t > 0)
-        # overThreshold=abs(y[iSample] - t - y[iSample + 1] - t) > zc_thresh
-        # if zeroCross and overThreshold:
-        #     # Count a zero cross
-        #     zc[iChannel]=zc[iChannel] + 1
+        """ Zero-crossings
+        Criteria for crossing zero
+        zeroCross=(y[iSample] - t > 0 and y[iSample + 1] - t < 0) or (y[iSample] - t < 0 and y[iSample + 1] - t > 0)
+        overThreshold=abs(y[iSample] - t - y[iSample + 1] - t) > zc_thresh
+        if zeroCross and overThreshold:
+            # Count a zero cross
+            zc[iChannel]=zc[iChannel] + 1
 
+        :param data_input: input samples to compute feature
+        :return: scalar feature value
+        """
         # Number of Samples
         n = data_input.shape[0]
 
@@ -99,26 +114,35 @@ class Ssc(EMGFeatures):
         self.ssc_thresh = ssc_thresh
         self.name = "Ssc"
 
-    def getName(self):
+    def get_name(self):
         return self.name
 
     def extract_features(self, data_input):
-        # Criteria for counting slope sign changes
-        # signChange = (y[iSample] > y[iSample - 1]) and (y[iSample] > y[iSample + 1]) or (y[iSample] < y[iSample - 1]) and
-        #       (y[iSample] < y[iSample + 1])
-        # overThreshold=abs(y[iSample] - y[iSample + 1]) > ssc_thresh or abs(y[iSample] - y[iSample - 1]) > ssc_thresh
-        # if signChange and overThreshold:
-        #     # Count a slope change
-        #     ssc[iChannel]=ssc[iChannel] + 1
+        """ Slope Sign Changes
 
+        Criteria for counting slope sign changes:
+
+        signChange = (y[iSample] > y[iSample - 1]) and
+            (y[iSample] > y[iSample + 1]) or (y[iSample] < y[iSample - 1]) and (y[iSample] < y[iSample + 1])
+
+        overThreshold=abs(y[iSample] - y[iSample + 1]) > ssc_thresh or abs(y[iSample] - y[iSample - 1]) > ssc_thresh
+
+        if signChange and overThreshold:
+            # Count a slope change
+            ssc[iChannel]=ssc[iChannel] + 1
+
+        :param data_input: input samples to compute feature
+        :return: scalar feature value
+        """
         # Number of Samples
         n = data_input.shape[0]
 
         ssc_feature = np.sum(
             ((data_input[1:n - 1, :] > data_input[0:n - 2, :]) & (data_input[1:n - 1, :] > data_input[2:n, :]) |
              (data_input[1:n - 1, :] < data_input[0:n - 2, :]) & (data_input[1:n - 1, :] < data_input[2:n, :])) &
-            ((abs(data_input[1:n - 1, :] - data_input[2:n, :]) > self.ssc_thresh) | (abs(data_input[1:n - 1, :] -
-            data_input[0:n - 2, :]) > self.ssc_thresh)),axis=0) * self.fs / n
+            ((abs(data_input[1:n - 1, :] - data_input[2:n, :]) > self.ssc_thresh) |
+             (abs(data_input[1:n - 1, :] - data_input[0:n - 2, :]) > self.ssc_thresh)), axis=0
+        ) * self.fs / n
         return ssc_feature
 
 
@@ -130,12 +154,11 @@ class Wamp(EMGFeatures):
         self.wamp_thresh = wamp_thresh
         self.name = "Wamp"
 
-    def getName(self):
+    def get_name(self):
         return self.name
 
     def extract_features(self, data_input):
-        '''
-        Willison Amplitude
+        """ Willison Amplitude
         "This feature is defined as the amount of times that the
         change in EMG signal amplitude exceeds a threshold; it is
         an indicator of the firing of motor unit action potentials
@@ -143,12 +166,16 @@ class Wamp(EMGFeatures):
 
         wamp = sum of f(abs(data_input[iSample] - data_input[iSample + 1])) in an analysis time window with n samples
         where f(x) = 1 if data_input[iSample] - data_input[iSample + 1]) > wamp_thresh and f(x) = 0 else
-        '''
+
+        :param data_input: input samples to compute feature
+        :return: scalar feature value
+        """
 
         # Number of Samples
         n = data_input.shape[0]
 
-        wamp_feature = np.sum(((abs(data_input[1:n - 1, :] - data_input[0:n - 2, :])) > self.wamp_thresh), axis=0) * self.fs / n
+        wamp_feature = np.sum(
+            ((abs(data_input[1:n - 1, :] - data_input[0:n - 2, :])) > self.wamp_thresh), axis=0) * self.fs / n
         return wamp_feature
 
 
@@ -158,16 +185,18 @@ class Var(EMGFeatures):
 
         self.name = "Var"
 
-    def getName(self):
+    def get_name(self):
         return self.name
 
     def extract_features(self, data_input):
-        '''
-        Variance
+        """ Variance
         "This feature is the measure of the EMG signal's power." (Tkach et. al 4)
 
         var = sum of signal x squared in an analysis time window with n samples all over (n-1)
-        '''
+
+        :param data_input: input samples to compute feature
+        :return: scalar feature value
+        """
 
         # Number of Samples
         n = data_input.shape[0]
@@ -182,12 +211,12 @@ class Vorder(EMGFeatures):
 
         self.name = "Vorder"
 
-    def getName(self):
+    def get_name(self):
         return self.name
 
     def extract_features(self, data_input):
-        '''
-        V-Order
+        """ V-Order Feature
+
         "This metric yields an estimation of the exerted muscle force...
         characterized by the absolute value of EMG signal
         to the vth power. The applied smoothing filter is the moving
@@ -199,7 +228,10 @@ class Vorder(EMGFeatures):
         the square root of the var feature." (Tkach et. al 4)
 
         vorder = sqrt(sum of signal x squared in an analysis time window with n samples, over (n-1))
-        '''
+
+        :param data_input: input samples to compute feature
+        :return: scalar feature value
+        """
 
         # Number of Samples
         n = data_input.shape[0]
@@ -208,43 +240,44 @@ class Vorder(EMGFeatures):
         return vorder_feature
 
 
-class Logdetect(EMGFeatures):
+class LogDetect(EMGFeatures):
     def __index__(self):
-        super(Logdetect, self).__init__()
+        super(LogDetect, self).__init__()
 
         self.name = "Logdetect"
 
-    def getName(self):
+    def get_name(self):
         return self.name
 
     def extract_features(self, data_input):
-        '''
-        V-Order
+        """ V-Order
         "This metric yields an estimation of the exerted muscle force" (Tkach et. al 4)
 
         logdetect = e raised to (the mean of the log of the absolute value of the signal input)
-        '''
 
-        logdetect_feature = math.e**(np.mean(np.log(abs(data_input)),axis=0))
+        :param data_input: input samples to compute feature
+        :return: scalar feature value
+        """
+
+        logdetect_feature = math.e**(np.mean(np.log(abs(data_input)), axis=0))
         return logdetect_feature
 
 
-class EMGhist(EMGFeatures):
+class EmgHist(EMGFeatures):
     def __index__(self):
-        super(EMGhist, self).__init__()
+        super(EmgHist, self).__init__()
 
-        self.name = "EMGhist"
+        self.name = "EmgHist"
 
-    def getName(self):
+    def get_name(self):
         return self.name
 
     def extract_features(self, data_input):
-        '''
-        EMG Histogram
+        """ EMG Histogram
         "This feature provides information about the frequency
         with which the EMG signal reaches various amplitudes" (Tkach et. al 5)
 
-        Actual feature finds the freqencies with the max and min amplitude and
+        Actual feature finds the frequencies with the max and min amplitude and
         sets the difference of this as the range for a histogram with multiple
         data bins.
 
@@ -252,11 +285,15 @@ class EMGhist(EMGFeatures):
         problems since an array with more than 8 values would be returned.  Rather than returning
         the number of frequencies with amplitudes in each equally spaced bin, it returns the range
         in between the max and min amplitude for each channel
-        '''
+
+        :param data_input: input samples to compute feature
+        :return: feature value
+        """
 
         emghist_feature = []
         for channel in range(8):
-            emghist_range = (np.amax(np.hstack(data_input[:,channel:channel+1])))-(np.amin(np.hstack(data_input[:,channel:channel+1])))
+            emghist_range = (np.amax(np.hstack(data_input[:, channel:channel+1]))) - \
+                            (np.amin(np.hstack(data_input[:, channel:channel+1])))
             emghist_feature.append(emghist_range)
 
         return emghist_feature
@@ -268,12 +305,11 @@ class AR(EMGFeatures):
 
         self.name = "AR"
 
-    def getName(self):
+    def get_name(self):
         return self.name
 
     def extract_features(self, data_input):
-        '''
-        Autoregressive Coefficient
+        """ Autoregressive Coefficient
         "This feature models individual EMG signals as a linear
         autoregressive time series and provides information
         about the muscle's contraction state" (Tkach et. al 5)
@@ -282,11 +318,14 @@ class AR(EMGFeatures):
         order autoregressive model coefficients using Yule-Walker equations for each
         channel and contructs an array made up of the autoregressive coeffcients (a sub 1 since only first order)
         for each channel
-        '''
+
+        :param data_input: input samples to compute feature
+        :return: feature value
+        """
 
         ar_feature = []
         for channel in range(8):
-            ar_coefficient_array, noise, reflection = aryule(np.hstack(data_input[:,channel:channel+1]), 1)
+            ar_coefficient_array, noise, reflection = aryule(np.hstack(data_input[:, channel:channel+1]), 1)
             ar_coefficient = ar_coefficient_array[0]
             ar_feature.append(ar_coefficient)
 
@@ -299,12 +338,11 @@ class Ceps(EMGFeatures):
 
         self.name = "Ceps"
 
-    def getName(self):
+    def get_name(self):
         return self.name
 
     def extract_features(self, data_input):
-        '''
-        Cepstrum coefficients
+        """ Cepstrum coefficients
         "This measure provides information about the rate of
         change in different frequency spectrum bands of a signal." (Tkach et. al 5)
 
@@ -313,11 +351,15 @@ class Ceps(EMGFeatures):
         order autoregressive model coefficients using Yule-Walker equations for each
         channel and contructs an array made up of the cepstrum coeffcients (-a sub 1 since only first order)
         for each channel
-        '''
+
+        :param data_input: input samples to compute feature
+        :return: scalar feature value
+
+        """
 
         ceps_feature = []
         for channel in range(8):
-            ar_coefficient_array, noise, reflection = aryule(np.hstack(data_input[:,channel:channel+1]), 1)
+            ar_coefficient_array, noise, reflection = aryule(np.hstack(data_input[:, channel:channel+1]), 1)
             ar_coefficient = ar_coefficient_array[0]
             ceps_coefficient = -ar_coefficient
             ceps_feature.append(ceps_coefficient)

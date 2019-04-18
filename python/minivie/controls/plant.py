@@ -9,7 +9,7 @@ to advance the kinematic state
 
 Usage:
 
-from the python\minivie folder:
+from the python/minivie folder:
 
 from Controls import Plant
 
@@ -166,7 +166,7 @@ class Plant(object):
         if joint_id is not None:
             self.joint_velocity[joint_id] = joint_velocity
 
-    def trackResidual(self, arm, shoulder, elbow, rot_mat):
+    def set_motion_tracking_angles(self, arm, shoulder, elbow, rot_mat):
         if shoulder:
             # Create 4x4 matrix from 3x3 rotation matrix
             with_col = np.insert(rot_mat[0], 3, 0, axis=1)
@@ -195,21 +195,21 @@ class Plant(object):
                                            np.dot(np.linalg.pinv(self.Fref2), F2))))
                 el = relXYZ[2]
 
-            if (arm == 'right'):
+            if arm == 'right':
                 # use imu data to control position of residual limb (right)
-                self.joint_position[0] = newXYZ[2]
-                self.joint_position[1] = -newXYZ[1]
-                self.joint_position[2] = newXYZ[0]
+                self.joint_position[MplId.SHOULDER_AB_AD] = newXYZ[2]
+                self.joint_position[MplId.SHOULDER_FE] = -newXYZ[1]
+                self.joint_position[MplId.HUMERAL_ROT] = newXYZ[0]
                 if elbow:
                     self.joint_position[3] = el
 
-            elif (arm == 'left'):
+            elif arm == 'left':
                 # use imu data to control position of residual limb (left)
-                self.joint_position[0] = -newXYZ[2]
-                self.joint_position[1] = -newXYZ[1]
-                self.joint_position[2] = -newXYZ[0]
+                self.joint_position[MplId.SHOULDER_AB_AD] = -newXYZ[2]
+                self.joint_position[MplId.SHOULDER_FE] = -newXYZ[1]
+                self.joint_position[MplId.HUMERAL_ROT] = -newXYZ[0]
                 if elbow:
-                    self.joint_position[3] = -el
+                    self.joint_position[MplId.ELBOW] = -el
 
         elif elbow:
             # Create 4x4 matrix from 3x3 rotation matrix
@@ -224,10 +224,10 @@ class Plant(object):
             newXYZ = (mat2euler(np.dot(np.linalg.pinv(self.Fref2), F2)))
             el = newXYZ[2]
 
-            if (arm == 'right'):
+            if arm == 'right':
                 self.joint_position[3] = el
 
-            elif (arm == 'left'):
+            elif arm == 'left':
                 self.joint_position[3] = -el
 
     def update(self):
@@ -246,11 +246,11 @@ class Plant(object):
         # set positions based on roc commands
         # hand positions will always be roc
         if self.roc_id in self.roc_table:
-            new_vals = roc.get_roc_values(self.roc_table[self.roc_id], self.roc_position)
-            self.joint_position[self.roc_table[self.roc_id].joints] = new_vals
+            roc_angles = roc.get_roc_values(self.roc_table[self.roc_id], self.roc_position)
+            self.joint_position[self.roc_table[self.roc_id].joints] = roc_angles
         if self.grasp_id in self.roc_table:
-            new_vals = roc.get_roc_values(self.roc_table[self.grasp_id], self.grasp_position)
-            self.joint_position[self.roc_table[self.grasp_id].joints] = new_vals
+            roc_angles = roc.get_roc_values(self.roc_table[self.grasp_id], self.grasp_position)
+            self.joint_position[self.roc_table[self.grasp_id].joints] = roc_angles
 
         # Apply limits
         self.joint_position = np.clip(self.joint_position, self.lower_limit, self.upper_limit)

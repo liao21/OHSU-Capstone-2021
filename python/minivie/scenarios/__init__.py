@@ -393,7 +393,17 @@ class Scenario(object):
             # Parse Manual Motion Command Message Type
             # Note the commands from the web app must match the Class Names
 
+            # Don't accept manual commands until mode is enabled.  Otherwise the command would be buffered
+            # and the arm would start moving on command restore
+            if not self.manual_override:
+                return
+
+            # Create a new timestep for the plant model (with all velocities zero)
             self.Plant.new_step()
+
+            # If command is Stop, then just return (with zero velocity set)
+            if cmd_data == 'Stop':
+                return
 
             # parse manual command type as arm, grasp, etc
             class_info = controls.plant.class_map(cmd_data)
@@ -447,6 +457,9 @@ class Scenario(object):
             if self.DataSink is not None:
                 # self.Plant.joint_velocity[mpl.JointEnum.MIDDLE_MCP] = self.Plant.grasp_velocity
                 self.DataSink.send_joint_angles(self.Plant.joint_position, self.Plant.joint_velocity)
+
+                # Adding a hidden feature here to (re-send) commands to the ghost arms while manual control is on.
+                # At some point this should be on a Unity-specific configuration page
                 # send some default config parameters on setup for ghost arms (turn them off)
                 enable = get_config_var('UnityUdp.ghost_default_enable', 0.0)
                 color = get_config_var('UnityUdp.ghost_default_color', (0.3, 0.4, 0.5))
@@ -535,7 +548,7 @@ class Scenario(object):
 
         # track arm motion
         if self.motion_track_enable is True and rot_mat is not None:
-            self.Plant.trackResidual(self.arm_side, self.shoulder, self.elbow, rot_mat)
+            self.Plant.set_motion_tracking_angles(self.arm_side, self.shoulder, self.elbow, rot_mat)
 
         # update positions
         self.Plant.update()
@@ -675,6 +688,8 @@ class MplScenario(Scenario):
             # get ports and configure joints based upon myo location
             if get_config_var('MyoUdpClient.num_devices', 1) == 1:
                 # Single Armband Case
+                # With one armband (+imu) we can only track the shoulder (if place above the elbow) OR the
+                # elbow angle (if place below the elbow).  Figure our which case we have:
                 local_port_1 = get_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
                 if myo_position_1 == 'AE':
                     self.shoulder = True
@@ -689,6 +704,12 @@ class MplScenario(Scenario):
                 # Dual Armband Case
                 local_port_1 = get_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
                 local_port_2 = get_config_var('MyoUdpClient.local_address_2', '//0.0.0.0:15002')
+
+                # With two armbands (+imu) we can only track the shoulder (if both placed above the elbow) OR the
+                # elbow angle (if BOTH placed below the elbow).
+                # If one imu is above the elbow and the other below the elbow, then we can track the entire arm
+                # (shoulder angles + elbow angles)
+                # Figure our which case we have:
 
                 if (myo_position_1 == 'AE') and (myo_position_2 == 'AE'):
                     self.shoulder = True

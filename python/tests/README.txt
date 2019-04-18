@@ -6,7 +6,7 @@ nfu_event_sim.csv - contains 10 seconds of nfu_event percepts with the limb
         Elbow 100 deg
         Wrist FE -35 deg
         Wrist Rot 60 deg
-        Hand 70% Close in Spherial Grasp
+        Hand 70% Close in Spherical Grasp
 
     Each finger and arm joint is pressed to generate a torque reading on each
 

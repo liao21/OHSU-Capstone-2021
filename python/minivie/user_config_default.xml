@@ -9,7 +9,7 @@
     <add key="Logging.use_combined_log"   value="1"/>
 
     <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
-    <add key="MPL.roc_table"         value="../../WrRocDefaults.xml"/>
+    <add key="MPL.roc_table"         value="mpl/#MPL_GEN3_ROC.xml"/>
 
     <!--Specify the Output Module [UnityUdp | NfuUdp] -->
     <add key="DataSink"         value="UnityUdp"/>

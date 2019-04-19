@@ -19,7 +19,7 @@ from inputs import myo
 
 
 # Setup Data Source
-m = myo.MyoUdp(source='//127.0.0.1:15001', num_samples=600)
+m = myo.MyoUdp(source='//0.0.0.0:15001', num_samples=600)
 m.connect()
 
 style.use('dark_background')

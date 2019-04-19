@@ -75,9 +75,6 @@ class Scenario(object):
 
         # Motion Tracking parameters
         self.motion_track_enable = get_config_var('MotionTrack.enable', False)
-        self.arm_side = get_config_var('MotionTrack.arm_side', 'Right')
-        self.shoulder = False
-        self.elbow = False
 
         # Futures for event loop
         self.futures = None
@@ -321,8 +318,8 @@ class Scenario(object):
             elif cmd_data == 'ChangeMyoSet2':
                 utilities.sys_cmd.change_myo(2)
             elif cmd_data == 'NormUnity':
-                self.Plant.Fref = np.eye(4)
-                self.Plant.Fref2 = np.eye(4)
+                self.Plant.ref_frame_upper = np.eye(4)
+                self.Plant.ref_frame_lower = np.eye(4)
 
             #################
             # System Options
@@ -548,7 +545,7 @@ class Scenario(object):
 
         # track arm motion
         if self.motion_track_enable is True and rot_mat is not None:
-            self.Plant.set_motion_tracking_angles(self.arm_side, self.shoulder, self.elbow, rot_mat)
+            self.Plant.set_motion_tracking_angles(rot_mat)
 
         # update positions
         self.Plant.update()
@@ -682,55 +679,16 @@ class MplScenario(Scenario):
         source_list = None
         input_device = get_config_var('input_device', 'myo')
         if input_device == 'myo':
-            myo_position_1 = get_config_var('myo_position_1', 'AE')
-            myo_position_2 = get_config_var('myo_position_2', 'AE')
-
-            # get ports and configure joints based upon myo location
             if get_config_var('MyoUdpClient.num_devices', 1) == 1:
-                # Single Armband Case
-                # With one armband (+imu) we can only track the shoulder (if place above the elbow) OR the
-                # elbow angle (if place below the elbow).  Figure our which case we have:
                 local_port_1 = get_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
-                if myo_position_1 == 'AE':
-                    self.shoulder = True
-                    self.elbow = False
-                else:
-                    self.shoulder = False
-                    self.elbow = True
                 source_list = [myo.MyoUdp(source=local_port_1)]
-
-            # add second device
             elif get_config_var('MyoUdpClient.num_devices', 1) == 2:
                 # Dual Armband Case
                 local_port_1 = get_config_var('MyoUdpClient.local_address_1', '//0.0.0.0:15001')
                 local_port_2 = get_config_var('MyoUdpClient.local_address_2', '//0.0.0.0:15002')
-
-                # With two armbands (+imu) we can only track the shoulder (if both placed above the elbow) OR the
-                # elbow angle (if BOTH placed below the elbow).
-                # If one imu is above the elbow and the other below the elbow, then we can track the entire arm
-                # (shoulder angles + elbow angles)
-                # Figure our which case we have:
-
-                if (myo_position_1 == 'AE') and (myo_position_2 == 'AE'):
-                    self.shoulder = True
-                    self.elbow = False
-                    source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
-
-                elif (myo_position_1 == 'BE') and (myo_position_2 == 'BE'):
-                    self.shoulder = False
-                    self.elbow = True
-                    source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
-
-                else:
-                    if myo_position_1 == 'AE':
-                        source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
-                    else:
-                        source_list = [myo.MyoUdp(source=local_port_2), myo.MyoUdp(source=local_port_1)]
-
+                source_list = [myo.MyoUdp(source=local_port_1), myo.MyoUdp(source=local_port_2)]
             self.attach_source(source_list)
         elif input_device == 'daq':
-            self.shoulder = False
-            self.elbow = False
             src = daqEMGDevice.DaqEMGDevice(get_config_var('DaqDevice.device_name_and_channels', 'Dev1/ai0:7'))
 
             self.attach_source([src])

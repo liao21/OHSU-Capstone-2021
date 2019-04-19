@@ -28,6 +28,7 @@ Revisions:
 import os
 import time
 import logging
+import math
 import numpy as np
 
 import mpl.roc as roc
@@ -128,8 +129,8 @@ class Plant(object):
         self.load_config_parameters()
 
         # for residual limb
-        self.Fref = np.eye(4)  # offset
-        self.Fref2 = np.eye(4)
+        self.ref_frame_upper = np.eye(4)  # offset
+        self.ref_frame_lower = np.eye(4)
 
     def load_config_parameters(self):
         # Load parameters from xml config file
@@ -166,69 +167,103 @@ class Plant(object):
         if joint_id is not None:
             self.joint_velocity[joint_id] = joint_velocity
 
-    def set_motion_tracking_angles(self, arm, shoulder, elbow, rot_mat):
-        if shoulder:
+    def set_motion_tracking_angles(self, rot_mat):
+
+        # With two armbands (+imu) we can only track the shoulder (if both placed above the elbow) OR the
+        # elbow angle (if BOTH placed below the elbow).
+        # If one imu is above the elbow and the other below the elbow, then we can track the entire arm
+        # (shoulder angles + elbow angles)
+        # Figure out which case we have:
+
+        myo_position_1 = user_config.get_user_config_var('myo_position_1', 'AE')
+        myo_position_2 = user_config.get_user_config_var('myo_position_2', 'AE')
+        arm_side = user_config.get_user_config_var('MotionTrack.arm_side', 'right')
+
+        if myo_position_1 == myo_position_2 == 'BE':
+            # Simplest case in which both armbands are below elbow.
+            # Only elbow angle can be tracked so compute and be done
+            # this is only with respect to gravity so should be robust against body orientation
+            rpy1 = mat2euler(rot_mat[0])
+            EL = rpy1[1] + math.pi/2
+            self.joint_position[MplId.ELBOW] = EL
+            return
+        elif myo_position_1 == myo_position_2 == 'AE':
+            # Both armbands are above elbow.  Since the shoulder is a 3DOF joint, we need to establish a
+            # reference position and then solve the angles independently
+
             # Create 4x4 matrix from 3x3 rotation matrix
-            with_col = np.insert(rot_mat[0], 3, 0, axis=1)
-            F = np.insert(with_col, 3, [0, 0, 0, 1], axis=0)
+            F = np.insert(np.insert(rot_mat[0], 3, 0, axis=1), 3, [0, 0, 0, 1], axis=0)
 
             # set offset first time through
-            if np.array_equal(self.Fref, np.eye(4)):
-                self.Fref = F
+            if np.array_equal(self.ref_frame_upper, np.eye(4)):
+                self.ref_frame_upper = F
 
             # compute shoulder angles
-            newXYZ = (mat2euler(np.dot(np.linalg.pinv(self.Fref), F)))
+            # RSA Note: This needs to be matrix multiply.  Matrix dot operator gives a nonsensical result
+            # WRONG: newXYZ = (mat2euler(np.dot(np.linalg.pinv(self.Fref), F)))
+            shoulder_angles = mat2euler(np.matmul(np.linalg.pinv(self.ref_frame_upper), F), axes='sxyz')
+            print((180.0 / math.pi * shoulder_angles[0], 180.0 / math.pi * shoulder_angles[1],
+                   180.0 / math.pi * shoulder_angles[2]))
 
-            # is second myo present, calculate elbow position in relation to shoulder position
-            if elbow:
-                # Create 4x4 matrix from 3x3 rotation matrix
-                with_col2 = np.insert(rot_mat[1], 3, 0, axis=1)
-                F2 = np.insert(with_col2, 3, [0, 0, 0, 1], axis=0)
-
-                # set offset first time through
-                if np.array_equal(self.Fref2, np.eye(4)):
-                    self.Fref2 = F2
-
-                # compute euler angles
-                # pinv(pinv(obj.Fref)*F)*pinv(obj.Fref2)*F2)
-                relXYZ = (mat2euler(np.dot(np.linalg.pinv(np.dot(np.linalg.pinv(self.Fref), F)),
-                                           np.dot(np.linalg.pinv(self.Fref2), F2))))
-                el = relXYZ[2]
-
-            if arm == 'right':
+            if arm_side == 'right':
                 # use imu data to control position of residual limb (right)
-                self.joint_position[MplId.SHOULDER_AB_AD] = newXYZ[2]
-                self.joint_position[MplId.SHOULDER_FE] = -newXYZ[1]
-                self.joint_position[MplId.HUMERAL_ROT] = newXYZ[0]
-                if elbow:
-                    self.joint_position[3] = el
+                self.joint_position[MplId.SHOULDER_FE] = shoulder_angles[2]
+                self.joint_position[MplId.SHOULDER_AB_AD] = -shoulder_angles[1]
+                self.joint_position[MplId.HUMERAL_ROT] = shoulder_angles[0]
 
-            elif arm == 'left':
+            elif arm_side == 'left':
                 # use imu data to control position of residual limb (left)
-                self.joint_position[MplId.SHOULDER_AB_AD] = -newXYZ[2]
-                self.joint_position[MplId.SHOULDER_FE] = -newXYZ[1]
-                self.joint_position[MplId.HUMERAL_ROT] = -newXYZ[0]
-                if elbow:
-                    self.joint_position[MplId.ELBOW] = -el
+                self.joint_position[MplId.SHOULDER_FE] = -shoulder_angles[2]
+                self.joint_position[MplId.SHOULDER_AB_AD] = -shoulder_angles[1]
+                self.joint_position[MplId.HUMERAL_ROT] = -shoulder_angles[0]
+            return
+        elif myo_position_1 == 'AE' and myo_position_2 == 'BE':
+            id_upper_arm_sensor = 0
+            id_lower_arm_sensor = 1
+        elif myo_position_1 == 'BE' and myo_position_2 == 'AE':
+            id_upper_arm_sensor = 1
+            id_lower_arm_sensor = 0
+        else:
+            logging.warning('Unknown Arm Tracking State')
+            return
 
-        elif elbow:
-            # Create 4x4 matrix from 3x3 rotation matrix
-            with_col2 = np.insert(rot_mat[0], 3, 0, axis=1)
-            F2 = np.insert(with_col2, 3, [0, 0, 0, 1], axis=0)
+        # Create 4x4 matrix from 3x3 rotation matrix
+        F_upper = np.insert(np.insert(rot_mat[id_upper_arm_sensor], 3, 0, axis=1), 3, [0, 0, 0, 1], axis=0)
+        F_lower = np.insert(np.insert(rot_mat[id_lower_arm_sensor], 3, 0, axis=1), 3, [0, 0, 0, 1], axis=0)
 
-            # set offset first time through
-            if np.array_equal(self.Fref2, np.eye(4)):
-                self.Fref2 = F2
+        # set offset first time through
+        if np.array_equal(self.ref_frame_upper, np.eye(4)):
+            self.ref_frame_upper = F_upper
+        if np.array_equal(self.ref_frame_lower, np.eye(4)):
+            self.ref_frame_lower = F_lower
 
-            # compute euler angles
-            newXYZ = (mat2euler(np.dot(np.linalg.pinv(self.Fref2), F2)))
-            el = newXYZ[2]
+        # these are the sensor rotation matrices relative to their starting point
+        F_start_upper = np.matmul(np.linalg.pinv(self.ref_frame_upper), F_upper)
+        F_start_lower = np.matmul(np.linalg.pinv(self.ref_frame_lower), F_lower)
 
-            if arm == 'right':
-                self.joint_position[3] = el
+        # compute shoulder angles
+        shoulder_angles = mat2euler(F_start_upper)
+        # print((180.0/math.pi*shoulder_angles[0], 180.0/math.pi*shoulder_angles[1], 180.0/math.pi*shoulder_angles[2]))
 
-            elif arm == 'left':
-                self.joint_position[3] = -el
+        # compute euler angles relative to the two sensors
+        relative_angles = mat2euler(np.matmul(np.linalg.pinv(F_start_upper), F_start_lower))
+        # print((180.0/math.pi*relative_angles[0], 180.0/math.pi*relative_angles[1], 180.0/math.pi*relative_angles[2]))
+
+        if arm_side == 'right':
+            # use imu data to control position of residual limb (right)
+            self.joint_position[MplId.SHOULDER_FE] = shoulder_angles[2]
+            self.joint_position[MplId.SHOULDER_AB_AD] = -shoulder_angles[1]
+            self.joint_position[MplId.HUMERAL_ROT] = shoulder_angles[0]
+            self.joint_position[MplId.ELBOW] = relative_angles[2]
+
+        elif arm_side == 'left':
+            # use imu data to control position of residual limb (left)
+            self.joint_position[MplId.SHOULDER_FE] = -shoulder_angles[2]
+            self.joint_position[MplId.SHOULDER_AB_AD] = -shoulder_angles[1]
+            self.joint_position[MplId.HUMERAL_ROT] = -shoulder_angles[0]
+            self.joint_position[MplId.ELBOW] = -relative_angles[2]
+
+        return
 
     def update(self):
         # perform time integration based on elapsed time, dt

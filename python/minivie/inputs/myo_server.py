@@ -1,9 +1,62 @@
 #!/usr/bin/env python3
-#
-# This function is a linux based module for establishing myo armband streaming as a server via UDP
-# This relies on the bluepy module for linux
-#
-#
+"""
+
+This module is a linux based application for establishing myo armband streaming as a server via UDP
+This relies on the bluepy module for linux
+
+Typical use would be to set this up as a service on a linux system to continually scan
+for myo armbands and stream data as available
+
+Setting up service (on raspberry pi):
+
+Create the service file
+    $ sudo nano /etc/systemd/system/mpl_myo1.service
+
+---------------vr---------- mpl_myo1.service ------------------------------
+[Unit]
+Description=Myo Streamer
+Requires=bluetooth.service
+After=network.target bluetooth.service
+
+[Service]
+ExecStart=/usr/bin/python3.7 -u -m inputs.myo_server -x vmpl_user_config.xml
+WorkingDirectory=/home/pi/git/minivie/python/minivie
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+
+[Install]
+WantedBy=multi-user.target
+------------------------- mpl_myo1.service ------------------------------
+
+Enable the service
+
+    $ sudo systemctl enable mpl_myo1.service
+
+    Created symlink from /etc/systemd/system/multi-user.target.wants/mpl_myo1.service to /lib/systemd/system/mpl_myo1.service.
+
+Start service and check status
+
+    $ sudo systemctl start mpl_myo1.service
+    $ sudo systemctl status mpl_myo1.service
+    ● mpl_myo1.service - Myo Streamer
+       Loaded: loaded (/etc/systemd/system/mpl_myo1.service; enabled; vendor preset: enabled)
+       Active: active (running) since Thu 2018-08-16 03:54:51 UTC; 5s ago
+     Main PID: 942 (python3)
+       CGroup: /system.slice/mpl_myo1.service
+               ├─942 /usr/bin/python3.7 -u -m inputs.myo_server -x vmpl_user_config.xml
+               └─951 /usr/local/lib/python3.7/dist-packages/bluepy/bluepy-helper 0
+
+    Aug 16 03:54:51 raspberrypi systemd[1]: Started Myo Streamer.
+
+
+
+
+
+
+"""
+
 import os
 import logging
 import time
@@ -165,7 +218,7 @@ class MyoUdpServer(object):
         self.peripheral = btle.Peripheral()
         while True:
             try:
-                self.peripheral.connect(self.mac_address,addrType=btle.ADDR_TYPE_PUBLIC, iface=self.iface)
+                self.peripheral.connect(self.mac_address, addrType=btle.ADDR_TYPE_PUBLIC, iface=self.iface)
                 print('Connection Successful')
                 break
             except btle.BTLEException:
@@ -175,7 +228,7 @@ class MyoUdpServer(object):
 
         # connect udp
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.setblocking(0)
+        self.sock.setblocking(False)
         self.sock.bind(self.local_port)
 
         # Assign event handler
@@ -195,7 +248,7 @@ class MyoUdpServer(object):
             # or until the given timeout (in seconds) has elapsed
             if not self.peripheral.waitForNotifications(1.0):
                 self.logger.warning('Missed Myo notification.')
-                self.peripheral.writeCharacteristic(0x19, struct.pack('<bbbbb', 1, 3, 3, 1, 0), 1)  # Tell the myo we want EMG, IMU
+                self.peripheral.writeCharacteristic(0x19, struct.pack('5b', 1, 3, 3, 1, 0), 1)  # Tell the myo we want EMG, IMU
 
             if t_elapsed > status_msg_rate:
                 rate_myo = self.delegate.counter['emg'] / t_elapsed
@@ -217,7 +270,7 @@ class MyoUdpServer(object):
                 print(data)
                 length = ord(data)
                 if 0 <= length <= 3:
-                    self.peripheral.writeCharacteristic(0x19, struct.pack('<bbb', 0x03, 0x01, length), True)
+                    self.peripheral.writeCharacteristic(0x19, struct.pack('3b', 0x03, 0x01, length), True)
             except BlockingIOError:
                 pass
 

@@ -313,6 +313,16 @@ class Scenario(object):
                 utilities.sys_cmd.restart_myo()
             elif cmd_data == 'RestartMyo2':
                 utilities.sys_cmd.restart_myo()
+            elif cmd_data == 'ShutdownMyo1':
+                import socket
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                addr = utilities.get_address(get_config_var('MyoUdpClient.remote_address_1', '//127.0.0.1:16001'))
+                sock.sendto(bytearray([1]), addr)
+            elif cmd_data == 'ShutdownMyo2':
+                import socket
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                addr = utilities.get_address(get_config_var('MyoUdpClient.remote_address_2', '//127.0.0.1:16001'))
+                sock.sendto(bytearray([1]), addr)
             elif cmd_data == 'ChangeMyoSet1':
                 utilities.sys_cmd.change_myo(1)
             elif cmd_data == 'ChangeMyoSet2':

@@ -95,8 +95,8 @@
     <add key="MyoUdpServer.iface_2"    value="0"/>
     <add key="MyoUdpServer.mac_address_1"    value="xx:xx:xx:xx:xx:xx"/>
     <add key="MyoUdpServer.mac_address_2"    value="xx:xx:xx:xx:xx:xx"/>
-    <add key="MyoUdpServer.local_address_1"     value="//127.0.0.1:16001"/>
-    <add key="MyoUdpServer.local_address_2"     value="//127.0.0.1:16002"/>
+    <add key="MyoUdpServer.local_address_1"     value="//0.0.0.0:16001"/>
+    <add key="MyoUdpServer.local_address_2"     value="//0.0.0.0:16002"/>
     <add key="MyoUdpServer.remote_address_1"    value="//127.0.0.1:15001"/>
     <add key="MyoUdpServer.remote_address_2"    value="//127.0.0.1:15002"/>
 
@@ -107,8 +107,8 @@
     <add key="MyoUdpClient.mac_address_2"    value="xx:xx:xx:xx:xx:xx"/>
     <add key="MyoUdpClient.local_address_1"     value="//0.0.0.0:15001"/>
     <add key="MyoUdpClient.local_address_2"     value="//0.0.0.0:15002"/>
-    <add key="MyoUdpClient.remote_address_1"    value="//0.0.0.0:16001"/>
-    <add key="MyoUdpClient.remote_address_2"    value="//0.0.0.0:16002"/>
+    <add key="MyoUdpClient.remote_address_1"    value="//127.0.0.1:16001"/>
+    <add key="MyoUdpClient.remote_address_2"    value="//127.0.0.1:16002"/>
 
     <!-- MPL Motion Speeds -->
     <add key="MPL.ArmSpeedMin"    value="0.1"/>

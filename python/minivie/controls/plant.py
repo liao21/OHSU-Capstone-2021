@@ -202,8 +202,8 @@ class Plant(object):
             # RSA Note: This needs to be matrix multiply.  Matrix dot operator gives a nonsensical result
             # WRONG: newXYZ = (mat2euler(np.dot(np.linalg.pinv(self.Fref), F)))
             shoulder_angles = mat2euler(np.matmul(np.linalg.pinv(self.ref_frame_upper), F), axes='sxyz')
-            print((180.0 / math.pi * shoulder_angles[0], 180.0 / math.pi * shoulder_angles[1],
-                   180.0 / math.pi * shoulder_angles[2]))
+            # print((180.0 / math.pi * shoulder_angles[0], 180.0 / math.pi * shoulder_angles[1],
+            #        180.0 / math.pi * shoulder_angles[2]))
 
             if arm_side == 'right':
                 # use imu data to control position of residual limb (right)

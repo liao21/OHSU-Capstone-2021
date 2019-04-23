@@ -79,11 +79,11 @@ def shutdown():
 
     while True:
         # Issue vibrate command for myo listening on this port
-        s.sendto(bytearray([1]), ('localhost', 16001))
+        s.sendto(bytearray([0, 1]), ('localhost', 16001))
         time.sleep(0.5)
-        s.sendto(bytearray([1]), ('localhost', 16001))
+        s.sendto(bytearray([0, 1]), ('localhost', 16001))
         time.sleep(0.5)
-        s.sendto(bytearray([1]), ('localhost', 16001))
+        s.sendto(bytearray([0, 1]), ('localhost', 16001))
         time.sleep(5)
 
 

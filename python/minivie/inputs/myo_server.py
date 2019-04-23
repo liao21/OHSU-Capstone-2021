@@ -263,14 +263,35 @@ class MyoUdpServer(object):
                 self.delegate.counter['imu'] = 0
 
             # Check for receive messages
+            #
+            # Define a simple protocol for commands to Myo
+            #
+            # Message ID:
+            # 0 - Send vibration. Expects a 1 byte payload with duration
+            # 1 - Send myo to Deep Sleep
+            #
             # Send a single byte for vibration command with duration of 0-3 seconds
             # s.sendto(bytearray([2]),('localhost',16001))
+            #
+            # import socket
+            # sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            # sock.bind(('0.0.0.0', 9097))
+            # sock.sendto(bytearray([0, 2]), ('127.0.0.1', 16001))
+            # sock.sendto(bytearray([1]), ('127.0.0.1', 16001))
+
             try:
                 data, address = self.sock.recvfrom(1024)
-                print(data)
-                length = ord(data)
-                if 0 <= length <= 3:
-                    self.peripheral.writeCharacteristic(0x19, struct.pack('3b', 0x03, 0x01, length), True)
+                if (data[0] == 0) & (len(data) == 2):
+                    # Send vibration
+                    logging.warning('Sending Myo vibration command')
+                    duration = int(data[1])
+                    if 0 <= duration <= 3:
+                        self.peripheral.writeCharacteristic(0x19, struct.pack('3b', 0x03, 0x01, duration), True)
+                elif (data[0] == 1) & (len(data) == 1):
+                    # Send Deep sleep
+                    logging.warning('Sending Myo to deep sleep')
+                    self.peripheral.writeCharacteristic(0x19, struct.pack('2b', 0x04, 0x01), True)
+
             except BlockingIOError:
                 pass
 

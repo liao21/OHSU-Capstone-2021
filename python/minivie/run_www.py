@@ -59,8 +59,8 @@ def main():
     vie = scenarios.MplScenario()
 
     # Perform setup operations based on settings above
-    vie.setup_interfaces()  # setup web-app and user assessment functions
     vie.setup()
+    vie.setup_interfaces()  # setup web-app and user assessment functions
     vie.setup_load_cell()   # setup interface
 
     # Run the VIE system

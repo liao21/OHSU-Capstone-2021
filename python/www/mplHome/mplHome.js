@@ -25,28 +25,27 @@ function readCsv(allText) {
 
   // Create CSV arrays
   var allTextLines = allText.split(/\r\n|\n/);
-  var dataLines = [];
   var headerLine = [];
 
   for (var i=0; i < allTextLines.length; i++) {
-      var thisLine = allTextLines[i]
+      var thisLine = allTextLines[i];
 
       // Always ignore comment or blank lines
-      if (thisLine[0] == "#" | thisLine.length < 1) continue;
+      if (thisLine[0] === "#" || thisLine.length < 1) continue;
 
       // Split on comma
       var splitLine = thisLine.split(',');
 
       // populate header
-      if (headerLine.length == 0) {
+      if (headerLine.length === 0) {
         headerLine = splitLine;
         continue;
       }
 
       // Populate gallery data for valid entries
-      if (splitLine.length == headerLine.length) {
-        var className = splitLine[0]
-        var classImagePath = splitLine[1]
+      if (splitLine.length === headerLine.length) {
+        var className = splitLine[0];
+        var classImagePath = splitLine[1];
         global_motion_class_data.push({
             title: className,
             href:  classImagePath,
@@ -56,8 +55,6 @@ function readCsv(allText) {
       }
   }
 
-
-
   setupGalley();
   setupCallbacks();
 }
@@ -66,193 +63,193 @@ function routeMessage(cmd_type, cmd_data) {
   // Route the message to the appropriate section of the html page
   // based on the cmd_type.  Pass the target function the cmd_data
 
-  if (cmd_type == "sys_status") {
+  if (cmd_type === "sys_status") {
     $("#msg_status").html(cmd_data);
     $("#msg_status_opt").html(cmd_data);
     $("#msg_status_myo").html(cmd_data);
   }
-  if (cmd_type == "training_class") {
+  if (cmd_type === "training_class") {
     $("#msg_train").text(cmd_data);
   }
-  if (cmd_type == "output_class") {
+  if (cmd_type === "output_class") {
      $("#main_output").text(cmd_data);
      $("#mt_output").text(cmd_data);
      $("#tac_output").text(cmd_data);
   }
-  if (cmd_type == "motion_test_status") {
+  if (cmd_type === "motion_test_status") {
     $("#mt_status").html(cmd_data);
   }
-  if (cmd_type == "motion_test_update") {
+  if (cmd_type === "motion_test_update") {
     updateMTProgressBar(cmd_data);
   }
-  if (cmd_type == "motion_test_setup") {
+  if (cmd_type === "motion_test_setup") {
     updateMTImage(cmd_data);
   }
-  if (cmd_type == "TAC_status") {
+  if (cmd_type === "TAC_status") {
     $("#tac_status").text(cmd_data);
   }
-  if (cmd_type == "TAC_setup") {
+  if (cmd_type === "TAC_setup") {
 
     // Further parse response (comma separated)
-    var data = cmd_data.split(",");
+    var tac_setup_data = cmd_data.split(",");
 
-    if (data[0] > 0) {
-      $("#tacJoint1Name").text(data[1]);
-      updateTACJointTarget(data[2], "tacJoint1Target");
-      updateTACJointError(data[3], "tacJoint1Target");
+    if (tac_setup_data[0] > 0) {
+      $("#tacJoint1Name").text(tac_setup_data[1]);
+      updateTACJointTarget(tac_setup_data[2], "tacJoint1Target");
+      updateTACJointError(tac_setup_data[3], "tacJoint1Target");
     }
-    if (data[0] > 1) {
-      $("#tacJoint2Name").text(data[4]);
-      updateTACJointTarget(data[5], "tacJoint2Target");
-      updateTACJointError(data[6], "tacJoint2Target");
+    if (tac_setup_data[0] > 1) {
+      $("#tacJoint2Name").text(tac_setup_data[4]);
+      updateTACJointTarget(tac_setup_data[5], "tacJoint2Target");
+      updateTACJointError(tac_setup_data[6], "tacJoint2Target");
     }
-    if (data[0] > 2) {
-      $("#tacJoint3Name").text(data[7]);
-      updateTACJointTarget(data[8], "tacJoint3Target");
-      updateTACJointError(data[9], "tacJoint3Target");
+    if (tac_setup_data[0] > 2) {
+      $("#tacJoint3Name").text(tac_setup_data[7]);
+      updateTACJointTarget(tac_setup_data[8], "tacJoint3Target");
+      updateTACJointError(tac_setup_data[9], "tacJoint3Target");
     }
   }
 
-  if (cmd_type == "TAC_update") {
+  if (cmd_type === "TAC_update") {
     // Further parse response (comma separated)
-    var data = cmd_data.split(",");
-    if (data[0] > 0) {
-      updateTACJointBar(data[1], "tacJoint1Bar", "tacJoint1Label");
+    var tac_update_data = cmd_data.split(",");
+    if (tac_update_data[0] > 0) {
+      updateTACJointBar(tac_update_data[1], "tacJoint1Bar", "tacJoint1Label");
     }
-    if (data[0] > 1) {
-      updateTACJointBar(data[2], "tacJoint2Bar", "tacJoint2Label");
+    if (tac_update_data[0] > 1) {
+      updateTACJointBar(tac_update_data[2], "tacJoint2Bar", "tacJoint2Label");
     }
-    if (data[0] > 2) {
-      updateTACJointBar(data[3], "tacJoint3Bar", "tacJoint3Label");
+    if (tac_update_data[0] > 2) {
+      updateTACJointBar(tac_update_data[3], "tacJoint3Bar", "tacJoint3Label");
     }
   }
-  if (cmd_type == "strNormalizeMyoPosition") {
+  if (cmd_type === "strNormalizeMyoPosition") {
 	  $("#nmp_status").text(cmd_data);
   }
-  if (cmd_type == "strNormalizeMyoPositionImage") {
+  if (cmd_type === "strNormalizeMyoPositionImage") {
              updateNMPImage(cmd_data);
   }
 
   // route joint percept message
-  if (cmd_type == "joint_cmd") {
-    var values = cmd_data.split(',');
-    $("#SHFE_Cmd").html(values[0]);
-    $("#SHAA_Cmd").html(values[1]);
-    $("#HUM_Cmd").html(values[2]);
-    $("#EL_Cmd").html(values[3]);
-    $("#WRT_Cmd").html(values[4]);
-    $("#WAA_Cmd").html(values[5]);
-    $("#WFE_Cmd").html(values[6]);
-    $("#1AA_Cmd").html(values[7]);
-    $("#1MCP_Cmd").html(values[8]);
-    $("#1PIP_Cmd").html(values[9]);
-    $("#1DIP_Cmd").html(values[10]);
-    $("#2AA_Cmd").html(values[11]);
-    $("#2MCP_Cmd").html(values[12]);
-    $("#2PIP_Cmd").html(values[13]);
-    $("#2DIP_Cmd").html(values[14]);
-    $("#3AA_Cmd").html(values[15]);
-    $("#3MCP_Cmd").html(values[16]);
-    $("#3PIP_Cmd").html(values[17]);
-    $("#3DIP_Cmd").html(values[18]);
-    $("#4AA_Cmd").html(values[19]);
-    $("#4MCP_Cmd").html(values[20]);
-    $("#4PIP_Cmd").html(values[21]);
-    $("#4DIP_Cmd").html(values[22]);
-    $("#5AA_Cmd").html(values[23]);
-    $("#5CMC_Cmd").html(values[24]);
-    $("#5MCP_Cmd").html(values[25]);
-    $("#5DIP_Cmd").html(values[26]);
+  if (cmd_type === "joint_cmd") {
+    var cmd_values = cmd_data.split(',');
+    $("#SHFE_Cmd").html(cmd_values[0]);
+    $("#SHAA_Cmd").html(cmd_values[1]);
+    $("#HUM_Cmd").html(cmd_values[2]);
+    $("#EL_Cmd").html(cmd_values[3]);
+    $("#WRT_Cmd").html(cmd_values[4]);
+    $("#WAA_Cmd").html(cmd_values[5]);
+    $("#WFE_Cmd").html(cmd_values[6]);
+    $("#1AA_Cmd").html(cmd_values[7]);
+    $("#1MCP_Cmd").html(cmd_values[8]);
+    $("#1PIP_Cmd").html(cmd_values[9]);
+    $("#1DIP_Cmd").html(cmd_values[10]);
+    $("#2AA_Cmd").html(cmd_values[11]);
+    $("#2MCP_Cmd").html(cmd_values[12]);
+    $("#2PIP_Cmd").html(cmd_values[13]);
+    $("#2DIP_Cmd").html(cmd_values[14]);
+    $("#3AA_Cmd").html(cmd_values[15]);
+    $("#3MCP_Cmd").html(cmd_values[16]);
+    $("#3PIP_Cmd").html(cmd_values[17]);
+    $("#3DIP_Cmd").html(cmd_values[18]);
+    $("#4AA_Cmd").html(cmd_values[19]);
+    $("#4MCP_Cmd").html(cmd_values[20]);
+    $("#4PIP_Cmd").html(cmd_values[21]);
+    $("#4DIP_Cmd").html(cmd_values[22]);
+    $("#5AA_Cmd").html(cmd_values[23]);
+    $("#5CMC_Cmd").html(cmd_values[24]);
+    $("#5MCP_Cmd").html(cmd_values[25]);
+    $("#5DIP_Cmd").html(cmd_values[26]);
   }
-  if (cmd_type == "joint_pos") {
-    var values = cmd_data.split(',');
-    $("#SHFE_Pos").html(values[0]);
-    $("#SHAA_Pos").html(values[1]);
-    $("#HUM_Pos").html(values[2]);
-    $("#EL_Pos").html(values[3]);
-    $("#WRT_Pos").html(values[4]);
-    $("#WAA_Pos").html(values[5]);
-    $("#WFE_Pos").html(values[6]);
-    $("#1AA_Pos").html(values[7]);
-    $("#1MCP_Pos").html(values[8]);
-    $("#1PIP_Pos").html(values[9]);
-    $("#1DIP_Pos").html(values[10]);
-    $("#2AA_Pos").html(values[11]);
-    $("#2MCP_Pos").html(values[12]);
-    $("#2PIP_Pos").html(values[13]);
-    $("#2DIP_Pos").html(values[14]);
-    $("#3AA_Pos").html(values[15]);
-    $("#3MCP_Pos").html(values[16]);
-    $("#3PIP_Pos").html(values[17]);
-    $("#3DIP_Pos").html(values[18]);
-    $("#4AA_Pos").html(values[19]);
-    $("#4MCP_Pos").html(values[20]);
-    $("#4PIP_Pos").html(values[21]);
-    $("#4DIP_Pos").html(values[22]);
-    $("#5AA_Pos").html(values[23]);
-    $("#5CMC_Pos").html(values[24]);
-    $("#5MCP_Pos").html(values[25]);
-    $("#5DIP_Pos").html(values[26]);
+  if (cmd_type === "joint_pos") {
+    var pos_values = cmd_data.split(',');
+    $("#SHFE_Pos").html(pos_values[0]);
+    $("#SHAA_Pos").html(pos_values[1]);
+    $("#HUM_Pos").html(pos_values[2]);
+    $("#EL_Pos").html(pos_values[3]);
+    $("#WRT_Pos").html(pos_values[4]);
+    $("#WAA_Pos").html(pos_values[5]);
+    $("#WFE_Pos").html(pos_values[6]);
+    $("#1AA_Pos").html(pos_values[7]);
+    $("#1MCP_Pos").html(pos_values[8]);
+    $("#1PIP_Pos").html(pos_values[9]);
+    $("#1DIP_Pos").html(pos_values[10]);
+    $("#2AA_Pos").html(pos_values[11]);
+    $("#2MCP_Pos").html(pos_values[12]);
+    $("#2PIP_Pos").html(pos_values[13]);
+    $("#2DIP_Pos").html(pos_values[14]);
+    $("#3AA_Pos").html(pos_values[15]);
+    $("#3MCP_Pos").html(pos_values[16]);
+    $("#3PIP_Pos").html(pos_values[17]);
+    $("#3DIP_Pos").html(pos_values[18]);
+    $("#4AA_Pos").html(pos_values[19]);
+    $("#4MCP_Pos").html(pos_values[20]);
+    $("#4PIP_Pos").html(pos_values[21]);
+    $("#4DIP_Pos").html(pos_values[22]);
+    $("#5AA_Pos").html(pos_values[23]);
+    $("#5CMC_Pos").html(pos_values[24]);
+    $("#5MCP_Pos").html(pos_values[25]);
+    $("#5DIP_Pos").html(pos_values[26]);
   }
-  if (cmd_type == "joint_torque") {
-    var values = cmd_data.split(',');
-    $("#SHFE_Torque").html(values[0]);
-    $("#SHAA_Torque").html(values[1]);
-    $("#HUM_Torque").html(values[2]);
-    $("#EL_Torque").html(values[3]);
-    $("#WRT_Torque").html(values[4]);
-    $("#WAA_Torque").html(values[5]);
-    $("#WFE_Torque").html(values[6]);
-    $("#1AA_Torque").html(values[7]);
-    $("#1MCP_Torque").html(values[8]);
-    $("#1PIP_Torque").html(values[9]);
-    $("#1DIP_Torque").html(values[10]);
-    $("#2AA_Torque").html(values[11]);
-    $("#2MCP_Torque").html(values[12]);
-    $("#2PIP_Torque").html(values[13]);
-    $("#2DIP_Torque").html(values[14]);
-    $("#3AA_Torque").html(values[15]);
-    $("#3MCP_Torque").html(values[16]);
-    $("#3PIP_Torque").html(values[17]);
-    $("#3DIP_Torque").html(values[18]);
-    $("#4AA_Torque").html(values[19]);
-    $("#4MCP_Torque").html(values[20]);
-    $("#4PIP_Torque").html(values[21]);
-    $("#4DIP_Torque").html(values[22]);
-    $("#5AA_Torque").html(values[23]);
-    $("#5CMC_Torque").html(values[24]);
-    $("#5MCP_Torque").html(values[25]);
-    $("#5DIP_Torque").html(values[26]);
+  if (cmd_type === "joint_torque") {
+    var torque_values = cmd_data.split(',');
+    $("#SHFE_Torque").html(torque_values[0]);
+    $("#SHAA_Torque").html(torque_values[1]);
+    $("#HUM_Torque").html(torque_values[2]);
+    $("#EL_Torque").html(torque_values[3]);
+    $("#WRT_Torque").html(torque_values[4]);
+    $("#WAA_Torque").html(torque_values[5]);
+    $("#WFE_Torque").html(torque_values[6]);
+    $("#1AA_Torque").html(torque_values[7]);
+    $("#1MCP_Torque").html(torque_values[8]);
+    $("#1PIP_Torque").html(torque_values[9]);
+    $("#1DIP_Torque").html(torque_values[10]);
+    $("#2AA_Torque").html(torque_values[11]);
+    $("#2MCP_Torque").html(torque_values[12]);
+    $("#2PIP_Torque").html(torque_values[13]);
+    $("#2DIP_Torque").html(torque_values[14]);
+    $("#3AA_Torque").html(torque_values[15]);
+    $("#3MCP_Torque").html(torque_values[16]);
+    $("#3PIP_Torque").html(torque_values[17]);
+    $("#3DIP_Torque").html(torque_values[18]);
+    $("#4AA_Torque").html(torque_values[19]);
+    $("#4MCP_Torque").html(torque_values[20]);
+    $("#4PIP_Torque").html(torque_values[21]);
+    $("#4DIP_Torque").html(torque_values[22]);
+    $("#5AA_Torque").html(torque_values[23]);
+    $("#5CMC_Torque").html(torque_values[24]);
+    $("#5MCP_Torque").html(torque_values[25]);
+    $("#5DIP_Torque").html(torque_values[26]);
   }
-  if (cmd_type == "joint_temp") {
-    var values = cmd_data.split(',');
-    $("#SHFE_Temp").html(values[0]);
-    $("#SHAA_Temp").html(values[1]);
-    $("#HUM_Temp").html(values[2]);
-    $("#EL_Temp").html(values[3]);
-    $("#WRT_Temp").html(values[4]);
-    $("#WAA_Temp").html(values[5]);
-    $("#WFE_Temp").html(values[6]);
-    $("#1AA_Temp").html(values[7]);
-    $("#1MCP_Temp").html(values[8]);
-    $("#1PIP_Temp").html(values[9]);
-    $("#1DIP_Temp").html(values[10]);
-    $("#2AA_Temp").html(values[11]);
-    $("#2MCP_Temp").html(values[12]);
-    $("#2PIP_Temp").html(values[13]);
-    $("#2DIP_Temp").html(values[14]);
-    $("#3AA_Temp").html(values[15]);
-    $("#3MCP_Temp").html(values[16]);
-    $("#3PIP_Temp").html(values[17]);
-    $("#3DIP_Temp").html(values[18]);
-    $("#4AA_Temp").html(values[19]);
-    $("#4MCP_Temp").html(values[20]);
-    $("#4PIP_Temp").html(values[21]);
-    $("#4DIP_Temp").html(values[22]);
-    $("#5AA_Temp").html(values[23]);
-    $("#5CMC_Temp").html(values[24]);
-    $("#5MCP_Temp").html(values[25]);
-    $("#5DIP_Temp").html(values[26]);
+  if (cmd_type === "joint_temp") {
+    var temp_values = cmd_data.split(',');
+    $("#SHFE_Temp").html(temp_values[0]);
+    $("#SHAA_Temp").html(temp_values[1]);
+    $("#HUM_Temp").html(temp_values[2]);
+    $("#EL_Temp").html(temp_values[3]);
+    $("#WRT_Temp").html(temp_values[4]);
+    $("#WAA_Temp").html(temp_values[5]);
+    $("#WFE_Temp").html(temp_values[6]);
+    $("#1AA_Temp").html(temp_values[7]);
+    $("#1MCP_Temp").html(temp_values[8]);
+    $("#1PIP_Temp").html(temp_values[9]);
+    $("#1DIP_Temp").html(temp_values[10]);
+    $("#2AA_Temp").html(temp_values[11]);
+    $("#2MCP_Temp").html(temp_values[12]);
+    $("#2PIP_Temp").html(temp_values[13]);
+    $("#2DIP_Temp").html(temp_values[14]);
+    $("#3AA_Temp").html(temp_values[15]);
+    $("#3MCP_Temp").html(temp_values[16]);
+    $("#3PIP_Temp").html(temp_values[17]);
+    $("#3DIP_Temp").html(temp_values[18]);
+    $("#4AA_Temp").html(temp_values[19]);
+    $("#4MCP_Temp").html(temp_values[20]);
+    $("#4PIP_Temp").html(temp_values[21]);
+    $("#4DIP_Temp").html(temp_values[22]);
+    $("#5AA_Temp").html(temp_values[23]);
+    $("#5CMC_Temp").html(temp_values[24]);
+    $("#5MCP_Temp").html(temp_values[25]);
+    $("#5DIP_Temp").html(temp_values[26]);
   }
 
 }  // routeMessage
@@ -287,40 +284,44 @@ function setupCallbacks() {
   $("#ID_GOTO_HOME").on("mousedown", function() {sendCmd("Cmd:GotoHome")} );
   $("#ID_GOTO_PARK").on("mousedown", function() {sendCmd("Cmd:GotoPark")} );
   $("#ID_NORMALIZE_UNITY_ORIENTATION").on("mousedown", function() {sendCmd("Cmd:NormUnity")} );
+  $("#ID_MYO_SHUTDOWN_1").on("mousedown", function() {sendCmd("Cmd:ShutdownMyo1")} );
+  $("#ID_MYO_SHUTDOWN_2").on("mousedown", function() {sendCmd("Cmd:ShutdownMyo2")} );
+
+
 
   // Generate the HTML required to setup buttons for manual control
-  var message = []  // append this to create HTML
-  var id_list = []  // Maintain a list of DOM id tags
-  var name_list = [] // Maintain a list of classes
+  var message = []; // append this to create HTML
+  var id_list = [];  // Maintain a list of DOM id tags
+  var name_list = []; // Maintain a list of classes
   // Add stop bar
   message += '<a href="#" class="ui-btn" id="MAN_Stop1">Stop</a>';
 
   // Loop through classes and create motion pairs
-  var side = 0
-  for (var i = 0; i < global_motion_class_data.length; i++ ){
-    id = 'MAN_' + global_motion_class_data[i].title.replace(/ /g,"_") // changes spaces to underscores
-    name = global_motion_class_data[i].title
+  var side = 0;
+  for (var i_class = 0; i_class < global_motion_class_data.length; i_class++ ){
+    var id = 'MAN_' + global_motion_class_data[i_class].title.replace(/ /g,"_"); // changes spaces to underscores
+    var name = global_motion_class_data[i_class].title;
 
-    if (name == 'No Movement') {
+    if (name === 'No Movement') {
       continue;
     } else {
-      var new_id = 0
+      var new_id = 0;
       while (id_list.includes(id)) {
         // generate a new ID
-        new_id += 1
+        new_id += 1;
         id = id + new_id.toString();
       }
-      id_list.push(id)
-      name_list.push(name)
-//      console.log(id_list)
+      id_list.push(id);
+      name_list.push(name);
+      // console.log(id_list)
     }
 
-    if (global_motion_class_data[i].title == 'Hand Open') {
+    if (global_motion_class_data[i_class].title === 'Hand Open') {
       message += '<a href="#" class="ui-btn" id="'+id+'">'+name+'</a>';
       continue
     }
 
-    if (side == 0) {
+    if (side === 0) {
       message += '<fieldset class="ui-grid-a">';
       message +=  '<div class="ui-block-a"><a href="#" class="ui-btn" id="' + id + '">' + name + '</a></div>';
       side += 1;
@@ -358,14 +359,14 @@ function setupCallbacks() {
   $('#pauseHand').on("change", function() { this.checked === true ? sendCmd("Cmd:PauseHandOn") : sendCmd("Cmd:PauseHandOff"); });
 
   // Create slider based switch listeners:
-  $('#resetTorque').on("change", function() { this.value == "On" ? sendCmd("Cmd:ResetTorqueOn") : sendCmd("Cmd:ResetTorqueOff"); });
-  $('#enableImpedance').on("change", function() { this.value == "On" ? sendCmd("Cmd:ImpedanceOn") : sendCmd("Cmd:ImpedanceOff"); });
-  $('#impedanceLevel').on("change", function() { this.value == "Low" ? sendCmd("Cmd:ImpedanceLow") : sendCmd("Cmd:ImpedanceHigh"); });
-  $('#autoSave').on("change", function() { this.value == "On" ? sendCmd("Cmd:AutoSaveOn") : sendCmd("Cmd:AutoSaveOff"); });
-  $('#autoOpen').on("change", function() { this.value == "On" ? sendCmd("Cmd:AutoOpenOn") : sendCmd("Cmd:AutoOpenOff"); });
+  $('#resetTorque').on("change", function() { this.value === "On" ? sendCmd("Cmd:ResetTorqueOn") : sendCmd("Cmd:ResetTorqueOff"); });
+  $('#enableImpedance').on("change", function() { this.value === "On" ? sendCmd("Cmd:ImpedanceOn") : sendCmd("Cmd:ImpedanceOff"); });
+  $('#impedanceLevel').on("change", function() { this.value === "Low" ? sendCmd("Cmd:ImpedanceLow") : sendCmd("Cmd:ImpedanceHigh"); });
+  $('#autoSave').on("change", function() { this.value === "On" ? sendCmd("Cmd:AutoSaveOn") : sendCmd("Cmd:AutoSaveOff"); });
+  $('#autoOpen').on("change", function() { this.value === "On" ? sendCmd("Cmd:AutoOpenOn") : sendCmd("Cmd:AutoOpenOff"); });
 
-  $('#manualControl').on("change", function() { this.value == "On" ? sendCmd("Cmd:ManualControlOn") : sendCmd("Cmd:ManualControlOff"); });
-  $('#streamPercepts').on("change", function() { this.value == "On" ? sendCmd("Cmd:JointPerceptsOn") : sendCmd("Cmd:JointPerceptsOff"); });
+  $('#manualControl').on("change", function() { this.value === "On" ? sendCmd("Cmd:ManualControlOn") : sendCmd("Cmd:ManualControlOff"); });
+  $('#streamPercepts').on("change", function() { this.value === "On" ? sendCmd("Cmd:JointPerceptsOn") : sendCmd("Cmd:JointPerceptsOff"); });
 }  // setupCallbacks
 
 function submitLogMessage() {
@@ -377,44 +378,45 @@ function submitLogMessage() {
 
 function startMT() {
   // Gather parameters to send to motion tester
-  var repetitions = $("#ID_MT_REPETITIONS").val()
-  var timeout = $("#ID_MT_TIMEOUT").val()
-  var max_classifications = $("#ID_MT_MAX_CLASSIFICATIONS").val()
-  sendCmd("Cmd:StartMotionTester-" + repetitions + "-" + timeout + "-" + max_classifications)
+  var repetitions = $("#ID_MT_REPETITIONS").val();
+  var timeout = $("#ID_MT_TIMEOUT").val();
+  var max_classifications = $("#ID_MT_MAX_CLASSIFICATIONS").val();
+  sendCmd("Cmd:StartMotionTester-" + repetitions + "-" + timeout + "-" + max_classifications);
 }
 
 function stopMT() {
-  sendCmd("Cmd:StopMotionTester")
+  sendCmd("Cmd:StopMotionTester");
 }
 
  function startNMP() {
     // Gather parameters to send to myo normalize
+    var norm_class = "";
 	if(document.getElementById("ID_WEO").checked) {
-		var norm_class = "Wrist Extend Out"
+		norm_class = "Wrist Extend Out"
 	}else if(document.getElementById("ID_EF").checked) {
-		var norm_class = "Elbow Flexion"
+		norm_class = "Elbow Flexion"
 	}
     sendCmd("Cmd:StartNormalizeMyo-" + norm_class)
  }
 
 function startTAC1() {
   // Gather parameters to send to TAC1
-  var repetitions = $("#ID_REPETITIONS").val()
-  var timeout = $("#ID_TIMEOUT").val()
-  var dwell_time = $("#ID_DWELL_TIME").val()
-  var degree_error = $("#ID_DEGREE_ERROR").val()
-  var grasp_error = $("#ID_GRASP_ERROR").val()
-  sendCmd("Cmd:StartTAC1-" + repetitions + "-" + timeout + "-" + dwell_time + "-" + degree_error + "-" + grasp_error)
+  var repetitions = $("#ID_REPETITIONS").val();
+  var timeout = $("#ID_TIMEOUT").val();
+  var dwell_time = $("#ID_DWELL_TIME").val();
+  var degree_error = $("#ID_DEGREE_ERROR").val();
+  var grasp_error = $("#ID_GRASP_ERROR").val();
+  sendCmd("Cmd:StartTAC1-" + repetitions + "-" + timeout + "-" + dwell_time + "-" + degree_error + "-" + grasp_error);
 }
 
 function startTAC3() {
   // Gather parameters to send to TAC3
-  var repetitions = $("#ID_REPETITIONS").val()
-  var timeout = $("#ID_TIMEOUT").val()
-  var dwell_time = $("#ID_DWELL_TIME").val()
-  var degree_error = $("#ID_DEGREE_ERROR").val()
-  var grasp_error = $("#ID_GRASP_ERROR").val()
-  sendCmd("Cmd:StartTAC3-" + repetitions + "-" + timeout + "-" + dwell_time + "-" + degree_error + "-" + grasp_error)
+  var repetitions = $("#ID_REPETITIONS").val();
+  var timeout = $("#ID_TIMEOUT").val();
+  var dwell_time = $("#ID_DWELL_TIME").val();
+  var degree_error = $("#ID_DEGREE_ERROR").val();
+  var grasp_error = $("#ID_GRASP_ERROR").val();
+  sendCmd("Cmd:StartTAC3-" + repetitions + "-" + timeout + "-" + dwell_time + "-" + degree_error + "-" + grasp_error);
 }
 
 function stopTAC() {
@@ -442,7 +444,7 @@ function updateNMPImage(imageFile){
 function updateTACJointBar(value, barId, labelId) {
     var elem = document.getElementById(barId);
     elem.style.marginLeft = value - 2.5 + '%'; // The 2.5 is to account for 5% width
-    document.getElementById(labelId).innerHTML = Math.round(value * 1);
+    document.getElementById(labelId).innerHTML = Math.round(value * 1).toString();
 }
 
 function updateTACJointError(value, elementId) {
@@ -452,11 +454,10 @@ function updateTACJointError(value, elementId) {
 
 function updateTACJointTarget(value, elementId) {
     var elem = document.getElementById(elementId);
-    percentChar = elem.style.width
-    percentNum  = percentChar.substring(0, percentChar.length - 1) // Remove percent sign
-    halfWidth = percentNum * 1 / 2
-    valuePercent = value * 1
-    newMargin = valuePercent  - halfWidth
-    newMarginPercent = newMargin * 1 + '%'
-    elem.style.marginLeft = newMarginPercent;
+    var percentChar = elem.style.width;
+    var percentNum  = percentChar.substring(0, percentChar.length - 1); // Remove percent sign
+    var halfWidth = percentNum * 1 / 2;
+    var valuePercent = value * 1;
+    var newMargin = valuePercent  - halfWidth;
+    elem.style.marginLeft = newMargin + '%';
 }

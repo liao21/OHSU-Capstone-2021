@@ -128,7 +128,10 @@ class Plant(object):
         self.load_roc()
         self.load_config_parameters()
 
-        # for residual limb
+        # for residual limb arm tracking
+        self.myo_position_1 = user_config.get_user_config_var('myo_position_1', 'AE')
+        self.myo_position_2 = user_config.get_user_config_var('myo_position_2', 'AE')
+        self.arm_side = user_config.get_user_config_var('MotionTrack.arm_side', 'right')
         self.ref_frame_upper = np.eye(4)  # offset
         self.ref_frame_lower = np.eye(4)
 
@@ -175,11 +178,7 @@ class Plant(object):
         # (shoulder angles + elbow angles)
         # Figure out which case we have:
 
-        myo_position_1 = user_config.get_user_config_var('myo_position_1', 'AE')
-        myo_position_2 = user_config.get_user_config_var('myo_position_2', 'AE')
-        arm_side = user_config.get_user_config_var('MotionTrack.arm_side', 'right')
-
-        if myo_position_1 == myo_position_2 == 'BE':
+        if self.myo_position_1 == self.myo_position_2 == 'BE':
             # Simplest case in which both armbands are below elbow.
             # Only elbow angle can be tracked so compute and be done
             # this is only with respect to gravity so should be robust against body orientation
@@ -187,7 +186,7 @@ class Plant(object):
             EL = rpy1[1] + math.pi/2
             self.joint_position[MplId.ELBOW] = EL
             return
-        elif myo_position_1 == myo_position_2 == 'AE':
+        elif self.myo_position_1 == self.myo_position_2 == 'AE':
             # Both armbands are above elbow.  Since the shoulder is a 3DOF joint, we need to establish a
             # reference position and then solve the angles independently
 
@@ -205,22 +204,22 @@ class Plant(object):
             # print((180.0 / math.pi * shoulder_angles[0], 180.0 / math.pi * shoulder_angles[1],
             #        180.0 / math.pi * shoulder_angles[2]))
 
-            if arm_side == 'right':
+            if self.arm_side == 'right':
                 # use imu data to control position of residual limb (right)
                 self.joint_position[MplId.SHOULDER_FE] = shoulder_angles[2]
                 self.joint_position[MplId.SHOULDER_AB_AD] = -shoulder_angles[1]
                 self.joint_position[MplId.HUMERAL_ROT] = shoulder_angles[0]
 
-            elif arm_side == 'left':
+            elif self.arm_side == 'left':
                 # use imu data to control position of residual limb (left)
                 self.joint_position[MplId.SHOULDER_FE] = -shoulder_angles[2]
                 self.joint_position[MplId.SHOULDER_AB_AD] = -shoulder_angles[1]
                 self.joint_position[MplId.HUMERAL_ROT] = -shoulder_angles[0]
             return
-        elif myo_position_1 == 'AE' and myo_position_2 == 'BE':
+        elif self.myo_position_1 == 'AE' and self.myo_position_2 == 'BE':
             id_upper_arm_sensor = 0
             id_lower_arm_sensor = 1
-        elif myo_position_1 == 'BE' and myo_position_2 == 'AE':
+        elif self.myo_position_1 == 'BE' and self.myo_position_2 == 'AE':
             id_upper_arm_sensor = 1
             id_lower_arm_sensor = 0
         else:
@@ -249,14 +248,14 @@ class Plant(object):
         relative_angles = mat2euler(np.matmul(np.linalg.pinv(F_start_upper), F_start_lower))
         # print((180.0/math.pi*relative_angles[0], 180.0/math.pi*relative_angles[1], 180.0/math.pi*relative_angles[2]))
 
-        if arm_side == 'right':
+        if self.arm_side == 'right':
             # use imu data to control position of residual limb (right)
             self.joint_position[MplId.SHOULDER_FE] = shoulder_angles[2]
             self.joint_position[MplId.SHOULDER_AB_AD] = -shoulder_angles[1]
             self.joint_position[MplId.HUMERAL_ROT] = shoulder_angles[0]
             self.joint_position[MplId.ELBOW] = relative_angles[2]
 
-        elif arm_side == 'left':
+        elif self.arm_side == 'left':
             # use imu data to control position of residual limb (left)
             self.joint_position[MplId.SHOULDER_FE] = -shoulder_angles[2]
             self.joint_position[MplId.SHOULDER_AB_AD] = -shoulder_angles[1]

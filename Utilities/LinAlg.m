@@ -601,7 +601,7 @@ classdef LinAlg
             if any(check < (1-tolX))
                 badIds = find(check < (1-tolX));
                 for i = 1:length(badIds)
-                    fprintf('|q| = %12.8f   q = %f %f %f %f \n',check(badIds(i)),q_list(:,i))
+                    fprintf('|q| = %12.8f   q = %f %f %f %f \n',check(badIds(i)),q_list(:,badIds(i)))
                     %disp(str);
                 end
                 error(['Error in %s \n' ...

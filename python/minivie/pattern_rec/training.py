@@ -107,6 +107,13 @@ class WSHandler(tornado.websocket.WebSocketHandler):
             wss.remove(self)
 
 
+class TestHandler(tornado.web.RequestHandler):
+    def get(self):
+        # self.render('../../www/mplTemplates/test_template.html', title='Testlist', items=('one', 'two', 'three'))
+        self.render('../../www/mplTemplates/index.html', title='Testlist', items=('one', 'two', 'three'), enableNfu=True, enableUnity=True)
+        pass
+
+
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         from os import path
@@ -133,6 +140,7 @@ class TrainingManagerWebsocket(TrainingInterface):
         self.application = tornado.web.Application([
             (r'/ws', WSHandler),
             (r'/', MainHandler),
+            (r'/test_area', TestHandler),
             (r"/(.*)", tornado.web.StaticFileHandler, {"path": homepath}),
         ])
 

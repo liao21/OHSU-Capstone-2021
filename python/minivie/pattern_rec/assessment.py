@@ -1,19 +1,15 @@
 # take in a vie object and perform a control assessment
 
+import asyncio
 import logging
-import threading
 import time
 import numpy as np
 import h5py
 import datetime as dtime
-import math
-import time
 from mpl import JointEnum as MplId
-import collections
 import random
 from controls.plant import class_map
 from abc import ABCMeta, abstractmethod
-import sys
 import os.path
 
 
@@ -53,7 +49,8 @@ class MotionTester(AssessmentInterface):
 
         self.vie = vie
         self.trainer = trainer
-        self.thread = None
+        # self.thread = None  # deprecated for asyncio tasks
+        self.task = None
         self.filename = 'MOTION_TESTER_LOG'
         self.file_ext = '.hdf5'
         self.reset()
@@ -72,7 +69,7 @@ class MotionTester(AssessmentInterface):
         self.data = []  # List of dicts
 
         # Kill flag
-        self.stop_assessment = False
+        # self.stop_assessment = False  # deprecated for asyncio task.cancel()
 
     def reset(self):
         # Method to reset all stored data
@@ -106,23 +103,46 @@ class MotionTester(AssessmentInterface):
 
         if cmd_type == 'Cmd':
             if 'StartMotionTester' in cmd_data:
+                # parse parameter values
                 self.repetitions = int(round(float(cmd_data.split('-')[1])))
                 self.timeout = float(cmd_data.split('-')[2])
                 self.max_correct = int(round(float(cmd_data.split('-')[3])))
-                self.stop_assessment = False
-                if self.thread:
-                    if self.thread.isAlive():
-                        logging.info('Ignoring StartMotionTesterCommand, motion tester already started')
-                        return
-                self.thread = threading.Thread(target=self.start_assessment, args=(lambda : self.stop_assessment,))
-                self.thread.name = 'MotionTester'
-                self.thread.start()
+
+                if self.task is not None:
+                    print('Already Started!!!')
+                else:
+                    self.task = asyncio.create_task(self.run_assessment())
+
             elif 'StopMotionTester' in cmd_data:
-                self.stop_assessment = True
+                self.send_status('Assessment aborted')
+                if self.task is not None:
+                    self.cancel_task()
             else:
                 logging.info('Unknown motion tester command: ' + cmd_data)
 
-    def start_assessment(self, stop_assessment):
+    def cancel_task(self):
+        """
+        Cancel the currently running assessment task and cleanup.  This is NOT acceptable to do if task completed
+        :return:
+        """
+        self.task.cancel()
+        self.clear_task()
+
+    def clear_task(self):
+        """
+        Delete the task from the object history.  This is acceptable to do either with a completed of cancelled task
+        :return:
+        """
+        self.task = None
+
+    async def run_assessment(self):
+        try:
+            await self.start_assessment()
+            self.clear_task()
+        except asyncio.CancelledError:
+            raise
+
+    async def start_assessment(self):
         # Method to assess all trained classes
 
         # The stop_assessment is a lambda function that will kill the thread once turned to True
@@ -137,8 +157,10 @@ class MotionTester(AssessmentInterface):
         all_class_names = self.vie.TrainingData.motion_names
         totals = self.vie.TrainingData.get_totals()
         trained_classes = [all_class_names[i] for i, e in enumerate(totals) if e != 0]
+
         # Remove no movement class
-        if 'No Movement' in trained_classes: trained_classes.remove('No Movement')
+        if 'No Movement' in trained_classes:
+            trained_classes.remove('No Movement')
 
         # pause limb during test
         self.vie.pause('All', True)
@@ -146,13 +168,14 @@ class MotionTester(AssessmentInterface):
 
         for i_rep in range(self.repetitions):  # Right now, assessing each class 3 times
             self.send_status('New Motion Tester Assessment Trial')
-            for i,i_class in enumerate(trained_classes):
+            for i, i_class in enumerate(trained_classes):
                 # Initiate new class storage "struct"
                 self.class_id_to_test.append(all_class_names.index(i_class))
                 self.data.append({'targetClass': [], 'classDecision': [], 'voteDecision': [], 'emgFrames': []})
 
                 # Assess class
-                is_complete = self.assess_class(i_class, stop_assessment)
+                is_complete = await self.assess_class(i_class)
+
                 if is_complete:
                     self.send_status('Motion Completed!')
                 else:
@@ -171,7 +194,7 @@ class MotionTester(AssessmentInterface):
         # Unlock limb
         self.vie.pause('All', False)
 
-    def assess_class(self, class_name, stop_assessment):
+    async def assess_class(self, class_name):
         # Method to assess a single class, display/save results for viewing
 
         # Update GUI image
@@ -188,17 +211,15 @@ class MotionTester(AssessmentInterface):
         #     time.sleep(dt)
 
         # Start once user goes to no-movement, then first non- no movement classification is given
-        self.send_status('Testing Class - <b>' + class_name + '</b> - Return to "No Movement" and Begin')
+        self.send_status('Testing Class - <b>' + class_name + '</b> <br>Return to "No Movement" and Begin')
         entered_no_movement = False
         while True:
             current_class = self.vie.output['decision']
-            if current_class == 'No Movement': entered_no_movement = True
-            if (current_class != 'No Movement') and (current_class != 'None') and entered_no_movement: break
-            # Kill if stop button pressed
-            if stop_assessment():
-                self.send_status('Assessment aborted')
-                sys.exit()  # Stop current thread
-            time.sleep(0.1)  # Necessary to sleep, otherwise output gets backlogged
+            if current_class == 'No Movement':
+                entered_no_movement = True
+            if (current_class != 'No Movement') and (current_class != 'None') and entered_no_movement:
+                break
+            await asyncio.sleep(0.1)  # Necessary to sleep, otherwise output gets backlogged
 
         dt = 0.1  # 100ms RIC JAMA
         timeout = self.timeout
@@ -211,11 +232,6 @@ class MotionTester(AssessmentInterface):
 
         while not move_complete and (time_elapsed < timeout):
 
-            # Kill if stop button pressed
-            if stop_assessment():
-                self.send_status('Assessment aborted')
-                sys.exit()  # Stop current thread
-
             # get the class
             current_class = self.vie.output['decision']
 
@@ -226,18 +242,18 @@ class MotionTester(AssessmentInterface):
                 num_wrong += 1.0
 
             # print status
-            self.send_status('Testing Class -  <b>' + class_name + '</b> - ' + str(num_correct) + '/' +
+            self.send_status('Testing Class -  <b>' + class_name + '</b> <br>' + str(num_correct) + '/' +
                              str(max_correct) + ' Correct Classifications')
 
             # update data for output
-            self.add_data(class_name,current_class)
+            self.add_data(class_name, current_class)
 
             # determine if move is completed
             if num_correct >= max_correct:
                 move_complete = True
 
             # Sleep before next assessed classification
-            time.sleep(dt)
+            await asyncio.sleep(dt)
             time_elapsed = time.time() - time_begin
 
         # Motion completed, update status
@@ -322,38 +338,41 @@ class TargetAchievementControl(AssessmentInterface):
 
         self.vie = vie
         self.trainer = trainer
-        self._condition = None # 1,2, or 3, corresponding to standard TAC conditions
-        self.thread = None
+        self._condition = None  # 1,2, or 3, corresponding to standard TAC conditions
+        # self.thread = None  # deprecated for asyncio tasks
+        self.task = None
         self.filename = 'TAC1_LOG'
         self.file_ext = '.hdf5'
 
+        self.assessment_type = 'TAC1'  # TAC1 or TAC3 currently implemented
+
         # Default assessment parameters
-        self.target_error_degree = 5.0 # Allowable error for degree-based joints
-        self.target_error_percent = 5.0 # Allowable error for percent-based grasps (I.e., grasps)
-        self.repetitions = 2 # Repetitions per joint
-        self.timeout = 45.0 # Time before assessment failed
-        self.dwell_time = 2.0 # Time required within target position
+        self.target_error_degree = 5.0  # Allowable error for degree-based joints
+        self.target_error_percent = 5.0  # Allowable error for percent-based grasps (I.e., grasps)
+        self.repetitions = 2  # Repetitions per joint
+        self.timeout = 45.0  # Time before assessment failed
+        self.dwell_time = 2.0  # Time required within target position
 
         # Data storage
-        self.target_joint = [] # Joint or grasp id
-        self.target_position = [] # Target position in degrees (joints) or percentage (grasps)
+        self.target_joint = []  # Joint or grasp id
+        self.target_position = []  # Target position in degrees (joints) or percentage (grasps)
         self.target_error = []
-        self.position_time_history = [] # Plant position
-        self.intent_time_history = [] # Intent at each test during assessment
-        self.time_history = [] # time list
-        self.completion_time = [] # completion time
+        self.position_time_history = []  # Plant position
+        self.intent_time_history = []  # Intent at each test during assessment
+        self.time_history = []  # time list
+        self.completion_time = []  # completion time
         self.lower_limit = []
         self.upper_limit = []
-        self.data = [] #list of dicts
+        self.data = []  # list of dicts
 
         # Kill flag
-        self.stop_assessment = False
+        # self.stop_assessment = False  # deprecated for asyncio task.cancel()
 
     def reset(self):
         # Method to reset data storage items
         self.target_joint = []  # Joint or grasp id
         self.target_position = []  # Target position in degrees (joints) or percentage (grasps)
-        self.target_error = [] # Deviation from target position that is allowed
+        self.target_error = []  # Deviation from target position that is allowed
         self.position_time_history = []  # Plant position
         self.intent_time_history = []  # Intent at each test during assessment
         self.time_history = []  # time list
@@ -384,60 +403,72 @@ class TargetAchievementControl(AssessmentInterface):
 
         if cmd_type == 'Cmd':
             if 'StartTAC1' in cmd_data:
+                # parse parameter values
+                self.assessment_type = 'TAC1'
+                self._condition = 1
                 self.repetitions = int(round(float(cmd_data.split('-')[1])))
                 self.timeout = float(cmd_data.split('-')[2])
                 self.dwell_time = float(cmd_data.split('-')[3])
                 self.target_error_degree = float(cmd_data.split('-')[4])
                 self.target_error_percent = float(cmd_data.split('-')[5])
-                self.stop_assessment = False
-                if self.thread:
-                    if self.thread.isAlive():
-                        logging.info('Ignoring StartTAC1 command, TAC already started')
-                        return
-                self.thread = threading.Thread(target=self.start_assessment, args=(1, lambda: self.stop_assessment,))
-                self.thread.name = 'TAC1'
-                self.thread.start()
+
+                if self.task is None:
+                    # Only start if no tasks already running
+                    self.task = asyncio.create_task(self.run_assessment())
 
             elif 'StartTAC3' in cmd_data:
+                # parse parameter values
+                self.assessment_type = 'TAC3'
+                self._condition = 3
                 self.repetitions = int(round(float(cmd_data.split('-')[1])))
                 self.timeout = float(cmd_data.split('-')[2])
                 self.dwell_time = float(cmd_data.split('-')[3])
                 self.target_error_degree = float(cmd_data.split('-')[4])
                 self.target_error_percent = float(cmd_data.split('-')[5])
-                self.stop_assessment = False
-                if self.thread:
-                    if self.thread.isAlive():
-                        logging.info('Ignoring StartTAC3 command, TAC already started')
-                        return
-                self.thread = threading.Thread(target=self.start_assessment, args=(3, lambda: self.stop_assessment,))
-                self.thread.name = 'TAC3'
-                self.thread.start()
+
+                if self.task is None:
+                    # Only start if no tasks already running
+                    self.task = asyncio.create_task(self.run_assessment())
 
             elif 'StopTAC' in cmd_data:
-                self.stop_assessment = True
-
+                self.send_status('Assessment aborted')
+                if self.task is not None:
+                    self.cancel_task()
             else:
                 logging.info('Unknown TAC command: ' + cmd_data)
 
-    def start_assessment(self, condition=1, stop_assessment=False):
+    def cancel_task(self):
+        """
+        Cancel the currently running assessment task and cleanup.  This is NOT acceptable to do if task completed
+        :return:
+        """
+        self.task.cancel()
+        self.clear_task()
+
+    def clear_task(self):
+        """
+        Delete the task from the object history.  This is acceptable to do either with a completed of cancelled task
+        :return:
+        """
+        self.task = None
+
+    async def run_assessment(self):
+        try:
+            await self.start_assessment()
+            # print('TAC done - clearing task')
+            self.clear_task()
+        except asyncio.CancelledError:
+            # print('TAC Cancelled')
+            raise
+
+    async def start_assessment(self):
         # condition should be
         # 1 - TAC1
         # 2 - TAC2
         # 3 - TAC3
 
-        # Set condition
-        self._condition = condition
-
         # Set condition specific parameters
-        if condition == 1:
-            self.filename = 'TAC1_LOG'
-        elif condition == 2:
-            self.filename = 'TAC2_LOG'
-        elif condition == 3:
-            self.filename = 'TAC3_LOG'
-        else:
-            print('Condition should be 1,2, or 3.\n')
-            return
+        self.filename = self.assessment_type + '_LOG'  # e.g. TAC1_LOG or TAC3_LOG
 
         # Determine which classes have been trained
         all_class_names = self.vie.TrainingData.motion_names
@@ -445,10 +476,14 @@ class TargetAchievementControl(AssessmentInterface):
         trained_classes = [all_class_names[i] for i, e in enumerate(totals) if e != 0]
 
         # Remove no movement class
-        if 'No Movement' in trained_classes: trained_classes.remove('No Movement')
+        if 'No Movement' in trained_classes:
+            trained_classes.remove('No Movement')
 
         # Determine which joints/grasps have been trained
         # TAC is based on a joint being fully trained in both directions, and on having a grasp and Hand Open trained
+        # the class_map is used to map motion names (e.g. Wrist Pronation) to the corresponding Joint and Direction
+        # (e.g. WRIST_ROT (+) )
+        # Not grasps have no joint ID so will be skipped here
         all_joint_ids = []
         all_grasp_ids = []
         for class_name in trained_classes:
@@ -461,11 +496,16 @@ class TargetAchievementControl(AssessmentInterface):
 
         # We will only assess joints where both directions have been trained
         # Logic used here will be simply to see if there are two instances of given joint id in all_joint_ids
-        trained_joints = set([x for x in all_joint_ids if (all_joint_ids.count(x) > 1) and (x is not None)])
+        from collections import Counter
+        d = Counter(all_joint_ids)
+        trained_joints = []
+        for joint, count in d.items():
+            if count > 1 and joint is not None:
+                trained_joints.append(joint)
 
         # We can assess any grasp, as long as 'Hand Open' has been trained
         if 'Hand Open' in trained_classes:
-            trained_grasps = set([x for x in all_grasp_ids if x is not None])
+            trained_grasps = [x for x in all_grasp_ids if x is not None]
         else:
             trained_grasps = []
 
@@ -474,19 +514,19 @@ class TargetAchievementControl(AssessmentInterface):
         joints_to_assess = []
         is_grasp = []
         # For TAC1, we will just assess all joints and/or grasps independently
-        if condition == 1:
+        if self._condition == 1:
             joints_to_assess = list(trained_joints) + list(trained_grasps)
             is_grasp = [False]*len(trained_joints) + [True]*len(trained_grasps)
 
-        # For TAC3, we will require simultaneous assess elbow, one wist motion, and one grasp
-        if condition == 3:
+        # For TAC3, we will require simultaneous assess elbow, one wrist motion, and one grasp
+        if self._condition == 3:
             # First verify elbow is trained
             if 'ELBOW' in trained_joints:
                 joints_to_assess.append('ELBOW')
                 is_grasp.append(False)
             else:
                 self.send_status('ELBOW must be fully trained to begin TAC3. Stopping assessment.')
-                return
+                self.cancel_task()
 
             # Choose wrist motion, right now will just pick the first one
             if 'WRIST_ROT' in trained_joints:
@@ -500,7 +540,7 @@ class TargetAchievementControl(AssessmentInterface):
                 is_grasp.append(False)
             else:
                 self.send_status('One WRIST DOF must be fully trained to begin TAC3. Stopping assessment.')
-                return
+                self.cancel_task()
 
             # Choose grasp
             if trained_grasps:
@@ -508,26 +548,27 @@ class TargetAchievementControl(AssessmentInterface):
                 joints_to_assess.append(list(trained_grasps)[0])
                 is_grasp.append(True)
             else:
-                self.send_status('One GRASP as well as Hand Open must be fully trained to begin TAC3. Stopping assessment.')
-                return
+                msg = 'One GRASP as well as Hand Open must be fully trained to begin TAC3. Stopping assessment.'
+                self.send_status(msg)
+                self.cancel_task()
 
         # Assess joints and grasps
         for i_rep in range(self.repetitions):
             self.send_status('New TAC Assessment Trial')
 
             # For TAC1, assess one joint at a time
-            if condition == 1:
+            if self._condition == 1:
                 for i, joint in enumerate(joints_to_assess):
-                    is_complete = self.assess_joint([joint], [is_grasp[i]], stop_assessment)  # Need to be passed in as list
+                    await self.assess_joint([joint], [is_grasp[i]])  # Need to be passed in as list
 
             # For TAC3, assess all joints simultaneously
-            if condition == 3:
-                is_complete = self.assess_joint(joints_to_assess, is_grasp, stop_assessment)
+            if self._condition == 3:
+                await self.assess_joint(joints_to_assess, is_grasp)
 
         self.send_status('TAC Assessment Completed')
         self.save_results()
 
-    def assess_joint(self, joint_name_list, is_grasp_list=[False], stop_assessment=False):
+    async def assess_joint(self, joint_name_list, is_grasp_list=[False]):
 
         # Set TAC parameters
         dt = 0.2  # Time between assessment queries
@@ -539,7 +580,7 @@ class TargetAchievementControl(AssessmentInterface):
         target_error_list = []  # Error range allowed
         lower_limit_list = []  # Lower limit for joint
         upper_limit_list = []  # Upper limit for joint
-        target_position_list = [] # Target joint positions
+        target_position_list = []  # Target joint positions
         for i, joint_name in enumerate(joint_name_list):
             is_grasp = is_grasp_list[i]
             if is_grasp:
@@ -563,13 +604,15 @@ class TargetAchievementControl(AssessmentInterface):
 
             else:
                 target_error_list.append(float(self.target_error_degree))
-                mplId = getattr(MplId, joint_name)
-                lower_limit_list.append(np.rad2deg(float(self.vie.Plant.lower_limit[mplId])))
-                upper_limit_list.append(np.rad2deg(float(self.vie.Plant.upper_limit[mplId])))
+                mpl_id = getattr(MplId, joint_name)
+                lower_limit_list.append(np.rad2deg(float(self.vie.Plant.lower_limit[mpl_id])))
+                upper_limit_list.append(np.rad2deg(float(self.vie.Plant.upper_limit[mpl_id])))
                 # Set target joint angle
-                # TAC set an angle 75 degrees away from current position, for now we wil just pick random number within limits
-                # Will ensure this position is at least 25% of total range away from current position, and not at edge of limit
-                current_position = np.rad2deg(self.vie.Plant.joint_position[mplId])
+                # TAC set an angle 75 degrees away from current position, for now we wil just pick random number
+                # within limits
+                # Will ensure this position is at least 25% of total range away from current position, and not at
+                # edge of limit
+                current_position = np.rad2deg(self.vie.Plant.joint_position[mpl_id])
                 time_begin = time.time()
                 while True:
                     target_position = float(random.randint(int(round(lower_limit_list[-1])), int(round(upper_limit_list[-1]))))
@@ -601,12 +644,13 @@ class TargetAchievementControl(AssessmentInterface):
         start_sequence = True
         entered_no_movement = False
 
-        self.send_status('Testing Joint(s) - ' + ', '.join(joint_name_list) + ' - Return to "No Movement" and Begin')
+        if self.assessment_type == 'TAC3':
+            prefix = 'Testing Joint(s):<br>'
+        else:
+            prefix = 'Testing Joint:<br>'
+        msg = prefix + '<b>' + ', '.join(joint_name_list) + '</b><br>Return to "No Movement" to Begin'
+        self.send_status(msg)
         while not move_complete and (time_elapsed < timeout):
-            # Kill if stop button pressed
-            if stop_assessment():
-                self.send_status('Assessment aborted')
-                sys.exit()  # Stop current thread
 
             # Loop through each joint we are assessing simultaneously
             for i, joint_name in enumerate(joint_name_list):
@@ -619,14 +663,15 @@ class TargetAchievementControl(AssessmentInterface):
                 if is_grasp:
                     position = self.vie.Plant.grasp_position*100.0
                 else:
-                    mplId = getattr(MplId, joint_name)
-                    position = np.rad2deg(self.vie.Plant.joint_position[mplId])
+                    mpl_id = getattr(MplId, joint_name)
+                    position = np.rad2deg(self.vie.Plant.joint_position[mpl_id])
 
                 # If within +- target_error of target_position, then flag this joint as within target
                 if (position < (target_position + target_error)) and (position > (target_position - target_error)):
                     joint_in_target[i] = True
                     if is_grasp:
-                        # Need an additional check if we are checking a grasp to make sure it is correct grasp that is falling within grasp percentage
+                        # Need an additional check if we are checking a grasp to make sure it is correct grasp that is
+                        # falling within grasp percentage
                         if joint_name is not self.vie.Plant.grasp_id:
                             joint_in_target[i] = False
                 else:
@@ -640,7 +685,7 @@ class TargetAchievementControl(AssessmentInterface):
 
             #  Update data storage properties for all joints
             self.position_time_history = np.append(self.position_time_history, position_row, axis=0)  # Plant position
-            self.intent_time_history.append(current_class) # Intent at each test during assessment
+            self.intent_time_history.append(current_class)  # Intent at each test during assessment
             self.time_history.append(time_elapsed)  # time list
 
             # Update web gui
@@ -648,39 +693,54 @@ class TargetAchievementControl(AssessmentInterface):
 
             # Start once user goes to no-movement, then first non- no movement classification is given
             if start_sequence:
-                if current_class == 'No Movement': entered_no_movement = True
-                if (current_class != 'No Movement') and (current_class != 'None') and entered_no_movement: start_sequence = False
+                if current_class == 'No Movement':
+                    entered_no_movement = True
+                if (current_class != 'No Movement') and (current_class != 'None') and entered_no_movement:
+                    start_sequence = False
+                    # First non-no movement command received.  Begin assessment
+                    time_begin = time.time()
+
                 # TODO: add a start condition for grasps that hand is all the way open
-                time.sleep(dt)  # Necessary to sleep, otherwise get output gets backlogged
+                # time.sleep(dt)  # Necessary to sleep, otherwise get output gets backlogged
+                await asyncio.sleep(dt)
                 continue
 
-            time_begin = time.time()
-
             # Output status
-            self.send_status(
-                'Testing Joint(s) - ' + ', '.join(joint_name_list) + '- Dwell Time - ' + "{0:0.1f}".format(
-                    time_in_target))
+            if self.assessment_type == 'TAC3':
+                prefix = 'Testing Joint(s):<br>'
+            else:
+                prefix = 'Testing Joint:<br>'
+            # msg = prefix + '<b>' + ', '.join(joint_name_list) \
+            #     + '</b><br>Dwell Time - ' + "{0:0.1f}".format(time_in_target) \
+            #     + '<br>Elapsed Time - ' + "{0:0.1f}".format(time_elapsed)
+            msg = prefix + '<b>' + ', '.join(joint_name_list) \
+                + '</b><br>Dwell Time - ' + "{0:0.1f}".format(time_in_target) \
+                + '<br>Elapsed Time - ' + "{0:0.1f}".format(time_elapsed) \
+                + '<br>Current Grasp - ' + self.vie.Plant.grasp_id
+            self.send_status(msg)
+
             # Commented out, too cluttered for now, could potentially allow this output with verbose option
             # self.send_status('Testing Joint - ' + joint_name + ' - Current Position - ' + str(position) +
             #                 ' - Target Position - ' + str(target_position) +
             #                 ' - Time in Target - ' + str(time_in_target))
 
-            # If all joints in target, increment time_in_target, othwerwise reset to 0
+            # If all joints in target, increment time_in_target, otherwise reset to 0
             if False in joint_in_target:
                 time_in_target = 0.0
             else:
                 time_in_target += dt
 
             # Exit criteria
-            if time_in_target>=dwell_time:
+            if time_in_target >= dwell_time:
                 move_complete = True
                 self.completion_time = time_elapsed  # completion time1
 
             # Sleep before next assessed classification
-            time.sleep(dt)
             time_elapsed = time.time() - time_begin
+            await asyncio.sleep(dt)
+            # time.sleep(dt)
 
-        # Add data from current joint assessmet
+        # Add data from current joint assessment
         self.add_data()
 
         self.send_status(', '.join(joint_name_list) + ' Assessment Completed')
@@ -715,12 +775,11 @@ class TargetAchievementControl(AssessmentInterface):
                     self.upper_limit[joint_num] - self.lower_limit[joint_num]) * 100.0
 
             payload += ",{name},{target:.2f},{error:.2f}".format(
-                name=self.target_joint[joint_num],target=normalized_target_position, error=normalized_target_error)
+                name=self.target_joint[joint_num], target=normalized_target_position, error=normalized_target_error)
         self.trainer.send_message("TAC_setup", payload)
 
     def send_status(self, status):
         # Method to send more verbose status updates for command line users and logging purposes
-        print(status)
         logging.info(status)
         self.trainer.send_message("TAC_status", status)
 
@@ -753,7 +812,7 @@ class TargetAchievementControl(AssessmentInterface):
         g1 = h5.create_group('Data')
         g1.attrs['description'] = t + 'TAC' + str(self._condition)+ ' Data'
 
-        for i,d in enumerate(self.data):
+        for i, d in enumerate(self.data):
             g2 = g1.create_group('Trial ' + str(i+1))
             encoded = [a.encode('utf8') for a in d['target_joint']] # Need to encode strings
             g2.create_dataset('target_joint', shape=(len(encoded), 1), data=encoded)

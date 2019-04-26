@@ -328,6 +328,28 @@ To Enable Spacebrew:
     http://localhost:9000/
     http://localhost:8081/?name=MPL
 
+### Sending a test control command via websocket
+
+```python
+#!/usr/bin/env python3
+
+# WS client example
+
+import asyncio
+import websockets
+
+async def hello():
+    async with websockets.connect(
+            'ws://localhost:9090/ws') as websocket:
+        cmd = 'Cmd:ManualControlOn'
+        await websocket.send(cmd)
+        print(f"> {cmd}")
+
+asyncio.get_event_loop().run_until_complete(hello())
+
+```
+
+
 ### Referencing MPL Joint Enumerations:
 
 ```python

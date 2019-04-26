@@ -501,9 +501,7 @@
         <a data-icon="arrow-l" data-role="button" href="#ID_MAIN_PAGE">Back</a>
     </div>
     <!-- /header -->
-    <div data-role="content"><a class="ui-btn ui-btn-icon-right ui-icon-arrow-r" href="#" id="ID_ASSESSMENT_MT">Start
-        Motion Tester</a>
-        <a class="ui-btn ui-btn-icon-right ui-icon-arrow-r" href="#" id="ID_ASSESSMENT_MT_STOP">Stop Motion Tester</a>
+    <div data-role="content">
         <div data-collapsed-icon="bullets" data-expanded-icon="bullets" data-role="collapsible">
             <h4>Options</h4>
             <ul data-inset="false" data-role="listview">
@@ -521,16 +519,19 @@
                 </div>
             </ul>
         </div>
-        <p>Status: <span id="mt_status"></span>
-        </p>
-        <p>Classifying: <span id="mt_output"></span>
-        </p>
+        <a class="ui-btn ui-btn-icon-right ui-icon-arrow-r" href="#" id="ID_ASSESSMENT_MT">Start
+        Motion Tester</a>
+        <a class="ui-btn ui-btn-icon-right ui-icon-arrow-r" href="#" id="ID_ASSESSMENT_MT_STOP">Stop Motion Tester</a>
         <img alt="Motion Image" id="ID_MT_IMAGE" src="img_arm_motions/No_Movement.png" style="max-width: 100%;">
         <div id="mtProgressBackground">
             <div id="mtProgressBar">
                 <div id="mtProgressLabel">0%</div>
             </div>
         </div>
+        <p>Classifying: <span id="mt_output"></span>
+        </p>
+        <p>Status: <span id="mt_status"></span>
+        </p>
     </div><!-- /content -->
 </div>
 <!-- TAC Page -->
@@ -540,10 +541,7 @@
         <a data-icon="arrow-l" data-role="button" href="#ID_MAIN_PAGE">Back</a>
     </div>
     <!-- /header -->
-    <div data-role="content"><a class="ui-btn ui-btn-icon-right ui-icon-arrow-r" href="#" id="ID_ASSESSMENT_TAC1">Start
-        TAC1</a>
-        <a class="ui-btn ui-btn-icon-right ui-icon-arrow-r" href="#" id="ID_ASSESSMENT_TAC3">Start TAC3</a>
-        <a class="ui-btn ui-btn-icon-right ui-icon-arrow-r" href="#" id="ID_ASSESSMENT_TAC_STOP">Stop TAC</a>
+    <div data-role="content">
         <div data-collapsed-icon="bullets" data-expanded-icon="bullets" data-role="collapsible">
             <h4>Options</h4>
             <ul data-inset="false" data-role="listview">
@@ -569,10 +567,10 @@
                 </div>
             </ul>
         </div>
-        <p>Status: <span id="tac_status"></span>
-        </p>
-        <p>Classifying: <span id="tac_output"></span>
-        </p>
+        <a class="ui-btn ui-btn-icon-right ui-icon-arrow-r" href="#" id="ID_ASSESSMENT_TAC1">Start
+        TAC1</a>
+        <a class="ui-btn ui-btn-icon-right ui-icon-arrow-r" href="#" id="ID_ASSESSMENT_TAC3">Start TAC3</a>
+        <a class="ui-btn ui-btn-icon-right ui-icon-arrow-r" href="#" id="ID_ASSESSMENT_TAC_STOP">Stop TAC</a>
         <p><span id="tacJoint1Name"></span>
         </p>
         <div id="tacJoint1Background">
@@ -597,6 +595,10 @@
                 <div id="tacJoint3Label">0</div>
             </div>
         </div>
+        <p>Classifying: <span id="tac_output"></span>
+        </p>
+        <p>Status: <span id="tac_status"></span>
+        </p>
     </div><!-- /content -->
 </div><!-- /page -->
 </body>

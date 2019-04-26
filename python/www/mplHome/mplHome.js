@@ -86,7 +86,7 @@ function routeMessage(cmd_type, cmd_data) {
     updateMTImage(cmd_data);
   }
   if (cmd_type === "TAC_status") {
-    $("#tac_status").text(cmd_data);
+    $("#tac_status").html(cmd_data);
   }
   if (cmd_type === "TAC_setup") {
 

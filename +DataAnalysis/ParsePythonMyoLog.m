@@ -125,11 +125,11 @@ classdef ParsePythonMyoLog
                 dataIMU = extractAfter(imuLines,' IMU: ');
                 
                 isValid = strlength(dataIMU) == 40;
-                fprintf('Omitting %d bad IMU lines\n',sum(~isValid))
+                fprintf('Omitting %d bad IMU lines (wrong length)\n',sum(~isValid))
                 dataIMU = dataIMU(isValid);
                 timeIMU  = timeIMU(isValid);
                 
-                
+                % convert hex values to decimel/float
                 imuVals = double(typecast(uint8(hex2dec(reshape([dataIMU{:}],2,[])')),'int16'));
                 imu = reshape(imuVals, 10, [])';
                 
@@ -138,11 +138,19 @@ classdef ParsePythonMyoLog
                 MYOHW_ACCELEROMETER_SCALE = 2048.0;
                 MYOHW_GYROSCOPE_SCALE = 16.0;
                 
-                imu = double(imu);
+                % check orientation 
                 obj.imuMsg.time = convertTime(str2double(timeIMU));
                 obj.imuMsg.orientation = imu(:,1:4) ./ MYOHW_ORIENTATION_SCALE;
                 obj.imuMsg.accelerometer = imu(:,5:7) ./ MYOHW_ACCELEROMETER_SCALE;
                 obj.imuMsg.gyroscope = imu(:,8:10) ./ MYOHW_GYROSCOPE_SCALE;
+
+                tolX = 0.001;
+                isValid = vecnorm(obj.imuMsg.orientation,2,2) > (1-tolX);
+                fprintf('Omitting %d bad IMU lines (bad quaternion)\n',sum(~isValid))
+                obj.imuMsg.time = obj.imuMsg.time(isValid);
+                obj.imuMsg.orientation = obj.imuMsg.orientation(isValid,:);
+                obj.imuMsg.accelerometer = obj.imuMsg.accelerometer(isValid,:);
+                obj.imuMsg.gyroscope = obj.imuMsg.gyroscope(isValid,:);
                 
                 % get orientation as [3x3] rotation matrix.  Convert native
                 % quaterion to matrix, but then do post processing to ensure it
@@ -150,7 +158,7 @@ classdef ParsePythonMyoLog
                 %
                 % If a second myo is attached then the second output argument
                 % can be used to query the [3x3] rotation matirx of that device
-                
+
                 R = LinAlg.quaternionToRMatrix(obj.imuMsg.orientation');
                 for i = 1:size(R,3)
                     [U, ~, V] = svd(R(:,:,i));

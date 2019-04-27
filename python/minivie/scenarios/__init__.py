@@ -382,11 +382,14 @@ class Scenario(object):
                 # Wait for a new percept
                 # Then set plant position to percept position
 
-                self.DataSink.position['last_percept'] = None
-                time.sleep(0.1)
-                self.DataSink.wait_for_connection()
-                # synchronize percept position and plant position
-                self.Plant.joint_position = self.DataSink.position['last_percept'][:]
+                # synchronize the data sink with the plant model
+                if get_config_var('MPL.connection_check', 1):
+                    time.sleep(0.1)
+                    self.DataSink.wait_for_connection()
+                # Synchronize joint positions
+                if self.DataSink.position['last_percept'] is not None:
+                    for i in range(0, len(self.Plant.joint_position)):
+                        self.Plant.joint_position[i] = self.DataSink.position['last_percept'][i]
                 time.sleep(0.1)
 
                 self.pause('All', False)
@@ -829,13 +832,13 @@ class MplScenario(Scenario):
         while True:
             try:
                 # Fixed rate loop.  get start time, run model, get end time; delay for duration
-                time_begin = time.time()
+                time_begin = time.perf_counter()
 
                 # Run the actual model
                 self.update()
                 self.update_interface()
 
-                time_end = time.time()
+                time_end = time.perf_counter()
                 time_elapsed = time_end - time_begin
                 self.loop_dt_last = time_elapsed
                 if dt > time_elapsed:
@@ -843,6 +846,7 @@ class MplScenario(Scenario):
                     await asyncio.sleep(dt - time_elapsed)
                 else:
                     # print("Timing Overload: {}".format(time_elapsed))
+                    await asyncio.sleep(0.001)
                     pass
 
                 # print('{0} dt={1:6.3f}'.format(output['decision'],time_elapsed))

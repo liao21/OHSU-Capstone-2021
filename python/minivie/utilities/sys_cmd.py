@@ -102,8 +102,8 @@ def set_system_time(date_num, time_error=30.0):
     system_time = time.time()
     user_time = date_num
 
-    system_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(system_time) )
-    user_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(user_time) )
+    system_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(system_time))
+    user_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(user_time))
 
     e_time = system_time - user_time
 

@@ -12,11 +12,11 @@ Setting up service (on raspberry pi):
 Create the service file
     $ sudo nano /etc/systemd/system/mpl_myo1.service
 
----------------vr---------- mpl_myo1.service ------------------------------
+------------------------- mpl_myo1.service ------------------------------
 [Unit]
 Description=Myo Streamer
-Requires=bluetooth.service
-After=network.target bluetooth.service
+Requires=bluetooth.target
+After=network.target bluetooth.target
 
 [Service]
 ExecStart=/usr/bin/python3.7 -u -m inputs.myo_server -x vmpl_user_config.xml
@@ -116,6 +116,8 @@ class MyoUdpServer(object):
         self.logger.debug('Running subprocess command: hcitool dev')
         hci = 'hci' + str(iface)
 
+        # Note that if running from startup, you should require bluetooth.target
+        # to ensure that the bluetooth device is started
         output = subprocess.check_output(["hcitool", "dev"])
         if hci in output.decode('utf-8'):
             self.logger.info('Found device: ' + hci)

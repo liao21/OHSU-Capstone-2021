@@ -783,13 +783,6 @@ class MplScenario(Scenario):
             self.close()
             sys.exit(1)
 
-        # synchronize the data sink with the plant model
-        if get_config_var('MPL.connection_check', 1):
-            sink.wait_for_connection()
-        # Synchronize joint positions
-        if sink.position['last_percept'] is not None:
-            for i in range(0, len(self.Plant.joint_position)):
-                self.Plant.joint_position[i] = sink.position['last_percept'][i]
         self.DataSink = sink
 
     def setup_load_cell(self):
@@ -831,6 +824,19 @@ class MplScenario(Scenario):
         self.loop_time = time.strftime("%c")
         dt = self.Plant.dt
         print(dt)
+
+        # synchronize the data sink with the plant model
+        if get_config_var('MPL.connection_check', 1):
+
+            # TODO: Give some kind of system status that we are waiting for limb connection
+            # if self.TrainingInterface is not None:
+            #     self.TrainingInterface.send_message("sys_status", 'Waiting for valid percepts...')
+
+            await self.DataSink.wait_for_connection()
+            # Synchronize joint positions
+            for i in range(0, len(self.Plant.joint_position)):
+                self.Plant.joint_position[i] = self.DataSink.position['last_percept'][i]
+
         while True:
             try:
                 # Fixed rate loop.  get start time, run model, get end time; delay for duration

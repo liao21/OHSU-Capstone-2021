@@ -601,4 +601,17 @@ exe = EXE(pyz,
 
 * 0.0.1
     * Work in progress
+* 1.0.0
+    * 12/1/2017 First Deployed Embedded System 
+* 2.0.0
+    * 5/1/2019 Completed integration of asyncio framework into the python VIE - 
+        Bench testing (on Raspberry Pi Model BV1.2) showed the following improvements
+        - The entire interface, includes 
+          -  main 20Hz emg collection and processing loop
+          -  tornado webserver + websocket interface
+          -  input/output udp messaging to unity environment
+          -  udp messaging from (single myo armband)
+        - The prior 'thread-based' program architecture ran loop at ~14-15 ms
+        - Moving the main loop to asyncio reduced to 10-11ms
+        - Moving udp signal source and datasink to asyncio reduced to 7-8ms
 

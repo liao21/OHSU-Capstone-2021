@@ -40,6 +40,7 @@ Created on 4/29/2019
 """
 
 import asyncio
+import time
 import struct
 import logging
 import numpy as np
@@ -48,6 +49,7 @@ from mpl.data_sink import DataSink
 from utilities.user_config import get_user_config_var
 from utilities import get_address
 from mpl.unity import extract_percepts
+from controls import timestep
 
 
 class UdpProtocol(asyncio.DatagramProtocol):
@@ -56,12 +58,15 @@ class UdpProtocol(asyncio.DatagramProtocol):
     """
     def __init__(self, parent):
         self.parent = parent
+        # Mark the time when object created. Note this will get overwritten once data received
+        self.parent.time_emg = time.time()
 
     def datagram_received(self, data, addr):
 
         self.parent.percepts = extract_percepts(data)
         try:
             self.parent.position['last_percept'] = self.parent.percepts['jointPercepts']['position']
+            self.parent.packet_count += 1
         except TypeError or KeyError:
             self.parent.position['last_percept'] = None
 
@@ -94,6 +99,12 @@ class UnityUdp(DataSink):
         self.percepts = None
         self.position = {'last_percept': None}
 
+        # store some rate counting parameters
+        self.packet_count = 0
+        self.packet_time = 0.0
+        self.packet_rate = 0.0
+        self.packet_update_time = 1.0  # seconds
+
     def load_config_parameters(self):
         # Load parameters from xml config file
 
@@ -102,28 +113,36 @@ class UnityUdp(DataSink):
             self.joint_offset[i] = np.deg2rad(get_user_config_var(MplId(i).name + '_OFFSET', 0.0))
 
     def connect(self):
+        """ Connect UDP socket and register callback for data received """
         self.loop = asyncio.get_event_loop()
-
         # Get a reference to the event loop as we plan to use
         # low-level APIs.
         # From python 3.7 docs (https://docs.python.org/3.7/library/asyncio-protocol.html#)
-        # self.loop = asyncio.get_running_loop()
-
-        print("Starting UDP server")
-        # One protocol instance will be created to serve all client requests
-        # self.transport, self.protocol = self.loop.create_datagram_endpoint(
-        #     lambda: UdpProtocol(foo),
-        #     local_addr=get_address(self.local_address))
-
         listen = self.loop.create_datagram_endpoint(
             lambda: UdpProtocol(parent=self), local_addr=get_address(self.local_address))
         self.transport, self.protocol = self.loop.run_until_complete(listen)
         pass
 
+    async def wait_for_connection(self):
+        # After connecting, this function can be used as a blocking call to ensure the desired percepts are received
+        # before continuing program execution.  E.g. ensure valid joint percepts are received to ensure smooth start
+
+        print('Checking for valid percepts...')
+
+        while self.position['last_percept'] is None or self.get_packet_data_rate() is 0:
+            await asyncio.sleep(timestep)
+            print('Waiting 20 ms for valid percepts...')
+            self.get_packet_data_rate()
+            logging.info('Waiting 20 ms for valid percepts...')
+
     def get_status_msg(self):
-        # returns a general purpose status message about the system state
-        # e.g. ' 22.5V 72.6C'
-        return 'vMPL - asyncio'
+        """
+        Create a short status message, typically shown on user interface
+
+        :return: a general purpose status message about the system state
+            e.g. ' 22.5V 72.6C' or vMPL: 50Hz
+        """
+        return 'vMPL: {:.0f}Hz%'.format(self.get_packet_data_rate())
 
     def send_joint_angles(self, values, velocity=None, send_to_ghost=False):
         """
@@ -224,6 +243,23 @@ class UnityUdp(DataSink):
 
     def get_percepts(self):
         return self.percepts
+
+    def get_packet_data_rate(self):
+        # Return the packet data rate
+
+        # get the number of new samples over the last n seconds
+
+        # compute data rate
+        t_now = time.time()
+        t_elapsed = t_now - self.packet_time
+
+        if t_elapsed > self.packet_update_time:
+            # compute rate (every few seconds second)
+            self.packet_rate = self.packet_count / t_elapsed
+            self.packet_count = 0  # reset counter
+            self.packet_time = t_now
+
+        return self.packet_rate
 
 
 # test asyncio loop commands

@@ -16,10 +16,14 @@ Linux (using python shebang statement):
 or
 > sudo systemctl start mpl_run_www
 
+
 Revisions:
 2016OCT05 Armiger: Created
 2017SEP29 Armiger: Added input arguments so that a user config file can be added for different setups
 2019JAN19 Armiger: Added asyncio event loop
+
+See docs/README.md for more info and version information
+
 """
 
 import asyncio
@@ -28,9 +32,12 @@ import argparse
 from utilities import user_config
 import scenarios
 import sys
+
 MIN_PYTHON = (3, 6)
 if sys.version_info < MIN_PYTHON:
     sys.exit("Python %s.%s or later is required.\n" % MIN_PYTHON)
+
+__version__ = "2.0.0"
 
 
 def main():
@@ -43,10 +50,15 @@ def main():
 
     # Parse main function input parameters to get user_config xml file
     parser = argparse.ArgumentParser(description='run_www: Configure and run a full user VIE with web training.')
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s {version}'.format(version=__version__))
     parser.add_argument('-x', '--XML', help='Specify path for user config file', default='user_config_default.xml')
-    parser.add_argument("-l", "--log", dest="logLevel", choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], 
+    parser.add_argument("-l", "--log", dest="logLevel", choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                         default=logging.INFO, help="Set the logging level")
     args = parser.parse_args()
+
+    if args.XML == 'VERSION':
+        print(__version__)
+        return 0
 
     # read the user parameter (xml) file
     user_config.read_user_config_file(file=args.XML)

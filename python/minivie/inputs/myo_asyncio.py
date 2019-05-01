@@ -147,6 +147,8 @@ class UdpProtocol(asyncio.DatagramProtocol):
     """
     def __init__(self, parent):
         self.parent = parent
+        # Mark the time when object created. Note this will get overwritten once data received
+        self.parent.time_emg = time.time()
 
     def datagram_received(self, data, addr):
 
@@ -170,19 +172,8 @@ class UdpProtocol(asyncio.DatagramProtocol):
             self.parent.accel = output[12:15]
             self.parent.gyro = output[15:18]
 
-            # compute data rate
-            if self.parent.count_emg == 0:
-                # mark time
-                self.parent.time_emg = time.time()
+            # count samples toward data rate
             self.parent.count_emg += 1  # 2 data points per packet
-
-            t_now = time.time()
-            t_elapsed = t_now - self.parent.time_emg
-
-            if t_elapsed > 3.0:
-                # compute rate (every second)
-                self.parent.rate_emg = self.parent.count_emg / t_elapsed
-                self.parent.count_emg = 0  # reset counter
 
         elif len(data) == 16:  # EMG data only
             # -------------------------------------
@@ -212,19 +203,8 @@ class UdpProtocol(asyncio.DatagramProtocol):
             self.parent.dataEMG = np.roll(self.parent.dataEMG, 1, axis=0)
             self.parent.dataEMG[:1, :] = output[8:16]  # insert in first buffer entry
 
-            # compute data rate
-            if self.parent.count_emg == 0:
-                # mark time
-                self.parent.time_emg = time.time()
+            # count samples toward data data rate
             self.parent.count_emg += 2  # 2 data points per packet
-
-            t_now = time.time()
-            t_elapsed = t_now - self.parent.time_emg
-
-            if t_elapsed > 3.0:
-                # compute rate (every second)
-                self.parent.rate_emg = self.parent.count_emg / t_elapsed
-                self.parent.count_emg = 0  # reset counter
 
         elif len(data) == 20:  # IMU data only
 
@@ -236,7 +216,7 @@ class UdpProtocol(asyncio.DatagramProtocol):
             self.parent.accel = np.array(unscaled[4:7], np.float) / MYOHW_ACCELEROMETER_SCALE
             self.parent.gyro = np.array(unscaled[7:10], np.float) / MYOHW_GYROSCOPE_SCALE
 
-        elif len(data) == 1:  # BATT Value
+        elif len(data) == 1:  # Battery Value
             self.parent.battery_level = ord(data)
             msg = 'Socket {} Battery Level: {}'.format(self.parent.addr, self.parent.battery_level)
             logger.info(msg)
@@ -286,6 +266,7 @@ class MyoUdp(SignalInput):
         self.count_emg = 0
         self.time_emg = 0.0
         self.rate_emg = 0.0
+        self.update_time = 1.0  # seconds
 
         # Initialize connection parameters
         self.loop = None
@@ -327,11 +308,11 @@ class MyoUdp(SignalInput):
 
     def get_imu(self):
         """ Return IMU data as a dictionary
-        result['quat'] = (qw qx qy qz)
+        result['quat'] = (qw qx qy qz) (quaternion)
         result['accel'] = (ax ay az)
         result['gyro'] = (rx ry rz)
         """
-        return {'quat': self.quat , 'accel': self.accel, 'gyro': self.gyro}
+        return {'quat': self.quat, 'accel': self.accel, 'gyro': self.gyro}
 
     def get_battery(self):
         # Return the battery value (0-100)
@@ -340,6 +321,19 @@ class MyoUdp(SignalInput):
 
     def get_data_rate_emg(self):
         # Return the emg data rate
+
+        # get the number of new samples over the last n seconds
+
+        # compute data rate
+        t_now = time.time()
+        t_elapsed = t_now - self.time_emg
+
+        if t_elapsed > self.update_time:
+            # compute rate (every few seconds second)
+            self.rate_emg = self.count_emg / t_elapsed
+            self.count_emg = 0  # reset counter
+            self.time_emg = t_now
+
         return self.rate_emg
 
     def get_status_msg(self):
@@ -349,7 +343,7 @@ class MyoUdp(SignalInput):
         battery = self.get_battery()
         if battery < 0:
             battery = '--'
-        return 'MYO: {:.0f}Hz {}%'.format(self.get_data_rate_emg(),battery)
+        return 'MYO: {:.0f}Hz {}%'.format(self.get_data_rate_emg(), battery)
 
     def close(self):
         """ Cleanup socket """

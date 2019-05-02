@@ -261,10 +261,13 @@ class UnityUdp(DataSink):
 
         return self.packet_rate
 
+    def close(self):
+        logging.info("Closing Unity Socket @ {}".format(self.remote_address))
+        self.transport.close()
 
-# test asyncio loop commands
 
 async def run_loop(sender):
+    # test asyncio loop commands
     # create a positive / negative ramp to command the arm
 
     counter = 0

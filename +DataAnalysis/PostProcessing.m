@@ -206,7 +206,8 @@ classdef PostProcessing
             
             for i = 1:length(hData)
                 % setup figure named with filename
-                [~,fname,~] = fileparts(hData(i).fullFileName);
+                %[~,fname,~] = fileparts(hData(i).fullFileName);
+                [~,fname,~] = fileparts(hData(i).Name);
                 f.Name = fname;
                 
                 if isempty(hData(i).getEnabledClassLabels)

@@ -143,6 +143,81 @@ classdef ParsePythonVieMainLog < handle
 
             
         end
+        function read_file_group_reduced(obj,filePath)
+            %% test read time per log:
+            
+            s = rdir(filePath);
+            
+            [p,f,e] = fileparts(fullFilename);
+            obj.filePath = p;
+            obj.fileName = [f e];
+            
+            s = dir(fullFilename);
+            
+            byte_array = [];
+            
+            fileList = {s.name};
+            
+            for i = 1:length(fileList)
+                fprintf('Reading %s (%.2f GB)...',fileList{i},sum([s(i).bytes])/1e9)
+                %     obj(i) = DataAnalysis.ParsePythonVieMainLog(fileList{i});
+                tic;
+                fp = fopen(fullFilename,'r');
+                
+                CR = 10;
+                read_inc = 1e6;
+                chunk_sz = 1500;
+                idx = chunk_sz:read_inc:s(i).bytes;
+                
+                byte_buf = zeros(length(idx),chunk_sz,'uint8');
+                
+                %     n = s(i).bytes / read_inc;
+                for iPosition = 1:length(idx)
+                    
+                    fseek(fp,idx(iPosition) - chunk_sz + 1,'bof');
+                    
+                    % read a chunk of bytes
+                    [b, count] = fread(fp,chunk_sz,'uint8');
+                    byte_buf(iPosition,:) = b;
+                    %         disp(char(b(id_1:id_2)'))
+                    
+                    %         disp(char(b'))
+                    loc = ftell(fp);
+                    %         if fseek(fp,loc+1e6,'bof') < 0
+                    %             break
+                    %         end
+                    
+                end
+                
+                fclose(fp);
+                
+                % Assemble full lines
+                fprintf('[Parsing]')
+                for iRow = 1:size(byte_buf,1)
+                    row = byte_buf(iRow,:);
+                    id_1 = find(row == CR,1);
+                    id_2 = find(row == CR,1,'last');
+                    try
+                        byte_array = cat(2,byte_array,row(id_1:id_2));
+                    catch
+                        disp(row)
+                        disp(id_1)
+                        disp(id_2)
+                    end
+                end
+                
+                %     char(byte_array)
+                
+                
+                %     filetext = fileread(fileList{i});
+                t_elapsed = toc;
+                fprintf('Done (%.2f s)\n',t_elapsed)
+            end
+            
+            obj.textLines = strsplit(char(byte_array), '\n');
+
+            
+        end
         function parse_text(obj)
             % Break file into lines
             obj.numLines = length(obj.textLines);
@@ -313,7 +388,7 @@ classdef ParsePythonVieMainLog < handle
                 file_duration = file_duration + e_actual;
                 figure
                 plot(tEpoch)
-                title({obj.fileName str},'Interpreter','None')
+                title({[obj.filePath filesep obj.fileName] str},'Interpreter','None')
                 
             end
             

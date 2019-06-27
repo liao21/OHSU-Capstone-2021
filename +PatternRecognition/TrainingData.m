@@ -226,7 +226,7 @@ classdef TrainingData < handle
             % as data frames, then align them so that ovrelapping portions
             % are removed resulting in a continuous time history
             %
-            % Inputs: 
+            % Inputs:
             %   channels - [Optional] specify which channels to return in
             %   the time history.  By default, all channels are recorded,
             %   but only those specified by the ActiveChannels property
@@ -237,11 +237,11 @@ classdef TrainingData < handle
             %   movement might be contained in the same data set, this will
             %   consolidate each to a single pool. Default is unsorted
             %
-
+            
             % Initialize output arguments
             signalData = [];
             signalLabel = [];
-
+            
             % Check input arguments
             if nargin < 2
                 channels = obj.ActiveChannels;
@@ -250,7 +250,7 @@ classdef TrainingData < handle
                 %sortOrder = 1:obj.SampleCount;
                 doSort = false;
             end
-
+            
             % Rather than accessing the raw data property directly (which
             % is buffered with NaNs for speed.  use the get method, but
             % note this will only apply to 'enabled' data samples
@@ -286,7 +286,7 @@ classdef TrainingData < handle
                         lag(i) = j;
                         break
                     end
-                end                
+                end
             end
             dbstop if error
             % concat EMG waveform
@@ -342,18 +342,18 @@ classdef TrainingData < handle
             %
             % response — Classification values
             % numeric vector | categorical vector | logical vector | character array | cell array of strings
-            % Classification values, specified as a categorical or character array, 
-            % logical or numeric vector, or cell array of strings. 
-            % 
+            % Classification values, specified as a categorical or character array,
+            % logical or numeric vector, or cell array of strings.
+            %
             % Data Types: single | double | logical | char | cell
             %
             % Predictor values, specified as a matrix of numeric values.
             % Each column of x represents one variable, and each row
-            % represents one observation.  
+            % represents one observation.
             %
             % Note: for use in the Classication Learner App, use:
             % myData = table(predictors, response)
-
+            
             % return cell array of class labels
             response = obj.ClassNames(obj.getClassLabels);
             
@@ -557,7 +557,7 @@ classdef TrainingData < handle
             % This methods allows disabling/masking training data by
             % specifying index numbers.  Indices must be less than the max
             % number of samples
-            % 
+            %
             % numDisabled is the number of sample disabled by this
             % function, not necessarily the total number of disabled data
             % labels
@@ -641,11 +641,11 @@ classdef TrainingData < handle
             fprintf('[%s] Filtering Data...',mfilename);
             numEmgSamples = size(obj.SignalDataRaw,3);
             filteredData = double(obj.SignalDataRaw);
-%             for i = 1:numEmgSamples
-%                 filteredData(:,:,i) = HPF.apply(filteredData(:,:,i)')';
-%                 filteredData(:,:,i) = NF.apply(filteredData(:,:,i)')';
-%             end
-%             fprintf('Done\n');
+            %             for i = 1:numEmgSamples
+            %                 filteredData(:,:,i) = HPF.apply(filteredData(:,:,i)')';
+            %                 filteredData(:,:,i) = NF.apply(filteredData(:,:,i)')';
+            %             end
+            %             fprintf('Done\n');
             
             % Feature extract
             [numChannels, windowSize, numSamples] = size(obj.SignalDataRaw);
@@ -726,17 +726,49 @@ classdef TrainingData < handle
                 h = h5info(fullFile);
                 
                 desc = h5readatt(fullFile,'/data','description');
+                
+                % read numeric label ids (this can also help on error
+                % recovery for num_samples
+                class_labels = double(h5read(fullFile,'/data/id')) + 1;  % one based indexing
+                
+                % read feature data [numchannels*numfeatures x numsamples]
+                features = double(h5read(fullFile,'/data/data'));
+                
+                % read number of channels
                 numchannels = double(h5readatt(fullFile,'/data','num_channels'));
-                numsamples = double(h5readatt(fullFile,'/data','num_samples'));
-                numfeatures = double(h5readatt(fullFile,'/data','num_features'));
-                featurenames = deblank(h5readatt(fullFile,'/data','feature_names'));
+                
+                % read number of samples
+                try
+                    numsamples = double(h5readatt(fullFile,'/data','num_samples'));
+                catch ME
+                    warning(ME.message)
+                    numsamples = length(class_labels);
+                end
+                
+                % read number of features
+                try
+                    numfeatures = double(h5readatt(fullFile,'/data','num_features'));
+                catch ME
+                    warning(ME.message)
+                    numfeatures = size(features,1)/numchannels;
+                end
+                numfeatures = size(features,1)/numchannels;
+                
+                % NEW field: Feature names
+                try
+                    %featurenames = deblank();
+                    featurenames = split(h5readatt(fullFile,'/data','feature_names'),',')';
+                catch ME
+                    warning(ME.message)
+                    featurenames = [];
+                end
+                
                 unix_time = double(h5read(fullFile,'/data/time_stamp')); %posix time
                 tz = java.util.Date(); % The date string display
                 tz_val = -tz.getTimezoneOffset()/60; % the timezone offset from UTC
                 matlab_time = datetime(unix_time+(tz_val*60*60),'ConvertFrom','posixtime');
-
-                features = double(h5read(fullFile,'/data/data'));
-                class_labels = double(h5read(fullFile,'/data/id')) + 1;  % one based indexing
+                
+                % Read class Names
                 names = deblank(h5read(fullFile,'/data/name'));
                 classnames = unique(names);
                 
@@ -764,7 +796,9 @@ classdef TrainingData < handle
             obj.MaxChannels = double(numchannels);
             
             %load feature names
-            obj.FeatureNames = featurenames;
+            if ~isempty(featurenames)
+                obj.FeatureNames = featurenames;
+            end
             
             % load labels
             obj.ClassLabelId = class_labels;
@@ -782,6 +816,7 @@ classdef TrainingData < handle
             fprintf('[%s] Sample rate empty.  Assuming 200Hz\n',mfilename);
             obj.SampleRate = 200;
             
+            obj.Name = fullFile;
             success = true;
         end
         function [success, fullFile] = loadTrainingData(obj,fname)
@@ -881,7 +916,7 @@ classdef TrainingData < handle
                         obj.ClassNames{i} = sprintf('Unknown Class #%d',classes(i));
                     end
                 end
-
+                
             end
             if isfield(S,'activeChannels')
                 obj.ActiveChannels = S.activeChannels;
@@ -949,7 +984,7 @@ classdef TrainingData < handle
             
             % Lower flag that there is new unsaved data
             obj.HasUnsavedData = 0;
-
+            
         end
         
         function removeTrainingData(obj,iClass)
@@ -1016,13 +1051,13 @@ classdef TrainingData < handle
                 %features = features(1:16,:);
                 
                 %[numChannels,numSamplesPerWindow]= size(rawSignal);
-
-                 assert(isequal(size(obj.SignalDataRaw,1),numChannels),...
-                     'New Data [%d] must match previous data number of channels',...
-                     numChannels,size(obj.SignalDataRaw,1));
-                 assert(isequal(size(obj.SignalDataRaw,2),numSamplesPerWindow),...
-                     'New Data [%d] must match previous data number of samples [%d]',...
-                     numSamplesPerWindow,size(obj.SignalDataRaw,2));
+                
+                assert(isequal(size(obj.SignalDataRaw,1),numChannels),...
+                    'New Data [%d] must match previous data number of channels',...
+                    numChannels,size(obj.SignalDataRaw,1));
+                assert(isequal(size(obj.SignalDataRaw,2),numSamplesPerWindow),...
+                    'New Data [%d] must match previous data number of samples [%d]',...
+                    numSamplesPerWindow,size(obj.SignalDataRaw,2));
             end
             
             % Increment Sample Count
@@ -1065,7 +1100,7 @@ classdef TrainingData < handle
                 s.activeChannels = obj.ActiveChannels;
                 s.classNames = obj.ClassNames;
                 s.featureNames = obj.FeatureNames;
-
+                
                 % Get Data.  Note we are getting the properties directly rather
                 % than the public get methods so that we can see all the data,
                 % enabled or not
@@ -1073,7 +1108,7 @@ classdef TrainingData < handle
                 s.features3D = obj.SignalFeatures3D(:,:,1:obj.SampleCount);
                 s.classLabelId = obj.ClassLabelId(1:obj.SampleCount);
                 s.enableLabel = obj.EnableLabel(1:obj.SampleCount);
-
+                
                 s.sampleCount = obj.SampleCount;
                 s.maxChannels = obj.MaxChannels;
                 s.windowSize = obj.WindowSize;
@@ -1096,16 +1131,16 @@ classdef TrainingData < handle
                 newObj.ActiveChannels = obj.activeChannels;
                 newObj.ClassNames = obj.ClassNames;
                 newObj.FeatureNames = obj.FeatureNames;
-
+                
                 newObj.SignalDataRaw = obj.signalData;
                 newObj.SignalFeatures3D = obj.features3D;
                 newObj.ClassLabelId = obj.classLabelId;
                 newObj.EnableLabel = obj.enableLabel;
-
+                
                 newObj.SampleCount = obj.SampleCount;
                 newObj.MaxChannels = obj.MaxChannels;
                 newObj.WindowSize = obj.WindowSize;
-
+                
                 obj = newObj;
             end
         end

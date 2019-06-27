@@ -33,6 +33,7 @@ classdef ParsePythonMyoLog
     % 1512398134.779073 IMU: cc2026db3628ba0642fe6ce7410e9ecd7f12d0e3
     % 1512398134.780298 E3: eca9cd0d3b7f7fb506f4ef10207fd6a9
     % 1512398134.787107 E0: eaf2fef2109780b2fef6ee00216a95b9
+    % 1512398134.789107 Battery Level: 98
     
     properties
         filePath = ''

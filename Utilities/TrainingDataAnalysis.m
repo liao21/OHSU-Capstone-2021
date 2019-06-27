@@ -340,32 +340,45 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             titleTxt = sprintf('%s Total=%d Active=%d',dataLabel,...
                 length(obj.getClassLabels),length(obj.getAllClassLabels));
             
+            % get the long list of numerical ids for classes trained
+            class_id = obj.getClassLabels;
+
+            % convert to text strings
+            class_list = obj.ClassNames(class_id);
             
-            % find transitions in data set for class labeling
-            %l = obj.getAllClassLabels;
-            l = obj.getClassLabels;
-            l = l(:)';
-            [l, sortOrder] = sort(l);
-            classChange = [find(diff(l) ~= 0) length(l)];
+            % sort text strings (which also groups)
+            [sorted_list, old_order] = sort(class_list);
             
-            for i = 1:obj.NumClasses
-                strClass = obj.ClassNames{i};
+            % convert the numerical ids as well
+            sorted_id = class_id(old_order);
+            
+            % find which classes have training data
+            used_classes = unique(sorted_list);
+            
+            % Convert long format class names to acronyms
+            for i = 1:length(used_classes)
+                strClass = used_classes{i};
                 acronymClass = upper(strClass(regexp(strClass, '\<.')));
                 acronymClassname{i} = acronymClass;
             end
             
-            xTickLabels = acronymClassname(l(classChange));
-            xTick = mean( [[0 classChange(1:end-1)]; classChange] );
+            % find where the class names change, so we can plot by group
+            class_transition_id = find(diff(sorted_id) ~= 0);
+            
+            % define the x labels as well as x location for each
+            xTickLabels = acronymClassname;
+            xTick = mean( [[0 class_transition_id]; [class_transition_id length(sorted_id)]] );
             
             clf
             
             for iFeature = 1:obj.NumFeatures
                 
-                h = subplot(4,1,iFeature);
+                h = subplot(obj.NumFeatures,1,iFeature);
                 hold on
                 
-                if iFeature == 1;
+                if iFeature == 1 % first row
                     title(titleTxt , 'Interpreter','None')
+%                     ylim([0 1])
                 end
                 
                 f = obj.getFeatureData;
@@ -374,25 +387,25 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
                 
                 for i = 1:obj.NumActiveChannels
                     iCh = obj.ActiveChannels(i);
-                    lineData = squeeze(f(iCh,iFeature,sortOrder));
+                    lineData = squeeze(f(iCh,iFeature,old_order));
                     plot(lineData,'Color',c(i,:))
                 end
                 
-                if iFeature == 4;
+                if iFeature == obj.NumFeatures %last row
                     set(h,'XTick',xTick)
                     set(h,'XTickLabel',xTickLabels);
                 else
                     set(h,'XTick',[])
                 end
                 
-                ylabel(obj.FeatureNames{iFeature})
+                ylabel(obj.FeatureNames{iFeature},'Interpreter','None')
                 
                 yLimits = ylim;
                 
-                xBreaks = classChange;
+                xBreaks = [0 class_transition_id length(sorted_id)];
                 xBreaks = [xBreaks; xBreaks; nan(size(xBreaks))];
                 yBreaks = repmat([yLimits(1); yLimits(2); NaN],1,size(xBreaks,2));
-                
+                xlim([0 length(sorted_id)])
                 plot(xBreaks,yBreaks,'k')
             end
             

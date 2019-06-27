@@ -15,7 +15,7 @@ classdef PptMaker < handle
             
             % Start new presentation
             isOpen  = exportToPPTX();
-            if ~isempty(isOpen),
+            if ~isempty(isOpen)
                 % If PowerPoint already started, then close first and then open a new one
                 exportToPPTX('close');
             end
@@ -24,7 +24,7 @@ classdef PptMaker < handle
             exportToPPTX('new','Title',obj.Title, ...
                 'Author',obj.Author);
             exportToPPTX('addslide');
-            if iscell(obj.SubTitle);
+            if iscell(obj.SubTitle)
                 subTitle = obj.SubTitle(:);
             else
                 subTitle = {obj.SubTitle};
@@ -99,7 +99,7 @@ classdef PptMaker < handle
             
             % Check current presentation
             fileStats = exportToPPTX('query');
-            if ~isempty(fileStats),
+            if ~isempty(fileStats)
                 fprintf('Presentation size: %f x %f\n',fileStats.dimensions);
                 fprintf('Number of slides: %d\n',fileStats.numSlides);
             end
@@ -119,6 +119,33 @@ classdef PptMaker < handle
             
             fprintf('New file has been saved: <a href="matlab:winopen(''%s'')">%s</a>\n',newFile,newFile);
             
+        end
+    end
+    methods (Static = true)
+        function exportAllFigsPPT(pptTitle)
+            % PptMaker.exportAllFigsPPT()
+            % exportAllFigsPPT(pptTitle,templateFile)
+            % Copy all open figures to PPT
+            %
+            
+            % get figure handles
+            hFigs = flipud(findobj(0,'type','figure'));
+            
+            hPpt = PptMaker;
+            hPpt.Title = 'Title';
+            hPpt.Author = 'Author';
+            hPpt.SubTitle = 'Subtitle';
+            hPpt.OutputFile = 'OutputFile';  % .pptx will be appended
+            hPpt.initialize();
+            
+            %f = figure(255);
+            %f.Position = [50 50 1600 900];
+            
+            % Add content
+            for i = 1:length(hFigs)
+                hPpt.addslide(hFigs(i));
+            end
+            hPpt.close();
         end
     end
 end

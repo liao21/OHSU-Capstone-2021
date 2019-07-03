@@ -67,11 +67,11 @@ async def send_data(websocket, _path):
 
     # create sample packet
     data = {
-        "api_version": "0.8.2",
+        "api_version": "0.1",
         "stream_batch": {
-            "raw_emg": {
+            "raw_emg_batch": {
                 "samples": [{
-                    "data": np.zeros(num_channels, dtype=np.int16).tolist(),
+                    "raw_emg": np.zeros(num_channels, dtype=np.int16).tolist(),
                     "timestamp_s": 0.0
                 }] * num_samples,
                 "batch_num": 0
@@ -79,12 +79,12 @@ async def send_data(websocket, _path):
         }
     }
     while True:
-        data['stream_batch']['raw_emg']['batch_num'] += 1
+        data['stream_batch']['raw_emg_batch']['batch_num'] += 1
         # Generate new random samples
-        for i in range(0, len(data['stream_batch']['raw_emg']['samples'])):
-            new_sample = {"data": np.random.randint(center-amp, center+amp, size=num_channels, dtype=np.int16).tolist(),
+        for i in range(0, len(data['stream_batch']['raw_emg_batch']['samples'])):
+            new_sample = {"raw_emg": np.random.randint(center-amp, center+amp, size=num_channels, dtype=np.int16).tolist(),
                           "timestamp_s": time.time()}
-            data['stream_batch']['raw_emg']['samples'][i] = new_sample
+            data['stream_batch']['raw_emg_batch']['samples'][i] = new_sample
             await asyncio.sleep(0.0005)
 
         await websocket.send(json.dumps(data))

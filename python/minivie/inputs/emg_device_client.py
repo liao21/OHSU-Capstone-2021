@@ -125,15 +125,16 @@ class EmgSocket(SignalInput):
                     print('Sending Start')
 
                     start_msg = {
-                        "api_version": "0.8.2",
-                        "api_request": {
-                            "request_id": 1,
-                            "start_stream_request": {
-                                "stream_id": "test_stream_id",
-                                "raw_emg_target": {}
-                            }
-                        }
-                    }
+						"api_version": "0.10",
+						"api_request": {
+							"request_id": 1,
+							"start_stream_request": {
+								"stream_id": "MiniVIE-stream",
+								"app_id": "MiniVIE",
+								"raw_emg_target": {}
+							}
+						}
+					}
 
                     await websocket.send(json.dumps(start_msg))
                     print('Done Starting CTRL')

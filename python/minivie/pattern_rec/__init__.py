@@ -279,6 +279,7 @@ class TrainingData:
             'Wrist Rotate In', 'Wrist Rotate Out',
             'Wrist Adduction', 'Wrist Abduction',
             'Wrist Flex In', 'Wrist Extend Out',
+            'Thumb Adduct In', 'Thumb Abduct Out',
             'Hand Open',
             'Spherical Grasp',
             'Tip Grasp',

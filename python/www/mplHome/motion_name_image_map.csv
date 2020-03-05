@@ -11,31 +11,33 @@ No Movement,img_arm_motions/No_Movement.png
 #Shoulder Abduction,img_arm_motions/Shoulder_Abduction.png
 #Humeral Internal Rotation,img_arm_motions/Elbow_Flexion.png
 #Humeral External Rotation,img_arm_motions/Elbow_Flexion.png
-Elbow Flexion,img_arm_motions/Elbow_Flexion.png
-Elbow Extension,img_arm_motions/Elbow_Extension.png
+#Elbow Flexion,img_arm_motions/Elbow_Flexion.png
+#Elbow Extension,img_arm_motions/Elbow_Extension.png
 Wrist Rotate In,img_arm_motions/Wrist_Rotate_In.png
 Wrist Rotate Out,img_arm_motions/Wrist_Rotate_Out.png
 #Wrist Adduction,img_arm_motions/Wrist_Adduction.png
 #Wrist Abduction,img_arm_motions/Wrist_Abduction.png
-Wrist Flex In,img_arm_motions/Wrist_Flexion.png
-Wrist Extend Out,img_arm_motions/Wrist_Extension.png
-Hand Open,img_grasps/Hand_Open.png
-Spherical Grasp,img_grasps/Spherical_Grasp.png
-Tip Grasp,img_grasps/Tip_Grasp.png
-Three Finger Pinch Grasp,img_grasps/Tripod_Grasp.bmp
-Lateral Grasp,img_grasps/Hook_Grasp.bmp
-Cylindrical Grasp,img_grasps/Power_Grasp.bmp
+#Wrist Flex In,img_arm_motions/Wrist_Flexion.png
+#Wrist Extend Out,img_arm_motions/Wrist_Extension.png
+Thumb Adduct In, img_grasps/Tip_Grasp.png
+Thumb Abduct Out, img_grasps/Hand_Open.png
+#Hand Open,img_grasps/Hand_Open.png
+#Spherical Grasp,img_grasps/Spherical_Grasp.png
+#Tip Grasp,img_grasps/Tip_Grasp.png
+#Three Finger Pinch Grasp,img_grasps/Tripod_Grasp.bmp
+#Lateral Grasp,img_grasps/Hook_Grasp.bmp
+#Cylindrical Grasp,img_grasps/Power_Grasp.bmp
 #Power Grasp,img_grasps/Power_Grasp.bmp
-Point Grasp,img_grasps/Trigger_Grasp.png
-Hand Open,img_grasps/Hand_Open.png
-Index,img_grasps/GEN3_Index.png
-Middle,img_grasps/GEN3_Middle.png
-Ring,img_grasps/GEN3_Ring.png
-Little,img_grasps/GEN3_Little.png
-Thumb,img_grasps/GEN3_Thumb.png
-Ring-Middle,img_grasps/GEN3_RingMiddle.png
-The Bird,img_grasps/GEN3_Bird.png
-Hang Loose,img_grasps/GEN3_Hang_Loose.PNG
-Thumbs Up,img_grasps/GEN3_Thumbs_Up.PNG
-Peace,img_grasps/GEN3_Peace.PNG
-Hand Open,img_grasps/Hand_Open.png
+#Point Grasp,img_grasps/Trigger_Grasp.png
+#Hand Open,img_grasps/Hand_Open.png
+#Index,img_grasps/GEN3_Index.png
+#Middle,img_grasps/GEN3_Middle.png
+#Ring,img_grasps/GEN3_Ring.png
+#Little,img_grasps/GEN3_Little.png
+#Thumb,img_grasps/GEN3_Thumb.png
+#Ring-Middle,img_grasps/GEN3_RingMiddle.png
+#The Bird,img_grasps/GEN3_Bird.png
+#Hang Loose,img_grasps/GEN3_Hang_Loose.PNG
+#Thumbs Up,img_grasps/GEN3_Thumbs_Up.PNG
+#Peace,img_grasps/GEN3_Peace.PNG
+#Hand Open,img_grasps/Hand_Open.png

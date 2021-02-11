@@ -69,6 +69,8 @@ def class_map(class_name):
         'Wrist Abduction': [False, MplId.WRIST_AB_AD, -1, None],
         'Wrist Flex In': [False, MplId.WRIST_FE, +1, None],
         'Wrist Extend Out': [False, MplId.WRIST_FE, -1, None],
+        'Thumb Adduct In': [False, MplId.THUMB_CMC_AB_AD, +1, None],
+        'Thumb Abduct Out': [False, MplId.THUMB_CMC_AB_AD, -1, None],
         'Hand Open': [True, None, -1, None],
         # 'Spherical Grasp': [True, None, +1, 'Spherical Grasp'],
         # 'Tip Grasp': [True, None, +1, 'Tip Grasp'],

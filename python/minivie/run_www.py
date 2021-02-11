@@ -47,7 +47,6 @@ def main():
     -h or --help -- output help text describing command-line arguments.
 
     """
-
     # Parse main function input parameters to get user_config xml file
     parser = argparse.ArgumentParser(description='run_www: Configure and run a full user VIE with web training.')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s {version}'.format(version=__version__))
@@ -65,7 +64,7 @@ def main():
 
     # Setup logging.  This will create a log file like: USER_2016-02-11_11-28-21.log to which all 'logging' calls go
     user_config.setup_file_logging(log_level=args.logLevel)
-
+    print("Setup config file")
     # Setup Default MPL scenario
     # A Scenario is the fundamental building blocks of the VIE: Inputs, Signal Analysis, System Plant, and Output Sink
     vie = scenarios.MplScenario()
@@ -84,4 +83,5 @@ def main():
 
 
 if __name__ == '__main__':
+    print("hello")
     main()

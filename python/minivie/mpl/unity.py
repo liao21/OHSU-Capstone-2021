@@ -123,7 +123,7 @@ def extract_percepts(data):
         percepts['segmentPercepts']['ftsn'] = struct.unpack('%df' % 70, data[398:678])
     elif len(data) >= 458:
         percepts['segmentPercepts']['ftsn'] = struct.unpack('%df' % 15, data[398:458])
-
+    print(percepts)
     return percepts
 
 

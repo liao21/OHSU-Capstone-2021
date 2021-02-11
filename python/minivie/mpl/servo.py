@@ -25,12 +25,12 @@ JHUAPL vMPL Unity Communications Info:
     Left vMPL Ghost Control       Broadcast	VULCANX	vMPLEnv	27100
 
 
-Inputs: 
+Inputs:
     remote_address - string of IP address and port of destination (running Unity) default = '//127.0.0.1:25000'
     local_address - string of IP address and port to receive percepts default = '//127.0.0.1:25001'
 
 Methods:
-    sendJointAngles - accept a 7 element or 27 element array of joint angles in radians 
+    sendJointAngles - accept a 7 element or 27 element array of joint angles in radians
         and transmit to Unity environment
 
 
@@ -44,6 +44,8 @@ import time
 import struct
 import logging
 import numpy as np
+import pigpio
+import random
 from mpl import JointEnum as MplId
 from mpl.data_sink import DataSink
 from utilities.user_config import get_user_config_var
@@ -71,7 +73,7 @@ class UdpProtocol(asyncio.DatagramProtocol):
             self.parent.position['last_percept'] = None
 
 
-class UnityUdp(DataSink):
+class Servo(DataSink):
     """
         % Left
         obj.MplCmdPort = 25100;
@@ -87,7 +89,7 @@ class UnityUdp(DataSink):
         DataSink.__init__(self)
         self.command_port = 25010  # integer port for ghost arm position commands
         self.config_port = 27000    # integer port for ghost arm display commands
-        self.name = "UnityUdp"
+        self.name = "Servo"
         self.joint_offset = None
         self.load_config_parameters()
         self.loop = None
@@ -97,13 +99,30 @@ class UnityUdp(DataSink):
         self.remote_address = remote_address
         self.is_connected = True
         self.percepts = None
-        self.position = {'last_percept': None}
+        self.position = {'last_percept': None} # might need to change this
 
         # store some rate counting parameters
         self.packet_count = 0
         self.packet_time = 0.0
         self.packet_rate = 0.0
         self.packet_update_time = 1.0  # seconds
+
+        # motor stuff
+        self.pi = pigpio.pi()
+        self.motor_num = get_user_config_var('Servo.Num', 2)
+        self.pins = []
+        self.motor_ranges = []
+        self.joint_links = []
+        self.joint_limits = []
+        for i in range(0, self.motor_num):
+            self.pins.append(get_user_config_var('Servo.GPIO' + str(i+1), 4))
+            self.motor_ranges.append(get_user_config_var('Servo.MotorLimit' + str(i+1), (600, 2200)))
+            self.joint_links.append(get_user_config_var('Servo.JointLink' + str(i+1), 0))
+            self.joint_limits.append(get_user_config_var(MplId(self.joint_links[i]).name + '_LIMITS', (0, 30)))
+        # logging.info('Pins: ' + str(self.pins)[1:-1])
+        # logging.info('Motor Ranges: ' + str(self.motor_ranges)[1:-1])
+        # logging.info('Joint Links: ' + str(self.joint_links)[1:-1])
+        # logging.info('Joint Limits: ' + str(self.joint_limits)[1:-1])
 
     def load_config_parameters(self):
         # Load parameters from xml config file
@@ -118,7 +137,6 @@ class UnityUdp(DataSink):
         # Get a reference to the event loop as we plan to use
         # low-level APIs.
         # From python 3.7 docs (https://docs.python.org/3.7/library/asyncio-protocol.html#)
-        print(get_address(self.local_address))
         listen = self.loop.create_datagram_endpoint(
             lambda: UdpProtocol(parent=self), local_addr=get_address(self.local_address))
         self.transport, self.protocol = self.loop.run_until_complete(listen)
@@ -128,6 +146,8 @@ class UnityUdp(DataSink):
         # After connecting, this function can be used as a blocking call to ensure the desired percepts are received
         # before continuing program execution.  E.g. ensure valid joint percepts are received to ensure smooth start
 
+        # Might need to comment this out. Must get rid of packet_data_rate() as that coincides
+        # with Unity
         print('Checking for valid percepts...')
 
         while self.position['last_percept'] is None or self.get_packet_data_rate() is 0:
@@ -180,9 +200,12 @@ class UnityUdp(DataSink):
 
         # Apply joint offsets if needed
         values = np.array(values) + self.joint_offset
+        rad_to_deg = 57.2957795  # 180/pi
+        deg_values = 27 * [0]
+        for i in range(0,27):
+            deg_values[i] = int(values[i]*rad_to_deg)
 
         # Send data
-        rad_to_deg = 57.2957795  # 180/pi
         # log command in degrees as this is the most efficient way to pack data
         msg = 'JointCmd: ' + ','.join(['%d' % int(elem*rad_to_deg) for elem in values])
         logging.debug(msg)  # 60 us
@@ -198,7 +221,19 @@ class UnityUdp(DataSink):
             else:
                 self.transport.sendto(packed_data, (addr, port))
         else:
-            print('Socket disconnected')
+           print('Socket disconnected')
+        for i in range(0, self.motor_num):
+            percent_angle = (deg_values[self.joint_links[i]] - self.joint_limits[i][0])/(self.joint_limits[i][1] - self.joint_limits[i][0])
+            motor_diff = self.motor_ranges[i][1] - self.motor_ranges[i][0]
+            pwm = self.motor_ranges[i][0] + (motor_diff * percent_angle)
+            #self.pi.set_servo_pulsewidth(self.pins[i], pwm)
+            self.pi.set_servo_pulsewidth(self.pins[i], pwm if percent_angle > 0.4 else 0)
+
+        #self.pi.set_PWM_frequency(self.pins[1], 255 if deg_values[self.joint_links[1]] > 0 else 0)
+
+        time.sleep(0.01)
+
+
 
     def send_config_command(self, enable=0.0, color=(0.3, 0.4, 0.5), alpha=0.8):
         """
@@ -265,7 +300,7 @@ class UnityUdp(DataSink):
     def close(self):
         logging.info("Closing Unity Socket @ {}".format(self.remote_address))
         self.transport.close()
-
+        pass
 
 async def run_loop(sender):
     # test asyncio loop commands
@@ -297,8 +332,9 @@ async def run_loop(sender):
 
 def main():
 
+    # print('Testing')
     # create socket
-    vie = UnityUdp(local_address='//0.0.0.0:25001', remote_address='//127.0.0.1:25000')
+    vie = Servo(local_address='//0.0.0.0:25001', remote_address='//127.0.0.1:25000')
 
     loop = asyncio.get_event_loop()
     loop.create_task(run_loop(vie))
@@ -306,6 +342,7 @@ def main():
 
     pass
 
+# print('Another')
 
 if __name__ == '__main__':
     main()

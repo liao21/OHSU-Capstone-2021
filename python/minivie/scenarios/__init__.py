@@ -512,6 +512,7 @@ class Scenario(object):
 
         # classify
         decision_id, self.output['status'] = self.SignalClassifier.predict(f)
+        # decision_id, self.output['status'] = (1, 'Movement')
         if decision_id is None:
             return
 
@@ -656,7 +657,7 @@ class MplScenario(Scenario):
             port = get_config_var('MobileApp.port', 9090)
             self.TrainingInterface = training.TrainingManagerWebsocket()
             self.TrainingInterface.setup(port)
-            print(f'Starting webserver at http://localhost:{port}')
+            logging.info(f'Starting webserver at http://localhost:{port}')
 
         elif server_type == 'Spacebrew':
             self.TrainingInterface = training.TrainingManagerSpacebrew()
@@ -690,6 +691,7 @@ class MplScenario(Scenario):
         # from mpl.unity import UnityUdp
         from mpl.unity_asyncio import UnityUdp
         from mpl.open_nfu import NfuUdp
+        from mpl.servo import Servo
         from controls.plant import Plant
 
         ################################################
@@ -776,6 +778,24 @@ class MplScenario(Scenario):
             remote_hostname, remote_port = get_address(get_config_var('NfuUdp.remote_address', '//127.0.0.1:9027'))
             sink = NfuUdp(hostname=remote_hostname, udp_telem_port=local_port, udp_command_port=remote_port)
             sink.connect()
+        elif data_sink == 'Servo':
+            logging.critical('Loading Data Sink.'.format(data_sink))
+            local_address = get_config_var('UnityUdp.local_address', '//0.0.0.0:25001')
+            remote_address = get_config_var('UnityUdp.remote_address', '//127.0.0.1:25000')
+            sink = Servo(local_address=local_address, remote_address=remote_address)
+            sink.connect()
+            # send some default config parameters on setup for ghost arms (turn them off)
+            enable = get_config_var('UnityUdp.ghost_default_enable', 0.0)
+            color = get_config_var('UnityUdp.ghost_default_color', (0.3, 0.4, 0.5))
+            alpha = get_config_var('UnityUdp.ghost_default_alpha', 0.8)
+            # TODO: this is a hard-coding to force the arms off on startup. not ideal...
+            sink.config_port = 27000
+            sink.send_config_command(enable, color, alpha)
+            sink.config_port = 27100
+            sink.send_config_command(enable, color, alpha)
+            # Now read the user parameter for which arm the user wants to control
+            sink.command_port = get_config_var('UnityUdp.ghost_command_port', 25010)
+            sink.config_port = get_config_var('UnityUdp.ghost_config_port', 27000)
         else:
             import sys
             # unrecoverable

@@ -3,20 +3,20 @@
     <!--Tag definition in MATLAB code:-->
     
     <!--Prefix to add to save data files e.g. USER_ -->
-    <add key="Logging.user_file_prefix"   value="USER_"/>
+    <add key="Logging.user_file_prefix"   value="VMPL_"/>
 
     <!--Specify whether system log should be datestamped files, or one single file -->
-    <add key="Logging.use_combined_log"   value="1"/>
+    <add key="Logging.use_combined_log"   value="0"/>
 
     <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
     <add key="MPL.roc_table"         value="mpl/#MPL_GEN3_ROC.xml"/>
 
     <!--Specify the Output Module [UnityUdp | NfuUdp | Servo] -->
-    <add key="DataSink"         value="Servo"/>
+    <add key="DataSink"         value="UnityUdp"/>
     <add key="NfuUdp.remote_address" value="//127.0.0.1:9027"/>
     <add key="NfuUdp.local_address" value="//0.0.0.0:9028"/>
-    <add key="UnityUdp.remote_address" value="//127.0.0.1:25000"/>
-    <add key="UnityUdp.local_address" value="//0.0.0.0:25001"/>
+    <add key="UnityUdp.remote_address" value="//192.162.8.3:25000"/>
+    <add key="UnityUdp.local_address" value="//192.168.8.3:25001"/>
     <add key="UnityUdp.ghost_command_port" value="25010"/>
     <add key="UnityUdp.ghost_config_port" value="27000"/>
     <add key="UnityUdp.ghost_default_enable" value="1"/>
@@ -33,7 +33,7 @@
     <add key="timestep"         value="0.02"/>
 
     <!-- MPL parameters-->
-    <add key="MPL.connection_check"         value="1"/>
+    <add key="MPL.connection_check"         value="0"/>
     <add key="MPL.shutdown_voltage"         value="20.5"/>
     <add key="MPL.enable_impedance"         value="1"/>
 
@@ -76,8 +76,8 @@
         above elbow to 15001 first if present)
             AE: Above Elbow
             BE: Below Elbow  -->
-    <add key="myo_position_1"    value="BE"/>
-    <add key="myo_position_2"    value="BE"/>
+    <add key="myo_position_1"    value="AE"/>
+    <add key="myo_position_2"    value="AE"/>
 
     <!-- Input Type
         Use this to set input type -->
@@ -90,11 +90,11 @@
     <!-- Myo Data Server Streaming Ports
         Use these for establishing a Myo UDP Server that reads from BTLE and forwards
         Packets to UDP from the local port to the remote port -->
-    <add key="MyoUdpServer.num_devices" value="2"/>
+    <add key="MyoUdpServer.num_devices" value="1"/>
     <add key="MyoUdpServer.iface_1"    value="0"/>
     <add key="MyoUdpServer.iface_2"    value="0"/>
-    <add key="MyoUdpServer.mac_address_1"    value="xx:xx:xx:xx:xx:xx"/>
-    <add key="MyoUdpServer.mac_address_2"    value="xx:xx:xx:xx:xx:xx"/>
+    <add key="MyoUdpServer.mac_address_1"    value="c0:83:15:fd:be:b4"/>
+    <add key="MyoUdpServer.mac_address_2"    value="ef:11:41:2c:ac:19"/>
     <add key="MyoUdpServer.local_address_1"     value="//0.0.0.0:16001"/>
     <add key="MyoUdpServer.local_address_2"     value="//0.0.0.0:16002"/>
     <add key="MyoUdpServer.remote_address_1"    value="//127.0.0.1:15001"/>
@@ -102,9 +102,9 @@
 
     <!-- Myo Data Client Streaming Ports
         Use these parameters for reading from a Myo Data Source in a client application  -->
-    <add key="MyoUdpClient.num_devices" value="2"/>
-    <add key="MyoUdpClient.mac_address_1"    value="xx:xx:xx:xx:xx:xx"/>
-    <add key="MyoUdpClient.mac_address_2"    value="xx:xx:xx:xx:xx:xx"/>
+    <add key="MyoUdpClient.num_devices" value="1"/>
+    <add key="MyoUdpClient.mac_address_1"    value="c0:83:15:fd:be:b4"/>
+    <add key="MyoUdpClient.mac_address_2"    value="ef:11:41:2c:ac:19"/>
     <add key="MyoUdpClient.local_address_1"     value="//0.0.0.0:15001"/>
     <add key="MyoUdpClient.local_address_2"     value="//0.0.0.0:15002"/>
     <add key="MyoUdpClient.remote_address_1"    value="//127.0.0.1:16001"/>
@@ -113,12 +113,21 @@
     <!-- MPL Motion Speeds -->
     <add key="MPL.ArmSpeedMin"    value="0.1"/>
     <add key="MPL.ArmSpeedMax"    value="5"/>
-    <add key="MPL.ArmSpeedDefault"    value="1.4"/>
+    <add key="MPL.ArmSpeedDefault"    value="3.0"/>
     <add key="MPL.ArmSpeedPrecision"    value="0.2"/>
     <add key="MPL.HandSpeedMin"    value="0.1"/>
     <add key="MPL.HandSpeedMax"    value="5"/>
     <add key="MPL.HandSpeedDefault"    value="1.2"/>
     <add key="MPL.HandSpeedPrecision"    value="0.15"/>
+
+    <!-- Servo Motor Information -->
+    <add key="Servo.Num"    value="2"/>
+    <add key="Servo.GPIO1"    value="26"/>
+    <add key="Servo.GPIO2"    value="16"/>
+    <add key="Servo.MotorLimit1"    value=" 700, 1600" />
+    <add key="Servo.MotorLimit2"    value=" 600, 2200" />
+    <add key="Servo.JointLink1"    value="23" />
+    <add key="Servo.JointLink2"    value="4" />
 
     <!-- User defined joint limits in *Degrees*
      Optionally limit the range of each joint prior to sending to the MPL

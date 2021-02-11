@@ -1,7 +1,6 @@
 .*
 *.log
 *.bak
-*.xml
 *.txt
 *.trainingData
 *.tacAssessment

@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="utf-8"?>
+<userConfig>
+    <!--Tag definition in MATLAB code:-->
+    
+    <!--Prefix to add to save data files e.g. USER_ -->
+    <add key="Logging.user_file_prefix"   value="VMPL_"/>
+
+    <!--Specify whether system log should be datestamped files, or one single file -->
+    <add key="Logging.use_combined_log"   value="0"/>
+
+    <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
+    <add key="MPL.roc_table"         value="mpl/#MPL_GEN3_ROC.xml"/>
+
+    <!--Specify the Output Module [UnityUdp | NfuUdp | Servo] -->
+    <add key="DataSink"         value="Servo"/>
+    <add key="NfuUdp.remote_address" value="//127.0.0.1:9027"/>
+    <add key="NfuUdp.local_address" value="//0.0.0.0:9028"/>
+    <add key="UnityUdp.remote_address" value="//192.162.8.3:25000"/>
+    <add key="UnityUdp.local_address" value="//0.0.0.0:25001"/>
+    <add key="UnityUdp.ghost_command_port" value="25010"/>
+    <add key="UnityUdp.ghost_config_port" value="27000"/>
+    <add key="UnityUdp.ghost_default_enable" value="1"/>
+    <add key="UnityUdp.ghost_default_color" value="0.5, 0.5, 0.5"/>
+    <add key="UnityUdp.ghost_default_alpha" value="0.8"/>
+
+    <!-- Control MPL App Settings -->
+    <add key="MobileApp.port"           value="9090"/>
+    <add key="MobileApp.homepage"       value="index.html"/>
+    <add key="MobileApp.path"           value="../www/mplHome"/>
+    <add key="MobileApp.server_type"      value="Tornado"/>    <!-- [Tornado | Spacebrew | None] -->
+
+    <!--Specify the timestep in seconds -->
+    <add key="timestep"         value="0.02"/>
+
+    <!-- MPL parameters-->
+    <add key="MPL.connection_check"         value="0"/>
+    <add key="MPL.shutdown_voltage"         value="20.5"/>
+    <add key="MPL.enable_impedance"         value="1"/>
+
+    <!-- Enable_dcell strain gauge logging-->
+	<add key="DCell.enable"         value="0"/>
+    <add key="DCell.serial_port"    value="/dev/ttymxc2"/>
+
+    <!--Pattern Recognition Parameters-->
+    <add key="PatternRec.num_majority_votes" value="5"/>
+    <add key="FeatureExtract.zc_threshold" value="0.2"/>
+    <add key="FeatureExtract.ssc_threshold" value="0.2"/>
+	<add key="FeatureExtract.wamp_threshold" value="0.2"/>
+    <add key="FeatureExtract.sample_rate" value="200"/>
+
+    <!-- Feature Extraction Techniques
+        Use this to set what feature extraction techniques will be used-->
+    <add key="mav"    		value="True"/>
+    <add key="curve_len"    value="True"/>
+    <add key="zc"  			value="True"/>
+    <add key="ssc"    		value="True"/>
+    <add key="wamp"    		value="False"/>
+    <add key="var"    		value="False"/>
+    <add key="vorder"    	value="False"/>
+    <add key="logdetect"    value="False"/>
+    <add key="emghist"    	value="False"/>
+    <add key="ar"    		value="False"/>
+    <add key="ceps"    		value="False"/>
+    <add key="features"		value="Mav,Curve_Len,Zc,Ssc"/>
+
+    <!-- Arm Use this to select arm -->
+    <add key="MotionTrack.arm_side" value="right"/> <!-- [Left | Right] -->
+
+    <!-- Motion Track
+        Use this to enable motion tracking in the Unity Environment -->
+    <add key="MotionTrack.enable" value="False"/> <!-- [True | False] -->
+
+    <!-- Myo Positions
+        Use these parameters to set the location of the myo armbands
+        (will not read second myo if only one is streaming, will assign
+        above elbow to 15001 first if present)
+            AE: Above Elbow
+            BE: Below Elbow  -->
+    <add key="myo_position_1"    value="AE"/>
+    <add key="myo_position_2"    value="AE"/>
+
+    <!-- Input Type
+        Use this to set input type -->
+    <add key="input_device"				value="myo"/><!-- [myo | daq] -->
+
+    <!-- DAQ Data Client
+        Use these parameters for reading from a DAQ Data Source in a client application  -->
+    <add key="DaqDevice.device_name_and_channels" value="Dev1/ai0:7"/>
+
+    <!-- Myo Data Server Streaming Ports
+        Use these for establishing a Myo UDP Server that reads from BTLE and forwards
+        Packets to UDP from the local port to the remote port -->
+    <add key="MyoUdpServer.num_devices" value="1"/>
+    <add key="MyoUdpServer.iface_1"    value="0"/>
+    <add key="MyoUdpServer.iface_2"    value="0"/>
+    <add key="MyoUdpServer.mac_address_1"    value="c0:83:15:fd:be:b4"/>
+    <add key="MyoUdpServer.mac_address_2"    value="ef:11:41:2c:ac:19"/>
+    <add key="MyoUdpServer.local_address_1"     value="//0.0.0.0:16001"/>
+    <add key="MyoUdpServer.local_address_2"     value="//0.0.0.0:16002"/>
+    <add key="MyoUdpServer.remote_address_1"    value="//127.0.0.1:15001"/>
+    <add key="MyoUdpServer.remote_address_2"    value="//127.0.0.1:15002"/>
+
+    <!-- Myo Data Client Streaming Ports
+        Use these parameters for reading from a Myo Data Source in a client application  -->
+    <add key="MyoUdpClient.num_devices" value="1"/>
+    <add key="MyoUdpClient.mac_address_1"    value="c0:83:15:fd:be:b4"/>
+    <add key="MyoUdpClient.mac_address_2"    value="ef:11:41:2c:ac:19"/>
+    <add key="MyoUdpClient.local_address_1"     value="//0.0.0.0:15001"/>
+    <add key="MyoUdpClient.local_address_2"     value="//0.0.0.0:15002"/>
+    <add key="MyoUdpClient.remote_address_1"    value="//127.0.0.1:16001"/>
+    <add key="MyoUdpClient.remote_address_2"    value="//127.0.0.1:16002"/>
+
+    <!-- MPL Motion Speeds -->
+    <add key="MPL.ArmSpeedMin"    value="0.1"/>
+    <add key="MPL.ArmSpeedMax"    value="5"/>
+    <add key="MPL.ArmSpeedDefault"    value="3.0"/>
+    <add key="MPL.ArmSpeedPrecision"    value="0.2"/>
+    <add key="MPL.HandSpeedMin"    value="0.1"/>
+    <add key="MPL.HandSpeedMax"    value="5"/>
+    <add key="MPL.HandSpeedDefault"    value="1.2"/>
+    <add key="MPL.HandSpeedPrecision"    value="0.15"/>
+
+    <!-- Servo Motor Information -->
+    <add key="Servo.Num"    value="2"/>
+    <add key="Servo.GPIO1"    value="17"/>
+    <add key="Servo.GPIO2"    value="27"/>
+    <add key="Servo.MotorLimit1"    value=" 700, 1600" />
+    <add key="Servo.MotorLimit2"    value=" 600, 2200" />
+    <add key="Servo.JointLink1"    value="23" />
+    <add key="Servo.JointLink2"    value="4" />
+
+    <!-- User defined joint limits in *Degrees*
+     Optionally limit the range of each joint prior to sending to the MPL
+     Value format: "MinAngle, MaxAngle" (degrees)
+     -->
+    <add key="ApplyUserJointLimits"   value="true"/>
+
+    <add key="SHOULDER_FE_LIMITS"     value=" -35, 170" />
+    <add key="SHOULDER_AB_AD_LIMITS"  value=" -90, 0" />
+    <add key="HUMERAL_ROT_LIMITS"     value=" -35, 80" />
+    <add key="ELBOW_LIMITS"           value="   0, 130" />
+
+    <add key="WRIST_ROT_LIMITS"       value=" -85, 85" />
+    <add key="WRIST_AB_AD_LIMITS"     value=" -45, 45" />
+    <add key="WRIST_FE_LIMITS"        value=" -60, 60" />
+
+    <add key="INDEX_AB_AD_LIMITS"     value=" -20, 0" />
+    <add key="INDEX_MCP_LIMITS"       value=" -40, 85" />
+    <add key="INDEX_PIP_LIMITS"       value="   0, 100" />
+    <add key="INDEX_DIP_LIMITS"       value="   0, 80" />
+
+    <add key="MIDDLE_AB_AD_LIMITS"    value=" -20, 0" />
+    <add key="MIDDLE_MCP_LIMITS"      value=" -40, 85" />
+    <add key="MIDDLE_PIP_LIMITS"      value="   0, 100" />
+    <add key="MIDDLE_DIP_LIMITS"      value="   0, 80" />
+
+    <add key="RING_AB_AD_LIMITS"      value="   0, 20" />
+    <add key="RING_MCP_LIMITS"        value=" -40, 85" />
+    <add key="RING_PIP_LIMITS"        value="   0, 100" />
+    <add key="RING_DIP_LIMITS"        value="   0, 80" />
+
+    <add key="LITTLE_AB_AD_LIMITS"    value="   0, 20" />
+    <add key="LITTLE_MCP_LIMITS"      value=" -40, 85" />
+    <add key="LITTLE_PIP_LIMITS"      value="   0, 100" />
+    <add key="LITTLE_DIP_LIMITS"      value="   0, 80" />
+
+    <add key="THUMB_CMC_AB_AD_LIMITS" value="  8, 135" />
+    <add key="THUMB_CMC_FE_LIMITS"    value="   8, 80" />
+    <add key="THUMB_MCP_LIMITS"       value="   8, 80" />
+    <add key="THUMB_DIP_LIMITS"       value=" -12, 60" />
+
+    <!-- Joint direction parameters to flip joint direction +/- 1 -->    
+    <add key="WRIST_FE_DIRECTION"        value="+1" />
+
+    <!-- Add joint offsets applied to correct offset fingers in *Degrees*-->
+    <add key="SHOULDER_FE_OFFSET"     value="0.0" />
+    <add key="SHOULDER_AB_AD_OFFSET"  value="0.0" />
+    <add key="HUMERAL_ROT_OFFSET"     value="0.0" />
+    <add key="ELBOW_OFFSET"           value="0.0" />
+
+    <add key="WRIST_ROT_OFFSET"       value="0.0" />
+    <add key="WRIST_AB_AD_OFFSET"     value="0.0" />
+    <add key="WRIST_FE_OFFSET"        value="0.0" />
+
+    <add key="INDEX_AB_AD_OFFSET"     value="0.0" />
+    <add key="INDEX_MCP_OFFSET"       value="0.0" />
+    <add key="INDEX_PIP_OFFSET"       value="0.0" />
+    <add key="INDEX_DIP_OFFSET"       value="0.0" />
+
+    <add key="MIDDLE_AB_AD_OFFSET"    value="0.0" />
+    <add key="MIDDLE_MCP_OFFSET"      value="0.0" />
+    <add key="MIDDLE_PIP_OFFSET"      value="0.0" />
+    <add key="MIDDLE_DIP_OFFSET"      value="0.0" />
+
+    <add key="RING_AB_AD_OFFSET"      value="0.0" />
+    <add key="RING_MCP_OFFSET"        value="0.0" />
+    <add key="RING_PIP_OFFSET"        value="0.0" />
+    <add key="RING_DIP_OFFSET"        value="0.0" />
+
+    <add key="LITTLE_AB_AD_OFFSET"    value="0.0" />
+    <add key="LITTLE_MCP_OFFSET"      value="0.0" />
+    <add key="LITTLE_PIP_OFFSET"      value="0.0" />
+    <add key="LITTLE_DIP_OFFSET"      value="0.0" />
+
+    <add key="THUMB_CMC_AB_AD_OFFSET" value="0.0" />
+    <add key="THUMB_CMC_FE_OFFSET"    value="0.0" />
+    <add key="THUMB_MCP_OFFSET"       value="0.0" />
+    <add key="THUMB_DIP_OFFSET"       value="0.0" />
+
+    <!-- Joint impedance parameters -->    
+    <add key="SHOULDER_FE_STIFFNESS_HIGH"     value="40.0" />
+    <add key="SHOULDER_AB_AD_STIFFNESS_HIGH"  value="40.0" />
+    <add key="HUMERAL_ROT_STIFFNESS_HIGH"     value="40.0" />
+    <add key="ELBOW_STIFFNESS_HIGH"           value="40.0" />
+
+    <add key="WRIST_ROT_STIFFNESS_HIGH"       value="40.0" />
+    <add key="WRIST_AB_AD_STIFFNESS_HIGH"     value="40.0" />
+    <add key="WRIST_FE_STIFFNESS_HIGH"        value="40.0" />
+
+    <add key="INDEX_AB_AD_STIFFNESS_HIGH"     value="1.5" />
+    <add key="INDEX_MCP_STIFFNESS_HIGH"       value="1.5" />
+    <add key="INDEX_PIP_STIFFNESS_HIGH"       value="1.5" />
+    <add key="INDEX_DIP_STIFFNESS_HIGH"       value="1.5" />
+
+    <add key="MIDDLE_AB_AD_STIFFNESS_HIGH"    value="1.5" />
+    <add key="MIDDLE_MCP_STIFFNESS_HIGH"      value="1.5" />
+    <add key="MIDDLE_PIP_STIFFNESS_HIGH"      value="1.5" />
+    <add key="MIDDLE_DIP_STIFFNESS_HIGH"      value="1.5" />
+
+    <add key="RING_AB_AD_STIFFNESS_HIGH"      value="1.5" />
+    <add key="RING_MCP_STIFFNESS_HIGH"        value="1.5" />
+    <add key="RING_PIP_STIFFNESS_HIGH"        value="1.5" />
+    <add key="RING_DIP_STIFFNESS_HIGH"        value="1.5" />
+
+    <add key="LITTLE_AB_AD_STIFFNESS_HIGH"    value="1.5" />
+    <add key="LITTLE_MCP_STIFFNESS_HIGH"      value="1.5" />
+    <add key="LITTLE_PIP_STIFFNESS_HIGH"      value="1.5" />
+    <add key="LITTLE_DIP_STIFFNESS_HIGH"      value="1.5" />
+
+    <add key="THUMB_CMC_AB_AD_STIFFNESS_HIGH" value="1.5" />
+    <add key="THUMB_CMC_FE_STIFFNESS_HIGH"    value="1.5" />
+    <add key="THUMB_MCP_STIFFNESS_HIGH"       value="1.5" />
+    <add key="THUMB_DIP_STIFFNESS_HIGH"       value="1.5" />
+    
+    <!-- The Global hand STIFFNESS_HIGH will overwrite values above!!-->
+    <add key="GLOBAL_HAND_STIFFNESS_HIGH_ENABLE"     value="1" />
+    <add key="GLOBAL_HAND_STIFFNESS_HIGH"            value="0.4" />
+
+    <!-- Joint impedance parameters -->
+    <add key="SHOULDER_FE_STIFFNESS_LOW"     value="20.0" />
+    <add key="SHOULDER_AB_AD_STIFFNESS_LOW"  value="20.0" />
+    <add key="HUMERAL_ROT_STIFFNESS_LOW"     value="20.0" />
+    <add key="ELBOW_STIFFNESS_LOW"           value="20.0" />
+
+    <add key="WRIST_ROT_STIFFNESS_LOW"       value="20.0" />
+    <add key="WRIST_AB_AD_STIFFNESS_LOW"     value="20.0" />
+    <add key="WRIST_FE_STIFFNESS_LOW"        value="20.0" />
+
+    <add key="INDEX_AB_AD_STIFFNESS_LOW"     value="0.75" />
+    <add key="INDEX_MCP_STIFFNESS_LOW"       value="0.75" />
+    <add key="INDEX_PIP_STIFFNESS_LOW"       value="0.75" />
+    <add key="INDEX_DIP_STIFFNESS_LOW"       value="0.75" />
+
+    <add key="MIDDLE_AB_AD_STIFFNESS_LOW"    value="0.75" />
+    <add key="MIDDLE_MCP_STIFFNESS_LOW"      value="0.75" />
+    <add key="MIDDLE_PIP_STIFFNESS_LOW"      value="0.75" />
+    <add key="MIDDLE_DIP_STIFFNESS_LOW"      value="0.75" />
+
+    <add key="RING_AB_AD_STIFFNESS_LOW"      value="0.75" />
+    <add key="RING_MCP_STIFFNESS_LOW"        value="0.75" />
+    <add key="RING_PIP_STIFFNESS_LOW"        value="0.75" />
+    <add key="RING_DIP_STIFFNESS_LOW"        value="0.75" />
+
+    <add key="LITTLE_AB_AD_STIFFNESS_LOW"    value="0.75" />
+    <add key="LITTLE_MCP_STIFFNESS_LOW"      value="0.75" />
+    <add key="LITTLE_PIP_STIFFNESS_LOW"      value="0.75" />
+    <add key="LITTLE_DIP_STIFFNESS_LOW"      value="0.75" />
+
+    <add key="THUMB_CMC_AB_AD_STIFFNESS_LOW" value="0.75" />
+    <add key="THUMB_CMC_FE_STIFFNESS_LOW"    value="0.75" />
+    <add key="THUMB_MCP_STIFFNESS_LOW"       value="0.75" />
+    <add key="THUMB_DIP_STIFFNESS_LOW"       value="0.75" />
+
+    <!-- The Global hand STIFFNESS_LOW will overwrite values above!!-->
+    <add key="GLOBAL_HAND_STIFFNESS_LOW_ENABLE"     value="1" />
+    <add key="GLOBAL_HAND_STIFFNESS_LOW"            value="0.2" />
+
+    <!-- Set Park Position in degrees -->
+    <add key="SHOULDER_FE_POS_PARK"     value="0.00"/>
+    <add key="SHOULDER_AB_AD_POS_PARK"  value="0.00"/>
+    <add key="HUMERAL_ROT_POS_PARK"     value="0.00"/>
+    <add key="ELBOW_POS_PARK"           value="100.0"/>
+
+    <add key="WRIST_ROT_POS_PARK"       value="0.00"/>
+    <add key="WRIST_AB_AD_POS_PARK"     value="0.00"/>
+    <add key="WRIST_FE_POS_PARK"        value="0.00"/>
+
+    <add key="INDEX_AB_AD_POS_PARK"     value="0.00"/>
+    <add key="INDEX_MCP_POS_PARK"       value="0.00"/>
+    <add key="INDEX_PIP_POS_PARK"       value="0.00"/>
+    <add key="INDEX_DIP_POS_PARK"       value="0.00"/>
+
+    <add key="MIDDLE_AB_AD_POS_PARK"    value="0.00"/>
+    <add key="MIDDLE_MCP_POS_PARK"      value="0.00"/>
+    <add key="MIDDLE_PIP_POS_PARK"      value="0.00"/>
+    <add key="MIDDLE_DIP_POS_PARK"      value="0.00"/>
+
+    <add key="RING_AB_AD_POS_PARK"      value="0.00"/>
+    <add key="RING_MCP_POS_PARK"        value="0.00"/>
+    <add key="RING_PIP_POS_PARK"        value="0.00"/>
+    <add key="RING_DIP_POS_PARK"        value="0.00"/>
+
+    <add key="LITTLE_AB_AD_POS_PARK"    value="0.00"/>
+    <add key="LITTLE_MCP_POS_PARK"      value="0.00"/>
+    <add key="LITTLE_PIP_POS_PARK"      value="0.00"/>
+    <add key="LITTLE_DIP_POS_PARK"      value="0.00"/>
+
+    <add key="THUMB_CMC_AB_AD_POS_PARK" value="20.0"/>
+    <add key="THUMB_CMC_FE_POS_PARK"    value="0.00"/>
+    <add key="THUMB_MCP_POS_PARK"       value="0.00"/>
+    <add key="THUMB_DIP_POS_PARK"       value="0.00"/>
+
+</userConfig>

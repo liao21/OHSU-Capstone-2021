@@ -202,11 +202,12 @@ class Servo(DataSink):
         values = np.array(values) + self.joint_offset
         
         # TODO: Numpy rad2deg
+        deg_values = np.rad2deg(values)
         
-        rad_to_deg = 57.2957795  # 180/pi
-        deg_values = 27 * [0]
-        for i in range(0,27):
-            deg_values[i] = int(values[i]*rad_to_deg)
+        #rad_to_deg = 57.2957795  # 180/pi
+        #deg_values = 27 * [0]
+        #for i in range(0,27):
+        #    deg_values[i] = int(values[i]*rad_to_deg)
 
         # Send data
         # log command in degrees as this is the most efficient way to pack data
@@ -231,8 +232,6 @@ class Servo(DataSink):
             pwm = self.motor_ranges[i][0] + (motor_diff * percent_angle)
             #self.pi.set_servo_pulsewidth(self.pins[i], pwm)
             self.pi.set_servo_pulsewidth(self.pins[i], pwm if percent_angle > 0.4 else 0)
-
-        #self.pi.set_PWM_frequency(self.pins[1], 255 if deg_values[self.joint_links[1]] > 0 else 0)
 
         time.sleep(0.01)
 

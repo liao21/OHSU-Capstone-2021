@@ -121,13 +121,32 @@
     <add key="MPL.HandSpeedPrecision"    value="0.15"/>
 
     <!-- Servo Motor Information -->
-    <add key="Servo.Num"    value="2"/>
+    <add key="Servo.Num"    value="8"/>
     <add key="Servo.GPIO1"    value="17"/>
     <add key="Servo.GPIO2"    value="27"/>
+    <add key="Servo.GPIO3"    value="22"/>
+    <add key="Servo.GPIO4"    value="10"/>
+    <add key="Servo.GPIO5"    value="9"/>
+    <add key="Servo.GPIO6"    value="11"/>
+    <add key="Servo.GPIO7"    value="5"/>
+    <add key="Servo.GPIO8"    value="6"/>
     <add key="Servo.MotorLimit1"    value=" 700, 1600" />
     <add key="Servo.MotorLimit2"    value=" 600, 2200" />
-    <add key="Servo.JointLink1"    value="23" />
-    <add key="Servo.JointLink2"    value="4" />
+    <add key="Servo.MotorLimit3"    value=" 600, 2200" />
+    <add key="Servo.MotorLimit4"    value=" 600, 2200" />
+    <add key="Servo.MotorLimit5"    value=" 600, 2200" />
+    <add key="Servo.MotorLimit6"    value=" 600, 2200" />
+    <add key="Servo.MotorLimit7"    value=" 600, 2200" />
+    <add key="Servo.MotorLimit8"    value=" 600, 2200" />
+    <!-- TODO: Use mpl.JointEnum to reference joints by name instead -->
+    <add key="Servo.JointLink1"    value="4" /> <!-- Wrist rotation -->
+    <add key="Servo.JointLink2"    value="6" /> <!-- Wrist FE -->
+    <add key="Servo.JointLink3"    value="8" /> <!-- Index MCP -->
+    <add key="Servo.JointLink4"    value="12" /> <!-- Middle MCP -->
+    <add key="Servo.JointLink5"    value="16" /> <!-- Ring MCP-->
+    <add key="Servo.JointLink6"    value="20" /> <!-- Little MCP -->
+    <add key="Servo.JointLink7"    value="25" /> <!-- Thumb MCP -->
+    <add key="Servo.JointLink8"    value="23" /> <!-- Thumb AB AD -->
 
     <!-- User defined joint limits in *Degrees*
      Optionally limit the range of each joint prior to sending to the MPL

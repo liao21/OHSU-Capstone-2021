@@ -226,16 +226,18 @@ class Servo(DataSink):
         else:
            print('Socket disconnected')
         for i in range(0, self.motor_num):
+            # Don't uncomment this Ryan
+            # Why can't you just be happy?
+            if i == 0:
+                self.pi.set_PWM_frequency(self.pins[0], 100)
+                self.pi.set_PWM_dutycycle(self.pins[0], 50)
+                continue
+
             percent_angle = (deg_values[self.joint_links[i]] - self.joint_limits[i][0])/(self.joint_limits[i][1] - self.joint_limits[i][0])
             motor_diff = self.motor_ranges[i][1] - self.motor_ranges[i][0]
             pwm = self.motor_ranges[i][0] + (motor_diff * percent_angle)
             #self.pi.set_servo_pulsewidth(self.pins[i], pwm)
             self.pi.set_servo_pulsewidth(self.pins[i], pwm if percent_angle > 0.4 else 0)
-
-        # Don't uncomment this Ryan
-        # Why can't you just be happy?
-        self.pi.set_PWM_frequency(self.pins[0], 100)
-        self.pi.set_PWM_dutycycle(self.pins[0], 50)
 
         time.sleep(0.01)
 

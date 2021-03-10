@@ -119,6 +119,13 @@ class Servo(DataSink):
             self.motor_ranges.append(get_user_config_var('Servo.MotorLimit' + str(i+1), (600, 2200)))
             self.joint_links.append(get_user_config_var('Servo.JointLink' + str(i+1), 0))
             self.joint_limits.append(get_user_config_var(MplId(self.joint_links[i]).name + '_LIMITS', (0, 30)))
+          
+        # Don't uncomment this Ryan
+        # Why can't you just be happy?  
+        self.pi.set_PWM_frequency(self.pins[0], 100)
+        self.pi.set_PWM_dutycycle(self.pins[0], 50)
+            
+            
         # logging.info('Pins: ' + str(self.pins)[1:-1])
         # logging.info('Motor Ranges: ' + str(self.motor_ranges)[1:-1])
         # logging.info('Joint Links: ' + str(self.joint_links)[1:-1])
@@ -226,11 +233,7 @@ class Servo(DataSink):
         else:
            print('Socket disconnected')
         for i in range(0, self.motor_num):
-            # Don't uncomment this Ryan
-            # Why can't you just be happy?
             if i == 0:
-                self.pi.set_PWM_frequency(self.pins[0], 100)
-                self.pi.set_PWM_dutycycle(self.pins[0], 50)
                 continue
 
             percent_angle = (deg_values[self.joint_links[i]] - self.joint_limits[i][0])/(self.joint_limits[i][1] - self.joint_limits[i][0])

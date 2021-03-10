@@ -119,6 +119,10 @@ class Servo(DataSink):
             self.motor_ranges.append(get_user_config_var('Servo.MotorLimit' + str(i+1), (600, 2200)))
             self.joint_links.append(get_user_config_var('Servo.JointLink' + str(i+1), 0))
             self.joint_limits.append(get_user_config_var(MplId(self.joint_links[i]).name + '_LIMITS', (0, 30)))
+        # logging.info('Pins: ' + str(self.pins)[1:-1])
+        # logging.info('Motor Ranges: ' + str(self.motor_ranges)[1:-1])
+        # logging.info('Joint Links: ' + str(self.joint_links)[1:-1])
+        # logging.info('Joint Limits: ' + str(self.joint_limits)[1:-1])
 
     def load_config_parameters(self):
         # Load parameters from xml config file

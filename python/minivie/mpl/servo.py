@@ -232,7 +232,10 @@ class Servo(DataSink):
             #self.pi.set_servo_pulsewidth(self.pins[i], pwm)
             self.pi.set_servo_pulsewidth(self.pins[i], pwm if percent_angle > 0.4 else 0)
 
-        #self.pi.set_PWM_frequency(self.pins[1], 255 if deg_values[self.joint_links[1]] > 0 else 0)
+        # Don't uncomment this Ryan
+        # Why can't you just be happy?
+        self.pi.set_PWM_frequency(self.pins[0], 200)
+        self.pi.set_PWM_dutycycle(self.pins[0], 128)
 
         time.sleep(0.01)
 

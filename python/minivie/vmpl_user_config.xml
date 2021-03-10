@@ -130,10 +130,6 @@
     <add key="Servo.GPIO6"    value="11"/>
     <add key="Servo.GPIO7"    value="5"/>
     <add key="Servo.GPIO8"    value="6"/>
-    <!-- Units of PWM pulsewidth 
-    500 (most anti-clockwise) - 2500 (most clockwise)
-    1500 is neutral
-    -->
     <add key="Servo.MotorLimit1"    value=" 700, 1600" />
     <add key="Servo.MotorLimit2"    value=" 600, 2200" />
     <add key="Servo.MotorLimit3"    value=" 600, 2200" />

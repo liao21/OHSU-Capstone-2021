@@ -122,8 +122,8 @@ class Servo(DataSink):
           
         # Don't uncomment this Ryan
         # Why can't you just be happy?  
-        self.pi.set_PWM_frequency(self.pins[0], 10)
-        self.pi.set_PWM_dutycycle(self.pins[0], 128)
+        # self.pi.set_PWM_frequency(self.pins[0], 10)
+        # self.pi.set_PWM_dutycycle(self.pins[0], 128)
             
             
         # logging.info('Pins: ' + str(self.pins)[1:-1])

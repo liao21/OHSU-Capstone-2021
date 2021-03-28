@@ -109,23 +109,14 @@ class Servo(DataSink):
         self.packet_update_time = 1.0  # seconds
 
         # servo stuff
-        self.servo_pi = pigpio.pi()
-        self.servo_wrist_pin = 4
-        self.servo_thumb_pin = 16
-        self.servo_min = 500
-        self.servo_max = 2500
-        self.servo_wrist_limits = get_user_config_var(MplId(4).name + '_LIMITS', (-85.0, 85.0))
-        self.servo_thumb_limits = get_user_config_var(MplId(23).name + '_LIMITS', (8.0, 135.0))
-#        self.servo_pos = 800
-#        self.servo_dir = 5
+        self.pi = pigpio.pi()
+
         self.servo_num = get_user_config_var('Servo.joint_num', 2)
-        self.servo_pins = []
         self.servo_joints = []
         self.servo_velocities = []
         self.servo_motor_limits = []
         self.servo_joint_limits = []
         for i in range(0, self.servo_num):
-            self.servo_pins.append(get_user_config_var('Servo.pin'+str(i), 4))
             joint = get_user_config_var('Servo.joint_id'+str(i), 4)
             self.servo_joints.append(joint)
             self.servo_velocities.append(get_user_config_var('Servo.joint_velocity'+str(i), 5.0))
@@ -208,46 +199,13 @@ class Servo(DataSink):
         values = np.array(values) + self.joint_offset
         
         rad_to_deg = 57.2957795  # 180/pi
-        deg_values = 27 * [0]
-        for i in range(0,27):
-            deg_values[i] = int(values[i]*rad_to_deg)
+        deg_values = [int(values[joint]*rad_to_deg) for joint in self.servo_joints]
 
         # Send data
-        rad_to_deg = 57.2957795  # 180/pi
-        # log command in degrees as this is the most efficient way to pack data
-        msg = 'JointCmd: ' + ','.join(['%d' % int(elem*rad_to_deg) for elem in values])
-        logging.debug(msg)  # 60 us
-#        logging.debug("hello")
+        msg = ','.join(deg_values)
+        logging.debug('JointCmd: ' + msg)  # 60 us
+        self.pi.serial_write(self.serial, "<%s>\n" % msg)
 
-#        packer = struct.Struct('27f')
-#        packed_data = packer.pack(*values)
-
-#        (addr, port) = get_address(self.remote_address)
-
-#        if self.is_connected:
-#            if send_to_ghost:
-#                self.transport.sendto(packed_data, (addr, self.command_port))
-#            else:
-#                self.transport.sendto(packed_data, (addr, port))
-#        else:
-#            print('Socket disconnected')
-#        logging.info('Setting motor PWM')
-#        self.servo_pi.set_servo_pulsewidth(self.servo_pin, self.servo_pos)
-#        self.servo_pos += self.servo_dir
-#        if self.servo_pos < self.servo_min or self.servo_pos > self.servo_max:
-#            self.servo_dir = -self.servo_dir
-#            self.servo_pos += self.servo_dir
-        for i in range(0, self.servo_num):
-            pct = ((values[self.servo_joints[i]]*rad_to_deg)-self.servo_joint_limits[i][0])/\
-                (self.servo_joint_limits[i][1]-self.servo_joint_limits[i][0])
-            pwm = int((self.servo_motor_limits[i][1]-self.servo_motor_limits[i][0])*pct)+self.servo_motor_limits[i][0]
-            self.servo_pi.set_servo_pulsewidth(self.servo_pins[i], pwm)
-#        wrist_pct = ((values[4]*rad_to_deg)-self.servo_wrist_limits[0])/(self.servo_wrist_limits[1]-self.servo_wrist_limits[0])
-#        wrist_pwm = int((self.servo_max-self.servo_min)*wrist_pct)+self.servo_min
-#        thumb_pct = ((values[23]*rad_to_deg)-self.servo_thumb_limits[0])/(self.servo_thumb_limits[1]-self.servo_thumb_limits[0])
-#        thumb_pwm = int((self.servo_max-self.servo_min)*thumb_pct)+self.servo_min
-#        self.servo_pi.set_servo_pulsewidth(self.servo_wrist_pin, wrist_pwm)
-#        self.servo_pi.set_servo_pulsewidth(self.servo_thumb_pin, thumb_pwm)
 
     def send_config_command(self, enable=0.0, color=(0.3, 0.4, 0.5), alpha=0.8):
         """
@@ -313,6 +271,7 @@ class Servo(DataSink):
 
     def close(self):
         logging.info("Closing Unity Socket @ {}".format(self.remote_address))
+        self.pi.serial_close(self.serial)
         self.transport.close()
 
 async def run_loop(sender):

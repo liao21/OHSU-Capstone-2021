@@ -86,6 +86,7 @@ class Servo(DataSink):
 
     """
     def __init__(self, local_address='//0.0.0.0:25001', remote_address='//127.0.0.1:25000'):
+    # def __init__(self):
         DataSink.__init__(self)
         self.command_port = 25010  # integer port for ghost arm position commands
         self.config_port = 27000    # integer port for ghost arm display commands
@@ -95,11 +96,11 @@ class Servo(DataSink):
         self.loop = None
         self.transport = None
         self.protocol = None
-        self.local_address = local_address
-        self.remote_address = remote_address
+        #self.local_address = local_address
+        #self.remote_address = remote_address
         self.is_connected = True
         self.percepts = None
-        self.position = {'last_percept': None} # might need to change this
+        self.position = {'last_percept': None}
 
         # store some rate counting parameters
         self.packet_count = 0
@@ -119,12 +120,6 @@ class Servo(DataSink):
             self.motor_ranges.append(get_user_config_var('Servo.MotorLimit' + str(i+1), (600, 2200)))
             self.joint_links.append(get_user_config_var('Servo.JointLink' + str(i+1), 0))
             self.joint_limits.append(get_user_config_var(MplId(self.joint_links[i]).name + '_LIMITS', (0, 30)))
-          
-        # Don't uncomment this again Ryan
-        # Why can't you just be happy?  
-        self.pi.set_PWM_frequency(self.pins[0], 10)
-        self.pi.set_PWM_dutycycle(self.pins[0], 128)
-            
 
     def load_config_parameters(self):
         # Load parameters from xml config file
@@ -135,28 +130,26 @@ class Servo(DataSink):
 
     def connect(self):
         """ Connect UDP socket and register callback for data received """
-        self.loop = asyncio.get_event_loop()
+        #self.loop = asyncio.get_event_loop()
         # Get a reference to the event loop as we plan to use
         # low-level APIs.
         # From python 3.7 docs (https://docs.python.org/3.7/library/asyncio-protocol.html#)
-        listen = self.loop.create_datagram_endpoint(
-            lambda: UdpProtocol(parent=self), local_addr=get_address(self.local_address))
-        self.transport, self.protocol = self.loop.run_until_complete(listen)
+        #listen = self.loop.create_datagram_endpoint(
+        #    lambda: UdpProtocol(parent=self), local_addr=get_address(self.local_address))
+        #self.transport, self.protocol = self.loop.run_until_complete(listen)
         pass
 
     async def wait_for_connection(self):
         # After connecting, this function can be used as a blocking call to ensure the desired percepts are received
         # before continuing program execution.  E.g. ensure valid joint percepts are received to ensure smooth start
 
-        # Might need to comment this out. Must get rid of packet_data_rate() as that coincides
-        # with Unity
         print('Checking for valid percepts...')
 
-        while self.position['last_percept'] is None or self.get_packet_data_rate() is 0:
-            await asyncio.sleep(timestep)
-            print('Waiting 20 ms for valid percepts...')
-            self.get_packet_data_rate()
-            logging.info('Waiting 20 ms for valid percepts...')
+#        while self.position['last_percept'] is None or self.get_packet_data_rate() is 0:
+#            await asyncio.sleep(timestep)
+#            print('Waiting 20 ms for valid percepts...')
+#            self.get_packet_data_rate()
+#            logging.info('Waiting 20 ms for valid percepts...')
 
     def get_status_msg(self):
         """
@@ -211,6 +204,7 @@ class Servo(DataSink):
             deg_values[i] = int(values[i]*rad_to_deg)
 
         # Send data
+        rad_to_deg = 57.2957795  # 180/pi
         # log command in degrees as this is the most efficient way to pack data
         msg = 'JointCmd: ' + ','.join(['%d' % int(elem*rad_to_deg) for elem in values])
         logging.debug(msg)  # 60 us
@@ -238,8 +232,6 @@ class Servo(DataSink):
             self.pi.set_servo_pulsewidth(self.pins[i], pwm if percent_angle > 0.4 else 0)
 
         time.sleep(0.01)
-
-
 
     def send_config_command(self, enable=0.0, color=(0.3, 0.4, 0.5), alpha=0.8):
         """
@@ -306,7 +298,6 @@ class Servo(DataSink):
     def close(self):
         logging.info("Closing Unity Socket @ {}".format(self.remote_address))
         self.transport.close()
-        pass
 
 async def run_loop(sender):
     # test asyncio loop commands
@@ -338,9 +329,8 @@ async def run_loop(sender):
 
 def main():
 
-    # print('Testing')
     # create socket
-    vie = Servo(local_address='//0.0.0.0:25001', remote_address='//127.0.0.1:25000')
+    vie = UnityUdp(local_address='//0.0.0.0:25001', remote_address='//127.0.0.1:25000')
 
     loop = asyncio.get_event_loop()
     loop.create_task(run_loop(vie))
@@ -348,7 +338,6 @@ def main():
 
     pass
 
-# print('Another')
 
 if __name__ == '__main__':
     main()

@@ -15,7 +15,7 @@
     <add key="DataSink"         value="Servo"/>
     <add key="NfuUdp.remote_address" value="//127.0.0.1:9027"/>
     <add key="NfuUdp.local_address" value="//0.0.0.0:9028"/>
-    <add key="UnityUdp.remote_address" value="//192.162.8.3:25000"/>
+    <add key="UnityUdp.remote_address" value="//192.162.8.3:25000"/> <!-- Could try "//192.168.8.10:25000" instead.-->
     <add key="UnityUdp.local_address" value="//0.0.0.0:25001"/>
     <add key="UnityUdp.ghost_command_port" value="25010"/>
     <add key="UnityUdp.ghost_config_port" value="27000"/>
@@ -77,7 +77,7 @@
             AE: Above Elbow
             BE: Below Elbow  -->
     <add key="myo_position_1"    value="AE"/>
-    <add key="myo_position_2"    value="AE"/>
+    <add key="myo_position_2"    value="BE"/>
 
     <!-- Input Type
         Use this to set input type -->
@@ -93,8 +93,9 @@
     <add key="MyoUdpServer.num_devices" value="1"/>
     <add key="MyoUdpServer.iface_1"    value="0"/>
     <add key="MyoUdpServer.iface_2"    value="0"/>
-    <add key="MyoUdpServer.mac_address_1"    value="c0:83:15:fd:be:b4"/>
-    <add key="MyoUdpServer.mac_address_2"    value="ef:11:41:2c:ac:19"/>
+    <!-- <add key="MyoUdpServer.mac_address_1"    value="C0:83:15:FD:BE:B4"/> -->
+    <add key="MyoUdpServer.mac_address_1"    value="EF:11:41:2C:A1:19"/>
+    <add key="MyoUdpServer.mac_address_2"    value="xx:xx:xx:xx:xx:xx"/>
     <add key="MyoUdpServer.local_address_1"     value="//0.0.0.0:16001"/>
     <add key="MyoUdpServer.local_address_2"     value="//0.0.0.0:16002"/>
     <add key="MyoUdpServer.remote_address_1"    value="//127.0.0.1:15001"/>
@@ -103,8 +104,8 @@
     <!-- Myo Data Client Streaming Ports
         Use these parameters for reading from a Myo Data Source in a client application  -->
     <add key="MyoUdpClient.num_devices" value="1"/>
-    <add key="MyoUdpClient.mac_address_1"    value="c0:83:15:fd:be:b4"/>
-    <add key="MyoUdpClient.mac_address_2"    value="ef:11:41:2c:ac:19"/>
+    <add key="MyoUdpClient.mac_address_1"    value="xx:xx:xx:xx:xx:xx"/>
+    <add key="MyoUdpClient.mac_address_2"    value="xx:xx:xx:xx:xx:xx"/>
     <add key="MyoUdpClient.local_address_1"     value="//0.0.0.0:15001"/>
     <add key="MyoUdpClient.local_address_2"     value="//0.0.0.0:15002"/>
     <add key="MyoUdpClient.remote_address_1"    value="//127.0.0.1:16001"/>
@@ -113,7 +114,7 @@
     <!-- MPL Motion Speeds -->
     <add key="MPL.ArmSpeedMin"    value="0.1"/>
     <add key="MPL.ArmSpeedMax"    value="5"/>
-    <add key="MPL.ArmSpeedDefault"    value="3.0"/>
+    <add key="MPL.ArmSpeedDefault"    value="1.4"/>
     <add key="MPL.ArmSpeedPrecision"    value="0.2"/>
     <add key="MPL.HandSpeedMin"    value="0.1"/>
     <add key="MPL.HandSpeedMax"    value="5"/>

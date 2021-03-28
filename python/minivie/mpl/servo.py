@@ -86,6 +86,7 @@ class Servo(DataSink):
 
     """
     def __init__(self, local_address='//0.0.0.0:25001', remote_address='//127.0.0.1:25000'):
+    # def __init__(self):
         DataSink.__init__(self)
         self.command_port = 25010  # integer port for ghost arm position commands
         self.config_port = 27000    # integer port for ghost arm display commands
@@ -95,11 +96,11 @@ class Servo(DataSink):
         self.loop = None
         self.transport = None
         self.protocol = None
-        self.local_address = local_address
-        self.remote_address = remote_address
+        #self.local_address = local_address
+        #self.remote_address = remote_address
         self.is_connected = True
         self.percepts = None
-        self.position = {'last_percept': None} # might need to change this
+        self.position = {'last_percept': None}
 
         # store some rate counting parameters
         self.packet_count = 0
@@ -107,22 +108,29 @@ class Servo(DataSink):
         self.packet_rate = 0.0
         self.packet_update_time = 1.0  # seconds
 
-        # motor stuff
-        self.pi = pigpio.pi()
-        self.motor_num = get_user_config_var('Servo.Num', 2)
-        self.pins = []
-        self.motor_ranges = []
-        self.joint_links = []
-        self.joint_limits = []
-        for i in range(0, self.motor_num):
-            self.pins.append(get_user_config_var('Servo.GPIO' + str(i+1), 4))
-            self.motor_ranges.append(get_user_config_var('Servo.MotorLimit' + str(i+1), (600, 2200)))
-            self.joint_links.append(get_user_config_var('Servo.JointLink' + str(i+1), 0))
-            self.joint_limits.append(get_user_config_var(MplId(self.joint_links[i]).name + '_LIMITS', (0, 30)))
-        # logging.info('Pins: ' + str(self.pins)[1:-1])
-        # logging.info('Motor Ranges: ' + str(self.motor_ranges)[1:-1])
-        # logging.info('Joint Links: ' + str(self.joint_links)[1:-1])
-        # logging.info('Joint Limits: ' + str(self.joint_limits)[1:-1])
+        # servo stuff
+        self.servo_pi = pigpio.pi()
+        self.servo_wrist_pin = 4
+        self.servo_thumb_pin = 16
+        self.servo_min = 500
+        self.servo_max = 2500
+        self.servo_wrist_limits = get_user_config_var(MplId(4).name + '_LIMITS', (-85.0, 85.0))
+        self.servo_thumb_limits = get_user_config_var(MplId(23).name + '_LIMITS', (8.0, 135.0))
+#        self.servo_pos = 800
+#        self.servo_dir = 5
+        self.servo_num = get_user_config_var('Servo.joint_num', 2)
+        self.servo_pins = []
+        self.servo_joints = []
+        self.servo_velocities = []
+        self.servo_motor_limits = []
+        self.servo_joint_limits = []
+        for i in range(0, self.servo_num):
+            self.servo_pins.append(get_user_config_var('Servo.pin'+str(i), 4))
+            joint = get_user_config_var('Servo.joint_id'+str(i), 4)
+            self.servo_joints.append(joint)
+            self.servo_velocities.append(get_user_config_var('Servo.joint_velocity'+str(i), 5.0))
+            self.servo_motor_limits.append(get_user_config_var('Servo.motor_limits'+str(i), (500, 2500)))
+            self.servo_joint_limits.append(get_user_config_var(MplId(joint).name+'_LIMITS', (0.0, 100.0)))
 
     def load_config_parameters(self):
         # Load parameters from xml config file
@@ -133,28 +141,26 @@ class Servo(DataSink):
 
     def connect(self):
         """ Connect UDP socket and register callback for data received """
-        self.loop = asyncio.get_event_loop()
+        #self.loop = asyncio.get_event_loop()
         # Get a reference to the event loop as we plan to use
         # low-level APIs.
         # From python 3.7 docs (https://docs.python.org/3.7/library/asyncio-protocol.html#)
-        listen = self.loop.create_datagram_endpoint(
-            lambda: UdpProtocol(parent=self), local_addr=get_address(self.local_address))
-        self.transport, self.protocol = self.loop.run_until_complete(listen)
+        #listen = self.loop.create_datagram_endpoint(
+        #    lambda: UdpProtocol(parent=self), local_addr=get_address(self.local_address))
+        #self.transport, self.protocol = self.loop.run_until_complete(listen)
         pass
 
     async def wait_for_connection(self):
         # After connecting, this function can be used as a blocking call to ensure the desired percepts are received
         # before continuing program execution.  E.g. ensure valid joint percepts are received to ensure smooth start
 
-        # Might need to comment this out. Must get rid of packet_data_rate() as that coincides
-        # with Unity
         print('Checking for valid percepts...')
 
-        while self.position['last_percept'] is None or self.get_packet_data_rate() is 0:
-            await asyncio.sleep(timestep)
-            print('Waiting 20 ms for valid percepts...')
-            self.get_packet_data_rate()
-            logging.info('Waiting 20 ms for valid percepts...')
+#        while self.position['last_percept'] is None or self.get_packet_data_rate() is 0:
+#            await asyncio.sleep(timestep)
+#            print('Waiting 20 ms for valid percepts...')
+#            self.get_packet_data_rate()
+#            logging.info('Waiting 20 ms for valid percepts...')
 
     def get_status_msg(self):
         """
@@ -201,42 +207,47 @@ class Servo(DataSink):
         # Apply joint offsets if needed
         values = np.array(values) + self.joint_offset
         
-        # TODO: Numpy rad2deg
-        
         rad_to_deg = 57.2957795  # 180/pi
         deg_values = 27 * [0]
         for i in range(0,27):
             deg_values[i] = int(values[i]*rad_to_deg)
 
         # Send data
+        rad_to_deg = 57.2957795  # 180/pi
         # log command in degrees as this is the most efficient way to pack data
         msg = 'JointCmd: ' + ','.join(['%d' % int(elem*rad_to_deg) for elem in values])
         logging.debug(msg)  # 60 us
+#        logging.debug("hello")
 
-        packer = struct.Struct('27f')
-        packed_data = packer.pack(*values)
+#        packer = struct.Struct('27f')
+#        packed_data = packer.pack(*values)
 
-        (addr, port) = get_address(self.remote_address)
+#        (addr, port) = get_address(self.remote_address)
 
-        if self.is_connected:
-            if send_to_ghost:
-                self.transport.sendto(packed_data, (addr, self.command_port))
-            else:
-                self.transport.sendto(packed_data, (addr, port))
-        else:
-           print('Socket disconnected')
-        for i in range(0, self.motor_num):
-            percent_angle = (deg_values[self.joint_links[i]] - self.joint_limits[i][0])/(self.joint_limits[i][1] - self.joint_limits[i][0])
-            motor_diff = self.motor_ranges[i][1] - self.motor_ranges[i][0]
-            pwm = self.motor_ranges[i][0] + (motor_diff * percent_angle)
-            #self.pi.set_servo_pulsewidth(self.pins[i], pwm)
-            self.pi.set_servo_pulsewidth(self.pins[i], pwm if percent_angle > 0.4 else 0)
-
-        #self.pi.set_PWM_frequency(self.pins[1], 255 if deg_values[self.joint_links[1]] > 0 else 0)
-
-        time.sleep(0.01)
-
-
+#        if self.is_connected:
+#            if send_to_ghost:
+#                self.transport.sendto(packed_data, (addr, self.command_port))
+#            else:
+#                self.transport.sendto(packed_data, (addr, port))
+#        else:
+#            print('Socket disconnected')
+#        logging.info('Setting motor PWM')
+#        self.servo_pi.set_servo_pulsewidth(self.servo_pin, self.servo_pos)
+#        self.servo_pos += self.servo_dir
+#        if self.servo_pos < self.servo_min or self.servo_pos > self.servo_max:
+#            self.servo_dir = -self.servo_dir
+#            self.servo_pos += self.servo_dir
+        for i in range(0, self.servo_num):
+            pct = ((values[self.servo_joints[i]]*rad_to_deg)-self.servo_joint_limits[i][0])/\
+                (self.servo_joint_limits[i][1]-self.servo_joint_limits[i][0])
+            pwm = int((self.servo_motor_limits[i][1]-self.servo_motor_limits[i][0])*pct)+self.servo_motor_limits[i][0]
+            self.servo_pi.set_servo_pulsewidth(self.servo_pins[i], pwm)
+#        wrist_pct = ((values[4]*rad_to_deg)-self.servo_wrist_limits[0])/(self.servo_wrist_limits[1]-self.servo_wrist_limits[0])
+#        wrist_pwm = int((self.servo_max-self.servo_min)*wrist_pct)+self.servo_min
+#        thumb_pct = ((values[23]*rad_to_deg)-self.servo_thumb_limits[0])/(self.servo_thumb_limits[1]-self.servo_thumb_limits[0])
+#        thumb_pwm = int((self.servo_max-self.servo_min)*thumb_pct)+self.servo_min
+#        self.servo_pi.set_servo_pulsewidth(self.servo_wrist_pin, wrist_pwm)
+#        self.servo_pi.set_servo_pulsewidth(self.servo_thumb_pin, thumb_pwm)
 
     def send_config_command(self, enable=0.0, color=(0.3, 0.4, 0.5), alpha=0.8):
         """
@@ -303,7 +314,6 @@ class Servo(DataSink):
     def close(self):
         logging.info("Closing Unity Socket @ {}".format(self.remote_address))
         self.transport.close()
-        pass
 
 async def run_loop(sender):
     # test asyncio loop commands
@@ -335,9 +345,8 @@ async def run_loop(sender):
 
 def main():
 
-    # print('Testing')
     # create socket
-    vie = Servo(local_address='//0.0.0.0:25001', remote_address='//127.0.0.1:25000')
+    vie = UnityUdp(local_address='//0.0.0.0:25001', remote_address='//127.0.0.1:25000')
 
     loop = asyncio.get_event_loop()
     loop.create_task(run_loop(vie))
@@ -345,7 +354,6 @@ def main():
 
     pass
 
-# print('Another')
 
 if __name__ == '__main__':
     main()

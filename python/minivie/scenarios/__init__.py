@@ -555,7 +555,15 @@ class Scenario(object):
         pause_arm = self.is_paused('Arm') or self.is_paused('All')
         if not class_info['IsGrasp'] and not pause_arm:
             # the motion class is an arm movement
-            self.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * self.gain_value)
+            # special addition for Servo DataSink
+            if self.DataSink.name == 'Servo':
+                if class_info['JointId'] in self.DataSink.servo_joints:
+                    self.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * \
+                        self.DataSink.servo_velocities[self.DataSink.servo_joints.index(class_info['JointId'])])
+                else:
+                    self.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * self.gain_value)
+            else:
+                self.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * self.gain_value)
 
         # Automatically open hand if auto open set and no movement class
         if self.TrainingData.motion_names[decision_id] == 'No Movement' and self.auto_open:
@@ -779,23 +787,24 @@ class MplScenario(Scenario):
             sink = NfuUdp(hostname=remote_hostname, udp_telem_port=local_port, udp_command_port=remote_port)
             sink.connect()
         elif data_sink == 'Servo':
-            logging.critical('Loading Data Sink.'.format(data_sink))
-            local_address = get_config_var('UnityUdp.local_address', '//0.0.0.0:25001')
-            remote_address = get_config_var('UnityUdp.remote_address', '//127.0.0.1:25000')
-            sink = Servo(local_address=local_address, remote_address=remote_address)
+            # Copying Unity Configuration
+            #local_address = get_config_var('UnityUdp.local_address', '0.0.0.0:25001')
+            #remote_address = get_config_var('UnityUdp.remote_address', '//127.0.0.1:25000')
+            #sink = Servo(local_address=local_address, remote_address=remote_address)
+            sink = Servo()
             sink.connect()
             # send some default config parameters on setup for ghost arms (turn them off)
-            enable = get_config_var('UnityUdp.ghost_default_enable', 0.0)
-            color = get_config_var('UnityUdp.ghost_default_color', (0.3, 0.4, 0.5))
-            alpha = get_config_var('UnityUdp.ghost_default_alpha', 0.8)
-            # TODO: this is a hard-coding to force the arms off on startup. not ideal...
-            sink.config_port = 27000
-            sink.send_config_command(enable, color, alpha)
-            sink.config_port = 27100
-            sink.send_config_command(enable, color, alpha)
+            #enable = get_config_var('UnityUdp.ghost_default_enable', 0.0)
+            #color = get_config_var('UnityUdp.ghost_default_color', (0.3, 0.4, 0.5))
+            #alpha = get_config_var('UnityUdp.ghost_default_alpha', 0.8)
+            # TODO: this is a hard-coding to force the arms off on startup.  not ideal...
+            #sink.config_port = 27000
+            #sink.send_config_command(enable, color, alpha)
+            #sink.config_port = 27100
+            #sink.send_config_command(enable, color, alpha)
             # Now read the user parameter for which arm the user wants to control
-            sink.command_port = get_config_var('UnityUdp.ghost_command_port', 25010)
-            sink.config_port = get_config_var('UnityUdp.ghost_config_port', 27000)
+            #sink.command_port = get_config_var('UnityUdp.ghost_command_port', 25010)
+            #sink.config_port = get_config_var('UnityUdp.ghost_config_port', 27000)
         else:
             import sys
             # unrecoverable

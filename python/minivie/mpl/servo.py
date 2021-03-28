@@ -206,6 +206,11 @@ class Servo(DataSink):
 
         # Apply joint offsets if needed
         values = np.array(values) + self.joint_offset
+        
+        rad_to_deg = 57.2957795  # 180/pi
+        deg_values = 27 * [0]
+        for i in range(0,27):
+            deg_values[i] = int(values[i]*rad_to_deg)
 
         # Send data
         rad_to_deg = 57.2957795  # 180/pi

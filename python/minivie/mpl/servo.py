@@ -110,7 +110,7 @@ class Servo(DataSink):
 
         # servo stuff
         self.pi = pigpio.pi()
-        self.serial = pi.serial_open("/dev/serial0", 115200)
+        self.serial = self.pi.serial_open("/dev/serial0", 115200)
 
         self.servo_num = get_user_config_var('Servo.joint_num', 2)
         self.servo_joints = []

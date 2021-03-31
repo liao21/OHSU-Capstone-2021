@@ -112,16 +112,14 @@ class Servo(DataSink):
         self.pi = pigpio.pi()
         self.serial = self.pi.serial_open("/dev/serial0", 115200)
 
-        self.servo_num = get_user_config_var('Servo.joint_num', 2)
+        self.servo_num = get_user_config_var('Servo.Num', 2)
         self.servo_joints = []
-        self.servo_velocities = []
         self.servo_motor_limits = []
         self.servo_joint_limits = []
         for i in range(0, self.servo_num):
-            joint = get_user_config_var('Servo.joint_id'+str(i), 4)
+            joint = get_user_config_var('Servo.JointLink'+str(i), 4)
             self.servo_joints.append(joint)
-            self.servo_velocities.append(get_user_config_var('Servo.joint_velocity'+str(i), 5.0))
-            self.servo_motor_limits.append(get_user_config_var('Servo.motor_limits'+str(i), (500, 2500)))
+            self.servo_motor_limits.append(get_user_config_var('Servo.MotorLimit'+str(i), (500, 2500)))
             self.servo_joint_limits.append(get_user_config_var(MplId(joint).name+'_LIMITS', (0.0, 100.0)))
 
     def load_config_parameters(self):

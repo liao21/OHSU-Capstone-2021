@@ -202,7 +202,7 @@ class Servo(DataSink):
         deg_values = [int(values[joint]*rad_to_deg) for joint in self.servo_joints]
 
         # Send data
-        msg = ','.join(deg_values)
+        msg = ','.join(map(str, deg_values))
         logging.debug('JointCmd: ' + msg)  # 60 us
         self.pi.serial_write(self.serial, "<%s>\n" % msg)
 

@@ -96,8 +96,8 @@ class Servo(DataSink):
         self.loop = None
         self.transport = None
         self.protocol = None
-        #self.local_address = local_address
-        #self.remote_address = remote_address
+        self.local_address = local_address
+        self.remote_address = remote_address
         self.is_connected = True
         self.percepts = None
         self.position = {'last_percept': None}
@@ -131,14 +131,14 @@ class Servo(DataSink):
 
     def connect(self):
         """ Connect UDP socket and register callback for data received """
-        #self.loop = asyncio.get_event_loop()
+        self.loop = asyncio.get_event_loop()
         # Get a reference to the event loop as we plan to use
         # low-level APIs.
         # From python 3.7 docs (https://docs.python.org/3.7/library/asyncio-protocol.html#)
-        #listen = self.loop.create_datagram_endpoint(
-        #    lambda: UdpProtocol(parent=self), local_addr=get_address(self.local_address))
-        #self.transport, self.protocol = self.loop.run_until_complete(listen)
-        pass
+        listen = self.loop.create_datagram_endpoint(
+            lambda: UdpProtocol(parent=self), local_addr=get_address(self.local_address))
+        self.transport, self.protocol = self.loop.run_until_complete(listen)
+        # pass
 
     async def wait_for_connection(self):
         # After connecting, this function can be used as a blocking call to ensure the desired percepts are received
@@ -146,11 +146,11 @@ class Servo(DataSink):
 
         print('Checking for valid percepts...')
 
-#        while self.position['last_percept'] is None or self.get_packet_data_rate() is 0:
-#            await asyncio.sleep(timestep)
-#            print('Waiting 20 ms for valid percepts...')
-#            self.get_packet_data_rate()
-#            logging.info('Waiting 20 ms for valid percepts...')
+        while self.position['last_percept'] is None or self.get_packet_data_rate() is 0:
+            await asyncio.sleep(timestep)
+            print('Waiting 20 ms for valid percepts...')
+            self.get_packet_data_rate()
+            logging.info('Waiting 20 ms for valid percepts...')
 
     def get_status_msg(self):
         """
@@ -204,6 +204,20 @@ class Servo(DataSink):
         msg = ','.join(map(str, deg_values))
         logging.debug('JointCmd: ' + msg)  # 60 us
         self.pi.serial_write(self.serial, "<%s>\n" % msg)
+        
+        # Old code I'm putting back to unbreak mpl
+        packer = struct.Struct('27f')
+        packed_data = packer.pack(*values)
+
+        (addr, port) = get_address(self.remote_address)
+
+        if self.is_connected:
+            if send_to_ghost:
+                self.transport.sendto(packed_data, (addr, self.command_port))
+            else:
+                self.transport.sendto(packed_data, (addr, port))
+        else:
+           print('Socket disconnected')
 
 
     def send_config_command(self, enable=0.0, color=(0.3, 0.4, 0.5), alpha=0.8):
@@ -304,7 +318,7 @@ async def run_loop(sender):
 def main():
 
     # create socket
-    vie = UnityUdp(local_address='//0.0.0.0:25001', remote_address='//127.0.0.1:25000')
+    vie = Servo(local_address='//0.0.0.0:25001', remote_address='//127.0.0.1:25000')
 
     loop = asyncio.get_event_loop()
     loop.create_task(run_loop(vie))

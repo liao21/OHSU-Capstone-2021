@@ -204,7 +204,7 @@ class Servo(DataSink):
         msg = ','.join(map(str, deg_values))
         logging.debug('JointCmd: ' + msg)  # 60 us
         # self.pi.serial_write(self.serial, "<%s>\n" % msg)
-        self.pi.serial_write(self.serial, "<%d>\n", % deg_values[2]) # index finger
+        self.pi.serial_write(self.serial, "<%d>\n" % deg_values[2]) # index finger
         
         # Old code I'm putting back to unbreak mpl
         packer = struct.Struct('27f')

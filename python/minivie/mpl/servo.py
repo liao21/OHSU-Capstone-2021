@@ -117,9 +117,9 @@ class Servo(DataSink):
         self.servo_motor_limits = []
         self.servo_joint_limits = []
         for i in range(0, self.servo_num):
-            joint = get_user_config_var('Servo.JointLink'+str(i), 4)
+            joint = get_user_config_var('Servo.JointLink'+str(i+1), 4)
             self.servo_joints.append(joint)
-            self.servo_motor_limits.append(get_user_config_var('Servo.MotorLimit'+str(i), (500, 2500)))
+            self.servo_motor_limits.append(get_user_config_var('Servo.MotorLimit'+str(i+1), (500, 2500)))
             self.servo_joint_limits.append(get_user_config_var(MplId(joint).name+'_LIMITS', (0.0, 100.0)))
 
     def load_config_parameters(self):
@@ -203,7 +203,8 @@ class Servo(DataSink):
         # Send data
         msg = ','.join(map(str, deg_values))
         logging.debug('JointCmd: ' + msg)  # 60 us
-        self.pi.serial_write(self.serial, "<%s>\n" % msg)
+        # self.pi.serial_write(self.serial, "<%s>\n" % msg)
+        self.pi.serial_write(self.serial, "<%d>\n", % deg_values[2]) # index finger
         
         # Old code I'm putting back to unbreak mpl
         packer = struct.Struct('27f')

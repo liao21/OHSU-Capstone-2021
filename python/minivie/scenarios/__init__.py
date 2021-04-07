@@ -554,16 +554,7 @@ class Scenario(object):
 
         pause_arm = self.is_paused('Arm') or self.is_paused('All')
         if not class_info['IsGrasp'] and not pause_arm:
-            # the motion class is an arm movement
-            # special addition for Servo DataSink
-            if self.DataSink.name == 'Servo':
-                if class_info['JointId'] in self.DataSink.servo_joints:
-                    self.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * \
-                        self.DataSink.servo_velocities[self.DataSink.servo_joints.index(class_info['JointId'])])
-                else:
-                    self.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * self.gain_value)
-            else:
-                self.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * self.gain_value)
+            self.Plant.set_joint_velocity(class_info['JointId'], class_info['Direction'] * self.gain_value)
 
         # Automatically open hand if auto open set and no movement class
         if self.TrainingData.motion_names[decision_id] == 'No Movement' and self.auto_open:

@@ -93,8 +93,8 @@
     <add key="MyoUdpServer.num_devices" value="1"/>
     <add key="MyoUdpServer.iface_1"    value="0"/>
     <add key="MyoUdpServer.iface_2"    value="0"/>
-    <!-- <add key="MyoUdpServer.mac_address_1"    value="C0:83:15:FD:BE:B4"/> -->
-    <add key="MyoUdpServer.mac_address_1"    value="EF:11:41:2C:A1:19"/>
+    <add key="MyoUdpServer.mac_address_1"    value="C0:83:15:FD:BE:B4"/>
+    <!-- <add key="MyoUdpServer.mac_address_1"    value="EF:11:41:2C:A1:19"/> -->
     <add key="MyoUdpServer.mac_address_2"    value="xx:xx:xx:xx:xx:xx"/>
     <add key="MyoUdpServer.local_address_1"     value="//0.0.0.0:16001"/>
     <add key="MyoUdpServer.local_address_2"     value="//0.0.0.0:16002"/>

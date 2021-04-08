@@ -116,6 +116,7 @@ class Servo(DataSink):
         self.servo_joints = []
         self.servo_motor_limits = []
         self.servo_joint_limits = []
+        self.finger_offsets = [MplId.INDEX_MCP, MplId.MIDDLE_MCP, MplId.RING_MCP, MplId.LITTLE_MCP]
         for i in range(0, self.servo_num):
             joint = get_user_config_var('Servo.JointLink'+str(i+1), 4)
             self.servo_joints.append(joint)
@@ -196,15 +197,25 @@ class Servo(DataSink):
 
         # Apply joint offsets if needed
         values = np.array(values) + self.joint_offset
+        degs = [int(angle*rad_to_deg) for angle in values]
+        
+        # Index, middle, ring, and pinky to ESP1
+        # For the fingers, we sum the angles of each of the joints of the finger
+        esp1_angles = [0]*4
+        for i, offset in enumerate(self.finger_offsets):
+            esp1_angles[i] = sum(degs[i:i+2])
+        
+        # Thumb and wrist to ESP2
+        # TODO
         
         rad_to_deg = 57.2957795  # 180/pi
         deg_values = [int(values[joint]*rad_to_deg) for joint in self.servo_joints]
 
         # Send data
-        msg = ','.join(map(str, deg_values))
-        logging.debug('JointCmd: ' + msg)  # 60 us
-        # self.pi.serial_write(self.serial, "<%s>\n" % msg)
-        self.pi.serial_write(self.serial, "<%d>\n" % deg_values[2]) # index finger
+        msg1 = ','.join(map(str, esp1_angles))
+        logging.debug('JointCmd: ' + msg1)  # 60 us
+        self.pi.serial_write(self.serial, "<%s>\n" % msg1)
+        # self.pi.serial_write(self.serial, "<%d>\n" % deg_values[2]) # index finger
         
         # Old code I'm putting back to unbreak mpl
         packer = struct.Struct('27f')

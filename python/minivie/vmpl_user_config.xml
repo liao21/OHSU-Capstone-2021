@@ -165,28 +165,28 @@
     <add key="WRIST_FE_LIMITS"        value=" -60, 60" />
 
     <add key="INDEX_AB_AD_LIMITS"     value=" -20, 0" />
-    <add key="INDEX_MCP_LIMITS"       value=" -40, 85" />
+    <add key="INDEX_MCP_LIMITS"       value=" 0, 85" />
     <add key="INDEX_PIP_LIMITS"       value="   0, 100" />
     <add key="INDEX_DIP_LIMITS"       value="   0, 80" />
 
     <add key="MIDDLE_AB_AD_LIMITS"    value=" -20, 0" />
-    <add key="MIDDLE_MCP_LIMITS"      value=" -40, 85" />
+    <add key="MIDDLE_MCP_LIMITS"      value=" 0, 85" />
     <add key="MIDDLE_PIP_LIMITS"      value="   0, 100" />
     <add key="MIDDLE_DIP_LIMITS"      value="   0, 80" />
 
     <add key="RING_AB_AD_LIMITS"      value="   0, 20" />
-    <add key="RING_MCP_LIMITS"        value=" -40, 85" />
+    <add key="RING_MCP_LIMITS"        value=" 0, 85" />
     <add key="RING_PIP_LIMITS"        value="   0, 100" />
     <add key="RING_DIP_LIMITS"        value="   0, 80" />
 
     <add key="LITTLE_AB_AD_LIMITS"    value="   0, 20" />
-    <add key="LITTLE_MCP_LIMITS"      value=" -40, 85" />
+    <add key="LITTLE_MCP_LIMITS"      value=" 0, 85" />
     <add key="LITTLE_PIP_LIMITS"      value="   0, 100" />
     <add key="LITTLE_DIP_LIMITS"      value="   0, 80" />
 
     <add key="THUMB_CMC_AB_AD_LIMITS" value="  8, 135" />
     <add key="THUMB_CMC_FE_LIMITS"    value="   8, 80" />
-    <add key="THUMB_MCP_LIMITS"       value="   8, 80" />
+    <add key="THUMB_MCP_LIMITS"       value="   0, 80" />
     <add key="THUMB_DIP_LIMITS"       value=" -12, 60" />
 
     <!-- Joint direction parameters to flip joint direction +/- 1 -->    

@@ -197,6 +197,7 @@ class Servo(DataSink):
 
         # Apply joint offsets if needed
         values = np.array(values) + self.joint_offset
+        rad_to_deg = 57.2957795  # 180/pi
         degs = [int(angle*rad_to_deg) for angle in values]
         
         # Index, middle, ring, and pinky to ESP1
@@ -208,7 +209,7 @@ class Servo(DataSink):
         # Thumb and wrist to ESP2
         # TODO
         
-        rad_to_deg = 57.2957795  # 180/pi
+        
         deg_values = [int(values[joint]*rad_to_deg) for joint in self.servo_joints]
 
         # Send data

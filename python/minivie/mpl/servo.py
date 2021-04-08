@@ -203,12 +203,13 @@ class Servo(DataSink):
         # Index, middle, ring, and pinky to ESP1
         # For the fingers, we sum the angles of each of the joints of the finger
         esp1_angles = [0]*4
+        logging.debug('Index finger: %d,%d,%d' % (degs[8], degs[9], degs[10]))
         for i, offset in enumerate(self.finger_offsets):
-            esp1_angles[i] = sum(degs[i:i+2])
+            
+            esp1_angles[i] = sum(degs[i:i+3])
         
         # Thumb and wrist to ESP2
         # TODO
-        
         
         deg_values = [int(values[joint]*rad_to_deg) for joint in self.servo_joints]
 

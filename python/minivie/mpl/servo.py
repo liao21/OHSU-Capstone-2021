@@ -112,16 +112,25 @@ class Servo(DataSink):
         self.pi = pigpio.pi()
         self.serial = self.pi.serial_open("/dev/serial0", 115200)
 
-        self.servo_num = get_user_config_var('Servo.Num', 2)
-        self.servo_joints = []
-        self.servo_motor_limits = []
-        self.servo_joint_limits = []
-        self.finger_offsets = [MplId.INDEX_MCP, MplId.MIDDLE_MCP, MplId.RING_MCP, MplId.LITTLE_MCP]
-        for i in range(0, self.servo_num):
-            joint = get_user_config_var('Servo.JointLink'+str(i+1), 4)
-            self.servo_joints.append(joint)
-            self.servo_motor_limits.append(get_user_config_var('Servo.MotorLimit'+str(i+1), (500, 2500)))
-            self.servo_joint_limits.append(get_user_config_var(MplId(joint).name+'_LIMITS', (0.0, 100.0)))
+        self.offsets = [
+            [MplId.INDEX_MCP, MplId.INDEX_PIP, MplId.INDEX_DIP],
+            [MplId.MIDDLE_MCP, MplId.MIDDLE_PIP, MplId.MIDDLE_DIP],
+            [MplId.RING_MCP, MplId.RING_PIP, MplId.RING_DIP],
+            [MplId.LITTLE_MCP, MplId.LITTLE_PIP, MplId.LITTLE_DIP],
+            [MplId.THUMB_MCP, MplId.THUMB_DIP],
+            [MplId.WRIST_ROT],
+            [MplId.WRIST_FE],
+            [MplId.THUMB_CMC_AB_AD] # Is this right?
+        ]
+
+        self.limits = []
+        for joint in self.offsets:
+            limit = (0.0, 0.0)
+            for subjoint in joint:
+                limit += get_user_config_var(subjoint.name + "_LIMITS", (0.0, 100.0))
+            self.limits.append(limit)
+        logging.info("Joint limits: " + str(self.limits))
+        #self.servo_joint_limits.append(get_user_config_var(MplId(joint).name+'_LIMITS', (0.0, 100.0)))
 
     def load_config_parameters(self):
         # Load parameters from xml config file
@@ -200,21 +209,17 @@ class Servo(DataSink):
         rad_to_deg = 57.2957795  # 180/pi
         degs = [int(angle*rad_to_deg) for angle in values]
         
-        # Index, middle, ring, and pinky to ESP1
-        # For the fingers, we sum the angles of each of the joints of the finger
-        esp1_angles = [0]*4
-        #logging.debug('Index finger: %d,%d,%d' % (degs[8], degs[9], degs[10]))
-        for i, offset in enumerate(self.finger_offsets):
-            
-            esp1_angles[i] = sum(degs[offset:offset+3])
+        esp_angles = [0]*8
+        for i, joint in enumerate(self.offsets):
+            for subjiont in joint:
+                esp_angles[i] += degs[subjoint.value]
+            esp_angles[i] = max(self.limits[i][0], min(self.limits[i][1], esp_angles[i]))
         
-        # Thumb and wrist to ESP2
-        # TODO
-        
-        deg_values = [int(values[joint]*rad_to_deg) for joint in self.servo_joints]
+        esp1 = esp_angles[:5]
+        esp2 = esp_angles[5:] #TODO: Use me
 
         # Send data
-        msg1 = ','.join(map(str, esp1_angles))
+        msg1 = ','.join(map(str, esp1))
         logging.debug('JointCmd: ' + msg1)  # 60 us
         self.pi.serial_write(self.serial, "<%s>\n" % msg1)
         # self.pi.serial_write(self.serial, "<%d>\n" % deg_values[2]) # index finger

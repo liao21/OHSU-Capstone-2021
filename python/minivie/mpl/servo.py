@@ -213,7 +213,7 @@ class Servo(DataSink):
         
         esp_angles = [0]*8
         for i, joint in enumerate(self.offsets):
-            for subjiont in joint:
+            for subjoint in joint:
                 esp_angles[i] += degs[subjoint.value]
             esp_angles[i] = max(self.limits[i][0], min(self.limits[i][1], esp_angles[i]))
         

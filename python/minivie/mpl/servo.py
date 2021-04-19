@@ -125,9 +125,9 @@ class Servo(DataSink):
 
         self.limits = []
         for joint in self.offsets:
-            limit = [0.0, 0.0]
+            limit = [0, 0]
             for subjoint in joint:
-                limit_vals = get_user_config_var(subjoint.name + "_LIMITS", (0.0, 100.0))
+                limit_vals = get_user_config_var(subjoint.name + "_LIMITS", (0, 100))
                 limit[0] += limit_vals[0]
                 limit[1] += limit_vals[1]
             self.limits.append(limit)

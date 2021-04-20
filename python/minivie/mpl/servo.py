@@ -135,7 +135,7 @@ class Servo(DataSink):
             self.limits.append(limit)
 
             encoder_max = get_user_config_var("EncoderMax" + str(i), 90)
-            self.encoder_maxs.push(encoder_max)
+            self.encoder_maxs.append(encoder_max)
         logging.info("Joint limits: " + str(self.limits))
         #self.servo_joint_limits.append(get_user_config_var(MplId(joint).name+'_LIMITS', (0.0, 100.0)))
 

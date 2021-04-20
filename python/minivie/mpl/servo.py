@@ -246,7 +246,7 @@ class Servo(DataSink):
             esp2[1] += wrist_rot
         
         esp2[0] = max(wrist_fe, esp2[0])
-        esp2[1] += max(wrist_fe, esp2[1])
+        esp2[1] = max(wrist_fe, esp2[1])
         esp2[2] = thumb_ab_ad
 
         # Send data

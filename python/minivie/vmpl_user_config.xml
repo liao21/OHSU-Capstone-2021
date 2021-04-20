@@ -123,17 +123,17 @@
 
     <!-- Servo Information -->
     <!-- The minimum is assumed to be 0 -->
-    <add key="Servo.EncoderMax1"    value="85" /> <!-- Index -->
-    <add key="Servo.EncoderMax2"    value="85" /> <!-- Middle -->
-    <add key="Servo.EncoderMax3"    value="85" /> <!-- Ring-->
-    <add key="Servo.EncoderMax4"    value="85" /> <!-- Little -->
-    <add key="Servo.EncoderMax5"    value="95" /> <!-- Thumb -->
+    <add key="Servo.EncoderMax0"    value="85" /> <!-- Index -->
+    <add key="Servo.EncoderMax1"    value="85" /> <!-- Middle -->
+    <add key="Servo.EncoderMax2"    value="85" /> <!-- Ring-->
+    <add key="Servo.EncoderMax3"    value="85" /> <!-- Little -->
+    <add key="Servo.EncoderMax4"    value="95" /> <!-- Thumb -->
 
     <!-- Special exception: the wrist rotation min is expected to be -max -->
-    <add key="Servo.EncoderMax6"    value="20" /> <!-- Wrist rotation -->
+    <add key="Servo.EncoderMax5"    value="20" /> <!-- Wrist rotation -->
 
-    <add key="Servo.EncoderMax7"    value="20" /> <!-- Wrist FE -->
-    <add key="Servo.EncoderMax8"    value="30" /> <!-- Thumb AB AD -->
+    <add key="Servo.EncoderMax6"    value="20" /> <!-- Wrist FE -->
+    <add key="Servo.EncoderMax7"    value="30" /> <!-- Thumb AB AD -->
 
     <!-- User defined joint limits in *Degrees*
      Optionally limit the range of each joint prior to sending to the MPL

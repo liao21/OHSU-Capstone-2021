@@ -126,7 +126,7 @@ class Servo(DataSink):
 
         self.limits = []
         self.encoder_maxs = []
-        for i, joint in self.offsets:
+        for i, joint in enumerate(self.offsets):
             limit = [0, 0]
             for subjoint in joint:
                 limit_vals = get_user_config_var(subjoint.name + "_LIMITS", (0, 100))

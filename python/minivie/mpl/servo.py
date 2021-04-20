@@ -111,6 +111,7 @@ class Servo(DataSink):
         # servo stuff
         self.pi = pigpio.pi()
         self.serial = self.pi.serial_open("/dev/serial0", 115200)
+        self.serial2 = self.pi.serial_open("/dev/ttyAMA1", 115200)
 
         self.offsets = [
             [MplId.INDEX_MCP, MplId.INDEX_PIP, MplId.INDEX_DIP],
@@ -124,13 +125,17 @@ class Servo(DataSink):
         ]
 
         self.limits = []
-        for joint in self.offsets:
+        self.encoder_maxs = []
+        for i, joint in self.offsets:
             limit = [0, 0]
             for subjoint in joint:
                 limit_vals = get_user_config_var(subjoint.name + "_LIMITS", (0, 100))
                 limit[0] += limit_vals[0]
                 limit[1] += limit_vals[1]
             self.limits.append(limit)
+
+            encoder_max = get_user_config_var("EncoderMax" + str(i), 90)
+            self.encoder_maxs.push(encoder_max)
         logging.info("Joint limits: " + str(self.limits))
         #self.servo_joint_limits.append(get_user_config_var(MplId(joint).name+'_LIMITS', (0.0, 100.0)))
 
@@ -215,16 +220,39 @@ class Servo(DataSink):
         for i, joint in enumerate(self.offsets):
             for subjoint in joint:
                 esp_angles[i] += degs[subjoint.value]
+            
+            # Bound
             esp_angles[i] = int(max(self.limits[i][0], min(self.limits[i][1], esp_angles[i])))
         
+            # Convert to encoder clicks
+            percent_rotated = (esp_angles[i] - self.limits[i][0]) // (self.limits[i][1] - self.limits[i][0])
+            if i < 5:
+                esp_angles[i] =  percent_rotated * self.encoder_maxs[i]
+            else: # Wrist rotation
+                # We assume that the rotation spans from -max to max instead of 0 to max like the other joints
+                esp_angles[i] = (2*percent_rotated - 1)*self.encoder_maxs[i]
+
         esp1 = esp_angles[:5]
-        esp2 = esp_angles[5:] #TODO: Use me
+
+        wrist_rot, wrist_fe, thumb_ab_ad = esp_angles[5:] #TODO: Use me
+        # The ESP expects <rot left, rot right, thumb ab ad>, where flexion is achieved through
+        #   setting both rotations to positive.
+        esp2 = [0]*3
+        if(wrist_rot < 0): # Rotate left
+            esp2[0] -= wrist_rot
+        else: # Rotate right
+            esp2[1] += wrist_rot
+        esp2[0] += wrist_fe
+        esp2[1] += wrist_fe
+        esp2[2] = thumb_ab_ad
 
         # Send data
         msg1 = ','.join(map(str, esp1))
-        logging.debug('JointCmd: ' + msg1)  # 60 us
+        msg2 = ",".join(map(str, esp2))
+        logging.debug('ESP1 JointCmd: ' + msg1)  # 60 us
+        logging.debug('ESP2 JointCmd: ' + msg2)
         self.pi.serial_write(self.serial, "<%s>\n" % msg1)
-        # self.pi.serial_write(self.serial, "<%d>\n" % deg_values[2]) # index finger
+        self.pi.serial_write(self.serial2, "<%d>\n" % msg2)
         
         # Old code I'm putting back to unbreak mpl
         packer = struct.Struct('27f')
@@ -350,3 +378,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# %%

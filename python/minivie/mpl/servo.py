@@ -222,10 +222,10 @@ class Servo(DataSink):
                 esp_angles[i] += degs[subjoint.value]
             
             # Bound
-            esp_angles[i] = int(max(self.limits[i][0], min(self.limits[i][1], esp_angles[i])))
+            esp_angles[i] = max(self.limits[i][0], min(self.limits[i][1], esp_angles[i]))
         
             # Convert to encoder clicks
-            percent_rotated = (esp_angles[i] - self.limits[i][0]) // (self.limits[i][1] - self.limits[i][0])
+            percent_rotated = (esp_angles[i] - self.limits[i][0]) / (self.limits[i][1] - self.limits[i][0])
             if i < 5:
                 esp_angles[i] =  percent_rotated * self.encoder_maxs[i]
             else: # Wrist rotation
@@ -247,8 +247,9 @@ class Servo(DataSink):
         esp2[2] = thumb_ab_ad
 
         # Send data
-        msg1 = ','.join(map(str, esp1))
-        msg2 = ",".join(map(str, esp2))
+        fmnt = lambda angle: str(int(angle))
+        msg1 = ','.join(map(fmnt, esp1))
+        msg2 = ",".join(map(fmnt, esp2))
         logging.debug('ESP1 JointCmd: ' + msg1)  # 60 us
         logging.debug('ESP2 JointCmd: ' + msg2)
         self.pi.serial_write(self.serial, "<%s>\n" % msg1)

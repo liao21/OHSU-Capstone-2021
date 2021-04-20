@@ -241,7 +241,7 @@ class Servo(DataSink):
         # The ESP expects <rot left, rot right, thumb ab ad>, where flexion is achieved through
         #   setting both rotations to positive.
         esp2 = [0]*3
-        logging.info("Raw esp2 data: " + str(esp2))
+        logging.info("Raw esp2 data: " + str(esp_angles[5:]))
         if(wrist_rot < 0): # Rotate left
             esp2[0] -= wrist_rot
         else: # Rotate right

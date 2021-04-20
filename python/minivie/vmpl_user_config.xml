@@ -127,7 +127,7 @@
     <add key="Servo.EncoderMax1"    value="85" /> <!-- Middle -->
     <add key="Servo.EncoderMax2"    value="85" /> <!-- Ring-->
     <add key="Servo.EncoderMax3"    value="85" /> <!-- Little -->
-    <add key="Servo.EncoderMax4"    value="95" /> <!-- Thumb -->
+    <add key="Servo.EncoderMax4"    value="60" /> <!-- Thumb --> <!-- TODO: Brady says this should be 95 -->
 
     <!-- Special exception: the wrist rotation min is expected to be -max -->
     <add key="Servo.EncoderMax5"    value="20" /> <!-- Wrist rotation -->

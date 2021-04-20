@@ -252,7 +252,7 @@ class Servo(DataSink):
         logging.debug('ESP1 JointCmd: ' + msg1)  # 60 us
         logging.debug('ESP2 JointCmd: ' + msg2)
         self.pi.serial_write(self.serial, "<%s>\n" % msg1)
-        self.pi.serial_write(self.serial2, "<%d>\n" % msg2)
+        self.pi.serial_write(self.serial2, "<%s>\n" % msg2)
         
         # Old code I'm putting back to unbreak mpl
         packer = struct.Struct('27f')

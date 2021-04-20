@@ -227,7 +227,7 @@ class Servo(DataSink):
         
             # Convert to encoder clicks
             percent_rotated = (esp_angles[i] - self.limits[i][0]) / (self.limits[i][1] - self.limits[i][0])
-            if i < 5:
+            if i != 5:
                 esp_angles[i] =  percent_rotated * self.encoder_maxs[i]
             else: # Wrist rotation
                 # We assume that the rotation spans from -max to max instead of 0 to max like the other joints

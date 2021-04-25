@@ -130,9 +130,9 @@
     <add key="Servo.EncoderMax4"    value="60" /> <!-- Thumb --> <!-- TODO: Brady says this should be 95 -->
 
     <!-- Special exception: the wrist rotation min is expected to be -max -->
-    <add key="Servo.EncoderMax5"    value="20" /> <!-- Wrist rotation -->
+    <add key="Servo.EncoderMax5"    value="85" /> <!-- Wrist rotation -->
 
-    <add key="Servo.EncoderMax6"    value="20" /> <!-- Wrist FE -->
+    <add key="Servo.EncoderMax6"    value="85" /> <!-- Wrist FE -->
     <add key="Servo.EncoderMax7"    value="30" /> <!-- Thumb AB AD -->
 
     <!-- User defined joint limits in *Degrees*

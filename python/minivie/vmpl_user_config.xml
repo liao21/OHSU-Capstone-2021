@@ -121,33 +121,19 @@
     <add key="MPL.HandSpeedDefault"    value="1.2"/>
     <add key="MPL.HandSpeedPrecision"    value="0.15"/>
 
-    <!-- Servo Motor Information -->
-    <add key="Servo.Num"    value="8"/>
-    <add key="Servo.GPIO1"    value="17"/>
-    <add key="Servo.GPIO2"    value="27"/>
-    <add key="Servo.GPIO3"    value="22"/>
-    <add key="Servo.GPIO4"    value="10"/>
-    <add key="Servo.GPIO5"    value="9"/>
-    <add key="Servo.GPIO6"    value="11"/>
-    <add key="Servo.GPIO7"    value="5"/>
-    <add key="Servo.GPIO8"    value="6"/>
-    <add key="Servo.MotorLimit1"    value=" 700, 1600" />
-    <add key="Servo.MotorLimit2"    value=" 600, 2200" />
-    <add key="Servo.MotorLimit3"    value=" 600, 2200" />
-    <add key="Servo.MotorLimit4"    value=" 600, 2200" />
-    <add key="Servo.MotorLimit5"    value=" 600, 2200" />
-    <add key="Servo.MotorLimit6"    value=" 600, 2200" />
-    <add key="Servo.MotorLimit7"    value=" 600, 2200" />
-    <add key="Servo.MotorLimit8"    value=" 600, 2200" />
-    <!-- TODO: Use mpl.JointEnum to reference joints by name instead -->
-    <add key="Servo.JointLink1"    value="4" /> <!-- Wrist rotation -->
-    <add key="Servo.JointLink2"    value="6" /> <!-- Wrist FE -->
-    <add key="Servo.JointLink3"    value="8" /> <!-- Index MCP -->
-    <add key="Servo.JointLink4"    value="12" /> <!-- Middle MCP -->
-    <add key="Servo.JointLink5"    value="16" /> <!-- Ring MCP-->
-    <add key="Servo.JointLink6"    value="20" /> <!-- Little MCP -->
-    <add key="Servo.JointLink7"    value="25" /> <!-- Thumb MCP -->
-    <add key="Servo.JointLink8"    value="23" /> <!-- Thumb AB AD -->
+    <!-- Servo Information -->
+    <!-- The minimum is assumed to be 0 -->
+    <add key="Servo.EncoderMax0"    value="85" /> <!-- Index -->
+    <add key="Servo.EncoderMax1"    value="85" /> <!-- Middle -->
+    <add key="Servo.EncoderMax2"    value="85" /> <!-- Ring-->
+    <add key="Servo.EncoderMax3"    value="85" /> <!-- Little -->
+    <add key="Servo.EncoderMax4"    value="85" /> <!-- Thumb -->
+
+    <!-- Special exception: the wrist rotation min is expected to be -max -->
+    <add key="Servo.EncoderMax5"    value="85" /> <!-- Wrist rotation -->
+
+    <add key="Servo.EncoderMax6"    value="85" /> <!-- Wrist FE -->
+    <add key="Servo.EncoderMax7"    value="30" /> <!-- Thumb AB AD -->
 
     <!-- User defined joint limits in *Degrees*
      Optionally limit the range of each joint prior to sending to the MPL
@@ -160,34 +146,34 @@
     <add key="HUMERAL_ROT_LIMITS"     value=" -35, 80" />
     <add key="ELBOW_LIMITS"           value="   0, 130" />
 
-    <add key="WRIST_ROT_LIMITS"       value=" -85, 85" />
+    <add key="WRIST_ROT_LIMITS"       value=" -45, 45" />
     <add key="WRIST_AB_AD_LIMITS"     value=" -45, 45" />
-    <add key="WRIST_FE_LIMITS"        value=" -60, 60" />
+    <add key="WRIST_FE_LIMITS"        value=" 0, 45" />
 
     <add key="INDEX_AB_AD_LIMITS"     value=" -20, 0" />
-    <add key="INDEX_MCP_LIMITS"       value=" -40, 85" />
+    <add key="INDEX_MCP_LIMITS"       value=" 0, 85" />
     <add key="INDEX_PIP_LIMITS"       value="   0, 100" />
     <add key="INDEX_DIP_LIMITS"       value="   0, 80" />
 
     <add key="MIDDLE_AB_AD_LIMITS"    value=" -20, 0" />
-    <add key="MIDDLE_MCP_LIMITS"      value=" -40, 85" />
+    <add key="MIDDLE_MCP_LIMITS"      value=" 0, 85" />
     <add key="MIDDLE_PIP_LIMITS"      value="   0, 100" />
     <add key="MIDDLE_DIP_LIMITS"      value="   0, 80" />
 
     <add key="RING_AB_AD_LIMITS"      value="   0, 20" />
-    <add key="RING_MCP_LIMITS"        value=" -40, 85" />
+    <add key="RING_MCP_LIMITS"        value=" 0, 85" />
     <add key="RING_PIP_LIMITS"        value="   0, 100" />
     <add key="RING_DIP_LIMITS"        value="   0, 80" />
 
     <add key="LITTLE_AB_AD_LIMITS"    value="   0, 20" />
-    <add key="LITTLE_MCP_LIMITS"      value=" -40, 85" />
+    <add key="LITTLE_MCP_LIMITS"      value=" 0, 85" />
     <add key="LITTLE_PIP_LIMITS"      value="   0, 100" />
     <add key="LITTLE_DIP_LIMITS"      value="   0, 80" />
 
-    <add key="THUMB_CMC_AB_AD_LIMITS" value="  8, 135" />
+    <add key="THUMB_CMC_AB_AD_LIMITS" value="  0, 52" />
     <add key="THUMB_CMC_FE_LIMITS"    value="   8, 80" />
-    <add key="THUMB_MCP_LIMITS"       value="   8, 80" />
-    <add key="THUMB_DIP_LIMITS"       value=" -12, 60" />
+    <add key="THUMB_MCP_LIMITS"       value="   0, 80" />
+    <add key="THUMB_DIP_LIMITS"       value=" 0, 60" />
 
     <!-- Joint direction parameters to flip joint direction +/- 1 -->    
     <add key="WRIST_FE_DIRECTION"        value="+1" />

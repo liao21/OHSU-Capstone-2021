@@ -111,16 +111,34 @@ class Servo(DataSink):
         # servo stuff
         self.pi = pigpio.pi()
         self.serial = self.pi.serial_open("/dev/serial0", 115200)
+        self.serial2 = self.pi.serial_open("/dev/ttyAMA1", 115200)
 
-        self.servo_num = get_user_config_var('Servo.Num', 2)
-        self.servo_joints = []
-        self.servo_motor_limits = []
-        self.servo_joint_limits = []
-        for i in range(0, self.servo_num):
-            joint = get_user_config_var('Servo.JointLink'+str(i), 4)
-            self.servo_joints.append(joint)
-            self.servo_motor_limits.append(get_user_config_var('Servo.MotorLimit'+str(i), (500, 2500)))
-            self.servo_joint_limits.append(get_user_config_var(MplId(joint).name+'_LIMITS', (0.0, 100.0)))
+        self.offsets = [
+            [MplId.INDEX_MCP, MplId.INDEX_PIP, MplId.INDEX_DIP],
+            [MplId.MIDDLE_MCP, MplId.MIDDLE_PIP, MplId.MIDDLE_DIP],
+            [MplId.RING_MCP, MplId.RING_PIP, MplId.RING_DIP],
+            [MplId.LITTLE_MCP, MplId.LITTLE_PIP, MplId.LITTLE_DIP],
+            [MplId.THUMB_MCP, MplId.THUMB_DIP],
+            [MplId.WRIST_ROT],
+            [MplId.WRIST_FE],
+            [MplId.THUMB_CMC_AB_AD] # Is this right?
+        ]
+
+        self.limits = []
+        self.encoder_maxs = []
+        for i, joint in enumerate(self.offsets):
+            limit = [0, 0]
+            for subjoint in joint:
+                limit_vals = get_user_config_var(subjoint.name + "_LIMITS", (0, 100))
+                limit[0] += limit_vals[0]
+                limit[1] += limit_vals[1]
+            self.limits.append(limit)
+
+            encoder_max = get_user_config_var("Servo.EncoderMax" + str(i), 90)
+            self.encoder_maxs.append(encoder_max)
+        logging.info("Joint limits: " + str(self.limits))
+        logging.info("Encoder maxs: " + str(self.encoder_maxs))
+        #self.servo_joint_limits.append(get_user_config_var(MplId(joint).name+'_LIMITS', (0.0, 100.0)))
 
     def load_config_parameters(self):
         # Load parameters from xml config file
@@ -196,14 +214,49 @@ class Servo(DataSink):
 
         # Apply joint offsets if needed
         values = np.array(values) + self.joint_offset
-        
         rad_to_deg = 57.2957795  # 180/pi
-        deg_values = [int(values[joint]*rad_to_deg) for joint in self.servo_joints]
+        degs = [int(angle*rad_to_deg) for angle in values]
+        
+        esp_angles = [0]*8
+        for i, joint in enumerate(self.offsets):
+            for subjoint in joint:
+                esp_angles[i] += degs[subjoint.value]
+            
+            # Bound
+            esp_angles[i] = max(self.limits[i][0], min(self.limits[i][1], esp_angles[i]))
+        
+            # Convert to encoder clicks
+            percent_rotated = (esp_angles[i] - self.limits[i][0]) / (self.limits[i][1] - self.limits[i][0])
+            if i != 5:
+                esp_angles[i] =  percent_rotated * self.encoder_maxs[i]
+            else: # Wrist rotation
+                # We assume that the rotation spans from -max to max instead of 0 to max like the other joints
+                esp_angles[i] = (2*percent_rotated - 1)*self.encoder_maxs[i]
+
+        esp1 = esp_angles[:5]
+
+        wrist_rot, wrist_fe, thumb_ab_ad = esp_angles[5:] #TODO: Use me
+        # The ESP expects <rot left, rot right, thumb ab ad>, where flexion is achieved through
+        #   setting both rotations to positive.
+        esp2 = [0]*3
+        logging.info("Raw esp2 data: " + str(esp_angles[5:]))
+        if(wrist_rot < 0): # Rotate left
+            esp2[0] -= wrist_rot
+        else: # Rotate right
+            esp2[1] += wrist_rot
+        
+        esp2[0] = max(wrist_fe, esp2[0])
+        esp2[1] = max(wrist_fe, esp2[1])
+        esp2[2] = thumb_ab_ad
 
         # Send data
-        msg = ','.join(map(str, deg_values))
-        logging.debug('JointCmd: ' + msg)  # 60 us
-        self.pi.serial_write(self.serial, "<%s>\n" % msg)
+        fmnt = lambda angle: str(int(angle))
+        msg1 = ','.join(map(fmnt, esp1))
+        msg2 = ",".join(map(fmnt, esp2))
+        logging.debug('ESP1 JointCmd: ' + msg1)  # 60 us
+        logging.debug('ESP2 JointCmd: ' + msg2)
+        self.pi.serial_write(self.serial, "<%s>\n" % msg1)
+        self.pi.serial_write(self.serial2, "<%s>\n" % msg2)
         
         # Old code I'm putting back to unbreak mpl
         packer = struct.Struct('27f')
@@ -329,3 +382,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# %%
